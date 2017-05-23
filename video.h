@@ -154,6 +154,8 @@ extern const vid_config_t vid_config_pal_i;
 extern const vid_config_t vid_config_pal;
 extern const vid_config_t vid_config_ntsc_m;
 extern const vid_config_t vid_config_ntsc;
+extern const vid_config_t vid_config_405_a;
+extern const vid_config_t vid_config_405;
 
 extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf);
 extern void vid_free(vid_t *s);

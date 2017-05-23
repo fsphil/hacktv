@@ -307,6 +307,8 @@ static void print_usage(void)
 		"  pal  = PAL colour, 25 fps, 625 lines, unmodulated (real)\n"
 		"  m    = NTSC colour, 30/1.001 fps, 525 lines, AM (complex)\n"
 		"  ntsc = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
+		"  a    = No colour, 25 fps, 405 lines, AM (complex)\n"
+		"  405  = No colour, 25 fps, 405 lines, unmodulated (real)\n"
 		"\n"
 		"NOTE: The number of samples per line is rounded to the nearest integer,\n"
 		"which may result in a slight frame rate error.\n"
@@ -464,6 +466,14 @@ int main(int argc, char *argv[])
 	else if(strcmp(s.mode, "ntsc") == 0)
 	{
 		vid_ptr = &vid_config_ntsc;
+	}
+	else if(strcmp(s.mode, "a") == 0)
+	{
+		vid_ptr = &vid_config_405_a;
+	}
+	else if(strcmp(s.mode, "405") == 0)
+	{
+		vid_ptr = &vid_config_405;
 	}
 	else
 	{

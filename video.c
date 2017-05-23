@@ -221,6 +221,67 @@ const vid_config_t vid_config_ntsc = {
 	.qv_co          = -0.478,
 };
 
+const vid_config_t vid_config_405_a = {
+	
+	/* System A (405 line monochrome) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 405,
+	.active_lines   = 376,
+	.active_width   = 0.00008030, /* 80.3µs */
+	.active_left    = 0.00001680, /* |-->| 16.8µs */
+	
+	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
+	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	
+	.white_level    = 1.00,
+	.black_level    = 0.30,
+	.blanking_level = 0.30,
+	.sync_level     = 0.00,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	
+	/* AM modulated */
+	.mono_carrier   = -3500000, /* Hz */
+};
+
+const vid_config_t vid_config_405 = {
+	
+	/* 405 line video */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 405,
+	.active_lines   = 376,
+	.active_width   = 0.00008030, /* 80.3µs */
+	.active_left    = 0.00001680, /* |-->| 16.8µs */
+	
+	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
+	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.00,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
 static int16_t *_sin_int16(unsigned int length, unsigned int cycles, double level)
 {
 	int16_t *lut;
@@ -391,25 +452,28 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		s->q_level_lookup[c] = round(q * level * INT16_MAX);
 	}
 	
-	/* Generate the colour subcarrier lookup table */
-	/* This carrier is in phase with the U (B-Y) component */
-	s->colour_lookup_width = s->width * s->conf.colour_lookup_lines;
-	d = 2.0 * M_PI * s->conf.colour_carrier / s->sample_rate;
-	
-	s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(int16_t));
-	if(!s->colour_lookup)
+	if(s->conf.colour_lookup_lines > 0)
 	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
+		/* Generate the colour subcarrier lookup table */
+		/* This carrier is in phase with the U (B-Y) component */
+		s->colour_lookup_width = s->width * s->conf.colour_lookup_lines;
+		d = 2.0 * M_PI * s->conf.colour_carrier / s->sample_rate;
+		
+		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(int16_t));
+		if(!s->colour_lookup)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		for(c = 0; c < s->colour_lookup_width; c++)
+		{
+			s->colour_lookup[c] = round(-sin(d * c) * INT16_MAX);
+		}
+		
+		/* To make overflow easier to handle, we repeat the first line at the end */
+		memcpy(&s->colour_lookup[s->colour_lookup_width], s->colour_lookup, s->width * sizeof(int16_t));
 	}
-	
-	for(c = 0; c < s->colour_lookup_width; c++)
-	{
-		s->colour_lookup[c] = round(-sin(d * c) * INT16_MAX);
-	}
-	
-	/* To make overflow easier to handle, we repeat the first line at the end */
-	memcpy(&s->colour_lookup[s->colour_lookup_width], s->colour_lookup, s->width * sizeof(int16_t));
 	
 	s->burst_left  = round(s->sample_rate * s->conf.burst_left);
 	s->burst_width = round(s->sample_rate * s->conf.burst_width);
@@ -617,7 +681,7 @@ int16_t *vid_next_line(vid_t *s)
 		vy = (s->line < 313 ? (s->line - 23) * 2 : (s->line - 336) * 2 + 1);
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
-	else
+	else if(s->conf.lines == 525)
 	{
 		switch(s->line)
 		{
@@ -671,6 +735,50 @@ int16_t *vid_next_line(vid_t *s)
 		vy = (s->line < 265 ? (s->line - 21) * 2 : (s->line - 284) * 2 + 1);
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
+	else if(s->conf.lines == 405)
+	{
+		switch(s->line)
+		{
+		case 1:   seq = "V__V"; break;
+		case 2:   seq = "V__V"; break;
+		case 3:   seq = "V__V"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "h___"; break;
+		case 6:   seq = "h___"; break;
+		case 7:   seq = "h___"; break;
+		case 8:   seq = "h___"; break;
+		case 9:   seq = "h___"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		
+		case 203: seq = "h_aV"; break;
+		case 204: seq = "V__V"; break;
+		case 205: seq = "V__V"; break;
+		case 206: seq = "V__V"; break;
+		case 207: seq = "V___"; break;
+		case 208: seq = "h___"; break;
+		case 209: seq = "h___"; break;
+		case 210: seq = "h___"; break;
+		case 211: seq = "h___"; break;
+		case 212: seq = "h___"; break;
+		case 213: seq = "h___"; break;
+		case 214: seq = "h___"; break;
+		case 215: seq = "h___"; break;
+		case 216: seq = "h___"; break;
+		case 217: seq = "h___"; break;
+		case 218: seq = "h__a"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 218) * 2 + 1);
+		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
+	}
 	
 	/* Does this line use colour? */
 	pal  = seq[1] == '0';
@@ -688,7 +796,7 @@ int16_t *vid_next_line(vid_t *s)
 		lut_i = _colour_subcarrier_phase(s, odd ? -90 : 90);
 		lut_q = _colour_subcarrier_phase(s, 0);
 	}
-	else
+	else if(s->conf.lines == 525)
 	{
 		/* NTSC */
 		lut_b = _colour_subcarrier_phase(s, 180);
