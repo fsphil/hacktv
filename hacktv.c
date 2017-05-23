@@ -521,10 +521,10 @@ int main(int argc, char *argv[])
 	
 	do
 	{
-		for(; optind < argc; optind++)
+		for(c = optind; c < argc && !_abort; c++)
 		{
 			/* Get a pointer to the output prefix and target */
-			pre = argv[optind];
+			pre = argv[c];
 			sub = strchr(pre, ':');
 			
 			if(sub != NULL)
@@ -537,11 +537,11 @@ int main(int argc, char *argv[])
 				l = strlen(pre);
 			}
 			
-			if(strncmp(argv[optind], "test", l) == 0)
+			if(strncmp(pre, "test", l) == 0)
 			{
 				r = _hacktv_av_test_open(&s);
 			}
-			else if(strncmp(argv[optind], "ffmpeg", l) == 0)
+			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{
 				r = av_ffmpeg_open(&s, sub);
 			}
