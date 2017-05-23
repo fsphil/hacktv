@@ -272,7 +272,7 @@ static void print_usage(void)
 		"\n"
 		"  -o, --output <target>          Set the output device or file, Default: hackrf\n"
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
-		"  -r, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
+		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
 			s.mode = optarg;
 			break;
 		
-		case 's': /* -r, --samplerate <value> */
+		case 's': /* -s, --samplerate <value> */
 			s.samplerate = atoi(optarg);
 			break;
 		
