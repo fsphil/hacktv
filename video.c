@@ -141,8 +141,8 @@ const vid_config_t vid_config_ntsc_m = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 1.0, /* Power level of video */
-	.mono_level     = 0.0, /* FM audio carrier power level */
+	.video_level    = 0.83, /* Power level of video */
+	.mono_level     = 0.17, /* FM audio carrier power level */
 	
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
@@ -226,8 +226,8 @@ const vid_config_t vid_config_405_a = {
 	/* System A (405 line monochrome) */
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
-	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
+	.level          = 0.8, /* Overall signal level */
+	.video_level    = 0.2, /* Power level of video */
 	
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
