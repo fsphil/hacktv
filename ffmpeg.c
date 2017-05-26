@@ -148,6 +148,7 @@ int av_ffmpeg_open(hacktv_t *s, char *input_url)
 	
 	/* Get a pointer to the codec context for the video stream */
 	av->codec_ctx = av->format_ctx->streams[i]->codec;
+	av->codec_ctx->thread_count = 0; /* Let ffmpeg decide number of threads */
 	
 	/* Find the decoder for the video stream */
 	codec = avcodec_find_decoder(av->codec_ctx->codec_id);
