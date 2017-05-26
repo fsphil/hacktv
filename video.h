@@ -20,10 +20,15 @@
 
 #include <stdint.h>
 
+/* Return codes */
 #define VID_OK             0
 #define VID_OUT_OF_MEMORY -1
 
-#include <stdint.h>
+/* Colour modes */
+#define VID_MONOCHROME 0
+#define VID_PAL        1
+#define VID_NTSC       2
+#define VID_SECAM      3
 
 typedef struct {
 	
@@ -45,16 +50,6 @@ typedef struct {
 	int lines;
 	int active_lines;
 	
-	double burst_width;
-	double burst_left;
-	double burst_level;
-	
-	double colour_carrier;
-	int colour_lookup_lines;
-	
-	double active_width;
-	double active_left;
-	
 	double hsync_width;
 	double vsync_short_width;
 	double vsync_long_width;
@@ -64,12 +59,23 @@ typedef struct {
 	double blanking_level;
 	double sync_level;
 	
+	double active_width;
+	double active_left;
+	
 	double gamma;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;
 	double gw_co;
 	double bw_co;
+	
+	int colour_mode;
+	double colour_carrier;
+	int colour_lookup_lines;
+	
+	double burst_width;
+	double burst_left;
+	double burst_level;
 	
 	double iu_co;
 	double iv_co;

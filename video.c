@@ -70,6 +70,7 @@ const vid_config_t vid_config_pal_i = {
 	.blanking_level = 0.76,
 	.sync_level     = 1.00,
 	
+	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
@@ -117,6 +118,7 @@ const vid_config_t vid_config_pal = {
 	.blanking_level =  0.00,
 	.sync_level     = -0.30,
 	
+	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
@@ -160,6 +162,7 @@ const vid_config_t vid_config_ntsc_m = {
 	.blanking_level = 0.7712,
 	.sync_level     = 1.0000,
 	
+	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
@@ -205,6 +208,7 @@ const vid_config_t vid_config_ntsc = {
 	.blanking_level = 0.7712,
 	.sync_level     = 1.0000,
 	
+	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
@@ -789,19 +793,24 @@ int16_t *vid_next_line(vid_t *s)
 	odd = (s->frame + s->line + 1) & 1;
 	
 	/* Calculate colour sub-carrier lookup-positions for the start of this line */
-	if(s->conf.lines == 625)
+	if(s->conf.colour_mode == VID_PAL)
 	{
 		/* PAL */
 		lut_b = _colour_subcarrier_phase(s, odd ? -135 : 135);
 		lut_i = _colour_subcarrier_phase(s, odd ? -90 : 90);
 		lut_q = _colour_subcarrier_phase(s, 0);
 	}
-	else if(s->conf.lines == 525)
+	else if(s->conf.colour_mode == VID_NTSC)
 	{
 		/* NTSC */
 		lut_b = _colour_subcarrier_phase(s, 180);
 		lut_i = _colour_subcarrier_phase(s, 90);
 		lut_q = _colour_subcarrier_phase(s, 0);
+	}
+	else
+	{
+		/* No colour */
+		pal = 0;
 	}
 	
 	/* Render the left side sync pulse */
