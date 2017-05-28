@@ -736,7 +736,14 @@ int16_t *vid_next_line(vid_t *s)
 		}
 		
 		/* Calculate the active line number */
-		vy = (s->line < 265 ? (s->line - 21) * 2 : (s->line - 284) * 2 + 1);
+		
+		/* There are 486 lines in this mode with some active video,
+		 * but encoded files normally only have 480 of these. Here
+		 * we use the line numbers suggested by SMPTE Recommended
+		 * Practice RP-202. Lines 23-262 from the first field and
+		 * 286-525 from the second. */
+		
+		vy = (s->line < 265 ? (s->line - 23) * 2 : (s->line - 286) * 2 + 1);
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 405)
