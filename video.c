@@ -627,7 +627,10 @@ int16_t *vid_next_line(vid_t *s)
 	 *    V = long vertical sync pulse
 	 * 
 	 **** I don't like this code, it's overly complicated for all it does.
-	 */
+	*/
+	
+	vy = -1;
+	
 	if(s->conf.lines == 625)
 	{
 		switch(s->line)
