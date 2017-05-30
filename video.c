@@ -286,6 +286,16 @@ const vid_config_t vid_config_405 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_configs_t vid_configs[] = {
+	{ "i",    &vid_config_pal_i  },
+	{ "pal",  &vid_config_pal    },
+	{ "m",    &vid_config_ntsc_m },
+	{ "ntsc", &vid_config_ntsc   },
+	{ "a",    &vid_config_405_a  },
+	{ "405",  &vid_config_405    },
+	{ NULL,   NULL },
+};
+
 static int16_t *_sin_int16(unsigned int length, unsigned int cycles, double level)
 {
 	int16_t *lut;

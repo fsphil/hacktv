@@ -339,8 +339,8 @@ int main(int argc, char *argv[])
 	};
 	static hacktv_t s;
 	uint32_t *framebuffer;
+	vid_configs_t *vid_confs;
 	vid_config_t vid_conf;
-	const vid_config_t *vid_ptr;
 	char *pre, *sub;
 	int l;
 	int r;
@@ -446,39 +446,18 @@ int main(int argc, char *argv[])
 	if(optind >= argc)
 	{
 		printf("No input specified.\n");
-		print_usage();
 		return(-1);
 	}
 	
 	/* Load the mode configuration */
-	if(strcmp(s.mode, "i") == 0)
+	for(vid_confs = vid_configs; vid_confs->id != NULL; vid_confs++)
 	{
-		vid_ptr = &vid_config_pal_i;
+		if(strcmp(s.mode, vid_confs->id) == 0) break;
 	}
-	else if(strcmp(s.mode, "pal") == 0)
-	{
-		vid_ptr = &vid_config_pal;
-	}
-	else if(strcmp(s.mode, "m") == 0)
-	{
-		vid_ptr = &vid_config_ntsc_m;
-	}
-	else if(strcmp(s.mode, "ntsc") == 0)
-	{
-		vid_ptr = &vid_config_ntsc;
-	}
-	else if(strcmp(s.mode, "a") == 0)
-	{
-		vid_ptr = &vid_config_405_a;
-	}
-	else if(strcmp(s.mode, "405") == 0)
-	{
-		vid_ptr = &vid_config_405;
-	}
-	else
+	
+	if(vid_confs->id == NULL)
 	{
 		fprintf(stderr, "Unrecognised TV mode.\n");
-		print_usage();
 		return(-1);
 	}
 	
@@ -490,7 +469,7 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, &_sigint_callback_handler);
 	signal(SIGABRT, &_sigint_callback_handler);
 	
-	memcpy(&vid_conf, vid_ptr, sizeof(vid_config_t));
+	memcpy(&vid_conf, vid_confs->conf, sizeof(vid_config_t));
 	if(s.gamma > 0)
 	{
 		vid_conf.gamma = s.gamma;

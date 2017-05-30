@@ -93,6 +93,11 @@ typedef struct {
 } vid_config_t;
 
 typedef struct {
+	const char *id;
+	const vid_config_t *conf;
+} vid_configs_t;
+
+typedef struct {
 	
 	/* Signal configuration */
 	vid_config_t conf;
@@ -162,6 +167,7 @@ extern const vid_config_t vid_config_ntsc_m;
 extern const vid_config_t vid_config_ntsc;
 extern const vid_config_t vid_config_405_a;
 extern const vid_config_t vid_config_405;
+extern const vid_configs_t vid_configs[];
 
 extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf);
 extern void vid_free(vid_t *s);
