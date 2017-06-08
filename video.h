@@ -22,13 +22,19 @@
 
 /* Return codes */
 #define VID_OK             0
-#define VID_OUT_OF_MEMORY -1
+#define VID_ERROR         -1
+#define VID_OUT_OF_MEMORY -2
 
 /* Colour modes */
 #define VID_MONOCHROME 0
 #define VID_PAL        1
 #define VID_NTSC       2
 #define VID_SECAM      3
+
+/* AV source function prototypes */
+typedef uint32_t *(*vid_read_video_t)(void *private);
+typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
+typedef int (*vid_close_t)(void *private);
 
 typedef struct {
 	
@@ -99,9 +105,15 @@ typedef struct {
 
 typedef struct {
 	
+	/* Source interface */
+	void *av_private;
+	vid_read_video_t av_read_video;
+	vid_read_audio_t av_read_audio;
+	vid_close_t av_close;
+	
 	/* Signal configuration */
 	vid_config_t conf;
-	
+
 	/* Video setup */
 	int sample_rate;
 	
@@ -130,31 +142,20 @@ typedef struct {
 	
 	/* Video state */
 	uint32_t *framebuffer;
-	uint32_t *next_framebuffer;
 	
 	unsigned int frame;
 	unsigned int line;
 	
-	/* Mono audio setup */
+	/* Audio state */
+	int16_t *audiobuffer;
+	size_t audiobuffer_samples;
+	
+	/* Mono audio state */
 	int mono_lookup_width;
 	int16_t *mono_lookup;
 	int mono_delta;
-	
-	/* Mono audio state */
-	int mono_i_ph;
-	int mono_q_ph;
-	
-	/* NICAM audio setup */
-	int nicam_lookup_width;
-	int16_t *nicam_lookup;
-	int nicam_delta;
-	
-	/* NICAM audio state */
-	int nicam_i_ph[4];
-	int nicam_q_ph[4];
-	
-	int nicam_a;
-	int nicam_sym;
+	int mono_pi;
+	int mono_pq;
 	
 	/* Output line buffer */
 	int16_t *output;
@@ -171,11 +172,10 @@ extern const vid_configs_t vid_configs[];
 
 extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf);
 extern void vid_free(vid_t *s);
+extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
-extern size_t vid_get_linebuffer_length(vid_t *s);
-extern void vid_set_framebuffer(vid_t *s, void *framebuffer);
-extern int16_t *vid_next_line(vid_t *s);
+extern int16_t *vid_next_line(vid_t *s, size_t *samples);
 
 #endif
 

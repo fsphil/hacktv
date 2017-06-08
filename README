@@ -9,7 +9,7 @@ Output can be to a file (IQ or real, int16_t) or directly to a HackRF.
 
 WHAT'S IT NOT DO (yet)
 
-Audio is the biggest missing feature.
+Streaming support is not optimal. An input buffer is needed.
 There are no filters. Needed for proper audio and VSB modulation.
 NICAM stereo audio. There is a frame encoder included but no QPSK modulator.
 An optional notch filter for the colour subcarrier would be nice.

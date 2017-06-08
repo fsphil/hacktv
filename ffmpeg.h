@@ -18,7 +18,7 @@
 #ifndef _FFMPEG_H
 #define _FFMPEG_H
 
-extern int av_ffmpeg_open(hacktv_t *s, char *input_url);
+extern int av_ffmpeg_open(vid_t *s, char *input_url);
 
 #endif
 

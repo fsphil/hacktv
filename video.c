@@ -373,6 +373,37 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 	return(&s->colour_lookup[p]);
 }
 
+/* AV source callback handlers */
+static uint32_t *_av_read_video(vid_t *s)
+{
+	if(s->av_read_video) return(s->av_read_video(s->av_private));
+	return(NULL);
+}
+
+static int16_t *_av_read_audio(vid_t *s, size_t *samples)
+{
+	if(s->av_read_audio)
+	{
+		return(s->av_read_audio(s->av_private, samples));
+	}
+	
+	return(NULL);
+}
+
+int vid_av_close(vid_t *s)
+{
+	int r;
+	
+	r = s->av_close ? s->av_close(s->av_private) : VID_ERROR;
+	
+	s->av_private = NULL;
+	s->av_read_video = NULL;
+	s->av_read_audio = NULL;
+	s->av_close = NULL;
+	
+	return(r);
+}
+
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
 {
 	int64_t c;
@@ -499,21 +530,21 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->frame = 1;
 	
 	s->framebuffer = NULL;
-	s->next_framebuffer = NULL;
 	
-	/* Mono Audio */
-	/*
-	s->mono_lookup_width = 32768 * (s->sample_rate / s->conf.mono_deviation);
-	s->mono_lookup = _sin_int16(s->mono_lookup_width, 1, s->conf.mono_level * s->conf.level);
-	if(!s->mono_lookup)
+	/* Mono FM Audio */
+	if(s->conf.mono_level > 0)
 	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
+		s->mono_lookup_width = 32768 * (s->sample_rate / s->conf.mono_deviation);
+		s->mono_lookup = _sin_int16(s->mono_lookup_width, 1, s->conf.mono_level * s->conf.level);
+		if(!s->mono_lookup)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		s->mono_delta = s->mono_lookup_width * s->conf.mono_carrier / s->sample_rate;
+		s->mono_pi = s->mono_lookup_width / 4;
+		s->mono_pq = 0;
 	}
-	s->mono_delta = s->mono_lookup_width * s->conf.mono_carrier / s->sample_rate;
-	s->mono_i_ph = s->mono_lookup_width / 4;
-	s->mono_q_ph = 0;
-	*/
 	
 	/* NICAM Audio */
 	/*
@@ -534,7 +565,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	*/
 	
 	/* Output line buffer */
-	s->output = malloc(vid_get_linebuffer_length(s));
+	s->output = malloc(sizeof(int16_t) * 2 * s->width);
 	if(!s->output)
 	{
 		vid_free(s);
@@ -546,12 +577,16 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 
 void vid_free(vid_t *s)
 {
+	/* Close the AV source */
+	vid_av_close(s);
+	
+	/* Free allocated memory */
 	if(s->y_level_lookup != NULL) free(s->y_level_lookup);
 	if(s->i_level_lookup != NULL) free(s->i_level_lookup);
 	if(s->q_level_lookup != NULL) free(s->q_level_lookup);
 	if(s->colour_lookup != NULL) free(s->colour_lookup);
 	if(s->mono_lookup != NULL) free(s->mono_lookup);
-	if(s->nicam_lookup != NULL) free(s->nicam_lookup);
+	//if(s->nicam_lookup != NULL) free(s->nicam_lookup);
 	if(s->output != NULL) free(s->output);
 }
 
@@ -570,17 +605,7 @@ size_t vid_get_framebuffer_length(vid_t *s)
 	return(sizeof(uint32_t) * s->active_width * s->conf.active_lines);
 }
 
-size_t vid_get_linebuffer_length(vid_t *s)
-{
-	return(sizeof(int16_t) * 2 * s->width);
-}
-
-void vid_set_framebuffer(vid_t *s, void *framebuffer)
-{
-	s->next_framebuffer = framebuffer;
-}
-
-int16_t *vid_next_line(vid_t *s)
+int16_t *vid_next_line(vid_t *s, size_t *samples)
 {
 	const char *seq;
 	int x;
@@ -593,13 +618,15 @@ int16_t *vid_next_line(vid_t *s)
 	int16_t *lut_i;
 	int16_t *lut_q;
 	
-	/* Switch to the next framebuffer if one was submitted */
+	/* Load the next frame */
 	if(s->line == 1)
 	{
-		if(s->next_framebuffer != NULL)
+		s->framebuffer = _av_read_video(s);
+		
+		/* No more frames from the video source? */
+		if(s->framebuffer == NULL)
 		{
-			s->framebuffer = s->next_framebuffer;
-			s->next_framebuffer = NULL;
+			return(NULL);
 		}
 	}
 	
@@ -940,6 +967,55 @@ int16_t *vid_next_line(vid_t *s)
 		s->output[x * 2 + 1] = 0;
 	}
 	
+	/* Generate the mono audio subcarrier */
+	if(s->conf.mono_level > 0)
+	{
+		static int16_t audio = 0;
+		static int interp = 0;
+		
+		for(x = 0; x < s->width; x++)
+		{
+			/* TODO: Replace this with a real FIR filter... */
+			interp += HACKTV_AUDIO_SAMPLE_RATE;
+			if(interp >= s->sample_rate)
+			{
+				interp -= s->sample_rate;
+				
+				if(s->audiobuffer_samples == 0)
+				{
+					s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
+				}
+				
+				if(s->audiobuffer)
+				{
+					/* Fetch next sample */
+					audio = ((int32_t) s->audiobuffer[0] + s->audiobuffer[1]) / 2;
+					s->audiobuffer += 2;
+					s->audiobuffer_samples--;
+				}
+				else
+				{
+					/* No audio from the source */
+					audio = 0;
+				}
+			}
+			
+			s->output[x * 2 + 0] += s->mono_lookup[s->mono_pi];
+			s->output[x * 2 + 1] += s->mono_lookup[s->mono_pq];
+			
+			/* Update the I and Q indexes, adding audio offset */
+			s->mono_pi += s->mono_delta + audio;
+			s->mono_pq += s->mono_delta + audio;
+			
+			/* Keep the I and Q index within bounds */
+			if(s->mono_pi < 0) { s->mono_pi = s->mono_lookup_width - s->mono_pi % s->mono_lookup_width; }
+			else if(s->mono_pi >= s->mono_lookup_width) { s->mono_pi %= s->mono_lookup_width; }
+			
+			if(s->mono_pq < 0) { s->mono_pq = s->mono_lookup_width - s->mono_pq % s->mono_lookup_width; }
+			else if(s->mono_pq >= s->mono_lookup_width) { s->mono_pq %= s->mono_lookup_width; }
+		}
+	}
+	
 	/* Advance the next line/frame counter */
 	if(s->line++ == s->conf.lines)
 	{
@@ -948,6 +1024,7 @@ int16_t *vid_next_line(vid_t *s)
 	}
 	
 	/* Return a pointer to the line buffer */
+	*samples = s->width;
 	return(s->output);
 }
 

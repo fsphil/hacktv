@@ -21,6 +21,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include "hacktv.h"
+#include "test.h"
 #include "ffmpeg.h"
 #include "hackrf.h"
 
@@ -30,108 +31,6 @@ static void _sigint_callback_handler(int signum)
 {
 	fprintf(stderr, "Caught signal %d\n", signum);
 	_abort = 1;
-}
-
-/* AV test pattern source */
-typedef struct {
-	uint32_t *video;
-	int16_t *audio;
-} av_test_t;
-
-static uint32_t *_hacktv_av_test_read_video(void *private)
-{
-	av_test_t *av = private;
-	return(av->video);
-}
-
-static int16_t *_hacktv_av_test_read_audio(void *private, size_t samples)
-{
-	av_test_t *av = private;
-	return(av->audio);
-}
-
-static int _hacktv_av_test_close(void *private)
-{
-	av_test_t *av = private;
-	if(av->video) free(av->video);
-	if(av->audio) free(av->audio);
-	free(av);
-	return(HACKTV_OK);
-}
-
-static int _hacktv_av_test_open(hacktv_t *s)
-{
-	uint32_t const bars[8] = {
-		0x000000,
-		0x0000FF,
-		0xFF0000,
-		0xFF00FF,
-		0x00FF00,
-		0x00FFFF,
-		0xFFFF00,
-		0xFFFFFF,
-	};
-	av_test_t *av;
-	int c, x, y;
-	
-	av = calloc(1, sizeof(av_test_t));
-	if(!av)
-	{
-		return(HACKTV_OUT_OF_MEMORY);
-	}
-
-	/* Generate a basic test pattern */
-	av->video = malloc(vid_get_framebuffer_length(&s->vid));
-	if(!av->video)
-	{
-		free(av);
-		return(HACKTV_OUT_OF_MEMORY);
-	}
-	
-	for(y = 0; y < s->vid.conf.active_lines; y++)
-	{
-		for(x = 0; x < s->vid.active_width; x++)
-		{
-			if(y < 400)
-			{
-				/* 100% colour bars */
-				c = 7 - x * 8 / s->vid.active_width;
-				c = bars[c];
-			}
-			else if(y < 420)
-			{
-				/* 100% red */
-				c = 0xFF0000;
-			}
-			else if(y < 440)
-			{
-				/* Gradient black to white */
-				c = x * 0xFF / (s->vid.active_width - 1);
-				c = c << 16 | c << 8 | c;
-			}
-			else
-			{
-				/* 8 level grey bars */
-				c = x * 0xFF / (s->vid.active_width - 1);
-				c &= 0xE0;
-				c = c | (c >> 3) | (c >> 6);
-				c = c << 16 | c << 8 | c;
-			}
-			
-			av->video[y * s->vid.active_width + x] = c;
-		}
-	}
-	
-	/* TODO audio */
-	av->audio = NULL;
-	
-	/* Register the callback functions */
-	s->av_private = av;
-	s->av_read_video = _hacktv_av_test_read_video;
-	s->av_read_audio = _hacktv_av_test_read_audio;
-	s->av_close = _hacktv_av_test_close;
-	
-	return(HACKTV_OK);
 }
 
 /* File sink */
@@ -214,33 +113,6 @@ static int _hacktv_rf_file_open(hacktv_t *s, char *filename)
 	s->rf_close = _hacktv_rf_file_close;
 	
 	return(HACKTV_OK);
-}
-
-/* AV source callback handlers */
-static uint32_t *_hacktv_av_read_video(hacktv_t *s)
-{
-	if(s->av_read_video) return(s->av_read_video(s->av_private));
-	return(NULL);
-}
-
-static int16_t *_hacktv_av_read_audio(hacktv_t *s, size_t samples)
-{
-	if(s->av_read_audio)
-	{
-		return(s->av_read_audio(s->av_private, samples));
-	}
-	
-	return(NULL);
-}
-
-static int _hacktv_av_close(hacktv_t *s)
-{
-	if(s->av_close)
-	{
-		return(s->av_close(s->av_private));
-	}
-	
-	return(HACKTV_ERROR);
 }
 
 /* RF sink callback handlers */
@@ -338,8 +210,7 @@ int main(int argc, char *argv[])
 		{ 0,            0,                 0,  0  }
 	};
 	static hacktv_t s;
-	uint32_t *framebuffer;
-	vid_configs_t *vid_confs;
+	const vid_configs_t *vid_confs;
 	vid_config_t vid_conf;
 	char *pre, *sub;
 	int l;
@@ -483,7 +354,6 @@ int main(int argc, char *argv[])
 	{
 		if(rf_hackrf_open(&s, s.output, s.frequency, s.gain, s.amp) != HACKTV_OK)
 		{
-			_hacktv_av_close(&s);
 			vid_free(&s.vid);
 			return(-1);
 		}
@@ -492,7 +362,6 @@ int main(int argc, char *argv[])
 	{
 		if(_hacktv_rf_file_open(&s, s.output) != HACKTV_OK)
 		{
-			_hacktv_av_close(&s);
 			vid_free(&s.vid);
 			return(-1);
 		}
@@ -518,15 +387,15 @@ int main(int argc, char *argv[])
 			
 			if(strncmp(pre, "test", l) == 0)
 			{
-				r = _hacktv_av_test_open(&s);
+				r = av_test_open(&s.vid);
 			}
 			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{
-				r = av_ffmpeg_open(&s, sub);
+				r = av_ffmpeg_open(&s.vid, sub);
 			}
 			else
 			{
-				r = av_ffmpeg_open(&s, pre);
+				r = av_ffmpeg_open(&s.vid, pre);
 			}
 			
 			if(r != HACKTV_OK)
@@ -535,17 +404,17 @@ int main(int argc, char *argv[])
 				return(-1);
 			}
 			
-			while((framebuffer = _hacktv_av_read_video(&s)) && !_abort)
+			while(!_abort)
 			{
-				vid_set_framebuffer(&s.vid, framebuffer);
+				size_t samples;
+				int16_t *data = vid_next_line(&s.vid, &samples);
 				
-				for(l = 0; l < s.vid.conf.lines; l++)
-				{
-					_hacktv_rf_write(&s, vid_next_line(&s.vid), s.vid.width);
-				}
+				if(data == NULL) break;
+				
+				_hacktv_rf_write(&s, data, samples);
 			}
 			
-			_hacktv_av_close(&s);
+			vid_av_close(&s.vid);
 		}
 	}
 	while(s.repeat && !_abort);

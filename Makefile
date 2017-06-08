@@ -3,13 +3,13 @@ CC=gcc
 CFLAGS=-g -Wall -pthread -O3
 LDFLAGS=-g -lm -pthread
 
-CFLAGS+=`pkg-config --cflags libavcodec libavformat libswscale libavutil`
-LDFLAGS+=`pkg-config --libs libavcodec libavformat libswscale libavutil`
+CFLAGS+=`pkg-config --cflags libavcodec libavformat libswscale libswresample libavutil`
+LDFLAGS+=`pkg-config --libs libavcodec libavformat libswscale libswresample libavutil`
 
 CFLAGS+=`pkg-config --cflags libhackrf`
 LDFLAGS+=`pkg-config --libs libhackrf`
 
-OBJS=hacktv.o video.o ffmpeg.o hackrf.o nicam728.o
+OBJS=hacktv.o video.o nicam728.o test.o ffmpeg.o hackrf.o
 
 all: hacktv
 
