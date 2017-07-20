@@ -25,6 +25,12 @@
 #define VID_ERROR         -1
 #define VID_OUT_OF_MEMORY -2
 
+/* Output modulation types */
+#define VID_NONE 0
+#define VID_AM   1
+#define VID_VSB  2
+#define VID_FM   3
+
 /* Colour modes */
 #define VID_MONOCHROME 0
 #define VID_PAL        1
@@ -41,12 +47,19 @@ typedef struct {
 	/* Output type */
 	int output_type;
 	
-	/* Overall signal level */
+	/* Output modulation */
+	int modulation;
+	
+	/* FM modulation options */
+	double fm_level;
+	double fm_deviation;
+	
+	/* Overall signal level (pre-modulation) */
 	double level;
 	
 	/* These three should add up to 1.0 */
 	double video_level;
-	double mono_level;
+	double fm_audio_level;
 	double nicam_level;
 	
 	/* Video */
@@ -88,13 +101,18 @@ typedef struct {
 	double qu_co;
 	double qv_co;
 	
-	/* Mono FM audio */
-	double mono_carrier;
-	double mono_preemph;
-	double mono_deviation;
+	/* FM audio */
+	double fm_mono_carrier;
+	double fm_left_carrier;
+	double fm_right_carrier;
+	double fm_audio_preemph;
+	double fm_audio_deviation;
 	
 	/* Stereo NICAM audio */
 	double nicam_carrier;
+	
+	/* AM audio */
+	double am_mono_carrier;
 	
 } vid_config_t;
 
@@ -150,12 +168,38 @@ typedef struct {
 	int16_t *audiobuffer;
 	size_t audiobuffer_samples;
 	
-	/* Mono audio state */
-	int mono_lookup_width;
-	int16_t *mono_lookup;
-	int mono_delta;
-	int mono_pi;
-	int mono_pq;
+	/* FM audio state */
+	int fm_audio_lookup_width;
+	int16_t *fm_audio_lookup;
+	
+	/* FM Mono state */
+	int fm_mono_delta;
+	int fm_mono_pi;
+	int fm_mono_pq;
+	
+	/* FM Left state */
+	int fm_left_delta;
+	int fm_left_pi;
+	int fm_left_pq;
+	
+	/* FM Right state */
+	int fm_right_delta;
+	int fm_right_pi;
+	int fm_right_pq;
+	
+	/* AM state */
+	int am_lookup_width;
+	int16_t *am_lookup;
+	int am_mono_delta;
+	int am_mono_pi;
+	int am_mono_pq;
+	
+	/* FM state */
+	int fm_lookup_width;
+	int16_t *fm_lookup;
+	int fm_delta;
+	int fm_pi;
+	int fm_pq;
 	
 	/* Output line buffer */
 	int16_t *output;
