@@ -20,6 +20,10 @@
 
 #include <stdint.h>
 
+typedef struct vid_t vid_t;
+
+#include "videocrypt.h"
+
 /* Return codes */
 #define VID_OK             0
 #define VID_ERROR         -1
@@ -83,6 +87,8 @@ typedef struct {
 	
 	double gamma;
 	
+	int videocrypt;
+	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;
 	double gw_co;
@@ -121,7 +127,7 @@ typedef struct {
 	const vid_config_t *conf;
 } vid_configs_t;
 
-typedef struct {
+struct vid_t {
 	
 	/* Source interface */
 	void *av_private;
@@ -131,7 +137,7 @@ typedef struct {
 	
 	/* Signal configuration */
 	vid_config_t conf;
-
+	
 	/* Video setup */
 	int sample_rate;
 	
@@ -163,6 +169,9 @@ typedef struct {
 	
 	unsigned int frame;
 	unsigned int line;
+	
+	/* Videocrypt state */
+	vc_t vc;
 	
 	/* Audio state */
 	int16_t *audiobuffer;
@@ -204,7 +213,7 @@ typedef struct {
 	/* Output line buffer */
 	int16_t *output;
 	
-} vid_t;
+};
 
 extern const vid_config_t vid_config_pal_i;
 extern const vid_config_t vid_config_pal;

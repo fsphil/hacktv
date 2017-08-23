@@ -15,58 +15,49 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _HACKTV_H
-#define _HACKTV_H
+#ifndef _VIDEOCRYPT_H
+#define _VIDEOCRYPT_H
 
 #include <stdint.h>
 #include "video.h"
 
-/* Return codes */
-#define HACKTV_OK             0
-#define HACKTV_ERROR         -1
-#define HACKTV_OUT_OF_MEMORY -2
+#define VC_SAMPLE_RATE         14000000
+#define VC_WIDTH               (VC_SAMPLE_RATE / 25 / 625)
+#define VC_VBI_LEFT            120
+#define VC_VBI_FIELD_1_START   12
+#define VC_VBI_FIELD_2_START   325
+#define VC_VBI_LINES_PER_FIELD 4
+#define VC_VBI_LINES_PER_FRAME (VC_VBI_LINES_PER_FIELD * 2)
+#define VC_VBI_SAMPLES_PER_BIT 18
+#define VC_VBI_BITS_PER_LINE   40
+#define VC_VBI_BYTES_PER_LINE  (VC_VBI_BITS_PER_LINE / 8)
+#define VC_PACKET_LENGTH       32
 
-/* Integer types */
-#define HACKTV_INT16_COMPLEX 0
-#define HACKTV_INT16_REAL    1
+#define VC_LEFT                120
+#define VC_RIGHT               (VC_LEFT + 710)
+#define VC_OVERLAP             15
+#define VC_FIELD_1_START       24
+#define VC_FIELD_2_START       336
+#define VC_LINES_PER_FIELD     287
+#define VC_LINES_PER_FRAME     (VC_LINES_PER_FIELD * 2)
 
-/* Standard audio sample rate */
-#define HACKTV_AUDIO_SAMPLE_RATE 32000
-
-/* AV source function prototypes */
-typedef uint32_t *(*hacktv_av_read_video_t)(void *private);
-typedef int16_t *(*hacktv_av_read_audio_t)(void *private, size_t *samples);
-typedef int (*hacktv_av_close_t)(void *private);
-
-/* RF output function prototypes */
-typedef int (*hacktv_rf_write_t)(void *private, int16_t *iq_data, size_t samples);
-typedef int (*hacktv_rf_close_t)(void *private);
-
-/* Program state */
 typedef struct {
 	
-	/* Configuration */
-	char *output_type;
-	char *output;
-	char *mode;
-	int samplerate;
-	float gamma;
-	int repeat;
-	int verbose;
-	int videocrypt;
-	unsigned long int frequency;
-	int amp;
-	int gain;
+	vid_t *vid;
 	
-	/* Video encoder state */
-	vid_t vid;
+	uint8_t counter;
+	uint8_t mode;
+	size_t command;
+	uint8_t vbi[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
 	
-	/* RF sink interface */
-	void *rf_private;
-	hacktv_rf_write_t rf_write;
-	hacktv_rf_close_t rf_close;
+	int16_t *delay;
+	int video_scale[VC_WIDTH];
 	
-} hacktv_t;
+} vc_t;
+
+extern int vc_init(vc_t *s, vid_t *vs);
+extern void vc_free(vc_t *s);
+extern void vc_render_line(vc_t *s);
 
 #endif
 

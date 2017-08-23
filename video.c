@@ -467,6 +467,7 @@ int vid_av_close(vid_t *s)
 
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
 {
+	int r;
 	int64_t c;
 	double d;
 	double glut[0x100];
@@ -666,6 +667,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(VID_OUT_OF_MEMORY);
 	}
 	
+	/* Initialise videocrypt encoder */
+	if(s->conf.videocrypt && (r = vc_init(&s->vc, s)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	return(VID_OK);
 }
 
@@ -673,6 +681,11 @@ void vid_free(vid_t *s)
 {
 	/* Close the AV source */
 	vid_av_close(s);
+	
+	if(s->conf.videocrypt)
+	{
+		vc_free(&s->vc);
+	}
 	
 	/* Free allocated memory */
 	if(s->y_level_lookup != NULL) free(s->y_level_lookup);
@@ -1034,27 +1047,11 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 		}
 	}
 	
-	/* Simulated line cut-and-rotate video scrambling */
-	/*if(seq[2] == 'a' && seq[3] == 'a')
+	/* Videocrypt scrambling, if enabled */
+	if(s->conf.videocrypt == 1)
 	{
-		int c1 = rand() % s->active_width;
-		int c2 = s->active_width - c1 - 1;
-		
-		for(x = s->active_left; x < s->active_left + c2; x++)
-		{
-			s->output[x * 2 + 1] = s->output[(x + c1) * 2];
-		}
-		
-		for(; x < s->active_left + s->active_width; x++)
-		{
-			s->output[x * 2 + 1] = s->output[(x - c2) * 2];
-		}
-		
-		for(x = s->active_left; x < s->active_left + s->active_width; x++)
-		{
-			s->output[x * 2] = s->output[x * 2 + 1];
-		}
-	}*/
+		vc_render_line(&s->vc);
+	}
 	
 	/* Clear the Q channel */
 	for(x = 0; x < s->width; x++)

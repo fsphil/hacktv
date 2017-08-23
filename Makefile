@@ -9,7 +9,7 @@ LDFLAGS+=`pkg-config --libs libavcodec libavformat libswscale libswresample liba
 CFLAGS+=`pkg-config --cflags libhackrf`
 LDFLAGS+=`pkg-config --libs libhackrf`
 
-OBJS=hacktv.o video.o nicam728.o test.o ffmpeg.o hackrf.o
+OBJS=hacktv.o video.o videocrypt.o nicam728.o test.o ffmpeg.o hackrf.o
 
 all: hacktv
 

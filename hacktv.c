@@ -148,6 +148,8 @@ static void print_usage(void)
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
+		"      --videocrypt               Enable Videocrypt I scrambling. Only supported\n"
+		"                                 in PAL modes.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -190,8 +192,22 @@ static void print_usage(void)
 		"\n"
 		"16MHz works well with PAL modes, and 13.5MHz for NTSC modes.\n"
 		"\n"
+		"Videocrypt I\n"
+		"\n"
+		"A video scrambling system used by the Sky TV analogue satellite service in\n"
+		"the UK in the 1990s. Each line of the image is cut at a point determined by\n"
+		"a pseudorandom number generator, then the two parts are swapped.\n"
+		"\n"
+		"hacktv only supports the free-access mode, the image is scrambled but a\n"
+		"subscription card is not required to decode.\n"
+		"\n"
+		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
+		"works best when used with samples rates at multiples of 14MHz.\n"
+		"\n"
 	);
 }
+
+#define _OPT_VIDEOCRYPT 1000
 
 int main(int argc, char *argv[])
 {
@@ -204,6 +220,7 @@ int main(int argc, char *argv[])
 		{ "gamma",      required_argument, 0, 'G' },
 		{ "repeat",     no_argument,       0, 'r' },
 		{ "verbose",    no_argument,       0, 'v' },
+		{ "videocrypt", no_argument,       0, _OPT_VIDEOCRYPT },
 		{ "frequency",  required_argument, 0, 'f' },
 		{ "amp",        no_argument,       0, 'a' },
 		{ "gain",       required_argument, 0, 'x' },
@@ -227,6 +244,7 @@ int main(int argc, char *argv[])
 	s.gamma = -1;
 	s.repeat = 0;
 	s.verbose = 0;
+	s.videocrypt = 0;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -296,6 +314,10 @@ int main(int argc, char *argv[])
 			s.verbose = 1;
 			break;
 		
+		case _OPT_VIDEOCRYPT: /* --videocrypt */
+			s.videocrypt = 1;
+			break;
+		
 		case 'f': /* -f, --frequency <value> */
 			s.frequency = atol(optarg);
 			break;
@@ -344,6 +366,16 @@ int main(int argc, char *argv[])
 	if(s.gamma > 0)
 	{
 		vid_conf.gamma = s.gamma;
+	}
+	
+	if(s.videocrypt)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Videocrypt I is only compatible with 625 line PAL modes.\n");
+		}
+		
+		vid_conf.videocrypt = 1;
 	}
 	
 	/* Setup video encoder */

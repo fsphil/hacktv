@@ -6,6 +6,7 @@ WHAT'S IT DO
 Generates a PAL/NTSC video signal from a video file or test pattern.
 Input is any file type or URL supported by ffmpeg.
 Output can be to a file (IQ or real, int16_t) or directly to a HackRF.
+Rudimentary Videocrypt I hardware support.
 
 WHAT'S IT NOT DO (yet)
 
@@ -15,7 +16,6 @@ NICAM stereo audio. There is a frame encoder included but no QPSK modulator.
 An optional notch filter for the colour subcarrier would be nice.
 SECAM colour. More of my TVs support this than NTSC.
 D-MAC / D2-MAC standards. Because SECAM isn't obscure enough.
-FM modulation. For transmitting to video sender / satellite receivers.
 SDR hardware beyond the HackRF is not supported yet.
 Proper frame rate handling would be nice.
 Proper NTSC colours. They look a bit off on my TV, but that might be normal.
