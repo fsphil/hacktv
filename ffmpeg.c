@@ -224,8 +224,11 @@ static int _av_ffmpeg_close(void *private)
 	//av_free(av->buffer);
 	av_free(av->frame_rgb);
 	av_free(av->frame);
-	av_freep(av->frame_s16);
-	swr_free(&av->swr_ctx);
+	if(av->audio_stream != NULL)
+	{
+		av_freep(av->frame_s16);
+		swr_free(&av->swr_ctx);
+	}
 	//avcodec_close(s->vid_ctx);
 	avformat_close_input(&av->format_ctx);
 	free(av);
