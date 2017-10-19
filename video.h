@@ -61,9 +61,10 @@ typedef struct {
 	/* Overall signal level (pre-modulation) */
 	double level;
 	
-	/* These three should add up to 1.0 */
+	/* Level of each component. The total sum should be exactly 1.0 */
 	double video_level;
 	double fm_audio_level;
+	double am_audio_level;
 	double nicam_level;
 	
 	/* Video */

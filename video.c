@@ -343,8 +343,9 @@ const vid_config_t vid_config_405_a = {
 	
 	.modulation     = VID_VSB,
 	
-	.level          = 0.8, /* Overall signal level */
-	.video_level    = 0.2, /* Power level of video */
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 0.8, /* Power level of video */
+	.am_audio_level = 0.2, /* Power level of audio */
 	
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
