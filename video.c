@@ -400,16 +400,78 @@ const vid_config_t vid_config_405 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_baird_240_am = {
+	
+	/* Baird 240 line, AM modulation */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_AM,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 240,
+	.active_lines   = 220,
+	.active_width   = 0.00015,     /* 150µs */
+	.active_left    = 0.000016667, /* |-->| 16.667µs */
+	
+	.hsync_width      = 0.000013333, /* 13.333µs */
+	.vsync_long_width = 0.000166667, /* 166.667µs */
+	
+	.white_level    = 1.00,
+	.black_level    = 0.40,
+	.blanking_level = 0.40,
+	.sync_level     = 0.00,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
+const vid_config_t vid_config_baird_240 = {
+	
+	/* Baird 240 line */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 240,
+	.active_lines   = 220,
+	.active_width   = 0.00015,     /* 150µs */
+	.active_left    = 0.000016667, /* |-->| 16.667µs */
+	
+	.hsync_width      = 0.000013333, /* 13.333µs */
+	.vsync_long_width = 0.000166667, /* 166.667µs */
+	
+	.white_level    = 1.00,
+	.black_level    = 0.40,
+	.blanking_level = 0.40,
+	.sync_level     = 0.00,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
 const vid_configs_t vid_configs[] = {
-	{ "i",      &vid_config_pal_i  },
-	{ "b",      &vid_config_pal_bg },
-	{ "g",      &vid_config_pal_bg },
-	{ "pal-fm", &vid_config_pal_fm },
-	{ "pal",    &vid_config_pal    },
-	{ "m",      &vid_config_ntsc_m },
-	{ "ntsc",   &vid_config_ntsc   },
-	{ "a",      &vid_config_405_a  },
-	{ "405",    &vid_config_405    },
+	{ "i",      &vid_config_pal_i        },
+	{ "b",      &vid_config_pal_bg       },
+	{ "g",      &vid_config_pal_bg       },
+	{ "pal-fm", &vid_config_pal_fm       },
+	{ "pal",    &vid_config_pal          },
+	{ "m",      &vid_config_ntsc_m       },
+	{ "ntsc",   &vid_config_ntsc         },
+	{ "a",      &vid_config_405_a        },
+	{ "405",    &vid_config_405          },
+	{ "240-am", &vid_config_baird_240_am },
+	{ "240",    &vid_config_baird_240    },
 	{ NULL,     NULL },
 };
 
@@ -994,6 +1056,38 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 218) * 2 + 1);
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
+	else if(s->conf.lines == 240)
+	{
+		switch(s->line)
+		{
+		case 1:   seq = "V__V"; break;
+		case 2:   seq = "V__V"; break;
+		case 3:   seq = "V__V"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
+		case 6:   seq = "V__V"; break;
+		case 7:   seq = "V__V"; break;
+		case 8:   seq = "V__V"; break;
+		case 9:   seq = "V__V"; break;
+		case 10:  seq = "V__V"; break;
+		case 11:  seq = "V__V"; break;
+		case 12:  seq = "V__V"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		case 16:  seq = "h___"; break;
+		case 17:  seq = "h___"; break;
+		case 18:  seq = "h___"; break;
+		case 19:  seq = "h___"; break;
+		case 20:  seq = "h___"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = s->line - 20;
+		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
+	}
 	
 	/* Does this line use colour? */
 	pal  = seq[1] == '0';
@@ -1029,7 +1123,7 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	else if(seq[0] == 'V') w = s->vsync_long_width;
 	else w = s->hsync_width;
 	
-	for(x = 0; x < w; x++)
+	for(x = 0; x < w && x < s->half_width; x++)
 	{
 		s->output[x * 2] = s->sync_level;
 	}
@@ -1082,7 +1176,7 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 		else if(seq[3] == 'V') w = s->vsync_long_width;
 		else w = 0;
 		
-		for(; x < s->half_width + w; x++)
+		for(; x < s->half_width + w && x < s->width; x++)
 		{
 			s->output[x * 2] = s->sync_level;
 		}
