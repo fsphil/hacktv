@@ -124,6 +124,7 @@ typedef struct {
 	
 	/* AM audio */
 	double am_mono_carrier;
+	double am_mono_bandwidth;
 	
 } vid_config_t;
 
