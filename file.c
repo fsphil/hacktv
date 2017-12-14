@@ -141,7 +141,7 @@ static int _rf_file_write_int16_complex(void *private, int16_t *iq_data, size_t 
 {
 	rf_file_t *rf = private;
 	
-	fwrite(iq_data, samples * sizeof(int16_t) * 2, samples, rf->f);
+	fwrite(iq_data, sizeof(int16_t) * 2, samples, rf->f);
 	
 	return(HACKTV_OK);
 }
