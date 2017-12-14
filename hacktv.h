@@ -30,6 +30,12 @@
 #define HACKTV_INT16_COMPLEX 0
 #define HACKTV_INT16_REAL    1
 
+/* File output types */
+#define HACKTV_INT8   0
+#define HACKTV_INT16  1
+#define HACKTV_INT32  2
+#define HACKTV_FLOAT  4 /* 32-bit float */
+
 /* Standard audio sample rate */
 #define HACKTV_AUDIO_SAMPLE_RATE 32000
 
@@ -57,6 +63,7 @@ typedef struct {
 	unsigned long int frequency;
 	int amp;
 	int gain;
+	int file_type;
 	
 	/* Video encoder state */
 	vid_t vid;

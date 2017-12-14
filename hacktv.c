@@ -23,6 +23,7 @@
 #include "hacktv.h"
 #include "test.h"
 #include "ffmpeg.h"
+#include "file.h"
 #include "hackrf.h"
 
 int _abort = 0;
@@ -31,88 +32,6 @@ static void _sigint_callback_handler(int signum)
 {
 	fprintf(stderr, "Caught signal %d\n", signum);
 	_abort = 1;
-}
-
-/* File sink */
-typedef struct {
-	FILE *f;
-	int type;
-} rf_file_t;
-
-static int _hacktv_rf_file_write(void *private, int16_t *iq_data, size_t samples)
-{
-	rf_file_t *rf = private;
-	int i;
-	
-	if(rf->type == HACKTV_INT16_COMPLEX)
-	{
-		/* Write the IQ real/imaginary components */
-		fwrite(iq_data, sizeof(int16_t), samples * 2, rf->f);
-	}
-	else if(rf->type == HACKTV_INT16_REAL)
-	{
-		int16_t *a, *b;
-		
-		/* We only want the I/real component */
-		a = &iq_data[1];
-		b = &iq_data[2];
-		
-		for(i = 1; i < samples; i++)
-		{
-			*a = *b;
-			a += 1;
-			b += 2;
-		}
-		
-		fwrite(iq_data, sizeof(int16_t), samples, rf->f);
-	}
-	
-	return(HACKTV_OK);
-}
-
-static int _hacktv_rf_file_close(void *private)
-{
-	rf_file_t *rf = private;
-	if(rf->f && rf->f != stdout) fclose(rf->f);
-	free(rf);
-	
-	return(HACKTV_OK);
-}
-
-static int _hacktv_rf_file_open(hacktv_t *s, char *filename)
-{
-	rf_file_t *rf = calloc(1, sizeof(rf_file_t));
-	
-	rf->type = s->vid.conf.output_type;
-	
-	if(filename == NULL)
-	{
-		fprintf(stderr, "No output filename provided.\n");
-		free(rf);
-		return(HACKTV_ERROR);
-	}
-	else if(strcmp(filename, "-") == 0)
-	{
-		rf->f = stdout;
-	}
-	else
-	{
-		rf->f = fopen(filename, "wb");	
-		
-		if(!rf->f)
-		{
-			perror("fopen");
-			free(rf);
-			return(HACKTV_ERROR);
-		}
-	}
-	
-	/* Register the callback functions */
-	s->rf_private = rf;
-	s->rf_write = _hacktv_rf_file_write;
-	s->rf_close = _hacktv_rf_file_close;
-	
-	return(HACKTV_OK);
 }
 
 /* RF sink callback handlers */
@@ -170,10 +89,19 @@ static void print_usage(void)
 		"File output options\n"
 		"\n"
 		"  -o, --output file:<filename>   Open a file for output. Use - for stdout.\n"
+		"  -t, --type <type>              Set the file data type.\n"
+		"\n"
+		"Supported file types:\n"
+		"\n"
+		"  int8\n"
+		"  int16\n"
+		"  int32\n"
+		"  float\n"
+		"\n"
+		"  The default output is int16. The TV mode will determine if the output\n"
+		"  is real or complex.\n"
 		"\n"
 		"  If no valid output prefix is provided, file: is assumed.\n"
-		"  The output format is int16, native endian. The TV mode will\n"
-		"  determine if the output is real or complex.\n"
 		"\n"
 		"Supported television modes:\n"
 		"\n"
@@ -227,6 +155,7 @@ int main(int argc, char *argv[])
 		{ "frequency",  required_argument, 0, 'f' },
 		{ "amp",        no_argument,       0, 'a' },
 		{ "gain",       required_argument, 0, 'x' },
+		{ "type",       required_argument, 0, 't' },
 		{ 0,            0,                 0,  0  }
 	};
 	static hacktv_t s;
@@ -251,9 +180,10 @@ int main(int argc, char *argv[])
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
+	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:t:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -333,6 +263,32 @@ int main(int argc, char *argv[])
 			s.gain = atoi(optarg);
 			break;
 		
+		case 't': /* -t, --type <type> */
+			
+			if(strcmp(optarg, "int8") == 0)
+			{
+				s.file_type = HACKTV_INT8;
+			}
+			else if(strcmp(optarg, "int16") == 0)
+			{
+				s.file_type = HACKTV_INT16;
+			}
+			else if(strcmp(optarg, "int32") == 0)
+			{
+				s.file_type = HACKTV_INT32;
+			}
+			else if(strcmp(optarg, "float") == 0)
+			{
+				s.file_type = HACKTV_FLOAT;
+			}
+			else
+			{
+				fprintf(stderr, "Unrecognised file data type.\n");
+				return(-1);
+			}
+			
+			break;
+		
 		case '?':
 			print_usage();
 			return(0);
@@ -395,7 +351,7 @@ int main(int argc, char *argv[])
 	}
 	else if(strcmp(s.output_type, "file") == 0)
 	{
-		if(_hacktv_rf_file_open(&s, s.output) != HACKTV_OK)
+		if(rf_file_open(&s, s.output, s.file_type) != HACKTV_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
