@@ -819,6 +819,12 @@ void vid_free(vid_t *s)
 		vc_free(&s->vc);
 	}
 	
+	if(s->video_filter_taps)
+	{
+		fir_int16_complex_free(&s->video_filter);
+		free(s->video_filter_taps);
+	}
+	
 	/* Free allocated memory */
 	if(s->y_level_lookup != NULL) free(s->y_level_lookup);
 	if(s->i_level_lookup != NULL) free(s->i_level_lookup);
@@ -838,6 +844,26 @@ void vid_info(vid_t *s)
 	);
 	
 	printf("Sample rate: %d\n", s->sample_rate);
+}
+
+int vid_init_filter(vid_t *s)
+{
+	int taps = 51; /* Magic number :( */
+	
+	if(s->conf.modulation == VID_VSB)
+	{
+		/* Prepare the video filter */
+		s->video_filter_taps = calloc(taps, sizeof(int16_t) * 2);
+		if(!s->video_filter_taps)
+		{
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		fir_int16_complex_band_pass(s->video_filter_taps, taps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
+		fir_int16_complex_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
+	}
+	
+	return(VID_OK);
 }
 
 size_t vid_get_framebuffer_length(vid_t *s)
@@ -1221,6 +1247,12 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	for(x = 0; x < s->width; x++)
 	{
 		s->output[x * 2 + 1] = 0;
+	}
+	
+	/* Apply video filter if enabled */
+	if(s->video_filter_taps)
+	{
+		fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
 	}
 	
 	/* Generate the FM audio subcarrier(s) */

@@ -69,6 +69,7 @@ static void print_usage(void)
 		"  -v, --verbose                  Enable verbose output.\n"
 		"      --videocrypt               Enable Videocrypt I scrambling. Only supported\n"
 		"                                 in PAL modes.\n"
+		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -139,6 +140,7 @@ static void print_usage(void)
 }
 
 #define _OPT_VIDEOCRYPT 1000
+#define _OPT_FILTER     1001
 
 int main(int argc, char *argv[])
 {
@@ -152,6 +154,7 @@ int main(int argc, char *argv[])
 		{ "repeat",     no_argument,       0, 'r' },
 		{ "verbose",    no_argument,       0, 'v' },
 		{ "videocrypt", no_argument,       0, _OPT_VIDEOCRYPT },
+		{ "filter",     no_argument,       0, _OPT_FILTER },
 		{ "frequency",  required_argument, 0, 'f' },
 		{ "amp",        no_argument,       0, 'a' },
 		{ "gain",       required_argument, 0, 'x' },
@@ -177,6 +180,7 @@ int main(int argc, char *argv[])
 	s.repeat = 0;
 	s.verbose = 0;
 	s.videocrypt = 0;
+	s.filter = 0;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -249,6 +253,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
 			s.videocrypt = 1;
+			break;
+		
+		case _OPT_FILTER: /* --filter */
+			s.filter = 1;
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -340,6 +348,11 @@ int main(int argc, char *argv[])
 	/* Setup video encoder */
 	vid_init(&s.vid, s.samplerate, &vid_conf);
 	vid_info(&s.vid);
+	
+	if(s.filter)
+	{
+		vid_init_filter(&s.vid);
+	}
 	
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{

@@ -19,6 +19,7 @@
 #define _VIDEO_H
 
 #include <stdint.h>
+#include "fir.h"
 
 typedef struct vid_t vid_t;
 
@@ -176,6 +177,10 @@ struct vid_t {
 	unsigned int frame;
 	unsigned int line;
 	
+	/* Video filter */
+	int16_t *video_filter_taps;
+	fir_int16_t video_filter;
+	
 	/* Videocrypt state */
 	vc_t vc;
 	
@@ -235,6 +240,7 @@ extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * con
 extern void vid_free(vid_t *s);
 extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
+extern int vid_init_filter(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
 extern int16_t *vid_next_line(vid_t *s, size_t *samples);
 

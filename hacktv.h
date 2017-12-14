@@ -60,6 +60,7 @@ typedef struct {
 	int repeat;
 	int verbose;
 	int videocrypt;
+	int filter;
 	unsigned long int frequency;
 	int amp;
 	int gain;
