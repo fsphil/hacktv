@@ -49,6 +49,8 @@ const vid_config_t vid_config_pal_i = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 5500000, /* Hz */
+	.vsb_lower_bw   = 1250000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -102,6 +104,8 @@ const vid_config_t vid_config_pal_bg = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 5000000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -251,6 +255,8 @@ const vid_config_t vid_config_ntsc_m = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 4200000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -342,6 +348,8 @@ const vid_config_t vid_config_405_a = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
+	.vsb_upper_bw   =  750000, /* Hz */
+	.vsb_lower_bw   = 3000000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 0.8, /* Power level of video */

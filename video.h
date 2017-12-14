@@ -54,6 +54,10 @@ typedef struct {
 	/* Output modulation */
 	int modulation;
 	
+	/* VSB modulation options */
+	double vsb_upper_bw;
+	double vsb_lower_bw;
+	
 	/* FM modulation options */
 	double fm_level;
 	double fm_deviation;
