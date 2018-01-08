@@ -25,6 +25,22 @@ WHAT IT WON'T DO
 DVB or other pure digital signals.
 Bring back Firefly. :(
 
+REQUIREMENTS
+
+Depends on libhackrf and various ffmpeg libraries.
+
+* For Fedora (with rpmfusion)
+yum install hackrf-devel ffmpeg-devel
+
+* For Debian and related
+apt-get update
+apt-get install libhackrf-dev libavutil-dev libswresample-dev libswscale-dev libavformat-dev libavcodec-dev
+
+INSTALL
+
+make
+make install
+
 EXAMPLES
 
 # Generate a file containing a PAL baseband signal from a video
