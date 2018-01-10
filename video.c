@@ -160,11 +160,11 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 13500000, /* kHz */
+	.fm_deviation   = 16000000, /* kHz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 1.00, /* Power level of video */
+	.video_level    = 0.92, /* Power level of video */
 	.fm_audio_level = 0.08, /* FM audio carrier power level */
 	
 	.frame_rate_num = 25,
@@ -178,10 +178,10 @@ const vid_config_t vid_config_pal_fm = {
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
 	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.20,
-	.blanking_level = -0.20,
-	.sync_level     = -0.50,
+	.white_level    =  1.00,
+	.black_level    = -0.40,
+	.blanking_level = -0.40,
+	.sync_level     = -1.00,
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
@@ -862,6 +862,24 @@ int vid_init_filter(vid_t *s)
 		fir_int16_complex_band_pass(s->video_filter_taps, taps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
 		fir_int16_complex_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
 	}
+	else if(s->conf.modulation == VID_FM)
+	{
+		/* Test taps for a CCIR-405 video pre-emphasis filter at 16MHz */
+		const int16_t fm_taps[47] = {
+			-1, -1, -1, -1, -2, -3, -5, -8, -13, -18, -28, -41, -62, -91, -140, -207, -322, -490, -777, -1209, -1962, -3110, -5215,
+			/*38620,*/ 32767, -5215, -3110, -1962, -1209, -777, -490, -322, -207, -140, -91, -62, -41, -28, -18, -13, -8, -5, -3, -2, -1, -1, -1, -1
+		};
+		
+		s->video_filter_taps = calloc(47, sizeof(int16_t));
+		if(!s->video_filter_taps)
+		{
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		memcpy(s->video_filter_taps, fm_taps, 47 * sizeof(int16_t));
+		
+		fir_int16_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
+	}
 	
 	return(VID_OK);
 }
@@ -1252,7 +1270,14 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	/* Apply video filter if enabled */
 	if(s->video_filter_taps)
 	{
-		fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
+		if(s->conf.modulation == VID_VSB)
+		{
+			fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
+		}
+		else if(s->conf.modulation == VID_FM)
+		{
+			fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
+		}
 	}
 	
 	/* Generate the FM audio subcarrier(s) */
