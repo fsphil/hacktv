@@ -878,7 +878,7 @@ int vid_init_filter(vid_t *s)
 		
 		memcpy(s->video_filter_taps, fm_taps, 47 * sizeof(int16_t));
 		
-		fir_int16_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
+		fir_int16_init(&s->video_filter, s->video_filter_taps, 47, 1, 1);
 	}
 	
 	return(VID_OK);
