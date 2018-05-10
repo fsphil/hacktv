@@ -67,8 +67,8 @@ static void print_usage(void)
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
-		"      --videocrypt               Enable Videocrypt I scrambling. Only supported\n"
-		"                                 in PAL modes.\n"
+		"      --videocrypt               Enable Videocrypt I scrambling. (PAL only)\n"
+		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"\n"
 		"Input options\n"
@@ -136,11 +136,20 @@ static void print_usage(void)
 		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
 		"\n"
+		"Nagravision Syster (Simulation)\n"
+		"\n"
+		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
+		"are vertically shuffled within a field.\n"
+		"\n"
+		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
+		"with real hardware.\n"
+		"\n"
 	);
 }
 
 #define _OPT_VIDEOCRYPT 1000
-#define _OPT_FILTER     1001
+#define _OPT_SYSTER     1001
+#define _OPT_FILTER     1002
 
 int main(int argc, char *argv[])
 {
@@ -154,6 +163,7 @@ int main(int argc, char *argv[])
 		{ "repeat",     no_argument,       0, 'r' },
 		{ "verbose",    no_argument,       0, 'v' },
 		{ "videocrypt", no_argument,       0, _OPT_VIDEOCRYPT },
+		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
 		{ "frequency",  required_argument, 0, 'f' },
 		{ "amp",        no_argument,       0, 'a' },
@@ -180,6 +190,7 @@ int main(int argc, char *argv[])
 	s.repeat = 0;
 	s.verbose = 0;
 	s.videocrypt = 0;
+	s.syster = 0;
 	s.filter = 0;
 	s.frequency = 0;
 	s.amp = 0;
@@ -253,6 +264,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
 			s.videocrypt = 1;
+			break;
+		
+		case _OPT_SYSTER: /* --syster */
+			s.syster = 1;
 			break;
 		
 		case _OPT_FILTER: /* --filter */
@@ -340,9 +355,27 @@ int main(int argc, char *argv[])
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
 		{
 			fprintf(stderr, "Videocrypt I is only compatible with 625 line PAL modes.\n");
+			return(-1);
 		}
 		
 		vid_conf.videocrypt = 1;
+	}
+	
+	if(s.syster)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		if(vid_conf.videocrypt)
+		{
+			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
+			return(-1);
+		}
+		
+		vid_conf.syster = 1;
 	}
 	
 	/* Setup video encoder */

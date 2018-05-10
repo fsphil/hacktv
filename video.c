@@ -806,6 +806,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Initalise syster encoder */
+	if(s->conf.syster && (r = ng_init(&s->ng, s)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	return(VID_OK);
 }
 
@@ -813,6 +820,11 @@ void vid_free(vid_t *s)
 {
 	/* Close the AV source */
 	vid_av_close(s);
+	
+	if(s->conf.syster)
+	{
+		ng_free(&s->ng);
+	}
 	
 	if(s->conf.videocrypt)
 	{
@@ -1259,6 +1271,12 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	if(s->conf.videocrypt == 1)
 	{
 		vc_render_line(&s->vc);
+	}
+	
+	/* Syster scrambling, if enabled */
+	if(s->conf.syster == 1)
+	{
+		ng_render_line(&s->ng);
 	}
 	
 	/* Clear the Q channel */
