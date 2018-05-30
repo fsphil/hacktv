@@ -31,9 +31,10 @@
 #define HACKTV_INT16_REAL    1
 
 /* File output types */
-#define HACKTV_INT8   0
-#define HACKTV_INT16  1
-#define HACKTV_INT32  2
+#define HACKTV_UINT8  0
+#define HACKTV_INT8   1
+#define HACKTV_INT16  2
+#define HACKTV_INT32  3
 #define HACKTV_FLOAT  4 /* 32-bit float */
 
 /* Standard audio sample rate */

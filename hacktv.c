@@ -95,6 +95,7 @@ static void print_usage(void)
 		"\n"
 		"Supported file types:\n"
 		"\n"
+		"  uint8\n"
 		"  int8\n"
 		"  int16\n"
 		"  int32\n"
@@ -311,7 +312,11 @@ int main(int argc, char *argv[])
 		
 		case 't': /* -t, --type <type> */
 			
-			if(strcmp(optarg, "int8") == 0)
+			if(strcmp(optarg, "uint8") == 0)
+			{
+				s.file_type = HACKTV_UINT8;
+			}
+			else if(strcmp(optarg, "int8") == 0)
 			{
 				s.file_type = HACKTV_INT8;
 			}

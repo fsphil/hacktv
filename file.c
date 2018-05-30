@@ -31,6 +31,27 @@ typedef struct {
 	int type;
 } rf_file_t;
 
+static int _rf_file_write_uint8_real(void *private, int16_t *iq_data, size_t samples)
+{
+	rf_file_t *rf = private;
+	uint8_t *u8 = rf->data;
+	int i;
+	
+	while(samples)
+	{
+		for(i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
+		{
+			u8[i] = (iq_data[0] - INT16_MIN) >> 8;
+		}
+		
+		fwrite(rf->data, rf->data_size, i, rf->f);
+		
+		samples -= i;
+	}
+	
+	return(HACKTV_OK);
+}
+
 static int _rf_file_write_int8_real(void *private, int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
@@ -105,6 +126,28 @@ static int _rf_file_write_float_real(void *private, int16_t *iq_data, size_t sam
 		for(i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
 		{
 			f32[i] = (float) iq_data[0] * (1.0 / 32767.0);
+		}
+		
+		fwrite(rf->data, rf->data_size, i, rf->f);
+		
+		samples -= i;
+	}
+	
+	return(HACKTV_OK);
+}
+
+static int _rf_file_write_uint8_complex(void *private, int16_t *iq_data, size_t samples)
+{
+	rf_file_t *rf = private;
+	uint8_t *u8 = rf->data;
+	int i;
+	
+	while(samples)
+	{
+		for(i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
+		{
+			u8[i * 2 + 0] = (iq_data[0] - INT16_MIN) >> 8;
+			u8[i * 2 + 1] = (iq_data[1] - INT16_MIN) >> 8;
 		}
 		
 		fwrite(rf->data, rf->data_size, i, rf->f);
@@ -239,6 +282,7 @@ int rf_file_open(hacktv_t *s, char *filename, int type)
 	/* Find the size of the output data type */
 	switch(type)
 	{
+	case HACKTV_UINT8: rf->data_size = sizeof(uint8_t); break;
 	case HACKTV_INT8:  rf->data_size = sizeof(int8_t); break;
 	case HACKTV_INT16: rf->data_size = sizeof(int16_t); break;
 	case HACKTV_INT32: rf->data_size = sizeof(int32_t); break;
@@ -273,6 +317,7 @@ int rf_file_open(hacktv_t *s, char *filename, int type)
 	
 	switch(type)
 	{
+	case HACKTV_UINT8: s->rf_write = rf->complex ? _rf_file_write_uint8_complex : _rf_file_write_uint8_real; break;
 	case HACKTV_INT8:  s->rf_write = rf->complex ? _rf_file_write_int8_complex  : _rf_file_write_int8_real;  break;
 	case HACKTV_INT16: s->rf_write = rf->complex ? _rf_file_write_int16_complex : _rf_file_write_int16_real; break;
 	case HACKTV_INT32: s->rf_write = rf->complex ? _rf_file_write_int32_complex : _rf_file_write_int32_real; break;
