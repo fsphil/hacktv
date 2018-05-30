@@ -67,6 +67,7 @@ static void print_usage(void)
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
+		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --videocrypt               Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
@@ -124,6 +125,20 @@ static void print_usage(void)
 		"\n"
 		"16MHz works well with PAL modes, and 13.5MHz for NTSC modes.\n"
 		"\n"
+		"Teletext\n"
+		"\n"
+		"Teletext is a digital information service transmitted within the VBI lines of\n"
+		"the video signal. Developed in the UK in the 1970s, it was used throughout\n"
+		"much of Europe until the end of analogue TV in the 2010s.\n"
+		"\n"
+		"hacktv supports TTI files. The path can be either a single file or a\n"
+		"directory. All files in the directory will be loaded.\n"
+		"\n"
+		"Lines 7-22 and 320-335 are used, 16 lines per field.\n"
+		"\n"
+		"Teletext support in hacktv is only compatible with 625 line PAL modes.\n"
+		"NTSC and SECAM variations exist and may be supported in the future.\n"
+		"\n"
 		"Videocrypt I\n"
 		"\n"
 		"A video scrambling system used by the Sky TV analogue satellite service in\n"
@@ -147,9 +162,10 @@ static void print_usage(void)
 	);
 }
 
-#define _OPT_VIDEOCRYPT 1000
-#define _OPT_SYSTER     1001
-#define _OPT_FILTER     1002
+#define _OPT_TELETEXT   1000
+#define _OPT_VIDEOCRYPT 1001
+#define _OPT_SYSTER     1002
+#define _OPT_FILTER     1003
 
 int main(int argc, char *argv[])
 {
@@ -162,6 +178,7 @@ int main(int argc, char *argv[])
 		{ "gamma",      required_argument, 0, 'G' },
 		{ "repeat",     no_argument,       0, 'r' },
 		{ "verbose",    no_argument,       0, 'v' },
+		{ "teletext",   required_argument, 0, _OPT_TELETEXT },
 		{ "videocrypt", no_argument,       0, _OPT_VIDEOCRYPT },
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
@@ -189,6 +206,7 @@ int main(int argc, char *argv[])
 	s.gamma = -1;
 	s.repeat = 0;
 	s.verbose = 0;
+	s.teletext = NULL;
 	s.videocrypt = 0;
 	s.syster = 0;
 	s.filter = 0;
@@ -260,6 +278,11 @@ int main(int argc, char *argv[])
 		
 		case 'v': /* -v, --verbose */
 			s.verbose = 1;
+			break;
+		
+		case _OPT_TELETEXT: /* --teletext <path> */
+			free(s.teletext);
+			s.teletext = strdup(optarg);
 			break;
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
@@ -350,6 +373,17 @@ int main(int argc, char *argv[])
 		vid_conf.gamma = s.gamma;
 	}
 	
+	if(s.teletext)
+	{
+		if(vid_conf.lines != 625)
+		{
+			fprintf(stderr, "Teletext is only available with 625 line modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.teletext = s.teletext;
+	}
+	
 	if(s.videocrypt)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -379,7 +413,14 @@ int main(int argc, char *argv[])
 	}
 	
 	/* Setup video encoder */
-	vid_init(&s.vid, s.samplerate, &vid_conf);
+	r = vid_init(&s.vid, s.samplerate, &vid_conf);
+	if(r != VID_OK)
+	{
+		fprintf(stderr, "Unable to initialise video encoder.\n");
+		vid_free(&s.vid);
+		return(-1);
+	}
+	
 	vid_info(&s.vid);
 	
 	if(s.filter)

@@ -23,6 +23,7 @@
 
 typedef struct vid_t vid_t;
 
+#include "teletext.h"
 #include "videocrypt.h"
 #include "syster.h"
 
@@ -93,6 +94,8 @@ typedef struct {
 	double active_left;
 	
 	double gamma;
+	
+	char *teletext;
 	
 	int videocrypt;
 	int syster;
@@ -182,6 +185,9 @@ struct vid_t {
 	/* Video filter */
 	int16_t *video_filter_taps;
 	fir_int16_t video_filter;
+	
+	/* Teletext state */
+	tt_t tt;
 	
 	/* Videocrypt state */
 	vc_t vc;

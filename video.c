@@ -799,6 +799,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(VID_OUT_OF_MEMORY);
 	}
 	
+	/* Initalise the teletext system */
+	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	/* Initialise videocrypt encoder */
 	if(s->conf.videocrypt && (r = vc_init(&s->vc, s)) != VID_OK)
 	{
@@ -829,6 +836,11 @@ void vid_free(vid_t *s)
 	if(s->conf.videocrypt)
 	{
 		vc_free(&s->vc);
+	}
+	
+	if(s->conf.teletext)
+	{
+		tt_free(&s->tt);
 	}
 	
 	if(s->video_filter_taps)
@@ -1265,6 +1277,12 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 		{
 			s->output[x * 2] += (lut_b[x] * s->burst_level) >> 16;
 		}
+	}
+	
+	/* Teletext, if enabled */
+	if(s->conf.teletext)
+	{
+		tt_render_line(&s->tt);
 	}
 	
 	/* Videocrypt scrambling, if enabled */

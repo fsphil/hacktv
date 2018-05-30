@@ -59,6 +59,7 @@ typedef struct {
 	float gamma;
 	int repeat;
 	int verbose;
+	char *teletext;
 	int videocrypt;
 	int syster;
 	int filter;

@@ -6,6 +6,7 @@ WHAT'S IT DO
 Generates a PAL/NTSC video signal from a video file or test pattern.
 Input is any file type or URL supported by ffmpeg.
 Output can be to a file (IQ or real, int16_t) or directly to a HackRF.
+Teletext support.
 Rudimentary Videocrypt I hardware support.
 
 WHAT'S IT NOT DO (yet)
@@ -51,6 +52,14 @@ $ hacktv -f 551250000 -m i -g 47 test
 
 # Transmit live NASA TV stream on VHF channel 7 (NTSC System M), 10dB TX gain
 $ hacktv -f 175250000 -m m -G 1 -g 10 https://nasa-i.akamaihd.net/hls/live/253565/NTV-Public1/master_2000.m3u8
+
+# Transmit a test pattern with teletext
+$ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
+
+# Download and transmit teletext pages from the Teefax service
+# http://teastop.co.uk/teletext/
+$ svn checkout http://teastop.plus.com/svn/teletext/ teefax
+$ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
 -Philip Heron <phil@sanslogic.co.uk>
 
