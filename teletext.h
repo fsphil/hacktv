@@ -19,6 +19,7 @@
 #define _TELETEXT_H
 
 #include <stdint.h>
+#include <time.h>
 #include "video.h"
 
 typedef struct _tt_page_t {

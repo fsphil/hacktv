@@ -38,6 +38,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <limits.h>
 #include <sys/stat.h>
 #include "video.h"
 #include "vbidata.h"
