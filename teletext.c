@@ -747,7 +747,7 @@ static void _add_page(tt_service_t *s, tt_page_t *new_page)
 		}
 		else
 		{
-			/* This is an existing subpage, overwrite it */
+			/* This is an existing subpage, replace it */
 			
 			/* Copy the subpage pointers */
 			new_page->next_subpage = subpage->next_subpage;
@@ -759,8 +759,8 @@ static void _add_page(tt_service_t *s, tt_page_t *new_page)
 			/* Overwrite the old page data with the new one */
 			memcpy(subpage, new_page, sizeof(tt_page_t));
 			
-			/* And finally free the old page data */
-			free(subpage);
+			/* And finally free the new page data */
+			free(new_page);
 		}
 	}
 }
