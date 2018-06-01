@@ -31,7 +31,13 @@ int _abort = 0;
 static void _sigint_callback_handler(int signum)
 {
 	fprintf(stderr, "Caught signal %d\n", signum);
-	_abort = 1;
+	
+	if(abort > 0)
+	{
+		exit(-1);
+	}
+	
+	_abort++;
 }
 
 /* RF sink callback handlers */
