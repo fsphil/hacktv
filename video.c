@@ -862,12 +862,12 @@ void vid_free(vid_t *s)
 
 void vid_info(vid_t *s)
 {
-	printf("Video: %dx%d %.2f fps (full frame %dx%d)\n",
+	fprintf(stderr, "Video: %dx%d %.2f fps (full frame %dx%d)\n",
 		s->active_width, s->conf.active_lines, (double) s->conf.frame_rate_num / s->conf.frame_rate_den,
 		s->width, s->conf.lines
 	);
 	
-	printf("Sample rate: %d\n", s->sample_rate);
+	fprintf(stderr, "Sample rate: %d\n", s->sample_rate);
 }
 
 int vid_init_filter(vid_t *s)
