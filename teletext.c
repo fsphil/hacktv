@@ -1146,6 +1146,8 @@ int tt_init(tt_t *s, vid_t *vid, char *path)
 
 void tt_free(tt_t *s)
 {
+	if(s == NULL) return;
+	
 	if(s->raw)
 	{
 		fclose(s->raw);
