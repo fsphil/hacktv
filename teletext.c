@@ -1074,15 +1074,29 @@ int tt_init(tt_t *s, vid_t *vid, char *path)
 		return(VID_OUT_OF_MEMORY);
 	}
 	
+	/* Is the path to a raw teletext packet source? */
+	if(strncmp(path, "raw:", 4) == 0)
+	{
+		s->raw = fopen(path + 4, "rb");
+		if(!s->raw)
+		{
+			fprintf(stderr, "%s: ", path + 4);
+			perror("fopen");
+			tt_free(s);
+			return(VID_ERROR);
+		}
+		
+		return(VID_OK);
+	}
+	
 	_new_service(&s->service);
 	
 	/* Test if the path is a file or a directory */
 	if(stat(path, &fs) != 0)
 	{
+		fprintf(stderr, "%s: ", path);
 		perror("stat");
-		
 		tt_free(s);
-		
 		return(VID_ERROR);
 	}
 	
@@ -1098,10 +1112,9 @@ int tt_init(tt_t *s, vid_t *vid, char *path)
 		
 		if(!dir)
 		{
+			fprintf(stderr, "%s: ", path);
 			perror("opendir");
-			
 			tt_free(s);
-			
 			return(VID_ERROR);
 		}
 		
@@ -1134,8 +1147,17 @@ int tt_init(tt_t *s, vid_t *vid, char *path)
 
 void tt_free(tt_t *s)
 {
-	_free_service(&s->service);
+	if(s->raw)
+	{
+		fclose(s->raw);
+	}
+	else
+	{
+		_free_service(&s->service);
+	}
+	
 	free(s->lut);
+	
 	memset(s, 0, sizeof(tt_t));
 }
 
@@ -1148,7 +1170,26 @@ void tt_render_line(tt_t *s)
 	if((s->vid->line >= 7 && s->vid->line <= 22) ||
 	   (s->vid->line >= 320 && s->vid->line <= 335))
 	{
-		r = _next_packet(&s->service, vbi, s->timecode);
+		if(s->raw)
+		{
+			if(feof(s->raw))
+			{
+				/* Return to the start of the file when we hit the end */
+				fseek(s->raw, 0, SEEK_SET);
+			}
+			
+			/* Synchronization sequence (Clock run-in and framing code) */
+			vbi[0] = 0x55;
+			vbi[1] = 0x55;
+			vbi[2] = 0x27;
+			
+			r = fread(&vbi[3], 1, 42, s->raw);
+			r = r == 42 ? TT_OK : TT_NO_PACKET;
+		}
+		else
+		{
+			r = _next_packet(&s->service, vbi, s->timecode);
+		}
 		
 		if(r == TT_OK)
 		{

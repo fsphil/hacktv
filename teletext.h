@@ -19,6 +19,7 @@
 #define _TELETEXT_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include <time.h>
 #include "video.h"
 
@@ -122,6 +123,7 @@ typedef struct {
 typedef struct {
 	vid_t *vid;
 	int16_t *lut;
+	FILE *raw;
 	tt_service_t service;
 	unsigned int timecode;
 } tt_t;
