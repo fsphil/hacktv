@@ -431,7 +431,6 @@ int main(int argc, char *argv[])
 	if(r != VID_OK)
 	{
 		fprintf(stderr, "Unable to initialise video encoder.\n");
-		vid_free(&s.vid);
 		return(-1);
 	}
 	

@@ -858,6 +858,8 @@ void vid_free(vid_t *s)
 	//if(s->nicam_lookup != NULL) free(s->nicam_lookup);
 	if(s->fm_lookup != NULL) free(s->fm_lookup);
 	if(s->output != NULL) free(s->output);
+	
+	memset(s, 0, sizeof(vid_t));
 }
 
 void vid_info(vid_t *s)
