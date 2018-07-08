@@ -26,13 +26,13 @@
 #include "file.h"
 #include "hackrf.h"
 
-int _abort = 0;
+volatile int _abort = 0;
 
 static void _sigint_callback_handler(int signum)
 {
 	fprintf(stderr, "Caught signal %d\n", signum);
 	
-	if(abort > 0)
+	if(_abort > 0)
 	{
 		exit(-1);
 	}
