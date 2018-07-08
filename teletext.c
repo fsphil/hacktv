@@ -508,7 +508,6 @@ static int _next_magazine_packet(tt_service_t *s, tt_magazine_t *mag, uint8_t li
 		
 		/* Set the erase flag if needed */
 		status &= ~(1 << 14);
-		status = 0;
 		status |= mag->page->erase << 14;
 		mag->page->erase = 0;
 		
