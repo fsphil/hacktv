@@ -74,6 +74,7 @@ static void print_usage(void)
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
+		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
 		"      --videocrypt               Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
@@ -149,6 +150,19 @@ static void print_usage(void)
 		"Teletext support in hacktv is only compatible with 625 line PAL modes.\n"
 		"NTSC and SECAM variations exist and may be supported in the future.\n"
 		"\n"
+		"WSS (Widescreen Signaling)\n"
+		"\n"
+		"WSS provides a method to signal to a TV the intended aspect ratio of\n"
+		"the video. The following modes are supported:\n"
+		"\n"
+		"  4:3            = Video is 4:3.\n"
+		"  16:9           = Video is 16:9 (Anamorphic).\n"
+		"  14:9-letterbox = Crop a 4:3 video to 14:9.\n"
+		"  16:9-letterbox = Crop a 4:3 video to 16:9.\n"
+		"\n"
+		"Currently only supported in 625 line modes. A 525 line variant exists and\n"
+		"may be supported in future.\n"
+		"\n"
 		"Videocrypt I\n"
 		"\n"
 		"A video scrambling system used by the Sky TV analogue satellite service in\n"
@@ -173,9 +187,10 @@ static void print_usage(void)
 }
 
 #define _OPT_TELETEXT   1000
-#define _OPT_VIDEOCRYPT 1001
-#define _OPT_SYSTER     1002
-#define _OPT_FILTER     1003
+#define _OPT_WSS        1001
+#define _OPT_VIDEOCRYPT 1002
+#define _OPT_SYSTER     1003
+#define _OPT_FILTER     1004
 
 int main(int argc, char *argv[])
 {
@@ -189,6 +204,7 @@ int main(int argc, char *argv[])
 		{ "repeat",     no_argument,       0, 'r' },
 		{ "verbose",    no_argument,       0, 'v' },
 		{ "teletext",   required_argument, 0, _OPT_TELETEXT },
+		{ "wss",        required_argument, 0, _OPT_WSS },
 		{ "videocrypt", no_argument,       0, _OPT_VIDEOCRYPT },
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
@@ -217,6 +233,7 @@ int main(int argc, char *argv[])
 	s.repeat = 0;
 	s.verbose = 0;
 	s.teletext = NULL;
+	s.wss = NULL;
 	s.videocrypt = 0;
 	s.syster = 0;
 	s.filter = 0;
@@ -293,6 +310,11 @@ int main(int argc, char *argv[])
 		case _OPT_TELETEXT: /* --teletext <path> */
 			free(s.teletext);
 			s.teletext = strdup(optarg);
+			break;
+		
+		case _OPT_WSS: /* --wss <mode> */
+			free(s.wss);
+			s.wss = strdup(optarg);
 			break;
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
@@ -396,6 +418,17 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.teletext = s.teletext;
+	}
+	
+	if(s.wss)
+	{
+		if(vid_conf.lines != 625)
+		{
+			fprintf(stderr, "WSS is only available with 625 line modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.wss = s.wss;
 	}
 	
 	if(s.videocrypt)

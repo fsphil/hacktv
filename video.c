@@ -806,6 +806,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Initalise the WSS system */
+	if(s->conf.wss && (r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	/* Initialise videocrypt encoder */
 	if(s->conf.videocrypt && (r = vc_init(&s->vc, s)) != VID_OK)
 	{
@@ -836,6 +843,11 @@ void vid_free(vid_t *s)
 	if(s->conf.videocrypt)
 	{
 		vc_free(&s->vc);
+	}
+	
+	if(s->conf.wss)
+	{
+		wss_free(&s->wss);
 	}
 	
 	if(s->conf.teletext)
@@ -1285,6 +1297,12 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	if(s->conf.teletext)
 	{
 		tt_render_line(&s->tt);
+	}
+	
+	/* WSS, if enabled */
+	if(s->conf.wss)
+	{
+		wss_render_line(&s->wss);
 	}
 	
 	/* Videocrypt scrambling, if enabled */

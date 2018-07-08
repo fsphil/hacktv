@@ -24,6 +24,7 @@
 typedef struct vid_t vid_t;
 
 #include "teletext.h"
+#include "wss.h"
 #include "videocrypt.h"
 #include "syster.h"
 
@@ -96,6 +97,8 @@ typedef struct {
 	double gamma;
 	
 	char *teletext;
+	
+	char *wss;
 	
 	int videocrypt;
 	int syster;
@@ -188,6 +191,9 @@ struct vid_t {
 	
 	/* Teletext state */
 	tt_t tt;
+	
+	/* WSS state */
+	wss_t wss;
 	
 	/* Videocrypt state */
 	vc_t vc;

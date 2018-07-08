@@ -61,6 +61,7 @@ typedef struct {
 	int repeat;
 	int verbose;
 	char *teletext;
+	char *wss;
 	int videocrypt;
 	int syster;
 	int filter;
