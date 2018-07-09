@@ -320,10 +320,10 @@ const vid_config_t vid_config_ntsc = {
 	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 2.71 */
 	
-	.white_level    = 0.2000,
-	.black_level    = 0.7280,
-	.blanking_level = 0.7712,
-	.sync_level     = 1.0000,
+	.white_level    =  0.70,
+	.black_level    =  0.0525,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
