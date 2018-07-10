@@ -271,7 +271,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, unsigned int frequency_hz, u
 		fprintf(stderr, "rf_hackrf_open(): Unsupported mode output type for this device.\n");
 		return(HACKTV_ERROR);
 	}
-
+	
 	rf = calloc(1, sizeof(hackrf_t));
 	if(!rf)
 	{

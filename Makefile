@@ -1,15 +1,19 @@
 
-CC=gcc
-CFLAGS=-g -Wall -pthread -O3
-LDFLAGS=-g -lm -pthread
+CC      := gcc
+CFLAGS  := -g -Wall -pthread -O3
+LDFLAGS := -g -lm -pthread
+OBJS    := hacktv.o fir.o vbidata.o teletext.o wss.o video.o videocrypt.o syster.o nicam728.o test.o ffmpeg.o file.o hackrf.o
+PKGS    := libavcodec libavformat libswscale libswresample libavutil libhackrf
 
-CFLAGS+=`pkg-config --cflags libavcodec libavformat libswscale libswresample libavutil`
-LDFLAGS+=`pkg-config --libs libavcodec libavformat libswscale libswresample libavutil`
+SOAPYSDR := $(shell pkg-config --exists SoapySDR && echo SoapySDR)
+ifeq ($(SOAPYSDR),SoapySDR)
+	OBJS += soapysdr.o
+	PKGS += SoapySDR
+	CFLAGS += -DHAVE_SOAPYSDR
+endif
 
-CFLAGS+=`pkg-config --cflags libhackrf`
-LDFLAGS+=`pkg-config --libs libhackrf`
-
-OBJS=hacktv.o fir.o vbidata.o teletext.o wss.o video.o videocrypt.o syster.o nicam728.o test.o ffmpeg.o file.o hackrf.o
+CFLAGS  += $(shell pkg-config --cflags $(PKGS))
+LDFLAGS += $(shell pkg-config --libs $(PKGS))
 
 all: hacktv
 

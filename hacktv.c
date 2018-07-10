@@ -26,6 +26,10 @@
 #include "file.h"
 #include "hackrf.h"
 
+#ifdef HAVE_SOAPYSDR
+#include "soapysdr.h"
+#endif
+
 volatile int _abort = 0;
 
 static void _sigint_callback_handler(int signum)
@@ -95,6 +99,14 @@ static void print_usage(void)
 		"\n"
 		"  Only modes with a complex output are supported by the HackRF.\n"
 		"\n"
+#ifdef HAVE_SOAPYSDR
+		"SoapySDR output options\n"
+		"\n"
+		"  -o, --output soapysdr[:<opts>] Open a SoapySDR device for output.\n"
+		"  -f, --frequency <value>        Set the RF frequency in Hz.\n"
+		"  -g, --gain <value>             Set the TX level. Default: 0dB\n"
+		"\n"
+#endif
 		"File output options\n"
 		"\n"
 		"  -o, --output file:<filename>   Open a file for output. Use - for stdout.\n"
@@ -271,6 +283,13 @@ int main(int argc, char *argv[])
 				s.output_type = "hackrf";
 				s.output = sub;
 			}
+#ifdef HAVE_SOAPYSDR
+			else if(strcmp(pre, "soapysdr") == 0)
+			{
+				s.output_type = "soapysdr";
+				s.output = sub;
+			}
+#endif
 			else
 			{
 				/* Unrecognised output type, default to file */
@@ -482,6 +501,16 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 	}
+#ifdef HAVE_SOAPYSDR
+	else if(strcmp(s.output_type, "soapysdr") == 0)
+	{
+		if(rf_soapysdr_open(&s, s.output, s.frequency, s.gain) != HACKTV_OK)
+		{
+			vid_free(&s.vid);
+			return(-1);
+		}
+	}
+#endif
 	else if(strcmp(s.output_type, "file") == 0)
 	{
 		if(rf_file_open(&s, s.output, s.file_type) != HACKTV_OK)
