@@ -23,6 +23,7 @@
 
 typedef struct {
 	vid_t *vid;
+	uint8_t code;
 	int16_t *lut;
 	uint8_t vbi[18];
 } wss_t;

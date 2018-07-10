@@ -171,6 +171,7 @@ static void print_usage(void)
 		"  16:9           = Video is 16:9 (Anamorphic).\n"
 		"  14:9-letterbox = Crop a 4:3 video to 14:9.\n"
 		"  16:9-letterbox = Crop a 4:3 video to 16:9.\n"
+		"  auto           = Automatically switch between 4:3 and 16:9.\n"
 		"\n"
 		"Currently only supported in 625 line modes. A 525 line variant exists and\n"
 		"may be supported in future.\n"

@@ -41,7 +41,7 @@
 #define HACKTV_AUDIO_SAMPLE_RATE 32000
 
 /* AV source function prototypes */
-typedef uint32_t *(*hacktv_av_read_video_t)(void *private);
+typedef uint32_t *(*hacktv_av_read_video_t)(void *private, float *ratio);
 typedef int16_t *(*hacktv_av_read_audio_t)(void *private, size_t *samples);
 typedef int (*hacktv_av_close_t)(void *private);
 

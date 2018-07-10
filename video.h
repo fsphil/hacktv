@@ -46,7 +46,7 @@ typedef struct vid_t vid_t;
 #define VID_SECAM      3
 
 /* AV source function prototypes */
-typedef uint32_t *(*vid_read_video_t)(void *private);
+typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
 typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
 typedef int (*vid_close_t)(void *private);
 
@@ -184,6 +184,8 @@ struct vid_t {
 	
 	unsigned int frame;
 	unsigned int line;
+	
+	float ratio;
 	
 	/* Video filter */
 	int16_t *video_filter_taps;

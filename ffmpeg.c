@@ -129,7 +129,7 @@ static int _read_frame(av_ffmpeg_t *av, int index, AVPacket *pkt)
 	return(r);
 }
 
-static uint32_t *_av_ffmpeg_read_video(void *private)
+static uint32_t *_av_ffmpeg_read_video(void *private, float *ratio)
 {
 	av_ffmpeg_t *av = private;
 	AVPacket packet;
@@ -143,6 +143,18 @@ static uint32_t *_av_ffmpeg_read_video(void *private)
 		
 		if(i)
 		{
+			if(ratio)
+			{
+				/* Default to 4:3 ratio if it can't be calculated */
+				*ratio = 4.0 / 3.0;
+				
+				if(av->frame->sample_aspect_ratio.den > 0 && av->frame->height > 0)
+				{
+					*ratio  = (float) av->frame->sample_aspect_ratio.num / av->frame->sample_aspect_ratio.den;
+					*ratio *= (float) av->frame->width / av->frame->height;
+				}
+			}
+			
 			/* We got a complete frame. Convert it
 			 * from its native format to RGB32 */
 			sws_scale(

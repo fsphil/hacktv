@@ -34,6 +34,7 @@ static const _wss_modes_t _wss_modes[] = {
 	{ "16:9", 0x07 },
 	{ "14:9-letterbox", 0x01 },
 	{ "16:9-letterbox", 0x04 },
+	{ "auto", 0xFF },
 	{ NULL, 0 },
 };
 
@@ -62,23 +63,22 @@ static size_t _group_bits(uint8_t *vbi, uint8_t code, size_t offset, size_t leng
 int wss_init(wss_t *s, vid_t *vid, char *mode)
 {
 	int16_t level;
-	uint8_t code;
 	size_t o;
 	
 	memset(s, 0, sizeof(wss_t));
 	
 	/* Find the mode settings */
-	code = 0;
+	s->code = 0;
 	for(o = 0; _wss_modes[o].id != NULL; o++)
 	{
 		if(strcasecmp(mode, _wss_modes[o].id) == 0)
 		{
-			code = _wss_modes[o].code;
+			s->code = _wss_modes[o].code;
 			break;
 		}
 	}
 	
-	if(code == 0)
+	if(s->code == 0)
 	{
 		fprintf(stderr, "wss: Unrecognised mode '%s'.\n", mode);
 		return(VID_ERROR);
@@ -109,7 +109,7 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	s->vbi[6] = 0xF8; // 11111___
 	
 	/* Group 1 (Aspect Ratio) */
-	o = _group_bits(s->vbi, code, 29 + 24, 4);
+	o = _group_bits(s->vbi, s->code, 29 + 24, 4);
 	
 	/* Group 2 (Enhanced Services) */
 	o = _group_bits(s->vbi, 0x00, o, 4);
@@ -139,6 +139,13 @@ void wss_render_line(wss_t *s)
 	/* WSS is rendered on line 23 */
 	if(s->vid->line == 23)
 	{
+		if(s->code == 0xFF)
+		{
+			/* Auto mode selects between 4:3 and 16:9 based on the
+			 * the ratio of the source frame. */
+			_group_bits(s->vbi, s->vid->ratio <= (14.0 / 9.0) ? 0x08 : 0x07, 29 + 24, 4);
+		}
+		
 		/* The second half of line 23 contains some active video, which overlaps
 		 * with the WSS bits. We need to ensure this is clear before rendering. */
 		for(x = s->vid->half_width; x < s->vid->active_left + s->vid->active_width; x++)

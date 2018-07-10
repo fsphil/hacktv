@@ -567,9 +567,9 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 }
 
 /* AV source callback handlers */
-static uint32_t *_av_read_video(vid_t *s)
+static uint32_t *_av_read_video(vid_t *s, float *ratio)
 {
-	if(s->av_read_video) return(s->av_read_video(s->av_private));
+	if(s->av_read_video) return(s->av_read_video(s->av_private, ratio));
 	return(NULL);
 }
 
@@ -943,7 +943,7 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	/* Load the next frame */
 	if(s->line == 1)
 	{
-		s->framebuffer = _av_read_video(s);
+		s->framebuffer = _av_read_video(s, &s->ratio);
 		
 		/* No more frames from the video source? */
 		if(s->framebuffer == NULL)
