@@ -19,6 +19,21 @@
 #include <stdlib.h>
 #include "hacktv.h"
 
+/* A small 2-bit hacktv logo */
+#define LOGO_WIDTH  48
+#define LOGO_HEIGHT 9
+#define LOGO_SCALE  4
+static const char *_logo =
+	"                                                "
+	" ##  ##    ##     ####   ##  ##  ######  ##  ## "
+	" ##  ##   ####   ##  ##  ## ##     ##    ##  ## "
+	" ##  ##  ##  ##  ##      ####      ##    ##  ## "
+	" ######  ######  ##      ###       ##    ##  ## "
+	" ##  ##  ##  ##  ##      ####      ##    ##  ## "
+	" ##  ##  ##  ##  ##  ##  ## ##     ##     ####  "
+	" ##  ##  ##  ##   ####   ##  ##    ##      ##   "
+	"                                                ";
+
 /* AV test pattern source */
 typedef struct {
 	int width;
@@ -87,18 +102,18 @@ int av_test_open(vid_t *s)
 	{
 		for(x = 0; x < s->active_width; x++)
 		{
-			if(y < 400)
+			if(y < s->conf.active_lines - 140)
 			{
 				/* 100% colour bars */
 				c = 7 - x * 8 / s->active_width;
 				c = bars[c];
 			}
-			else if(y < 420)
+			else if(y < s->conf.active_lines - 120)
 			{
 				/* 100% red */
 				c = 0xFF0000;
 			}
-			else if(y < 440)
+			else if(y < s->conf.active_lines - 100)
 			{
 				/* Gradient black to white */
 				c = x * 0xFF / (s->active_width - 1);
@@ -114,6 +129,20 @@ int av_test_open(vid_t *s)
 			}
 			
 			av->video[y * s->active_width + x] = c;
+		}
+	}
+	
+	/* Overlay the logo */
+	x = s->active_width / 2;
+	y = s->conf.active_lines / 10;
+	
+	for(x = 0; x < LOGO_WIDTH * LOGO_SCALE; x++)
+	{
+		for(y = 0; y < LOGO_HEIGHT * LOGO_SCALE; y++)
+		{
+			c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
+			
+			av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
 		}
 	}
 	
