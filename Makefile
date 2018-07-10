@@ -20,12 +20,15 @@ all: hacktv
 hacktv: $(OBJS)
 	$(CC) -o hacktv $(OBJS) $(LDFLAGS)
 
-.c.o:
+%.o: %.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) -MM $< -o $(@:.o=.d)
 
 install:
 	cp -f hacktv /usr/local/bin/
 
 clean:
-	rm -f *.o hacktv
+	rm -f *.o *.d hacktv
+
+-include $(OBJS:.o=.d)
 
