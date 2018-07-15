@@ -65,7 +65,7 @@ typedef struct {
 	int videocrypt;
 	int syster;
 	int filter;
-	unsigned long int frequency;
+	uint64_t frequency;
 	int amp;
 	int gain;
 	int file_type;

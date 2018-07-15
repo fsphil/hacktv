@@ -261,7 +261,7 @@ static int _close(void *private)
 	return(HACKTV_OK);
 }
 
-int rf_hackrf_open(hacktv_t *s, const char *serial, unsigned int frequency_hz, unsigned int txvga_gain, unsigned char amp_enable)
+int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsigned int txvga_gain, unsigned char amp_enable)
 {
 	hackrf_t *rf;
 	int r;
