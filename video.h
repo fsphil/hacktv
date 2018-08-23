@@ -50,6 +50,45 @@ typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
 typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
 typedef int (*vid_close_t)(void *private);
 
+
+
+/* Complex integer types */
+
+typedef struct {
+	int8_t i;
+	int8_t q;
+} cint8_t;
+
+typedef struct {
+	int16_t i;
+	int16_t q;
+} cint16_t;
+
+typedef struct {
+	int32_t i;
+	int32_t q;
+} cint32_t;
+
+
+
+/* RF modulation */
+
+typedef struct {
+	int16_t level;
+	int32_t counter;
+	cint32_t phase;
+	cint32_t *lut;
+} _mod_fm_t;
+
+typedef struct {
+	int16_t level;
+	int32_t counter;
+	cint32_t phase;
+	cint32_t delta;
+} _mod_am_t;
+
+
+
 typedef struct {
 	
 	/* Output type */
@@ -207,42 +246,19 @@ struct vid_t {
 	int16_t *audiobuffer;
 	size_t audiobuffer_samples;
 	
-	/* FM audio state */
-	int fm_audio_lookup_width;
-	int16_t *fm_audio_lookup;
+	/* FM Mono/Stereo audio state */
+	_mod_fm_t fm_mono;
+	_mod_fm_t fm_left;
+	_mod_fm_t fm_right;
 	
-	/* FM Mono state */
-	int fm_mono_delta;
-	int fm_mono_pi;
-	int fm_mono_pq;
+	/* AM Mono audio state */
+	_mod_am_t am_mono;
 	
-	/* FM Left state */
-	int fm_left_delta;
-	int fm_left_pi;
-	int fm_left_pq;
-	
-	/* FM Right state */
-	int fm_right_delta;
-	int fm_right_pi;
-	int fm_right_pq;
-	
-	/* AM state */
-	int am_lookup_width;
-	int16_t *am_lookup;
-	int am_mono_delta;
-	int am_mono_pi;
-	int am_mono_pq;
-	
-	/* FM state */
-	int fm_lookup_width;
-	int16_t *fm_lookup;
-	int fm_delta;
-	int fm_pi;
-	int fm_pq;
+	/* FM Video state */
+	_mod_fm_t fm_video;
 	
 	/* Output line buffer */
 	int16_t *output;
-	
 };
 
 extern const vid_config_t vid_config_pal_i;

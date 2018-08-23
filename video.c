@@ -489,25 +489,15 @@ const vid_configs_t vid_configs[] = {
 	{ NULL,     NULL },
 };
 
-static int16_t *_sin_int16(unsigned int length, unsigned int cycles, double level)
+static inline void _cint32_mul(cint32_t *r, const cint32_t *a, const cint32_t *b)
 {
-	int16_t *lut;
-	unsigned int i;
-	double d;
+	int64_t i, q;
 	
-	lut = malloc(length * sizeof(int16_t));
-	if(!lut)
-	{
-		return(NULL);
-	}
+	i = (int64_t) a->i * (int64_t) b->i - (int64_t) a->q * (int64_t) b->q;
+	q = (int64_t) a->i * (int64_t) b->q + (int64_t) a->q * (int64_t) b->i;
 	
-	d = 2.0 * M_PI / length * cycles;
-	for(i = 0; i < length; i++)
-	{
-		lut[i] = round(sin(d * i) * level * INT16_MAX);
-	}
-	
-	return(lut);
+	r->i = (i + 0x7FFFFFFF) >> 31;
+	r->q = (q + 0x7FFFFFFF) >> 31;
 }
 
 static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
@@ -564,6 +554,101 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 	
 	/* Return a pointer to the line */
 	return(&s->colour_lookup[p]);
+}
+
+/* FM modulator */
+static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, double deviation, double level)
+{
+	int r;
+	double d;
+	
+	fm->level   = round(INT16_MAX * level);
+	fm->counter = INT16_MAX;
+	fm->phase.i = INT16_MAX;
+	fm->phase.q = 0;
+	fm->lut     = malloc(sizeof(cint32_t) * (UINT16_MAX + 1));
+	
+	if(!fm->lut)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	for(r = INT16_MIN; r <= INT16_MAX; r++)
+	{
+		d = 2.0 * M_PI / sample_rate * (frequency + (double) r / INT16_MAX * deviation);
+		
+		fm->lut[r - INT16_MIN].i = lround(cos(d) * INT32_MAX);
+		fm->lut[r - INT16_MIN].q = lround(sin(d) * INT32_MAX);
+	}
+	
+	return(VID_OK);
+}
+
+static void inline _fm_modulator(_mod_fm_t *fm, int16_t *dst, int16_t sample)
+{
+	_cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
+	
+	dst[0] += ((fm->phase.i >> 16) * fm->level) >> 16;
+	dst[1] += ((fm->phase.q >> 16) * fm->level) >> 16;
+	
+	/* Correct the amplitude after INT16_MAX samples */
+	if(--fm->counter == 0)
+	{
+		double ra = atan2(fm->phase.q, fm->phase.i);
+		
+		fm->phase.i = lround(cos(ra) * INT32_MAX);
+		fm->phase.q = lround(sin(ra) * INT32_MAX);
+		
+		fm->counter = INT16_MAX;
+	}
+}
+
+static void _free_fm_modulator(_mod_fm_t *fm)
+{
+	free(fm->lut);
+}
+
+/* AM modulator */
+static int _init_am_modulator(_mod_am_t *am, int sample_rate, double frequency, double level)
+{
+	double d;
+	
+	am->level   = round(INT16_MAX * level);
+	am->counter = INT16_MAX;
+	am->phase.i = INT16_MAX;
+	am->phase.q = 0;
+	
+	d = 2.0 * M_PI / sample_rate * frequency;
+	am->delta.i = lround(cos(d) * INT32_MAX);
+	am->delta.q = lround(sin(d) * INT32_MAX);
+	
+	return(VID_OK);
+}
+
+static void inline _am_modulator(_mod_am_t *am, int16_t *dst, int16_t sample)
+{
+	_cint32_mul(&am->phase, &am->phase, &am->delta);
+	
+	sample = ((int32_t) sample + INT16_MIN) / 2;
+	
+	dst[0] += ((((am->phase.i >> 16) * sample) >> 16) * am->level) >> 16;
+	dst[1] += ((((am->phase.q >> 16) * sample) >> 16) * am->level) >> 16;
+	
+	/* Correct the amplitude after INT16_MAX samples */
+	if(--am->counter == 0)
+	{
+		double ra = atan2(am->phase.q, am->phase.i);
+		
+		am->phase.i = lround(cos(ra) * INT32_MAX);
+		am->phase.q = lround(sin(ra) * INT32_MAX);
+		
+		am->counter = INT16_MAX;
+	}
+}
+
+static void _free_am_modulator(_mod_am_t *am)
+{
+	/* Nothing */
 }
 
 /* AV source callback handlers */
@@ -725,70 +810,57 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	s->framebuffer = NULL;
 	
-	/* FM Audio */
-	if(s->conf.fm_audio_level > 0)
+	/* FM audio */
+	if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
 	{
-		s->fm_audio_lookup_width = 32768 * (s->sample_rate / s->conf.fm_audio_deviation);
-		s->fm_audio_lookup = _sin_int16(s->fm_audio_lookup_width, 1, s->conf.fm_audio_level * s->conf.level);
-		if(!s->fm_audio_lookup)
+		r = _init_fm_modulator(&s->fm_mono, s->sample_rate, s->conf.fm_mono_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level);
+		if(r != VID_OK)
 		{
 			vid_free(s);
-			return(VID_OUT_OF_MEMORY);
-		}
-		
-		if(s->conf.fm_mono_carrier != 0)
-		{
-			s->fm_mono_delta = s->fm_audio_lookup_width * s->conf.fm_mono_carrier / s->sample_rate;
-			s->fm_mono_pi = s->fm_audio_lookup_width / 4;
-			s->fm_mono_pq = 0;
-		}
-		
-		if(s->conf.fm_left_carrier != 0)
-		{
-			s->fm_left_delta = s->fm_audio_lookup_width * s->conf.fm_left_carrier / s->sample_rate;
-			s->fm_left_pi = s->fm_audio_lookup_width / 4;
-			s->fm_mono_pq = 0;
-		}
-		
-		if(s->conf.fm_right_carrier != 0)
-		{
-			s->fm_right_delta = s->fm_audio_lookup_width * s->conf.fm_right_carrier / s->sample_rate;
-			s->fm_right_pi = s->fm_audio_lookup_width / 4;
-			s->fm_right_pq = 0;
+			return(r);
 		}
 	}
 	
-	/* NICAM Audio */
-	/*
-	s->nicam_lookup_width = s->fm_audio_lookup_width;
-	s->nicam_lookup = _sin_int16(s->nicam_lookup_width, 1, s->conf.nicam_level * s->conf.level);
-	if(!s->nicam_lookup)
+	if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
 	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
+		r = _init_fm_modulator(&s->fm_left, s->sample_rate, s->conf.fm_left_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
 	}
-	s->nicam_delta = s->nicam_lookup_width * s->conf.nicam_carrier / s->sample_rate;
-	for(c = 0; c < 4; c++)
-	{
-		s->nicam_q_ph[c] = s->nicam_lookup_width / 4 * c;
-		s->nicam_i_ph[c] = (s->nicam_q_ph[c] + (s->nicam_lookup_width / 4)) % s->nicam_lookup_width;
-	}
-	s->nicam_a = 4000 - 91;
-	*/
 	
-	/* Output FM modulation */
+	if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
+	{
+		r = _init_fm_modulator(&s->fm_right, s->sample_rate, s->conf.fm_right_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+	}
+	
+	/* AM audio */
+	if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
+	{
+		r = _init_am_modulator(&s->am_mono, s->sample_rate, s->conf.am_mono_carrier, s->conf.am_audio_level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+	}
+	
+	/* FM video */
 	if(s->conf.modulation == VID_FM)
 	{
-		s->fm_lookup_width = 32768 * (s->sample_rate / s->conf.fm_deviation);
-		s->fm_lookup = _sin_int16(s->fm_lookup_width, 1, s->conf.fm_level);
-		if(!s->fm_lookup)
+		r = _init_fm_modulator(&s->fm_video, s->sample_rate, 0, s->conf.fm_deviation, s->conf.fm_level);
+		if(r != VID_OK)
 		{
 			vid_free(s);
-			return(VID_OUT_OF_MEMORY);
+			return(r);
 		}
-		s->fm_delta = 0;
-		s->fm_pi = s->fm_lookup_width / 4;
-		s->fm_pq = 0;
 	}
 	
 	/* Output line buffer */
@@ -866,9 +938,11 @@ void vid_free(vid_t *s)
 	if(s->i_level_lookup != NULL) free(s->i_level_lookup);
 	if(s->q_level_lookup != NULL) free(s->q_level_lookup);
 	if(s->colour_lookup != NULL) free(s->colour_lookup);
-	if(s->fm_audio_lookup != NULL) free(s->fm_audio_lookup);
-	//if(s->nicam_lookup != NULL) free(s->nicam_lookup);
-	if(s->fm_lookup != NULL) free(s->fm_lookup);
+	_free_fm_modulator(&s->fm_video);
+	_free_fm_modulator(&s->fm_mono);
+	_free_fm_modulator(&s->fm_left);
+	_free_fm_modulator(&s->fm_right);
+	_free_am_modulator(&s->am_mono);
 	if(s->output != NULL) free(s->output);
 	
 	memset(s, 0, sizeof(vid_t));
@@ -1337,7 +1411,7 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	}
 	
 	/* Generate the FM audio subcarrier(s) */
-	if(s->conf.fm_audio_level > 0)
+	if(s->conf.fm_audio_level > 0 || s->conf.am_audio_level > 0)
 	{
 		static int16_t audio[2] = { 0, 0 };
 		static int interp = 0;
@@ -1373,57 +1447,24 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 				}
 			}
 			
-			if(s->conf.fm_mono_carrier != 0)
+			if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
 			{
-				int mono = (audio[0] + audio[1]) / 2;
-				
-				add[0] += s->fm_audio_lookup[s->fm_mono_pi];
-				add[1] += s->fm_audio_lookup[s->fm_mono_pq];
-				
-				/* Update the I and Q indexes, adding audio offset */
-				s->fm_mono_pi += s->fm_mono_delta + mono;
-				s->fm_mono_pq += s->fm_mono_delta + mono;
-				
-				/* Keep the I and Q index within bounds */
-				if(s->fm_mono_pi < 0) { s->fm_mono_pi += s->fm_audio_lookup_width; }
-				else if(s->fm_mono_pi >= s->fm_audio_lookup_width) { s->fm_mono_pi -= s->fm_audio_lookup_width; }
-				
-				if(s->fm_mono_pq < 0) { s->fm_mono_pq += s->fm_audio_lookup_width; }
-				else if(s->fm_mono_pq >= s->fm_audio_lookup_width) { s->fm_mono_pq -= s->fm_audio_lookup_width; }
+				_fm_modulator(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
 			}
 			
-			if(s->conf.fm_left_carrier != 0)
+			if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
 			{
-				add[0] += s->fm_audio_lookup[s->fm_left_pi];
-				add[1] += s->fm_audio_lookup[s->fm_left_pq];
-				
-				/* Update the I and Q indexes, adding audio offset */
-				s->fm_left_pi += s->fm_left_delta + audio[0];
-				s->fm_left_pq += s->fm_left_delta + audio[0];
-				
-				/* Keep the I and Q index within bounds */
-				if(s->fm_left_pi < 0) { s->fm_left_pi += s->fm_audio_lookup_width; }
-				else if(s->fm_left_pi >= s->fm_audio_lookup_width) { s->fm_left_pi -= s->fm_audio_lookup_width; }
-				
-				if(s->fm_left_pq < 0) { s->fm_left_pq += s->fm_audio_lookup_width; }
-				else if(s->fm_left_pq >= s->fm_audio_lookup_width) { s->fm_left_pq -= s->fm_audio_lookup_width; }
+				_fm_modulator(&s->fm_left, add, audio[0]);
 			}
 			
-			if(s->conf.fm_right_carrier != 0)
+			if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
 			{
-				add[0] += s->fm_audio_lookup[s->fm_right_pi];
-				add[1] += s->fm_audio_lookup[s->fm_right_pq];
-				
-				/* Update the I and Q indexes, adding audio offset */
-				s->fm_right_pi += s->fm_right_delta + audio[1];
-				s->fm_right_pq += s->fm_right_delta + audio[1];
-				
-				/* Keep the I and Q index within bounds */
-				if(s->fm_right_pi < 0) { s->fm_right_pi += s->fm_audio_lookup_width; }
-				else if(s->fm_right_pi >= s->fm_audio_lookup_width) { s->fm_right_pi -= s->fm_audio_lookup_width; }
-				
-				if(s->fm_right_pq < 0) { s->fm_right_pq += s->fm_audio_lookup_width; }
-				else if(s->fm_right_pq >= s->fm_audio_lookup_width) { s->fm_right_pq -= s->fm_audio_lookup_width; }
+				_fm_modulator(&s->fm_right, add, audio[1]);
+			}
+			
+			if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
+			{
+				_am_modulator(&s->am_mono, add, (audio[0] + audio[1]) / 2);
 			}
 			
 			s->output[x * 2 + 0] += add[0];
@@ -1431,25 +1472,17 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 		}
 	}
 	
-	/* FM modulate the output */
+	/* FM modulate the video and audio if requested */
 	if(s->conf.modulation == VID_FM)
 	{
+		int16_t add[2] = { 0, 0 };
+		
 		for(x = 0; x < s->width; x++)
 		{
-			int16_t sample = s->output[x * 2];
+			_fm_modulator(&s->fm_video, add, s->output[x * 2 + 0]);
 			
-			s->output[x * 2 + 0] = s->fm_lookup[s->fm_pi];
-			s->output[x * 2 + 1] = s->fm_lookup[s->fm_pq];
-			
-			s->fm_pi += s->fm_delta + sample;
-			s->fm_pq += s->fm_delta + sample;
-			
-			/* Keep the I and Q index within bounds */
-			if(s->fm_pi < 0) { s->fm_pi += s->fm_lookup_width; }
-			else if(s->fm_pi >= s->fm_lookup_width) { s->fm_pi -= s->fm_lookup_width; }
-			
-			if(s->fm_pq < 0) { s->fm_pq += s->fm_lookup_width; }
-			else if(s->fm_pq >= s->fm_lookup_width) { s->fm_pq -= s->fm_lookup_width; }
+			s->output[x * 2 + 0] = add[0];
+			s->output[x * 2 + 1] = add[1];
 		}
 	}
 	
