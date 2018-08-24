@@ -1125,6 +1125,7 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	 *    h = horizontal sync pulse
 	 *    v = short vertical sync pulse
 	 *    V = long vertical sync pulse
+	 *    _ = no sync pulse
 	 * 
 	 * b: colour burst
 	 *    0 = line always has a colour burst
@@ -1146,6 +1147,7 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	*/
 	
 	vy = -1;
+	seq = "____";
 	
 	if(s->conf.lines == 625)
 	{
@@ -1378,13 +1380,17 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	else
 	{
 		/* No colour */
+		lut_b = NULL;
+		lut_i = NULL;
+		lut_q = NULL;
 		pal = 0;
 	}
 	
 	/* Render the left side sync pulse */
 	if(seq[0] == 'v') w = s->vsync_short_width;
 	else if(seq[0] == 'V') w = s->vsync_long_width;
-	else w = s->hsync_width;
+	else if(seq[0] == 'h') w = s->hsync_width;
+	else w = 0;
 	
 	for(x = 0; x < w && x < s->half_width; x++)
 	{
