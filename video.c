@@ -677,12 +677,31 @@ static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, 
 	return(VID_OK);
 }
 
+static void inline _fm_modulator_add(_mod_fm_t *fm, int16_t *dst, int16_t sample)
+{
+	_cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
+	
+	dst[0] += ((fm->phase.i >> 16) * fm->level) >> 15;
+	dst[1] += ((fm->phase.q >> 16) * fm->level) >> 15;
+	
+	/* Correct the amplitude after INT16_MAX samples */
+	if(--fm->counter == 0)
+	{
+		double ra = atan2(fm->phase.q, fm->phase.i);
+		
+		fm->phase.i = lround(cos(ra) * INT32_MAX);
+		fm->phase.q = lround(sin(ra) * INT32_MAX);
+		
+		fm->counter = INT16_MAX;
+	}
+}
+
 static void inline _fm_modulator(_mod_fm_t *fm, int16_t *dst, int16_t sample)
 {
 	_cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
 	
-	dst[0] += ((fm->phase.i >> 16) * fm->level) >> 16;
-	dst[1] += ((fm->phase.q >> 16) * fm->level) >> 16;
+	dst[0] = ((fm->phase.i >> 16) * fm->level) >> 15;
+	dst[1] = ((fm->phase.q >> 16) * fm->level) >> 15;
 	
 	/* Correct the amplitude after INT16_MAX samples */
 	if(--fm->counter == 0)
@@ -718,14 +737,14 @@ static int _init_am_modulator(_mod_am_t *am, int sample_rate, double frequency, 
 	return(VID_OK);
 }
 
-static void inline _am_modulator(_mod_am_t *am, int16_t *dst, int16_t sample)
+static void inline _am_modulator_add(_mod_am_t *am, int16_t *dst, int16_t sample)
 {
 	_cint32_mul(&am->phase, &am->phase, &am->delta);
 	
 	sample = ((int32_t) sample + INT16_MIN) / 2;
 	
-	dst[0] += ((((am->phase.i >> 16) * sample) >> 16) * am->level) >> 16;
-	dst[1] += ((((am->phase.q >> 16) * sample) >> 16) * am->level) >> 16;
+	dst[0] += ((((am->phase.i >> 16) * sample) >> 16) * am->level) >> 15;
+	dst[1] += ((((am->phase.q >> 16) * sample) >> 16) * am->level) >> 15;
 	
 	/* Correct the amplitude after INT16_MAX samples */
 	if(--am->counter == 0)
@@ -1548,22 +1567,22 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 			
 			if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
 			{
-				_fm_modulator(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
+				_fm_modulator_add(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
 			}
 			
 			if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
 			{
-				_fm_modulator(&s->fm_left, add, audio[0]);
+				_fm_modulator_add(&s->fm_left, add, audio[0]);
 			}
 			
 			if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
 			{
-				_fm_modulator(&s->fm_right, add, audio[1]);
+				_fm_modulator_add(&s->fm_right, add, audio[1]);
 			}
 			
 			if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
 			{
-				_am_modulator(&s->am_mono, add, (audio[0] + audio[1]) / 2);
+				_am_modulator_add(&s->am_mono, add, (audio[0] + audio[1]) / 2);
 			}
 			
 			s->output[x * 2 + 0] += add[0];
@@ -1574,14 +1593,9 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	/* FM modulate the video and audio if requested */
 	if(s->conf.modulation == VID_FM)
 	{
-		int16_t add[2] = { 0, 0 };
-		
 		for(x = 0; x < s->width; x++)
 		{
-			_fm_modulator(&s->fm_video, add, s->output[x * 2 + 0]);
-			
-			s->output[x * 2 + 0] = add[0];
-			s->output[x * 2 + 1] = add[1];
+			_fm_modulator(&s->fm_video, &s->output[x * 2], s->output[x * 2]);
 		}
 	}
 	
