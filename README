@@ -5,21 +5,17 @@ WHAT'S IT DO
 
 Generates a PAL/NTSC video signal from a video file or test pattern.
 Input is any file type or URL supported by ffmpeg.
-Output can be to a file (IQ or real, int16_t) or directly to a HackRF.
+Output can be to a file or directly to a HackRF.
 Teletext support.
 Rudimentary Videocrypt I hardware support.
 
 WHAT'S IT NOT DO (yet)
 
-Streaming support is not optimal. An input buffer is needed.
 There are no filters. Needed for proper audio and VSB modulation.
 NICAM stereo audio. There is a frame encoder included but no QPSK modulator.
 An optional notch filter for the colour subcarrier would be nice.
 SECAM colour. More of my TVs support this than NTSC.
 D-MAC / D2-MAC standards. Because SECAM isn't obscure enough.
-SDR hardware beyond the HackRF is not supported yet.
-Proper frame rate handling would be nice.
-Proper NTSC colours. They look a bit off on my TV, but that might be normal.
 
 WHAT IT WON'T DO
 
@@ -35,7 +31,7 @@ yum install hackrf-devel ffmpeg-devel
 
 * For Debian and related
 apt-get update
-apt-get install libhackrf-dev libavutil-dev libswresample-dev libswscale-dev libavformat-dev libavcodec-dev
+apt-get install libhackrf-dev libavutil-dev libavdevice-dev libswresample-dev libswscale-dev libavformat-dev libavcodec-dev
 
 INSTALL
 
@@ -49,9 +45,6 @@ $ hacktv -o baseband.bin -m pal example.mkv
 
 # Transmit a test pattern on UHF channel 31 (PAL System I), 47dB TX gain
 $ hacktv -f 551250000 -m i -g 47 test
-
-# Transmit live NASA TV stream on VHF channel 7 (NTSC System M), 10dB TX gain
-$ hacktv -f 175250000 -m m -G 1 -g 10 https://nasa-i.akamaihd.net/hls/live/253565/NTV-Public1/master_2000.m3u8
 
 # Transmit a test pattern with teletext
 $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
