@@ -19,6 +19,8 @@
 #define _FFMPEG_H
 
 extern int av_ffmpeg_open(vid_t *s, char *input_url);
+extern void av_ffmpeg_init(void);
+extern void av_ffmpeg_deinit(void);
 
 #endif
 

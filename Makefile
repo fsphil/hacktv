@@ -3,7 +3,7 @@ CC      := gcc
 CFLAGS  := -g -Wall -pthread -O3
 LDFLAGS := -g -lm -pthread
 OBJS    := hacktv.o fir.o vbidata.o teletext.o wss.o video.o videocrypt.o syster.o nicam728.o test.o ffmpeg.o file.o hackrf.o
-PKGS    := libavcodec libavformat libswscale libswresample libavutil libhackrf
+PKGS    := libavcodec libavformat libavdevice libswscale libswresample libavutil libhackrf
 
 SOAPYSDR := $(shell pkg-config --exists SoapySDR && echo SoapySDR)
 ifeq ($(SOAPYSDR),SoapySDR)

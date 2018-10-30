@@ -521,6 +521,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+	av_ffmpeg_init();
+	
 	do
 	{
 		for(c = optind; c < argc && !_abort; c++)
@@ -575,6 +577,8 @@ int main(int argc, char *argv[])
 	
 	_hacktv_rf_close(&s);
 	vid_free(&s.vid);
+	
+	av_ffmpeg_deinit();
 	
 	return(0);
 }
