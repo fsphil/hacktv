@@ -243,6 +243,7 @@ struct vid_t {
 	ng_t ng;
 	
 	/* Audio state */
+	int audio;
 	int16_t *audiobuffer;
 	size_t audiobuffer_samples;
 	

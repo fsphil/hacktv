@@ -922,6 +922,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	s->framebuffer = NULL;
 	
+	/* Audio */
+	s->audio = 0;
+	
 	/* FM audio */
 	if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
 	{
@@ -931,6 +934,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			vid_free(s);
 			return(r);
 		}
+		
+		s->audio = 1;
 	}
 	
 	if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
@@ -941,6 +946,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			vid_free(s);
 			return(r);
 		}
+		
+		s->audio = 1;
 	}
 	
 	if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
@@ -951,6 +958,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			vid_free(s);
 			return(r);
 		}
+		
+		s->audio = 1;
 	}
 	
 	/* AM audio */
@@ -962,6 +971,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			vid_free(s);
 			return(r);
 		}
+		
+		s->audio = 1;
 	}
 	
 	/* FM video */
