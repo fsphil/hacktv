@@ -19,6 +19,7 @@
 #define _VIDEO_H
 
 #include <stdint.h>
+#include "nicam728.h"
 #include "fir.h"
 
 typedef struct vid_t vid_t;
@@ -49,25 +50,6 @@ typedef struct vid_t vid_t;
 typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
 typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
 typedef int (*vid_close_t)(void *private);
-
-
-
-/* Complex integer types */
-
-typedef struct {
-	int8_t i;
-	int8_t q;
-} cint8_t;
-
-typedef struct {
-	int16_t i;
-	int16_t q;
-} cint16_t;
-
-typedef struct {
-	int32_t i;
-	int32_t q;
-} cint32_t;
 
 
 
@@ -169,6 +151,7 @@ typedef struct {
 	
 	/* Stereo NICAM audio */
 	double nicam_carrier;
+	double nicam_beta;
 	
 	/* AM audio */
 	double am_mono_carrier;
@@ -251,6 +234,11 @@ struct vid_t {
 	_mod_fm_t fm_mono;
 	_mod_fm_t fm_left;
 	_mod_fm_t fm_right;
+	
+	/* NICAM stereo audio state */
+	nicam_mod_t nicam;
+	int16_t nicam_buf[NICAM_AUDIO_LEN * 2];
+	size_t nicam_buf_len;
 	
 	/* AM Mono audio state */
 	_mod_am_t am_mono;

@@ -28,7 +28,26 @@
 */
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include "nicam728.h"
+
+/* Pre-calculated J.17 pre-emphasis filter taps, 32kHz sample rate */
+static const int32_t _j17_taps[_J17_NTAPS] = {
+	-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -2, -2, -3, -3, -3, -3, -5, -5,
+	-6, -7, -9, -10, -13, -14, -18, -21, -27, -32, -42, -51, -69, -86, -120,
+	-159, -233, -332, -524, -814, -1402, -2372, -4502, 25590, -4502, -2372,
+	-1402, -814, -524, -332, -233, -159, -120, -86, -69, -51, -42, -32, -27,
+	-21, -18, -14, -13, -10, -9, -7, -6, -5, -5, -3, -3, -3, -3, -2, -2, -1,
+	-1, -1, -1, -1, -1, -1, -1, 0, -1
+};
+
+/* RF symbols */
+static const int _step[4] = { 0, 3, 1, 2 };
+static const int _syms[4] = { 0, 1, 3, 2 };
+
+/* NICAM scaling factors */
 
 typedef struct {
 	int factor;
@@ -37,7 +56,6 @@ typedef struct {
 	int protection_range;
 } _scale_factor_t;
 
-/* A list of the scaling factors and their parameters */
 static const _scale_factor_t _scale_factors[8] = {
 	{ 0, 2, 5, 7 }, /* 0b000 */
 	{ 1, 2, 5, 7 }, /* 0b001 */
@@ -121,16 +139,38 @@ static uint8_t _parity(unsigned int value)
 
 void nicam_encode_init(nicam_enc_t *s, uint8_t mode, uint8_t reserve)
 {
+	memset(s, 0, sizeof(nicam_enc_t));
+	
 	s->mode = mode;
 	s->reserve = reserve;
-	s->frame = 0;
+	
 	_prn(s->prn);
 }
 
-void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], int16_t audio[NICAM_AUDIO_LEN * 2])
+void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], const int16_t audio[NICAM_AUDIO_LEN * 2])
 {
+	int16_t j17_audio[NICAM_AUDIO_LEN * 2];
 	const _scale_factor_t *scale[2];
+	int32_t l, r;
 	int x, xi;
+	
+	/* Apply J.17 pre-emphasis filter */
+	for(x = 0; x < NICAM_AUDIO_LEN; x++)
+	{
+		s->fir_l[s->fir_p] = audio ? audio[x * 2 + 0] : 0;
+		s->fir_r[s->fir_p] = audio ? audio[x * 2 + 1] : 0;
+		if(++s->fir_p == _J17_NTAPS) s->fir_p = 0;
+		
+		for(l = r = xi = 0; xi < _J17_NTAPS; xi++)
+		{
+			l += (int32_t) s->fir_l[s->fir_p] * _j17_taps[xi];
+			r += (int32_t) s->fir_r[s->fir_p] * _j17_taps[xi];
+			if(++s->fir_p == _J17_NTAPS) s->fir_p = 0;
+		}
+		
+		j17_audio[x * 2 + 0] = l >> 15;
+		j17_audio[x * 2 + 1] = r >> 15;
+	}
 	
 	/* Initialise the NICAM frame header with the FAW (Frame Alignment Word) */
 	frame[0] = NICAM_FAW;
@@ -149,8 +189,8 @@ void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], int16_
 	}
 	
 	/* Calculate the scale factors for each channel */
-	scale[0] = _scale_factor(audio + 0, 2);
-	scale[1] = _scale_factor(audio + 1, 2);
+	scale[0] = _scale_factor(j17_audio + 0, 2);
+	scale[1] = _scale_factor(j17_audio + 1, 2);
 	
 	/* Scale and append each sample to the frame */
 	for(xi = x = 0; x < NICAM_AUDIO_LEN * 2; x++)
@@ -159,7 +199,7 @@ void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], int16_
 		int b;
 		
 		/* Shift down the selected range */
-		a = (audio[x] >> scale[x & 1]->shift) & 0x3FF;
+		a = (j17_audio[x] >> scale[x & 1]->shift) & 0x3FF;
 		
 		/* Add the parity bit (6 MSBs only) */
 		a |= _parity(a >> 4) << 10;
@@ -181,9 +221,9 @@ void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], int16_
 			
 			/* Calculate next interleaved bit location */
 			xi += 16;
-			if(xi >= NICAM_FRAME_LEN - 24)
+			if(xi >= NICAM_FRAME_BITS - 24)
 			{
-				xi -= NICAM_FRAME_LEN - 24 - 1;
+				xi -= NICAM_FRAME_BITS - 24 - 1;
 			}
 		}
 	}
@@ -196,5 +236,195 @@ void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], int16_
 	
 	/* Increment the frame counter */
 	s->frame++;
+}
+
+
+
+static double _hamming(double x)
+{
+	if(x < -1 || x > 1) return(0);
+	return(0.54 - 0.46 * cos((M_PI * (1.0 + x))));
+}
+
+static double _rrc(double x, double b, double t)
+{
+	double r;
+	
+	/* Based on the Wikipedia page, https://en.wikipedia.org/w/index.php?title=Root-raised-cosine_filter&oldid=787851747 */
+	
+	if(x == 0)
+	{
+		r = (1.0 / t) * (1.0 + b * (4.0 / M_PI - 1));
+	}
+	else if(fabs(x) == t / (4.0 * b))
+	{
+		r = b / (t * sqrt(2.0)) * ((1.0 + 2.0 / M_PI) * sin(M_PI / (4.0 * b)) + (1.0 - 2.0 / M_PI) * cos(M_PI / (4.0 * b)));
+	}
+	else
+	{
+		double t1 = (4.0 * b * (x / t));
+		double t2 = (sin(M_PI * (x / t) * (1.0 - b)) + 4.0 * b * (x / t) * cos(M_PI * (x / t) * (1.0 + b)));
+		double t3 = (M_PI * (x / t) * (1.0 - t1 * t1));
+		
+		r = (1.0 / t) * (t2 / t3);
+	}
+	
+	return(r);
+}
+
+int nicam_mod_init(nicam_mod_t *s, uint8_t mode, uint8_t reserve, unsigned int sample_rate, unsigned int frequency, double beta, double level)
+{
+	double sps;
+	double t;
+	double r;
+	int x, n;
+	
+	memset(s, 0, sizeof(nicam_mod_t));
+	
+	/* Samples per symbol */
+	sps = (double) sample_rate / 364000.0;
+	
+	/* Calculate the number of taps needed to cover 5 symbols, rounded up to odd number */
+	s->ntaps = ((unsigned int) (sps * 5) + 1) | 1;
+	
+	s->taps = malloc(sizeof(int16_t) * s->ntaps);
+	if(!s->taps)
+	{
+		return(-1);
+	}
+	
+	/* Generate the filter taps */
+	n = s->ntaps / 2;
+	for(x = -n; x <= n; x++)
+	{
+		t = ((double) x) / sps;
+		
+		r  = _rrc(t, beta, 1.0) * _hamming((double) x / n);
+		r *= M_SQRT1_2 * INT16_MAX * level;
+		
+		s->taps[x + n] = lround(r);
+	}
+	
+	/* Allocate memory for the baseband buffer */
+	s->bb_start = calloc(s->ntaps, sizeof(cint16_t));
+	s->bb_end   = s->bb_start + s->ntaps;
+	s->bb       = s->bb_start;
+	s->bb_len   = 0;
+	
+	if(!s->bb_start)
+	{
+		return(-1);
+	}
+	
+	/* Setup values for the sample rate error correction */
+	n = gcd(sample_rate, NICAM_SYMBOL_RATE);
+	
+	s->decimation = NICAM_SYMBOL_RATE / n;
+	s->sps = (sample_rate + NICAM_SYMBOL_RATE - 1) / NICAM_SYMBOL_RATE;
+	s->dsl = (s->sps * s->decimation) % (sample_rate / n);
+	s->ds  = 0;
+	
+	/* Setup the mixer signal */
+	n = gcd(sample_rate, frequency);
+	x = sample_rate / n;
+	s->cc_start = sin_cint16(x, frequency / n, 1.0);
+	s->cc_end   = s->cc_start + x;
+	s->cc       = s->cc_start;
+	
+	if(!s->cc)
+	{
+		return(-1);
+	}
+	
+	/* Initialise the encoder */
+	nicam_encode_init(&s->enc, mode, reserve);
+	s->frame_bit = NICAM_FRAME_BITS;
+	
+	return(0);
+}
+
+int nicam_mod_free(nicam_mod_t *s)
+{
+	free(s->cc_start);
+	free(s->bb_start);
+	free(s->taps);
+	
+	return(0);
+}
+
+void nicam_mod_input(nicam_mod_t *s, const int16_t audio[NICAM_AUDIO_LEN * 2])
+{
+	memcpy(s->audio, audio, sizeof(int16_t) * NICAM_AUDIO_LEN * 2);
+}
+
+int nicam_mod_output(nicam_mod_t *s, int16_t *iq, size_t samples)
+{
+	cint16_t *ciq = (cint16_t *) iq;
+	int x, i;
+	int16_t r;
+	
+	for(x = 0; x < samples;)
+	{
+		/* Output and clear the buffer */
+		for(; x < samples && s->bb_len; x++, s->bb_len--)
+		{
+			cint16_mula(ciq++, s->bb, s->cc);
+			
+			s->bb->i = 0;
+			s->bb->q = 0;
+			
+			if(++s->bb == s->bb_end)
+			{
+				s->bb = s->bb_start;
+			}
+			
+			if(++s->cc == s->cc_end)
+			{
+				s->cc = s->cc_start;
+			}
+		}
+		
+		if(s->bb_len > 0)
+		{
+			break;
+		}
+		
+		if(s->frame_bit == NICAM_FRAME_BITS)
+		{
+			/* Encode the next frame */
+			nicam_encode_frame(&s->enc, s->frame, s->audio);
+			s->frame_bit = 0;
+		}
+		
+		/* Read out the next 2-bit symbol, USB first */
+		s->dsym += _step[(s->frame[s->frame_bit >> 3] >> (6 - (s->frame_bit & 0x07))) & 0x03];
+		s->dsym &= 0x03;
+		s->frame_bit += 2;
+		
+		/* Encode the symbol */
+		for(i = 0; i < s->ntaps; i++)
+		{
+			r = s->taps[i];
+			s->bb->i += (_syms[s->dsym] & 1 ? r : -r);
+			s->bb->q += (_syms[s->dsym] & 2 ? r : -r);
+			
+			if(++s->bb == s->bb_end)
+			{
+				s->bb = s->bb_start;
+			}
+		}
+		
+		/* Calculate length of the next block */
+		s->bb_len = s->sps;
+		
+		s->ds += s->dsl;
+		if(s->ds >= s->decimation)
+		{
+			s->bb_len--;
+			s->ds -= s->decimation;
+		}
+	}
+	
+	return(0);
 }
 

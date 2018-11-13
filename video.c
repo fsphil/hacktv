@@ -20,6 +20,7 @@
 #include <string.h>
 #include <math.h>
 #include "video.h"
+#include "nicam728.h"
 #include "hacktv.h"
 
 /* 
@@ -56,7 +57,7 @@ const vid_config_t vid_config_pal_i = {
 	
 	.video_level    = 0.71, /* Power level of video */
 	.fm_audio_level = 0.22, /* FM audio carrier power level */
-	.nicam_level    = 0.07, /* NICAM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
@@ -96,6 +97,7 @@ const vid_config_t vid_config_pal_i = {
 	.fm_audio_deviation = 50000, /* +/- Hz */
 	
 	.nicam_carrier  = 6552000, /* Hz */
+	.nicam_beta     = 1.0,
 };
 
 const vid_config_t vid_config_pal_bg = {
@@ -111,7 +113,7 @@ const vid_config_t vid_config_pal_bg = {
 	
 	.video_level    = 0.71, /* Power level of video */
 	.fm_audio_level = 0.22, /* FM audio carrier power level */
-	.nicam_level    = 0.07, /* NICAM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
@@ -151,6 +153,7 @@ const vid_config_t vid_config_pal_bg = {
 	.fm_audio_deviation = 50000, /* +/- Hz */
 	
 	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_beta     = 0.4,
 };
 
 const vid_config_t vid_config_pal_fm = {
@@ -582,17 +585,6 @@ const vid_configs_t vid_configs[] = {
 	{ NULL,     NULL },
 };
 
-static inline void _cint32_mul(cint32_t *r, const cint32_t *a, const cint32_t *b)
-{
-	int64_t i, q;
-	
-	i = (int64_t) a->i * (int64_t) b->i - (int64_t) a->q * (int64_t) b->q;
-	q = (int64_t) a->i * (int64_t) b->q + (int64_t) a->q * (int64_t) b->i;
-	
-	r->i = (i + 0x7FFFFFFF) >> 31;
-	r->q = (q + 0x7FFFFFFF) >> 31;
-}
-
 static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 {
 	int frame = (s->frame - 1) & 3;
@@ -679,7 +671,7 @@ static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, 
 
 static void inline _fm_modulator_add(_mod_fm_t *fm, int16_t *dst, int16_t sample)
 {
-	_cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
+	cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
 	
 	dst[0] += ((fm->phase.i >> 16) * fm->level) >> 15;
 	dst[1] += ((fm->phase.q >> 16) * fm->level) >> 15;
@@ -698,7 +690,7 @@ static void inline _fm_modulator_add(_mod_fm_t *fm, int16_t *dst, int16_t sample
 
 static void inline _fm_modulator(_mod_fm_t *fm, int16_t *dst, int16_t sample)
 {
-	_cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
+	cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
 	
 	dst[0] = ((fm->phase.i >> 16) * fm->level) >> 15;
 	dst[1] = ((fm->phase.q >> 16) * fm->level) >> 15;
@@ -739,7 +731,7 @@ static int _init_am_modulator(_mod_am_t *am, int sample_rate, double frequency, 
 
 static void inline _am_modulator_add(_mod_am_t *am, int16_t *dst, int16_t sample)
 {
-	_cint32_mul(&am->phase, &am->phase, &am->delta);
+	cint32_mul(&am->phase, &am->phase, &am->delta);
 	
 	sample = ((int32_t) sample + INT16_MIN) / 2;
 	
@@ -962,6 +954,20 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		s->audio = 1;
 	}
 	
+	/* NICAM audio */
+	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+	{
+		r = nicam_mod_init(&s->nicam, NICAM_MODE_STEREO, 0, s->sample_rate, s->conf.nicam_carrier, s->conf.nicam_beta, s->conf.nicam_level);
+		
+		if(r != 0)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		s->nicam_buf_len = 0;
+	}
+	
 	/* AM audio */
 	if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
 	{
@@ -1065,6 +1071,7 @@ void vid_free(vid_t *s)
 	_free_fm_modulator(&s->fm_mono);
 	_free_fm_modulator(&s->fm_left);
 	_free_fm_modulator(&s->fm_right);
+	nicam_mod_free(&s->nicam);
 	_free_am_modulator(&s->am_mono);
 	if(s->output != NULL) free(s->output);
 	
@@ -1538,7 +1545,7 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 			fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
 		}
 	}
-	
+	 
 	/* Generate the FM audio subcarrier(s) */
 	if(s->conf.fm_audio_level > 0 || s->conf.am_audio_level > 0)
 	{
@@ -1574,6 +1581,18 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 					audio[0] = 0;
 					audio[1] = 0;
 				}
+				
+				if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+				{
+					s->nicam_buf[s->nicam_buf_len++] = audio[0];
+					s->nicam_buf[s->nicam_buf_len++] = audio[1];
+					
+					if(s->nicam_buf_len == NICAM_AUDIO_LEN * 2)
+					{
+						nicam_mod_input(&s->nicam, s->nicam_buf);
+						s->nicam_buf_len = 0;
+					}
+				}
 			}
 			
 			if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
@@ -1599,6 +1618,11 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 			s->output[x * 2 + 0] += add[0];
 			s->output[x * 2 + 1] += add[1];
 		}
+	}
+	
+	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+	{
+		nicam_mod_output(&s->nicam, s->output, s->width);
 	}
 	
 	/* FM modulate the video and audio if requested */
