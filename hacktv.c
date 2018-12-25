@@ -155,7 +155,7 @@ static void print_usage(void)
 		"directory. All files in the directory will be loaded.\n"
 		"\n"
 		"Raw packet sources are also supported with the raw:<source> path name.\n"
-		"The input is expected to be 42 byte teletext packets.\n"
+		"The input is expected to be 42 byte teletext packets. Use - for stdin.\n"
 		"\n"
 		"Lines 7-22 and 320-335 are used, 16 lines per field.\n"
 		"\n"

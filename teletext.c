@@ -1076,13 +1076,21 @@ int tt_init(tt_t *s, vid_t *vid, char *path)
 	/* Is the path to a raw teletext packet source? */
 	if(strncmp(path, "raw:", 4) == 0)
 	{
-		s->raw = fopen(path + 4, "rb");
-		if(!s->raw)
+		if(strcmp(path + 4, "-") == 0)
 		{
-			fprintf(stderr, "%s: ", path + 4);
-			perror("fopen");
-			tt_free(s);
-			return(VID_ERROR);
+			s->raw = stdin;
+		}
+		else
+		{
+			s->raw = fopen(path + 4, "rb");
+			
+			if(!s->raw)
+			{
+				fprintf(stderr, "%s: ", path + 4);
+				perror("fopen");
+				tt_free(s);
+				return(VID_ERROR);
+			}
 		}
 		
 		return(VID_OK);
@@ -1148,7 +1156,7 @@ void tt_free(tt_t *s)
 {
 	if(s == NULL) return;
 	
-	if(s->raw)
+	if(s->raw && s->raw != stdin)
 	{
 		fclose(s->raw);
 	}

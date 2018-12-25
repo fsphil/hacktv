@@ -859,6 +859,12 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		return(HACKTV_OUT_OF_MEMORY);
 	}
 	
+	/* Use 'pipe:' for stdin */
+	if(strcmp(input_url, "-") == 0)
+	{
+		input_url = "pipe:";
+	}
+	
 	/* Open the video */
 	if((r = avformat_open_input(&av->format_ctx, input_url, NULL, NULL)) < 0)
 	{
