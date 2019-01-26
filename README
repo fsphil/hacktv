@@ -58,6 +58,22 @@ $ svn checkout http://teastop.plus.com/svn/teletext/ teefax
 $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
 
+ADVANCED EXAMPLES
+
+# applying a 4:3 filter to 16:9 media (some_mkv_file.mkv) with ffmpeg, selecting audio channel 2, output to fifo with format matroska, then transmitting it through a fifo
+$ mkfifo some_fifo
+$ ffmpeg -i some_mkv_file.mkv -v verbose -filter:v 'pad=iw:iw*3/4:(ow-iw)/2:(oh-ih)/2' -filter:a volumedetect -map 0:0 -map 0:2 -f matroska pipe:1 > some_fifo
+$ hacktv -f 567250000 -m m -g 47 -a -s 13500000 some_fifo
+
+# pass a twitch stream with streamlink through ffmpeg, apply a 4:3 filter to 16:9 media, convert audio channel to libopus, output to fifo with format matroska, then transmitting it through a fifo
+$ STREAM=https://www.twitch.tv/dotastarladder_en
+$ STREAM=https://www.douyu.com/19002
+$ QUALITY=worst
+$ mkfifo some_fifo
+$ streamlink -O $STREAM $QUALITY | ffmpeg -i pipe:0 -v verbose -filter:v 'pad=iw:iw*3/4:(ow-iw)/2:(oh-ih)/2' -filter:a volumedetect -c:a libopus -f matroska pipe:1 > some_fifo
+$ hacktv -f 567250000 -m m -g 47 -a -s 13500000 some_fifo
+
+
 FREQUENCY GUIDE
 
 [PAL](https://www.digitalspy.com/tech/terrestrial/a12613/uhf-channel-and-frequency-guide/)
