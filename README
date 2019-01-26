@@ -46,6 +46,9 @@ $ hacktv -o baseband.bin -m pal example.mkv
 # Transmit a test pattern on UHF channel 31 (PAL System I), 47dB TX gain
 $ hacktv -f 551250000 -m i -g 47 test
 
+# Transmit a test pattern on UHF channel 30 (NTSC), 47dB TX gain, TX amplifier
+$ hacktv -f 567250000 -m m -g 47 -a -s 13500000 test
+
 # Transmit a test pattern with teletext
 $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
 
