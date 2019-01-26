@@ -35,12 +35,12 @@ volatile int _abort = 0;
 static void _sigint_callback_handler(int signum)
 {
 	fprintf(stderr, "Caught signal %d\n", signum);
-	
+
 	if(_abort > 0)
 	{
 		exit(-1);
 	}
-	
+
 	_abort++;
 }
 
@@ -51,7 +51,7 @@ static int _hacktv_rf_write(hacktv_t *s, int16_t *iq_data, size_t samples)
 	{
 		return(s->rf_write(s->rf_private, iq_data, samples));
 	}
-	
+
 	return(HACKTV_ERROR);
 }
 
@@ -61,7 +61,7 @@ static int _hacktv_rf_close(hacktv_t *s)
 	{
 		return(s->rf_close(s->rf_private));
 	}
-	
+
 	return(HACKTV_OK);
 }
 
@@ -86,6 +86,7 @@ static void print_usage(void)
 		"Input options\n"
 		"\n"
 		"  test:colourbars    Generate and transmit a test pattern.\n"
+		"  test:checkerboard  Generate and transmit a checkerboard test pattern.\n"
 		"  ffmpeg:<file|url>  Decode and transmit a video file with ffmpeg.\n"
 		"\n"
 		"  If no valid input prefix is provided, ffmpeg: is assumed.\n"
@@ -233,10 +234,10 @@ int main(int argc, char *argv[])
 	char *pre, *sub;
 	int l;
 	int r;
-	
+
 	/* Initialise the state */
 	memset(&s, 0, sizeof(hacktv_t));
-	
+
 	/* Default configuration */
 	s.output_type = "hackrf";
 	s.output = NULL;
@@ -254,25 +255,25 @@ int main(int argc, char *argv[])
 	s.amp = 0;
 	s.gain = 0;
 	s.file_type = HACKTV_INT16;
-	
+
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:t:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
 		case 'o': /* -o, --output <[type:]target> */
-			
+
 			/* Get a pointer to the output prefix and target */
 			pre = optarg;
 			sub = strchr(pre, ':');
-			
+
 			if(sub != NULL)
 			{
 				/* Split the optarg into two */
 				*sub = '\0';
 				sub++;
 			}
-			
+
 			/* Try to match the prefix with a known type */
 			if(strcmp(pre, "file") == 0)
 			{
@@ -300,69 +301,69 @@ int main(int argc, char *argv[])
 					sub--;
 					*sub = ':';
 				}
-				
+
 				s.output_type = "file";
 				s.output = pre;
 			}
-			
+
 			break;
-		
+
 		case 'm': /* -m, --mode <name> */
 			s.mode = optarg;
 			break;
-		
+
 		case 's': /* -s, --samplerate <value> */
 			s.samplerate = atoi(optarg);
 			break;
-		
+
 		case 'G': /* -G, --gamma <value> */
 			s.gamma = atof(optarg);
 			break;
-		
+
 		case 'r': /* -r, --repeat */
 			s.repeat = 1;
 			break;
-		
+
 		case 'v': /* -v, --verbose */
 			s.verbose = 1;
 			break;
-		
+
 		case _OPT_TELETEXT: /* --teletext <path> */
 			free(s.teletext);
 			s.teletext = strdup(optarg);
 			break;
-		
+
 		case _OPT_WSS: /* --wss <mode> */
 			free(s.wss);
 			s.wss = strdup(optarg);
 			break;
-		
+
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
 			s.videocrypt = 1;
 			break;
-		
+
 		case _OPT_SYSTER: /* --syster */
 			s.syster = 1;
 			break;
-		
+
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
 			break;
-		
+
 		case 'f': /* -f, --frequency <value> */
 			s.frequency = atol(optarg);
 			break;
-		
+
 		case 'a': /* -a, --amp */
 			s.amp = 1;
 			break;
-		
+
 		case 'g': /* -g, --gain <value> */
 			s.gain = atoi(optarg);
 			break;
-		
+
 		case 't': /* -t, --type <type> */
-			
+
 			if(strcmp(optarg, "uint8") == 0)
 			{
 				s.file_type = HACKTV_UINT8;
@@ -388,33 +389,33 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Unrecognised file data type.\n");
 				return(-1);
 			}
-			
+
 			break;
-		
+
 		case '?':
 			print_usage();
 			return(0);
 		}
 	}
-	
+
 	if(optind >= argc)
 	{
 		printf("No input specified.\n");
 		return(-1);
 	}
-	
+
 	/* Load the mode configuration */
 	for(vid_confs = vid_configs; vid_confs->id != NULL; vid_confs++)
 	{
 		if(strcmp(s.mode, vid_confs->id) == 0) break;
 	}
-	
+
 	if(vid_confs->id == NULL)
 	{
 		fprintf(stderr, "Unrecognised TV mode.\n");
 		return(-1);
 	}
-	
+
 	/* Catch all the signals */
 	signal(SIGINT, &_sigint_callback_handler);
 	signal(SIGILL, &_sigint_callback_handler);
@@ -422,13 +423,13 @@ int main(int argc, char *argv[])
 	signal(SIGSEGV, &_sigint_callback_handler);
 	signal(SIGTERM, &_sigint_callback_handler);
 	signal(SIGABRT, &_sigint_callback_handler);
-	
+
 	memcpy(&vid_conf, vid_confs->conf, sizeof(vid_config_t));
 	if(s.gamma > 0)
 	{
 		vid_conf.gamma = s.gamma;
 	}
-	
+
 	if(s.teletext)
 	{
 		if(vid_conf.lines != 625)
@@ -436,10 +437,10 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Teletext is only available with 625 line modes.\n");
 			return(-1);
 		}
-		
+
 		vid_conf.teletext = s.teletext;
 	}
-	
+
 	if(s.wss)
 	{
 		if(vid_conf.lines != 625)
@@ -447,10 +448,10 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "WSS is only available with 625 line modes.\n");
 			return(-1);
 		}
-		
+
 		vid_conf.wss = s.wss;
 	}
-	
+
 	if(s.videocrypt)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -458,10 +459,10 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Videocrypt I is only compatible with 625 line PAL modes.\n");
 			return(-1);
 		}
-		
+
 		vid_conf.videocrypt = 1;
 	}
-	
+
 	if(s.syster)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -469,16 +470,16 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
 			return(-1);
 		}
-		
+
 		if(vid_conf.videocrypt)
 		{
 			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
 			return(-1);
 		}
-		
+
 		vid_conf.syster = 1;
 	}
-	
+
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, &vid_conf);
 	if(r != VID_OK)
@@ -486,14 +487,14 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Unable to initialise video encoder.\n");
 		return(-1);
 	}
-	
+
 	vid_info(&s.vid);
-	
+
 	if(s.filter)
 	{
 		vid_init_filter(&s.vid);
 	}
-	
+
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{
 		if(rf_hackrf_open(&s, s.output, s.frequency, s.gain, s.amp) != HACKTV_OK)
@@ -520,9 +521,9 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 	}
-	
+
 	av_ffmpeg_init();
-	
+
 	do
 	{
 		for(c = optind; c < argc && !_abort; c++)
@@ -530,7 +531,7 @@ int main(int argc, char *argv[])
 			/* Get a pointer to the output prefix and target */
 			pre = argv[c];
 			sub = strchr(pre, ':');
-			
+
 			if(sub != NULL)
 			{
 				l = sub - pre;
@@ -540,10 +541,24 @@ int main(int argc, char *argv[])
 			{
 				l = strlen(pre);
 			}
-			
+
 			if(strncmp(pre, "test", l) == 0)
 			{
-				r = av_test_open(&s.vid);
+				if(sub == NULL)
+				{
+					r = av_test_open(&s.vid, 0);
+				}
+				else
+				{
+					if(strncmp(sub, "checkerboard", l) == 0)
+					{
+						r = av_test_open(&s.vid, 1);
+					}
+					else
+					{
+						r = av_test_open(&s.vid, 0);
+					}
+				}
 			}
 			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{
@@ -553,33 +568,33 @@ int main(int argc, char *argv[])
 			{
 				r = av_ffmpeg_open(&s.vid, pre);
 			}
-			
+
 			if(r != HACKTV_OK)
 			{
 				vid_free(&s.vid);
 				return(-1);
 			}
-			
+
 			while(!_abort)
 			{
 				size_t samples;
 				int16_t *data = vid_next_line(&s.vid, &samples);
-				
+
 				if(data == NULL) break;
-				
+
 				_hacktv_rf_write(&s, data, samples);
 			}
-			
+
 			vid_av_close(&s.vid);
 		}
 	}
 	while(s.repeat && !_abort);
-	
+
 	_hacktv_rf_close(&s);
 	vid_free(&s.vid);
-	
+
 	av_ffmpeg_deinit();
-	
+
 	return(0);
 }
 

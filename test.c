@@ -66,7 +66,7 @@ static int _av_test_close(void *private)
 	return(HACKTV_OK);
 }
 
-int av_test_open(vid_t *s)
+int av_test_open(vid_t *s, int test_pattern_number)
 {
 	uint32_t const bars[8] = {
 		0x000000,
@@ -82,13 +82,13 @@ int av_test_open(vid_t *s)
 	int c, x, y;
 	double d;
 	int16_t l;
-	
+
 	av = calloc(1, sizeof(av_test_t));
 	if(!av)
 	{
 		return(HACKTV_OUT_OF_MEMORY);
 	}
-	
+
 	/* Generate a basic test pattern */
 	av->width = s->active_width;
 	av->height = s->conf.active_lines;
@@ -98,7 +98,7 @@ int av_test_open(vid_t *s)
 		free(av);
 		return(HACKTV_OUT_OF_MEMORY);
 	}
-	
+
 	for(y = 0; y < s->conf.active_lines; y++)
 	{
 		for(x = 0; x < s->active_width; x++)
@@ -128,25 +128,42 @@ int av_test_open(vid_t *s)
 				c = c | (c >> 3) | (c >> 6);
 				c = c << 16 | c << 8 | c;
 			}
-			
+
 			av->video[y * s->active_width + x] = c;
 		}
 	}
-	
+
 	/* Overlay the logo */
 	x = s->active_width / 2;
 	y = s->conf.active_lines / 10;
-	
+
 	for(x = 0; x < LOGO_WIDTH * LOGO_SCALE; x++)
 	{
 		for(y = 0; y < LOGO_HEIGHT * LOGO_SCALE; y++)
 		{
 			c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
-			
+
 			av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
 		}
 	}
-	
+
+	/* Draw checkerboard */
+	if(test_pattern_number == 1)
+	{
+		for(x = 0; x < 200; ++x)
+		{
+			for(y = 0; y < 200; ++y)
+			{
+				c = 0x000000;
+				if((x / 20 % 2 == 0 && y / 20 % 2 == 0) || (x / 20 % 2 != 0 && y / 20 % 2 != 0))
+				{
+					c = 0xffffff;
+				}
+				av->video[(s->conf.active_lines / 4 + y) * s->active_width + ((s->active_width - 200) / 2) + x] = c;
+			}
+		}
+	}
+
 	/* Generate the 1khz test tones (BBC 1 style) */
 	d = 1000.0 * 2 * M_PI / HACKTV_AUDIO_SAMPLE_RATE;
 	y = HACKTV_AUDIO_SAMPLE_RATE * 64 / 100; /* 640ms */
@@ -157,11 +174,11 @@ int av_test_open(vid_t *s)
 		free(av);
 		return(HACKTV_OUT_OF_MEMORY);
 	}
-	
+
 	for(x = 0; x < av->audio_samples; x++)
 	{
 		l = sin(x * d) * INT16_MAX * 0.1;
-		
+
 		if(x < y)
 		{
 			/* 0 - 640ms, interrupt left channel */
@@ -187,13 +204,13 @@ int av_test_open(vid_t *s)
 			av->audio[x * 2 + 1] = l; /* Right */
 		}
 	}
-	
+
 	/* Register the callback functions */
 	s->av_private = av;
 	s->av_read_video = _av_test_read_video;
 	s->av_read_audio = _av_test_read_audio;
 	s->av_close = _av_test_close;
-	
+
 	return(HACKTV_OK);
 }
 
