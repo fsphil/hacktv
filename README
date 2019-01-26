@@ -57,5 +57,11 @@ $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
 $ svn checkout http://teastop.plus.com/svn/teletext/ teefax
 $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
+
+FREQUENCY GUIDE
+
+[PAL](https://www.digitalspy.com/tech/terrestrial/a12613/uhf-channel-and-frequency-guide/)
+[NTSC](https://en.wikipedia.org/wiki/Pan-American_television_frequencies)
+
 -Philip Heron <phil@sanslogic.co.uk>
 
