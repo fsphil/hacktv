@@ -66,7 +66,7 @@ static int _av_test_close(void *private)
 	return(HACKTV_OK);
 }
 
-int av_test_open(vid_t *s)
+int av_test_open(vid_t *s, char *sub)
 {
 	uint32_t const bars[8] = {
 		0x000000,
@@ -148,7 +148,7 @@ int av_test_open(vid_t *s)
 	}
 	
 	/* Draw checkerboard */
-	if(test_pattern_number == 1)
+	if(sub != NULL && strncmp(sub, "checkerboard", l) == 0)
 	{
 		for(x = 0; x < 200; ++x)
 		{

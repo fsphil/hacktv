@@ -543,21 +543,7 @@ int main(int argc, char *argv[])
 			
 			if(strncmp(pre, "test", l) == 0)
 			{
-				if(sub == NULL)
-				{
-					r = av_test_open(&s.vid, 0);
-				}
-				else
-				{
-					if(strncmp(sub, "checkerboard", l) == 0)
-					{
-						r = av_test_open(&s.vid, 1);
-					}
-					else
-					{
-						r = av_test_open(&s.vid, 0);
-					}
-				}
+				r = av_test_open(&s.vid, sub);
 			}
 			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{
