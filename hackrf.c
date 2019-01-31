@@ -204,7 +204,7 @@ static int _tx_callback(hackrf_transfer *transfer)
 	return(0);
 }
 
-static int _write(void *private, int16_t *iq_data, size_t samples)
+static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 {
 	hackrf_t *rf = private;
 	int8_t iq8[1024 * 4];
@@ -229,7 +229,7 @@ static int _write(void *private, int16_t *iq_data, size_t samples)
 	return(HACKTV_OK);
 }
 
-static int _close(void *private)
+static int _rf_close(void *private)
 {
 	hackrf_t *rf = private;
 	int r;
@@ -348,8 +348,8 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	
 	/* Register the callback functions */
 	s->rf_private = rf;
-	s->rf_write = _write;
-	s->rf_close = _close;
+	s->rf_write = _rf_write;
+	s->rf_close = _rf_close;
 	
 	return(HACKTV_OK);
 };

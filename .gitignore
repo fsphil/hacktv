@@ -1,3 +1,5 @@
 *.o
 *.d
+*.exe
+build_win64
 hacktv
