@@ -1,10 +1,10 @@
 
 CC      := $(CROSS_HOST)gcc
 PKGCONF := $(CROSS_HOST)pkg-config
-CFLAGS  := -g -Wall -pthread -O3
-LDFLAGS := -g -lm -pthread
+CFLAGS  := -g -Wall -pthread -O3 $(EXTRA_CFLAGS)
+LDFLAGS := -g -lm -pthread $(EXTRA_LDFLAGS)
 OBJS    := hacktv.o common.o fir.o vbidata.o teletext.o wss.o video.o videocrypt.o syster.o nicam728.o test.o ffmpeg.o file.o hackrf.o
-PKGS    := libavcodec libavformat libavdevice libswscale libswresample libavutil libhackrf
+PKGS    := libavcodec libavformat libavdevice libswscale libswresample libavutil libhackrf $(EXTRA_PKGS)
 
 SOAPYSDR := $(shell $(PKGCONF) --exists SoapySDR && echo SoapySDR)
 ifeq ($(SOAPYSDR),SoapySDR)
