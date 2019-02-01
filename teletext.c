@@ -178,6 +178,22 @@ static int _mjd(int year, int month, int day)
 	return((int) mjd);
 }
 
+#ifdef __MINGW32__
+static struct tm *gmtime_r(const time_t *timep, struct tm *result)
+{
+	struct tm *tm = gmtime(timep);
+	
+	if(!tm)
+	{
+		return(NULL);
+	}
+	
+	memcpy(result, tm, sizeof(struct tm));
+	
+	return(result);
+}
+#endif
+
 static void _packet830(uint8_t line[45], time_t timestamp)
 {
 	int magazine = 8;
