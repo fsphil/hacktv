@@ -772,6 +772,16 @@ static int16_t *_av_read_audio(vid_t *s, size_t *samples)
 	return(NULL);
 }
 
+static int _av_eof(vid_t *s)
+{
+	if(s->av_eof)
+	{
+		return(s->av_eof(s->av_private));
+	}
+	
+	return(0);
+}
+
 int vid_av_close(vid_t *s)
 {
 	int r;
@@ -1147,13 +1157,13 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	/* Load the next frame */
 	if(s->line == 1)
 	{
-		s->framebuffer = _av_read_video(s, &s->ratio);
-		
-		/* No more frames from the video source? */
-		if(s->framebuffer == NULL)
+		/* Have we reached the end of the video? */
+		if(_av_eof(s))
 		{
 			return(NULL);
 		}
+		
+		s->framebuffer = _av_read_video(s, &s->ratio);
 	}
 	
 	/* Sequence codes: abcd

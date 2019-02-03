@@ -100,6 +100,7 @@ typedef struct {
 	AVStream *video_stream;
 	AVCodecContext *video_codec_ctx;
 	_frame_dbuffer_t in_video_buffer;
+	int video_eof;
 	
 	/* Video scaling */
 	struct SwsContext *sws_ctx;
@@ -112,6 +113,7 @@ typedef struct {
 	AVStream *audio_stream;
 	AVCodecContext *audio_codec_ctx;
 	_frame_dbuffer_t in_audio_buffer;
+	int audio_eof;
 	
 	/* Audio resampler */
 	struct SwrContext *swr_ctx;
@@ -605,10 +607,16 @@ static uint32_t *_av_ffmpeg_read_video(void *private, float *ratio)
 	av_ffmpeg_t *av = private;
 	AVFrame *frame;
 	
+	if(av->video_stream == NULL)
+	{
+		return(NULL);
+	}
+	
 	frame = _frame_dbuffer_flip(&av->out_video_buffer);
 	if(!frame)
 	{
 		/* EOF or abort */
+		av->video_eof = 1;
 		return(NULL);
 	}
 	
@@ -777,16 +785,35 @@ static int16_t *_av_ffmpeg_read_audio(void *private, size_t *samples)
 	av_ffmpeg_t *av = private;
 	AVFrame *frame;
 	
+	if(av->audio_stream == NULL)
+	{
+		return(NULL);
+	}
+	
 	frame = _frame_dbuffer_flip(&av->out_audio_buffer);
 	if(!frame)
 	{
 		/* EOF or abort */
+		av->audio_eof = 1;
 		return(NULL);
 	}
 	
 	*samples = frame->nb_samples;
 	
 	return((int16_t *) frame->data[0]);
+}
+
+static int _av_ffmpeg_eof(void *private)
+{
+	av_ffmpeg_t *av = private;
+	
+	if((av->video_stream && !av->video_eof) ||
+	   (av->audio_stream && !av->audio_eof))
+	{
+		return(0);
+	}
+	
+	return(1);
 }
 
 static int _av_ffmpeg_close(void *private)
@@ -970,6 +997,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		{
 			return(HACKTV_OUT_OF_MEMORY);
 		}
+		
+		av->video_eof = 0;
 	}
 	else
 	{
@@ -1046,6 +1075,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			fprintf(stderr, "Failed to initialise the resampling context\n");
 			return(HACKTV_ERROR);
 		}
+		
+		av->audio_eof = 0;
 	}
 	else
 	{
@@ -1072,6 +1103,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	s->av_private = av;
 	s->av_read_video = _av_ffmpeg_read_video;
 	s->av_read_audio = _av_ffmpeg_read_audio;
+	s->av_eof = _av_ffmpeg_eof;
 	s->av_close = _av_ffmpeg_close;
 	
 	/* Start the threads */

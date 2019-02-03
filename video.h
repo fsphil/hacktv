@@ -49,6 +49,7 @@ typedef struct vid_t vid_t;
 /* AV source function prototypes */
 typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
 typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
+typedef int (*vid_eof_t)(void *private);
 typedef int (*vid_close_t)(void *private);
 
 
@@ -170,6 +171,7 @@ struct vid_t {
 	void *av_private;
 	vid_read_video_t av_read_video;
 	vid_read_audio_t av_read_audio;
+	vid_eof_t av_eof;
 	vid_close_t av_close;
 	
 	/* Signal configuration */
