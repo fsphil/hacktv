@@ -73,6 +73,27 @@ static int _rf_file_write_int8_real(void *private, int16_t *iq_data, size_t samp
 	return(HACKTV_OK);
 }
 
+static int _rf_file_write_uint16_real(void *private, int16_t *iq_data, size_t samples)
+{
+	rf_file_t *rf = private;
+	int16_t *u16 = rf->data;
+	int i;
+
+	while (samples)
+	{
+		for (i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
+		{
+			u16[i] = (iq_data[0] + INT16_MAX);
+		}
+
+		fwrite(rf->data, rf->data_size, i, rf->f);
+
+		samples -= i;
+	}
+
+	return(HACKTV_OK);
+}
+
 static int _rf_file_write_int16_real(void *private, int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
@@ -180,6 +201,15 @@ static int _rf_file_write_int8_complex(void *private, int16_t *iq_data, size_t s
 	return(HACKTV_OK);
 }
 
+static int _rf_file_write_uint16_complex(void *private, int16_t *iq_data, size_t samples)
+{
+	rf_file_t *rf = private;
+
+	fwrite(iq_data + INT16_MAX, sizeof(int16_t) * 2, samples, rf->f);
+
+	return(HACKTV_OK);
+}
+
 static int _rf_file_write_int16_complex(void *private, int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
@@ -282,11 +312,12 @@ int rf_file_open(hacktv_t *s, char *filename, int type)
 	/* Find the size of the output data type */
 	switch(type)
 	{
-	case HACKTV_UINT8: rf->data_size = sizeof(uint8_t); break;
-	case HACKTV_INT8:  rf->data_size = sizeof(int8_t); break;
-	case HACKTV_INT16: rf->data_size = sizeof(int16_t); break;
-	case HACKTV_INT32: rf->data_size = sizeof(int32_t); break;
-	case HACKTV_FLOAT: rf->data_size = sizeof(float); break;
+	case HACKTV_UINT8:  rf->data_size = sizeof(uint8_t);  break;
+	case HACKTV_INT8:   rf->data_size = sizeof(int8_t);   break;
+	case HACKTV_UINT16: rf->data_size = sizeof(uint16_t); break;
+	case HACKTV_INT16:  rf->data_size = sizeof(int16_t);  break;
+	case HACKTV_INT32:  rf->data_size = sizeof(int32_t);  break;
+	case HACKTV_FLOAT:  rf->data_size = sizeof(float);    break;
 	default:
 		fprintf(stderr, "%s: Unrecognised data type %d\n", __func__, type);
 		_rf_file_close(rf);
@@ -317,11 +348,12 @@ int rf_file_open(hacktv_t *s, char *filename, int type)
 	
 	switch(type)
 	{
-	case HACKTV_UINT8: s->rf_write = rf->complex ? _rf_file_write_uint8_complex : _rf_file_write_uint8_real; break;
-	case HACKTV_INT8:  s->rf_write = rf->complex ? _rf_file_write_int8_complex  : _rf_file_write_int8_real;  break;
-	case HACKTV_INT16: s->rf_write = rf->complex ? _rf_file_write_int16_complex : _rf_file_write_int16_real; break;
-	case HACKTV_INT32: s->rf_write = rf->complex ? _rf_file_write_int32_complex : _rf_file_write_int32_real; break;
-	case HACKTV_FLOAT: s->rf_write = rf->complex ? _rf_file_write_float_complex : _rf_file_write_float_real; break;
+	case HACKTV_UINT8:  s->rf_write = rf->complex ? _rf_file_write_uint8_complex  : _rf_file_write_uint8_real;  break;
+	case HACKTV_INT8:   s->rf_write = rf->complex ? _rf_file_write_int8_complex   : _rf_file_write_int8_real;   break;
+	case HACKTV_UINT16: s->rf_write = rf->complex ? _rf_file_write_uint16_complex : _rf_file_write_uint16_real; break;
+	case HACKTV_INT16:  s->rf_write = rf->complex ? _rf_file_write_int16_complex  : _rf_file_write_int16_real;  break;
+	case HACKTV_INT32:  s->rf_write = rf->complex ? _rf_file_write_int32_complex  : _rf_file_write_int32_real;  break;
+	case HACKTV_FLOAT:  s->rf_write = rf->complex ? _rf_file_write_float_complex  : _rf_file_write_float_real;  break;
 	}
 	
 	return(HACKTV_OK);
