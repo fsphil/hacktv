@@ -116,6 +116,7 @@ static void print_usage(void)
 		"\n"
 		"  uint8\n"
 		"  int8\n"
+		"  uint16\n"
 		"  int16\n"
 		"  int32\n"
 		"  float\n"
@@ -370,6 +371,10 @@ int main(int argc, char *argv[])
 			else if(strcmp(optarg, "int8") == 0)
 			{
 				s.file_type = HACKTV_INT8;
+			}
+			else if(strcmp(optarg, "uint16") == 0)
+			{
+				s.file_type = HACKTV_UINT16;
 			}
 			else if(strcmp(optarg, "int16") == 0)
 			{
