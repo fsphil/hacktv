@@ -76,14 +76,14 @@ static int _rf_file_write_int8_real(void *private, int16_t *iq_data, size_t samp
 static int _rf_file_write_uint16_real(void *private, int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
-	int16_t *u16 = rf->data;
+	uint16_t *u16 = rf->data;
 	int i;
 
 	while (samples)
 	{
 		for (i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
 		{
-			u16[i] = (iq_data[0] + INT16_MAX);
+			u16[i] = (iq_data[0] - INT16_MIN);
 		}
 
 		fwrite(rf->data, rf->data_size, i, rf->f);
@@ -204,9 +204,22 @@ static int _rf_file_write_int8_complex(void *private, int16_t *iq_data, size_t s
 static int _rf_file_write_uint16_complex(void *private, int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
-
-	fwrite(iq_data + INT16_MAX, sizeof(int16_t) * 2, samples, rf->f);
-
+	uint16_t *u16 = rf->data;
+	int i;
+	
+	while(samples)
+	{
+		for(i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
+		{
+			u16[i * 2 + 0] = (iq_data[0] - INT16_MIN);
+			u16[i * 2 + 1] = (iq_data[1] - INT16_MIN);
+		}
+		
+		fwrite(rf->data, rf->data_size, i, rf->f);
+		
+		samples -= i;
+	}
+	
 	return(HACKTV_OK);
 }
 
