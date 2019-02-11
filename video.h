@@ -211,6 +211,8 @@ struct vid_t {
 	
 	float ratio;
 	
+	unsigned int delay;
+	
 	/* Video filter */
 	int16_t *video_filter_taps;
 	fir_int16_t video_filter;

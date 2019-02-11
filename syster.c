@@ -91,6 +91,7 @@ int ng_init(ng_t *s, vid_t *vid)
 	_update_field_order(s);
 	
 	/* Allocate memory for the delay */
+	s->vid->delay += NG_DELAY_LINES;
 	s->delay = calloc(2 * vid->width * NG_DELAY_LINES, sizeof(int16_t));
 	if(!s->delay)
 	{

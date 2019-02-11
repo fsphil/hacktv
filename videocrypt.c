@@ -123,6 +123,7 @@ int vc_init(vc_t *s, vid_t *vid)
 	}
 	
 	/* Allocate memory for the 1-line delay */
+	s->vid->delay += 1;
 	s->delay = calloc(2 * vid->width, sizeof(int16_t));
 	if(!s->delay)
 	{

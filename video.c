@@ -924,6 +924,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	s->framebuffer = NULL;
 	
+	s->delay = 0;
+	
 	/* Audio */
 	s->audio = 0;
 	
@@ -1141,7 +1143,7 @@ size_t vid_get_framebuffer_length(vid_t *s)
 	return(sizeof(uint32_t) * s->active_width * s->conf.active_lines);
 }
 
-int16_t *vid_next_line(vid_t *s, size_t *samples)
+static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 {
 	const char *seq;
 	int x;
@@ -1654,5 +1656,17 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	/* Return a pointer to the line buffer */
 	*samples = s->width;
 	return(s->output);
+}
+
+int16_t *vid_next_line(vid_t *s, size_t *samples)
+{
+	/* Drop any delay lines introduced by scramblers / filters */
+	while(s->delay)
+	{
+		_vid_next_line(s, samples);
+		s->delay--;
+	}
+	
+	return(_vid_next_line(s, samples));
 }
 
