@@ -56,3 +56,9 @@ $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
 -Philip Heron <phil@sanslogic.co.uk>
 
+
+
+New Features from James Dallas, AD5NL (jim.dallas@gmail.com):
+
+1. -b / --band argument for LimeSDR.
+2. my_test.c demonstrates how to change the test pattern to include your own call sign, name, poetic musings, ASCII art, whatever.
