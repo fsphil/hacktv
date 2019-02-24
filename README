@@ -62,3 +62,4 @@ New Features from James Dallas, AD5NL (jim.dallas@gmail.com):
 
 1. -b / --band argument for LimeSDR.
 2. my_test.c demonstrates how to change the test pattern to include your own call sign, name, poetic musings, ASCII art, whatever.
+2. -A / --amateur argument for amateur television in the US; uses CATV channel 59.
