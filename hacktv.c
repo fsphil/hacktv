@@ -108,6 +108,8 @@ static void print_usage(void)
 		"  -b, --band <value>             Set the antenna band (1=Lo, 2=Hi) for LimeSDR.\n"
 		"\n"
 #endif
+		"  -A, --amateur <value>          Set frequency to CATV channel 59 (433.25 MHz), alternative to using -f/--frequency\n"
+		"\n" 
 		"File output options\n"
 		"\n"
 		"  -o, --output file:<filename>   Open a file for output. Use - for stdout.\n"
@@ -226,6 +228,7 @@ int main(int argc, char *argv[])
 		{ "amp",        no_argument,       0, 'a' },
 		{ "gain",       required_argument, 0, 'x' },
 		{ "band",	required_argument, 0, 'b' },
+		{ "amateur",	no_argument,	   0, 'A' },
 		{ "type",       required_argument, 0, 't' },
 		{ 0,            0,                 0,  0  }
 	};
@@ -259,7 +262,7 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:b:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:b:At:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -367,7 +370,11 @@ int main(int argc, char *argv[])
 		case 'b': /* -b, --band <value> */
 			s.band = atoi(optarg);
 			break;
-		
+	
+		case 'A': /* -A, --amateur */
+			s.frequency = 433250000;
+			break;
+
 		case 't': /* -t, --type <type> */
 			
 			if(strcmp(optarg, "uint8") == 0)
