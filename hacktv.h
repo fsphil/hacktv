@@ -68,6 +68,7 @@ typedef struct {
 	uint64_t frequency;
 	int amp;
 	int gain;
+	int band;
 	int file_type;
 	
 	/* Video encoder state */

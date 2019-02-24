@@ -52,7 +52,7 @@ static int _close(void *private)
 	return(HACKTV_OK);
 }
 
-int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz, unsigned int gain)
+int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz, unsigned int gain, unsigned int band)
 {
 	soapysdr_t *rf;
 	SoapySDRKwargs *results;
@@ -124,7 +124,32 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 		free(rf);
 		return(HACKTV_ERROR);
 	}
+
+	/* Added to work with LimeSDR */
+
+	if (band < 99)
+	{
+		if (band == 1)
+		{
+			if(SoapySDRDevice_setAntenna(rf->d, SOAPY_SDR_TX, 0, "BAND1") !=0)
+			{
+				fprintf(stderr, "SoapySDRDevice_setAntenna() failed: %s\n", SoapySDRDevice_lastError());
+				free(rf);
+				return(HACKTV_ERROR);
+			}
+		}
 	
+		if (band == 2)
+		{
+       	       		if(SoapySDRDevice_setAntenna(rf->d, SOAPY_SDR_TX, 0, "BAND2") !=0)
+                       {
+                               fprintf(stderr, "SoapySDRDevice_setAntenna() failed: %s\n", SoapySDRDevice_lastError());
+                               free(rf);
+                               return(HACKTV_ERROR);
+                       }
+		}
+	}
+
 	if(SoapySDRDevice_setupStream(rf->d, &rf->s, SOAPY_SDR_TX, SOAPY_SDR_CS16, NULL, 0, NULL) != 0)
 	{
 		fprintf(stderr, "SoapySDRDevice_setupStream() failed: %s\n", SoapySDRDevice_lastError());

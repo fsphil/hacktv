@@ -105,6 +105,7 @@ static void print_usage(void)
 		"  -o, --output soapysdr[:<opts>] Open a SoapySDR device for output.\n"
 		"  -f, --frequency <value>        Set the RF frequency in Hz.\n"
 		"  -g, --gain <value>             Set the TX level. Default: 0dB\n"
+		"  -b, --band <value>             Set the antenna band (1=Lo, 2=Hi) for LimeSDR.\n"
 		"\n"
 #endif
 		"File output options\n"
@@ -224,6 +225,7 @@ int main(int argc, char *argv[])
 		{ "frequency",  required_argument, 0, 'f' },
 		{ "amp",        no_argument,       0, 'a' },
 		{ "gain",       required_argument, 0, 'x' },
+		{ "band",	required_argument, 0, 'b' },
 		{ "type",       required_argument, 0, 't' },
 		{ 0,            0,                 0,  0  }
 	};
@@ -253,10 +255,11 @@ int main(int argc, char *argv[])
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
+	s.band = 99;
 	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:b:t:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -359,6 +362,10 @@ int main(int argc, char *argv[])
 		
 		case 'g': /* -g, --gain <value> */
 			s.gain = atoi(optarg);
+			break;
+
+		case 'b': /* -b, --band <value> */
+			s.band = atoi(optarg);
 			break;
 		
 		case 't': /* -t, --type <type> */
@@ -505,7 +512,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_SOAPYSDR
 	else if(strcmp(s.output_type, "soapysdr") == 0)
 	{
-		if(rf_soapysdr_open(&s, s.output, s.frequency, s.gain) != HACKTV_OK)
+		if(rf_soapysdr_open(&s, s.output, s.frequency, s.gain, s.band) != HACKTV_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
