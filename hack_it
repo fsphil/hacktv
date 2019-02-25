@@ -1,0 +1,18 @@
+#!/bin/bash
+
+CALLSIGN="AD5NL/4"
+NAME="JAMES"
+LOCATION="COLUMBIA TN USA"
+GRID="EM65"
+POWER="27 dBM"
+
+#hacktv -o soapysdr:driver=lime,soapy=0 -m m -f 55250000 -s9000000 -g 50 -b1 ffmpeg:/dev/video0
+#hacktv -o soapysdr:driver=lime,soapy=0 -m m -f 55250000 -s13500000 -g 50 test
+
+v4l2-ctl -d /dev/video0 --set-fmt-video=width=720,height=480,pixelformat=YUY2
+v4l2-ctl -d /dev/video0 -p 30000/1001
+rm /tmp/testfifo.mp4
+mkfifo /tmp/testfifo.mp4
+hacktv -o soapysdr:driver=lime,soapy=0 -m m -A -s9000000 -g64 -b1 ffmpeg:/tmp/testfifo.mp4 > /dev/null 2>&1 &
+
+ffmpeg -hide_banner -loglevel panic -f pulse -i default -f v4l2 -i /dev/video0 -r ntsc -vf "drawtext=text='|  ${CALLSIGN}  |  ${NAME}  |  ${LOCATION}  |  ${GRID}  | ${POWER} |                .': fontcolor=white: fontsize=20: box=1: boxcolor=black@0.5: boxborderw=10: x=20: y=20, drawtext=text='|  ON-AIR for %{pts\:gmtime\:0\:%M\\\\\:%S}                    %{localtime\:%Y %b %d %H.%M.%S %Z}        .': fontcolor=white: fontsize=20: box=1: boxcolor=black@0.5: boxborderw=10: x=20: y=440" -f mpegts pipe:1 > /tmp/testfifo.mp4

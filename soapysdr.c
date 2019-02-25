@@ -137,6 +137,13 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 				free(rf);
 				return(HACKTV_ERROR);
 			}
+                        
+			if(SoapySDRDevice_setBandwidth(rf->d, SOAPY_SDR_TX, 0, 9000000) !=0)
+                        {
+                                fprintf(stderr, "SoapySDRDevice_setiBandwidth() failed: %s\n", SoapySDRDevice_lastError());
+                                free(rf);
+                                return(HACKTV_ERROR);
+                        }
 		}
 	
 		if (band == 2)
@@ -147,6 +154,13 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
                                free(rf);
                                return(HACKTV_ERROR);
                        }
+                        if(SoapySDRDevice_setBandwidth(rf->d, SOAPY_SDR_TX, 0, 9000000) !=0)
+                        {
+                                fprintf(stderr, "SoapySDRDevice_setBandwidth() failed: %s\n", SoapySDRDevice_lastError());
+                                free(rf);
+                                return(HACKTV_ERROR);
+                        }
+
 		}
 	}
 
