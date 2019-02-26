@@ -78,19 +78,19 @@ static int _rf_file_write_uint16_real(void *private, int16_t *iq_data, size_t sa
 	rf_file_t *rf = private;
 	uint16_t *u16 = rf->data;
 	int i;
-
-	while (samples)
+	
+	while(samples)
 	{
-		for (i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
+		for(i = 0; i < rf->samples && i < samples; i++, iq_data += 2)
 		{
 			u16[i] = (iq_data[0] - INT16_MIN);
 		}
-
+		
 		fwrite(rf->data, rf->data_size, i, rf->f);
-
+		
 		samples -= i;
 	}
-
+	
 	return(HACKTV_OK);
 }
 
