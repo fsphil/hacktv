@@ -70,12 +70,12 @@ int av_test_open(vid_t *s)
 {
 	uint32_t const bars[8] = {
 		0x000000,
-		0x0000BF,
-		0xBF0000,
-		0xBF00BF,
-		0x00BF00,
-		0x00BFBF,
-		0xBFBF00,
+		0x0000FF,
+		0xFF0000,
+		0xFF00FF,
+		0x00FF00,
+		0x00FFFF,
+		0xFFFF00,
 		0xFFFFFF,
 	};
 	av_test_t *av;
@@ -105,13 +105,13 @@ int av_test_open(vid_t *s)
 		{
 			if(y < s->conf.active_lines - 140)
 			{
-				/* 75% colour bars */
+				/* 100% colour bars */
 				c = 7 - x * 8 / s->active_width;
 				c = bars[c];
 			}
 			else if(y < s->conf.active_lines - 120)
 			{
-				/* 75% red */
+				/* 100% red */
 				c = 0xFF0000;
 			}
 			else if(y < s->conf.active_lines - 100)
@@ -141,7 +141,7 @@ int av_test_open(vid_t *s)
 	{
 		for(y = 0; y < LOGO_HEIGHT * LOGO_SCALE; y++)
 		{
-			c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xBFBFBF;
+			c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
 			
 			av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
 		}
