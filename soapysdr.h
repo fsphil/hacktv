@@ -18,7 +18,7 @@
 #ifndef _SOAPYSDR_H
 #define _SOAPYSDR_H
 
-extern int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz, unsigned int gain);
+extern int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz, unsigned int gain, const char *antenna);
 
 #endif
 

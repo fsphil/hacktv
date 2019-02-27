@@ -52,7 +52,7 @@ static int _close(void *private)
 	return(HACKTV_OK);
 }
 
-int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz, unsigned int gain)
+int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz, unsigned int gain, const char *antenna)
 {
 	soapysdr_t *rf;
 	SoapySDRKwargs *results;
@@ -121,6 +121,13 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 	if(SoapySDRDevice_setGain(rf->d, SOAPY_SDR_TX, 0, gain) != 0)
 	{
 		fprintf(stderr, "SoapySDRDevice_setGain() failed: %s\n", SoapySDRDevice_lastError());
+		free(rf);
+		return(HACKTV_ERROR);
+	}
+	
+	if(antenna && SoapySDRDevice_setAntenna(rf->d, SOAPY_SDR_TX, 0, antenna) != 0)
+	{
+		fprintf(stderr, "SoapySDRDevice_setAntenna() failed: %s\n", SoapySDRDevice_lastError());
 		free(rf);
 		return(HACKTV_ERROR);
 	}
