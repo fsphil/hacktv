@@ -46,7 +46,7 @@ fi
 
 if [[ ! -f $PREFIX/lib/libfdk-aac.a ]]; then
 	
-	if [[ ! -f fdk-aac ]]; then
+	if [[ ! -d fdk-aac ]]; then
 		git clone https://github.com/mstorsjo/fdk-aac.git
 	fi
 	
@@ -57,15 +57,28 @@ if [[ ! -f $PREFIX/lib/libfdk-aac.a ]]; then
 	cd ..
 fi
 
+if [[ ! -f $PREFIX/lib/libopus.a ]]; then
+	
+	if [[ ! -f opus-1.3.tar.gz ]]; then
+		wget https://archive.mozilla.org/pub/opus/opus-1.3.tar.gz
+		tar -xvzf opus-1.3.tar.gz
+	fi
+	
+	cd opus-1.3
+	./configure --host=$HOST --prefix=$PREFIX --enable-static --disable-shared --disable-doc --disable-extra-programs
+	make -j4 install
+	cd ..
+fi
+
 if [[ ! -f $PREFIX/lib/libavformat.a ]]; then
 	
-	if [[ ! -f ffmpeg ]]; then
-		git clone https://github.com/FFmpeg/FFmpeg.git ffmpeg
+	if [[ ! -d ffmpeg ]]; then
+		git clone --depth 1 https://github.com/FFmpeg/FFmpeg.git ffmpeg
 	fi
 	
 	cd ffmpeg
 	./configure \
-		--enable-gpl --enable-nonfree --enable-libfdk-aac \
+		--enable-gpl --enable-nonfree --enable-libfdk-aac --enable-libopus \
 		--enable-static --disable-shared --disable-programs \
 		--disable-outdevs --disable-encoders \
 		--arch=x86_64 --target-os=mingw64 --cross-prefix=$HOST- \
@@ -76,7 +89,7 @@ fi
 
 cd ..
 CROSS_HOST=$HOST- make -j4 EXTRA_LDFLAGS="-static" EXTRA_PKGS="libusb-1.0"
-mv hacktv hacktv.exe
+mv -f hacktv hacktv.exe || true
 $HOST-strip hacktv.exe
 
 echo "Done"
