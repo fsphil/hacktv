@@ -96,19 +96,15 @@ static uint16_t _crc(uint16_t crc, const uint8_t *data, size_t length)
 	uint16_t i, bit;
 	uint8_t b;
 	
-	/* TODO: This could be greatly optimised */
-	
 	while(length--)
 	{
 		b = *(data++);
 		
 		/* As per ETS 300 706 9.6.1 */
-		for(i = 0; i < 8; i++)
+		for(i = 0; i < 8; i++, b <<= 1)
 		{
-			bit = (crc >> 15) ^ (crc >> 11) ^ (crc >> 8) ^ (crc >> 6) ^ (b >> 7);
-			
-			b <<= 1;
-			crc = (crc << 1) | (bit & 1);
+			bit = ((crc >> 15) ^ (crc >> 11) ^ (crc >> 8) ^ (crc >> 6) ^ (b >> 7)) & 1;
+			crc = (crc << 1) | bit;
 		}
 	}
 	
@@ -326,7 +322,7 @@ static void _header(uint8_t line[45], int magazine, int page, int subcode, int s
 	_paritycpy(&line[13], data, 32, ' ');
 }
 
-static void _fastext_line(uint8_t line[45], int magazine, int links[6], uint16_t crc)
+static void _fastext_line(uint8_t line[45], int magazine, int links[6])
 {
 	int packet_number = 27;
 	int page;
@@ -386,9 +382,9 @@ static void _fastext_line(uint8_t line[45], int magazine, int links[6], uint16_t
 	/* Link Control Byte, always 0x0F */
 	line[42] = _hamming84[0x0F];
 	
-	/* Page CRC */
-	line[43] = (crc & 0x00FF);
-	line[44] = (crc & 0xFF00) >> 8;
+	/* Page CRC padding. Real CRC is generated later. */
+	line[43] = 0x12;
+	line[44] = 0x34;
 }
 
 static void _line(uint8_t line[45], int magazine, int packet_number, const uint8_t *data)
@@ -460,14 +456,11 @@ static void _update_page_crc(tt_page_t *page, const uint8_t header[45])
 {
 	const uint8_t *blank = (const uint8_t *) "                                        ";
 	uint8_t *line;
-	uint16_t crc = 0x0000;
+	uint16_t crc;
 	int l, i;
 	
-	/* TODO: I do not know if this is being done correctly.
-	 * I need to compare it against data from a real service. */
-	
 	/* Begin calculating the CRC from the header */
-	crc = _crc(crc, &header[13], 24);
+	crc = _crc(0x0000, &header[13], 24);
 	
 	/* Scan each line in order, using the blank line if not found */
 	for(l = 1; l < 26; l++)
@@ -492,8 +485,8 @@ static void _update_page_crc(tt_page_t *page, const uint8_t header[45])
 	{
 		if(_line_packet_number(line) == 27)
 		{
-			line[43] = (crc & 0x00FF);
-			line[44] = (crc & 0xFF00) >> 8;
+			line[43] = (crc >> 8) & 0xFF;
+			line[44] = (crc >> 0) & 0xFF;
 		}
 	}
 }
@@ -676,7 +669,7 @@ static int _page_mkpackets(tt_page_t *page, uint8_t lines[25][40])
 	page->data = realloc(page->data, page->packets * 45);
 	
 	/* The fastext packet is transmitted before the page content (Annex B.2) */
-	_fastext_line(&page->data[0], (page->page >> 8) & 0x07, page->links, 0x1234);
+	_fastext_line(&page->data[0], (page->page >> 8) & 0x07, page->links);
 	
 	/* Generate the line packets */
 	for(j = 1, i = 1; i < 25; i++)
