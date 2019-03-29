@@ -74,6 +74,7 @@ static void print_usage(void)
 		"  -o, --output <target>          Set the output device or file, Default: hackrf\n"
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
 		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
+		"  -l, --level <value>            Set the output level. Default: 1.0\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
@@ -215,6 +216,7 @@ int main(int argc, char *argv[])
 		{ "output",     required_argument, 0, '0' },
 		{ "mode",       required_argument, 0, 'm' },
 		{ "samplerate", required_argument, 0, 's' },
+		{ "level",      required_argument, 0, 'l' },
 		{ "gamma",      required_argument, 0, 'G' },
 		{ "repeat",     no_argument,       0, 'r' },
 		{ "verbose",    no_argument,       0, 'v' },
@@ -245,6 +247,7 @@ int main(int argc, char *argv[])
 	s.output = NULL;
 	s.mode = "i";
 	s.samplerate = 16000000;
+	s.level = 1.0;
 	s.gamma = -1;
 	s.repeat = 0;
 	s.verbose = 0;
@@ -260,7 +263,7 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:ag:A:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:al:g:A:t:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -317,6 +320,10 @@ int main(int argc, char *argv[])
 		
 		case 's': /* -s, --samplerate <value> */
 			s.samplerate = atoi(optarg);
+			break;
+		
+		case 'l': /* -l, --level <value> */
+			s.level = atof(optarg);
 			break;
 		
 		case 'G': /* -G, --gamma <value> */
@@ -441,6 +448,8 @@ int main(int argc, char *argv[])
 	{
 		vid_conf.gamma = s.gamma;
 	}
+	
+	vid_conf.level *= s.level;
 	
 	if(s.teletext)
 	{

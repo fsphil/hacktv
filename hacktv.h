@@ -58,6 +58,7 @@ typedef struct {
 	char *output;
 	char *mode;
 	int samplerate;
+	float level;
 	float gamma;
 	int repeat;
 	int verbose;
