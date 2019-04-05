@@ -80,7 +80,7 @@ static void print_usage(void)
 		"  -v, --verbose                  Enable verbose output.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
-		"      --videocrypt               Enable Videocrypt I scrambling. (PAL only)\n"
+		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"\n"
@@ -185,8 +185,10 @@ static void print_usage(void)
 		"the UK in the 1990s. Each line of the image is cut at a point determined by\n"
 		"a pseudorandom number generator, then the two parts are swapped.\n"
 		"\n"
-		"hacktv only supports the free-access mode, the image is scrambled but a\n"
-		"subscription card is not required to decode.\n"
+		"hacktv supports the following modes:\n"
+		"\n"
+		"  free        = Free-access, no subscription card is required to decode.\n"
+		"  conditional = A valid Sky card is required to decode. Sample data from MTV.\n"
 		"\n"
 		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
 		{ "verbose",    no_argument,       0, 'v' },
 		{ "teletext",   required_argument, 0, _OPT_TELETEXT },
 		{ "wss",        required_argument, 0, _OPT_WSS },
-		{ "videocrypt", no_argument,       0, _OPT_VIDEOCRYPT },
+		{ "videocrypt", required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
 		{ "frequency",  required_argument, 0, 'f' },
@@ -253,7 +255,7 @@ int main(int argc, char *argv[])
 	s.verbose = 0;
 	s.teletext = NULL;
 	s.wss = NULL;
-	s.videocrypt = 0;
+	s.videocrypt = NULL;
 	s.syster = 0;
 	s.filter = 0;
 	s.frequency = 0;
@@ -349,7 +351,8 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
-			s.videocrypt = 1;
+			free(s.videocrypt);
+			s.videocrypt = strdup(optarg);
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
@@ -481,7 +484,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		vid_conf.videocrypt = 1;
+		vid_conf.videocrypt = s.videocrypt;
 	}
 	
 	if(s.syster)

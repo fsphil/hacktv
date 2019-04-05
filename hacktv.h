@@ -64,7 +64,7 @@ typedef struct {
 	int verbose;
 	char *teletext;
 	char *wss;
-	int videocrypt;
+	char *videocrypt;
 	int syster;
 	int filter;
 	uint64_t frequency;

@@ -41,21 +41,43 @@
 #define VC_LINES_PER_FIELD     287
 #define VC_LINES_PER_FRAME     (VC_LINES_PER_FIELD * 2)
 
+#define VC_PRBS_CW_FA    ((1UL << 60) - 1)
+#define VC_PRBS_CW_MASK  ((1UL << 60) - 1)
+#define VC_PRBS_SR1_MASK ((1UL << 31) - 1)
+#define VC_PRBS_SR2_MASK ((1UL << 29) - 1)
+
+typedef struct {
+	uint8_t mode;
+	uint64_t codeword;
+	uint8_t messages[7][32];
+} _vc_block_t;
+
 typedef struct {
 	
 	vid_t *vid;
 	
 	uint8_t counter;
 	uint8_t mode;
-	size_t command;
 	uint8_t vbi[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
+	
+	/* VC1 blocks */
+	const _vc_block_t *blocks;
+	size_t block;
+	size_t block_len;
+	uint8_t message[32];
+	
+	/* PRBS generator */
+	uint64_t cw;
+	uint64_t sr1;
+	uint64_t sr2;
+	uint16_t c;
 	
 	int16_t *delay;
 	int video_scale[VC_WIDTH];
 	
 } vc_t;
 
-extern int vc_init(vc_t *s, vid_t *vs);
+extern int vc_init(vc_t *s, vid_t *vs, const char *mode);
 extern void vc_free(vc_t *s);
 extern void vc_render_line(vc_t *s);
 

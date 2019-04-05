@@ -122,7 +122,7 @@ typedef struct {
 	
 	char *wss;
 	
-	int videocrypt;
+	char *videocrypt;
 	int syster;
 	
 	/* RGB weights, should add up to 1.0 */
