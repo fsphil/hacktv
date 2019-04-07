@@ -163,9 +163,9 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 16000000, /* kHz */
+	.fm_deviation   = 6000000, /* kHz */
 	
-	.level          = 1.0, /* Overall signal level */
+	.level          = 0.8, /* Overall signal level */
 	
 	.video_level    = 0.92, /* Power level of video */
 	.fm_audio_level = 0.08, /* FM audio carrier power level */
@@ -1027,7 +1027,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* Initialise videocrypt encoder */
-	if(s->conf.videocrypt && (r = vc_init(&s->vc, s, s->conf.videocrypt)) != VID_OK)
+	if(s->conf.videocrypt && (r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.key)) != VID_OK)
 	{
 		vid_free(s);
 		return(r);
@@ -1530,7 +1530,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	/* Videocrypt scrambling, if enabled */
 	if(s->conf.videocrypt)
 	{
-		vc_render_line(&s->vc);
+		vc_render_line(&s->vc, s->conf.videocrypt, s->conf.key);
 	}
 	
 	/* Syster scrambling, if enabled */

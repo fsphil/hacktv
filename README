@@ -1,3 +1,26 @@
+This is a fork of https://github.com/fsphil/hacktv with some additional features
+added. Most of them are those which I personally use, though not necessarily
+warrant inclusions into original source.
+
+I will try and keep this as up to date as possible with official releases.
+
+Additional features:
+
+(added on 2019-04-07)
+Conditional Videocrypt mode requires --key sky|tac parameter. This specifies
+which card you want to use to decode video. 
+
+  sky = this works with an active Sky 11 series card (blue semi-oval logo) and 
+        uses two fixed control words.
+  tac = this works with an active The Adult Channel or Eurotica card and uses 
+        randomly generated control words.
+
+  Hex files for both modes are included in PIC directory to flash your own
+  PIC16F84 based cards. Old pirate D2MAC cards based on this chip will work.
+  These cards are also known as "Goldwafer" or "Multimac" - only PIC chip
+  needs to be flashed. External EEPROM is not used.
+
+All credit for original code goes to author. Original README text is below.
 
  -[ HackTV - Analogue TV transmitter for the HackRF ]-
 

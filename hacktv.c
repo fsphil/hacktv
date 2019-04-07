@@ -81,6 +81,7 @@ static void print_usage(void)
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
+		"      --key <key>                Key to use for Videocrypt. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"\n"
@@ -187,8 +188,14 @@ static void print_usage(void)
 		"\n"
 		"hacktv supports the following modes:\n"
 		"\n"
-		"  free        = Free-access, no subscription card is required to decode.\n"
-		"  conditional = A valid Sky card is required to decode. Sample data from MTV.\n"
+		"  free            = Free-access, no subscription card is required to decode.\n"
+		"  conditional     = A valid card is required to decode; required --key option, below.\n"
+		"\n"
+		"hacktv supports the following key options:\n"
+		"  sky             = A valid Sky series 11 card is required to decode. Sample data from MTV.\n"
+		"  tac             = A valid TAC card or supplied PIC16F84 hex flashed\n"
+	  "                    on a \"gold card\" is required to decode . Sample data from TAC.\n"
+		"                    This mode uses totally random control words\n"
 		"\n"
 		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
@@ -225,6 +232,7 @@ int main(int argc, char *argv[])
 		{ "teletext",   required_argument, 0, _OPT_TELETEXT },
 		{ "wss",        required_argument, 0, _OPT_WSS },
 		{ "videocrypt", required_argument, 0, _OPT_VIDEOCRYPT },
+		{ "key", 				required_argument, 0, 'k'},
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
 		{ "frequency",  required_argument, 0, 'f' },
@@ -256,6 +264,7 @@ int main(int argc, char *argv[])
 	s.teletext = NULL;
 	s.wss = NULL;
 	s.videocrypt = NULL;
+	s.key = NULL;
 	s.syster = 0;
 	s.filter = 0;
 	s.frequency = 0;
@@ -265,7 +274,7 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:al:g:A:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:G:rvk:f:al:g:A:t:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -361,6 +370,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
+			break;
+		
+		case 'k': /* -k, --key sky|tac */
+			s.key = strdup(optarg);
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -483,8 +496,17 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Videocrypt I is only compatible with 625 line PAL modes.\n");
 			return(-1);
 		}
-		
 		vid_conf.videocrypt = s.videocrypt;
+	}
+	
+	if(s.key)
+	{		
+		if(!s.videocrypt || strcmp(s.videocrypt, "conditional") != 0)
+		{
+				fprintf(stderr, "Key can only be specified in conditional Videocrypt mode.\n");
+				return(-1);
+		}
+		vid_conf.key = s.key;
 	}
 	
 	if(s.syster)
