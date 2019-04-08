@@ -4,9 +4,11 @@ warrant inclusions into original source.
 
 I will try and keep this as up to date as possible with official releases.
 
-Additional features:
+ADDITIONS AND CHANGES:
 
 (added on 2019-04-07)
+PAL FM deviation changed to 6000000 kHz and default signal level reduced to 0.8
+
 Conditional Videocrypt mode requires --key sky|tac parameter. This specifies
 which card you want to use to decode video. 
 
