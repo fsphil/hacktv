@@ -253,7 +253,7 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *key)
 			else
 			{
 				fprintf(stderr, "Unrecognised key '%s' for conditional access (valid options are \"sky\" and \"tac\").\n", key);
-				return(-1);
+				return(VID_ERROR);
 			}
 		}
 		else
