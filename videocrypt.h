@@ -41,10 +41,10 @@
 #define VC_LINES_PER_FIELD     287
 #define VC_LINES_PER_FRAME     (VC_LINES_PER_FIELD * 2)
 
-#define VC_PRBS_CW_FA    ((1UL << 60) - 1)
-#define VC_PRBS_CW_MASK  ((1UL << 60) - 1)
-#define VC_PRBS_SR1_MASK ((1UL << 31) - 1)
-#define VC_PRBS_SR2_MASK ((1UL << 29) - 1)
+#define VC_PRBS_CW_FA    (((uint64_t) 1 << 60) - 1)
+#define VC_PRBS_CW_MASK  (((uint64_t) 1 << 60) - 1)
+#define VC_PRBS_SR1_MASK (((uint32_t) 1 << 31) - 1)
+#define VC_PRBS_SR2_MASK (((uint32_t) 1 << 29) - 1)
 
 typedef struct {
 	uint8_t mode;
