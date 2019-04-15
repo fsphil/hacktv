@@ -265,7 +265,7 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *key)
 	else
 	{
 		fprintf(stderr, "Unrecognised videocrypt mode '%s'.\n", mode);
-		exit(-1);
+		return(VID_ERROR);
 	}
 	
 	s->block = 0;
