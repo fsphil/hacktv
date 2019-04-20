@@ -17,22 +17,21 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <libavfilter/avfiltergraph.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 #include "hacktv.h"
+#include  "ascii.h"
 
 /* A small 2-bit hacktv logo */
-#define LOGO_WIDTH  48
-#define LOGO_HEIGHT 9
+#define CHAR_WIDTH  8
+#define CHAR_HEIGHT 9
+#define CHARS 39
 #define LOGO_SCALE  4
-static const char *_logo =
-	"                                                "
-	" ##  ##    ##     ####   ##  ##  ######  ##  ## "
-	" ##  ##   ####   ##  ##  ## ##     ##    ##  ## "
-	" ##  ##  ##  ##  ##      ####      ##    ##  ## "
-	" ######  ######  ##      ###       ##    ##  ## "
-	" ##  ##  ##  ##  ##      ####      ##    ##  ## "
-	" ##  ##  ##  ##  ##  ##  ## ##     ##     ####  "
-	" ##  ##  ##  ##   ####   ##  ##    ##      ##   "
-	"                                                ";
+	
+static char _logo_text[] = " HACKTV ";
 
 /* AV test pattern source */
 typedef struct {
@@ -43,9 +42,41 @@ typedef struct {
 	size_t audio_samples;
 } av_test_t;
 
-static uint32_t *_av_test_read_video(void *private, float *ratio)
+static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
 {
 	av_test_t *av = private;
+	
+	int l, x, y, z, charindex;
+	int logotextlength = strlen(logotext);
+	uint32_t c;
+		
+	for (z=0 ; z < logotextlength; z++)
+	{
+		/* Find char index within ASCII table */
+		for(l=0;l<CHARS;l++)  if(toupper(logotext[z]) == chars[l]) charindex = l;
+
+		for (x=0; x < CHAR_WIDTH * LOGO_SCALE; x++) 
+		{
+				for(y=0; y < CHAR_HEIGHT * LOGO_SCALE; y++)
+				{
+						c = (ascii[(y / LOGO_SCALE * CHAR_WIDTH + x / LOGO_SCALE) + (CHAR_WIDTH * CHAR_HEIGHT * charindex)  ] ==  ' ' ? 0x000000 : 0xFFFFFF ) ;
+						av->video[(av->height / pos + y) * av->width + ((av->width - CHAR_WIDTH * (logotextlength - z * 2) * LOGO_SCALE) / 2 ) + x] = c;
+				 }
+			}
+	}
+	return(av->video);
+}
+
+static uint32_t *_av_test_read_video(void *private, float *ratio)
+{
+	/* Get time */
+	char timestr[9];	
+	time_t secs = time(0);
+	struct tm *local = localtime(&secs);
+	sprintf(timestr, "%02d:%02d:%02d", local->tm_hour, local->tm_min, local->tm_sec);
+	
+	av_test_t *av = private;
+	_overlay_logo(av,timestr, 80);
 	if(ratio) *ratio = 4.0 / 3.0;
 	return(av->video);
 }
@@ -134,18 +165,7 @@ int av_test_open(vid_t *s)
 	}
 	
 	/* Overlay the logo */
-	x = s->active_width / 2;
-	y = s->conf.active_lines / 10;
-	
-	for(x = 0; x < LOGO_WIDTH * LOGO_SCALE; x++)
-	{
-		for(y = 0; y < LOGO_HEIGHT * LOGO_SCALE; y++)
-		{
-			c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
-			
-			av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
-		}
-	}
+	_overlay_logo(av,_logo_text, 10);	
 	
 	/* Generate the 1khz test tones (BBC 1 style) */
 	d = 1000.0 * 2 * M_PI / HACKTV_AUDIO_SAMPLE_RATE;
