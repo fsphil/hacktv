@@ -31,7 +31,7 @@
 #define CHARS 39
 #define LOGO_SCALE  4
 	
-static char _logo_text[] = " HACKTV ";
+static char _logo_text[] = "HACKTV";
 
 /* AV test pattern source */
 typedef struct {
@@ -76,7 +76,7 @@ static uint32_t *_av_test_read_video(void *private, float *ratio)
 	sprintf(timestr, "%02d:%02d:%02d", local->tm_hour, local->tm_min, local->tm_sec);
 	
 	av_test_t *av = private;
-	_overlay_logo(av,timestr, 80);
+	_overlay_logo(av,timestr, 3);
 	if(ratio) *ratio = 4.0 / 3.0;
 	return(av->video);
 }
