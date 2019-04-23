@@ -199,7 +199,7 @@ static void print_usage(void)
 		"are vertically shuffled within a field.\n"
 		"\n"
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
-		"with real hardware.\n"
+		"with most hardware.\n"
 		"\n"
 	);
 }
