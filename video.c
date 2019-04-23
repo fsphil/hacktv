@@ -82,7 +82,7 @@ const vid_config_t vid_config_pal_i = {
 	.colour_carrier = 4433618.75,
 	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
 	
-	.gamma          = 1.4, /* 2.8 in spec? too bright */
+	.gamma          = 1.2, /* 2.8 in spec? too bright */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -138,7 +138,7 @@ const vid_config_t vid_config_pal_bg = {
 	.colour_carrier = 4433618.75,
 	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
 	
-	.gamma          = 1.4, /* 2.8 in spec? too bright */
+	.gamma          = 1.2, /* 2.8 in spec? too bright */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
