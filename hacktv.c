@@ -14,9 +14,10 @@
 /*                                                                       */
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-
+#define _GNU_SOURCE 1
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <getopt.h>
 #include <signal.h>
@@ -84,7 +85,7 @@ static void print_usage(void)
 		"  -p, --position <value>         Set start position of video in minutes.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
 		"      --logo <path>              Overlay picture logo over video.\n"
-		"      --timecode                 Overlay video timecode over video.\n"
+		"      --timestamp                Overlay video timestamp over video.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
@@ -251,7 +252,7 @@ int main(int argc, char *argv[])
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
 		{ "logo",       required_argument, 0, _OPT_LOGO },
-		{ "timecode",   no_argument,       0, _OPT_TIMECODE },
+		{ "timestamp",  no_argument,       0, _OPT_TIMECODE },
 		{ "position",   required_argument, 0, 'p' },
 		{ "frequency",  required_argument, 0, 'f' },
 		{ "amp",        no_argument,       0, 'a' },
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
 	s.wss = "auto";
 	s.videocrypt = NULL;
 	s.logo = NULL;
-	s.timecode = NULL;
+	s.timestamp = 0;
 	s.key = NULL;
 	s.syster = 0;
 	s.filter = 0;
@@ -404,8 +405,8 @@ int main(int argc, char *argv[])
 			s.logo = strdup(optarg);
 			break;
 				
-		case _OPT_TIMECODE: /* --timecode */
-			s.timecode = 1;
+		case _OPT_TIMECODE: /* --timestamp */
+			s.timestamp = 1;
 			break;
 			
 		case 'p': /* -p, --position <value> */
@@ -529,9 +530,9 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	if(s.timecode)
+	if(s.timestamp)
 	{		
-		vid_conf.timecode = s.timecode;
+		vid_conf.timestamp = s.timestamp;
 	}
 	
 	if(s.position)

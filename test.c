@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <ctype.h>
 #include <libavfilter/avfiltergraph.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
@@ -46,7 +47,7 @@ static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
 {
 	av_test_t *av = private;
 	
-	int l, x, y, z, charindex;
+	int l, x, y, z, charindex = 0;
 	int logotextlength = strlen(logotext);
 	uint32_t c;
 		

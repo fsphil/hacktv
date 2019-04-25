@@ -14,7 +14,6 @@
 /*                                                                       */
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-
 #ifndef _HACKTV_H
 #define _HACKTV_H
 
@@ -67,7 +66,7 @@ typedef struct {
 	char *wss;
 	char *videocrypt;
 	char *key;
-	int timecode;
+	int timestamp;
 	int position;
 	int syster;
 	int filter;

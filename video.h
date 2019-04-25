@@ -120,7 +120,7 @@ typedef struct {
 	
 	char *teletext;
 	char *logo;
-	int timecode;
+	int timestamp;
 	int position;
 	
 	char *wss;

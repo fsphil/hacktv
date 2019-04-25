@@ -1,7 +1,7 @@
 
 CC      := $(CROSS_HOST)gcc
 PKGCONF := $(CROSS_HOST)pkg-config
-CFLAGS  := -g -Wall -pthread -O3 $(EXTRA_CFLAGS)
+CFLAGS  := -g -Wall -Wno-unused-result -pthread -O3 $(EXTRA_CFLAGS)
 LDFLAGS := -g -lm -pthread $(EXTRA_LDFLAGS)
 OBJS    := hacktv.o common.o fir.o vbidata.o teletext.o wss.o video.o videocrypt.o syster.o nicam728.o test.o ffmpeg.o file.o hackrf.o
 PKGS    := libavcodec libavformat libavdevice libswscale libswresample libavutil libhackrf libavfilter $(EXTRA_PKGS)

@@ -34,7 +34,9 @@
  * Audio resampler - Resamples the decoded audio frames to the format
  *                   required by hacktv (32000Hz, Stereo, 16-bit)
 */
-
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
 #include <pthread.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -1071,12 +1073,12 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		}
 		else
 		{
-			asprintf(&_vid_logo_filter,"");
+			asprintf(&_vid_logo_filter," ");
 			asprintf(&_vid_output_filter,"null");
 		}
 		
-		/* Filter definition for overlaying timecode */
-		if(s->conf.timecode)
+		/* Filter definition for overlaying timestamp */
+		if(s->conf.timestamp)
 		{
 			asprintf(&_vid_timecode_filter,
 				"drawtext=resources/fonts/Stencil:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/20: y=h*16/18:shadowx=1:shadowy=1",
@@ -1237,7 +1239,6 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	
 	/* Seek stuff here */
 	AVRational stream_time_base = av->format_ctx->streams[av->video_stream->index]->time_base;
-	AVRational codec_time_base = av->video_codec_ctx->time_base;
 
 	float request_time = 60.0 * s->conf.position; // in seconds. 
 	int64_t request_timestamp = request_time / av_q2d(stream_time_base) + start_time;
