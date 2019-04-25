@@ -30,6 +30,10 @@
 #include "soapysdr.h"
 #endif
 
+#ifdef HAVE_FL2K
+#include "fl2k.h"
+#endif
+
 volatile int _abort = 0;
 
 static void _sigint_callback_handler(int signum)
@@ -107,6 +111,12 @@ static void print_usage(void)
 		"  -f, --frequency <value>        Set the RF frequency in Hz.\n"
 		"  -g, --gain <value>             Set the TX level. Default: 0dB\n"
 		"  -A, --antenna <name>           Set the antenna.\n"
+		"\n"
+#endif
+#ifdef HAVE_FL2K
+		"fl2k output options\n"
+		"\n"
+		"  -o, --output fl2k[:<dev>]      Open an fl2k device for output.\n"
 		"\n"
 #endif
 		"File output options\n"
@@ -297,6 +307,13 @@ int main(int argc, char *argv[])
 			else if(strcmp(pre, "soapysdr") == 0)
 			{
 				s.output_type = "soapysdr";
+				s.output = sub;
+			}
+#endif
+#ifdef HAVE_FL2K
+			else if(strcmp(pre, "fl2k") == 0)
+			{
+				s.output_type = "fl2k";
 				s.output = sub;
 			}
 #endif
@@ -537,6 +554,16 @@ int main(int argc, char *argv[])
 		}
 	}
 #endif
+#ifdef HAVE_FL2K
+	else if(strcmp(s.output_type, "fl2k") == 0)
+	{
+		if(rf_fl2k_open(&s, s.output) != HACKTV_OK)
+		{
+			vid_free(&s.vid);
+			return(-1);
+		}
+	}
+#endif
 	else if(strcmp(s.output_type, "file") == 0)
 	{
 		if(rf_file_open(&s, s.output, s.file_type) != HACKTV_OK)
@@ -592,7 +619,7 @@ int main(int argc, char *argv[])
 				
 				if(data == NULL) break;
 				
-				_hacktv_rf_write(&s, data, samples);
+				if(_hacktv_rf_write(&s, data, samples) != HACKTV_OK) break;
 			}
 			
 			vid_av_close(&s.vid);
