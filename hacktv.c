@@ -77,9 +77,12 @@ static void print_usage(void)
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
+		"  -p, --position <value>         Set start position of video in minutes.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
+		"      --logo <path>              Overlay picture logo over video.\n"
+		"      --timecode                 Overlay video timecode over video.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
-		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
+		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --key <key>                Key to use for Videocrypt. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
@@ -216,6 +219,8 @@ static void print_usage(void)
 #define _OPT_VIDEOCRYPT 1002
 #define _OPT_SYSTER     1003
 #define _OPT_FILTER     1004
+#define _OPT_LOGO       2000
+#define _OPT_TIMECODE   2001
 
 int main(int argc, char *argv[])
 {
@@ -235,6 +240,9 @@ int main(int argc, char *argv[])
 		{ "key", 				required_argument, 0, 'k'},
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
+		{ "logo",       required_argument, 0, _OPT_LOGO },
+		{ "timecode",   no_argument,       0, _OPT_TIMECODE },
+		{ "position",   required_argument, 0, 'p' },
 		{ "frequency",  required_argument, 0, 'f' },
 		{ "amp",        no_argument,       0, 'a' },
 		{ "gain",       required_argument, 0, 'x' },
@@ -262,8 +270,11 @@ int main(int argc, char *argv[])
 	s.repeat = 0;
 	s.verbose = 0;
 	s.teletext = NULL;
-	s.wss = NULL;
+	s.position = 0;
+	s.wss = "auto";
 	s.videocrypt = NULL;
+	s.logo = NULL;
+	s.timecode = NULL;
 	s.key = NULL;
 	s.syster = 0;
 	s.filter = 0;
@@ -274,7 +285,7 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvk:f:al:g:A:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:G:rvk:f:al:g:A:t:p:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -340,7 +351,7 @@ int main(int argc, char *argv[])
 		case 'G': /* -G, --gamma <value> */
 			s.gamma = atof(optarg);
 			break;
-		
+	
 		case 'r': /* -r, --repeat */
 			s.repeat = 1;
 			break;
@@ -355,7 +366,6 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_WSS: /* --wss <mode> */
-			free(s.wss);
 			s.wss = strdup(optarg);
 			break;
 		
@@ -371,7 +381,20 @@ int main(int argc, char *argv[])
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
 			break;
-		
+			
+		case _OPT_LOGO: /* --logo <path> */
+			free(s.logo);
+			s.logo = strdup(optarg);
+			break;
+				
+		case _OPT_TIMECODE: /* --timecode */
+			s.timecode = 1;
+			break;
+			
+		case 'p': /* -p, --position <value> */
+			s.position = atof(optarg);
+			break;
+			
 		case 'k': /* -k, --key sky|tac */
 			s.key = strdup(optarg);
 			break;
@@ -476,6 +499,27 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.teletext = s.teletext;
+	}
+	
+	if(s.logo)
+	{		
+		asprintf(&vid_conf.logo,"resources/logos/%s",s.logo);
+		
+		if( access(vid_conf.logo, F_OK ) == -1 ) 
+		{
+			fprintf(stderr, "Logo file '%s' not found.\n",vid_conf.logo);
+			return(-1);
+		}
+	}
+	
+	if(s.timecode)
+	{		
+		vid_conf.timecode = s.timecode;
+	}
+	
+	if(s.position)
+	{		
+		vid_conf.position = s.position;
 	}
 	
 	if(s.wss)

@@ -119,6 +119,9 @@ typedef struct {
 	double gamma;
 	
 	char *teletext;
+	char *logo;
+	int timecode;
+	int position;
 	
 	char *wss;
 	

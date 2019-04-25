@@ -44,6 +44,9 @@
 #include <libavutil/opt.h>
 #include <libavutil/time.h>
 #include <libavutil/imgutils.h>
+#include <libavfilter/avfiltergraph.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 #include "hacktv.h"
 
 /* Maximum length of the packet queue */
@@ -128,6 +131,11 @@ typedef struct {
 	pthread_t audio_decode_thread;
 	pthread_t audio_scaler_thread;
 	volatile int thread_abort;
+	
+	/* Filter */	
+	AVFilterContext *vbuffersink_ctx;
+	AVFilterContext *vbuffersrc_ctx;
+	AVRational sar, dar;
 	
 } av_ffmpeg_t;
 
@@ -505,6 +513,17 @@ static void *_video_decode_thread(void *arg)
 		
 		if(r == 0)
 		{
+			/* Push the decoded frame into the filtergraph */
+			if (av_buffersrc_add_frame(av->vbuffersrc_ctx, frame) < 0) 
+			{
+					printf( "Error while feeding the video filtergraph\n");
+			}
+
+			/* Pull filtered frame from the filtergraph */ 
+			if(av_buffersink_get_frame(av->vbuffersink_ctx, frame) < 0) 
+			{
+				printf( "Error while sourcing the video filtergraph\n");
+} 
 			/* We have received a frame! */
 			av_frame_ref(_frame_dbuffer_back_buffer(&av->in_video_buffer), frame);
 			_frame_dbuffer_ready(&av->in_video_buffer, 0);
@@ -979,6 +998,134 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			return(HACKTV_ERROR);
 		}
 		
+		/* Video filter starts here */
+		
+		/* Video filter declarations */
+		char *_vfi;
+		char *_filter_args;
+		enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_RGB32 };
+			
+		AVFilterGraph *vfilter_graph;
+		avfilter_register_all();
+		
+		AVBufferSinkParams *buffersink_params;
+		AVFilter *vbuffersrc  = avfilter_get_by_name("buffer");
+		AVFilter *vbuffersink = avfilter_get_by_name("buffersink");
+		AVFilterInOut *vinputs  = avfilter_inout_alloc();
+		AVFilterInOut *voutputs = avfilter_inout_alloc();
+		vfilter_graph = avfilter_graph_alloc();
+
+		asprintf(&_filter_args,"video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+			av->video_codec_ctx->width, av->video_codec_ctx->height, av->video_codec_ctx->pix_fmt,
+			av->video_stream->r_frame_rate.num, av->video_stream->r_frame_rate.den,
+	    av->video_codec_ctx->sample_aspect_ratio.num, av->video_codec_ctx->sample_aspect_ratio.den);
+
+		if(avfilter_graph_create_filter(&av->vbuffersrc_ctx, vbuffersrc, "in",_filter_args, NULL, vfilter_graph) < 0) 
+		{
+			fprintf(stderr, "Cannot create video buffer source\n");
+			return(HACKTV_ERROR);
+		}
+		
+		/* Buffer video sink to terminate the filter chain */
+		buffersink_params = av_buffersink_params_alloc();
+		buffersink_params->pixel_fmts = pix_fmts;
+		
+		if(avfilter_graph_create_filter(&av->vbuffersink_ctx, vbuffersink, "out",NULL, buffersink_params, vfilter_graph) < 0) 
+		{
+			fprintf(stderr,"Cannot create video buffer sink\n");
+			return(HACKTV_ERROR);
+		}
+	
+		/* Endpoints for the filter graph. */
+		voutputs->name       = av_strdup("in");
+		voutputs->filter_ctx = av->vbuffersrc_ctx;
+		voutputs->pad_idx    = 0;
+		voutputs->next       = NULL;
+		
+		vinputs->name       = av_strdup("out");
+		vinputs->filter_ctx = av->vbuffersink_ctx;
+		vinputs->pad_idx    = 0;
+		vinputs->next       = NULL;
+		
+		/* Calculate letterbox padding for widescreen videos, if necessary */ 
+		int video_width = s->conf.active_lines * (float) 16/9; 
+		int video_height = s->conf.active_lines;
+		int source_width = av->video_codec_ctx->width;
+		int source_height = av->video_codec_ctx->height;
+		
+		float target_ratio = (float) 16/9;
+		float source_ratio = (float) source_width / (float) source_height;
+		int ws =  source_ratio >= target_ratio ? 1 : 0;
+		float fps = av->video_stream->r_frame_rate.num / (float) av->video_stream->r_frame_rate.den;	
+
+		char *_vid_filter;
+		char *_vid_logo_filter;
+		char *_vid_timecode_filter;
+		char *_vid_output_filter;
+		
+		/* Filter definition for overlaying logo */
+		if(s->conf.logo)
+		{
+			asprintf(&_vid_logo_filter,"movie=%s,scale=iw/(%i/%i)/%f:iw/(iw/ih)/(%i/%i)/(4/3)[tvlogo];",s->conf.logo,video_width,source_width,(source_ratio >= (float) 14/9 ? (float) 4/3 : 1),video_height,source_height);
+			asprintf(&_vid_output_filter,"[tvlogo]overlay=W*(18/22):H*(1/15)");
+		}
+		else
+		{
+			asprintf(&_vid_logo_filter,"");
+			asprintf(&_vid_output_filter,"null");
+		}
+		
+		/* Filter definition for overlaying timecode */
+		if(s->conf.timecode)
+		{
+			asprintf(&_vid_timecode_filter,
+				"drawtext=resources/fonts/Stencil:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/20: y=h*16/18:shadowx=1:shadowy=1",
+				s->conf.position,fps);
+		}
+		else
+		{
+			asprintf(&_vid_timecode_filter,"null");
+		}
+		
+		if(ws)
+		{
+			asprintf(&_vid_filter,"pad='iw:iw/(%i/%i):0:(oh-ih)/2',scale=%i:%i",video_width,video_height,source_width,source_height);
+		}
+		else
+		{
+			asprintf(&_vid_filter,"null");
+		}
+		
+		asprintf(&_vfi,
+			"[in]%s[video];"
+			"%s"
+			"[video]%s[timestamp];"
+			"[timestamp]%s[out]", 
+			_vid_filter,
+			_vid_logo_filter,
+			_vid_timecode_filter,
+			_vid_output_filter);
+		
+		const char *vfilter_descr = _vfi;
+
+		if (avfilter_graph_parse_ptr(vfilter_graph, vfilter_descr, &vinputs, &voutputs, NULL) < 0)
+		{
+			fprintf(stderr,"Cannot parse filter graph\n");
+			return(HACKTV_ERROR);
+		}
+		
+	 if (avfilter_graph_config(vfilter_graph, NULL) < 0) 
+		{
+			fprintf(stderr,"Cannot configure filter graph\n");
+			return(HACKTV_ERROR);
+		}
+		
+		av_free(buffersink_params);
+		avfilter_inout_free(&vinputs);
+		avfilter_inout_free(&voutputs);
+		
+		/* Video filter ends here */
+		
 		/* Initialise SWS context for software scaling */
 		av->sws_ctx = sws_getContext(
 			av->video_codec_ctx->width,
@@ -1088,15 +1235,39 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		start_time = 0;
 	}
 	
+	/* Seek stuff here */
+	AVRational stream_time_base = av->format_ctx->streams[av->video_stream->index]->time_base;
+	AVRational codec_time_base = av->video_codec_ctx->time_base;
+
+	float request_time = 60.0 * s->conf.position; // in seconds. 
+	int64_t request_timestamp = request_time / av_q2d(stream_time_base) + start_time;
+	
 	/* Calculate the start time for each stream */
 	if(av->video_stream != NULL)
 	{
-		av->video_start_time = av_rescale_q(start_time, time_base, av->video_time_base);
+		if (s->conf.position > 0) 
+		{
+			printf("\n\nSEEKING VIDEO TO KEYFRAME AT %i MINUTES....\n\n", s->conf.position);
+			av->video_start_time = av_rescale_q(request_timestamp, time_base, av->video_time_base);
+			av_seek_frame(av->format_ctx, av->video_stream->index, request_timestamp, 0);
+		}
+		else
+		{
+			av->video_start_time = av_rescale_q(start_time, time_base, av->video_time_base);
+		}
 	}
 	
 	if(av->audio_stream != NULL)
 	{
-		av->audio_start_time = av_rescale_q(start_time, time_base, av->audio_time_base);
+		if (s->conf.position > 0) 
+		{
+			av_seek_frame(av->format_ctx, av->video_stream->index, request_timestamp, 0);
+			av->audio_start_time = av_rescale_q(request_timestamp, time_base, av->audio_time_base);
+		}
+		else
+		{
+			av->audio_start_time = av_rescale_q(start_time, time_base, av->audio_time_base);
+		}
 	}
 	
 	/* Register the callback functions */
@@ -1136,7 +1307,6 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			fprintf(stderr, "Error starting video decoder thread.\n");
 			return(HACKTV_ERROR);
 		}
-		
 		r = pthread_create(&av->video_scaler_thread, NULL, &_video_scaler_thread, (void *) av);
 		if(r != 0)
 		{
@@ -1202,7 +1372,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		fprintf(stderr, "Error starting input thread.\n");
 		return(HACKTV_ERROR);
 	}
-	
+
 	return(HACKTV_OK);
 }
 
