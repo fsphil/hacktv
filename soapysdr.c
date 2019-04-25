@@ -23,24 +23,24 @@
 
 typedef struct {
 	
-	/* SoapySDR device and stream*/
+	/* SoapySDR device and stream */
 	SoapySDRDevice *d;
 	SoapySDRStream *s;
 	
 } soapysdr_t;
 
-static int _write(void *private, int16_t *iq_data, size_t samples)
+static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 {
 	soapysdr_t *rf = private;
 	const void *buffs[] = { iq_data };
 	int flags = 0;
 	
-	SoapySDRDevice_writeStream(rf->d, rf->s, buffs, samples, &flags, 0, 100000);
+	SoapySDRDevice_writeStream(rf->d, rf->s, buffs, samples, &flags, 0, 0);
 	
 	return(HACKTV_OK);
 }
 
-static int _close(void *private)
+static int _rf_close(void *private)
 {
 	soapysdr_t *rf = private;
 	
@@ -143,8 +143,8 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 	
 	/* Register the callback functions */
 	s->rf_private = rf;
-	s->rf_write = _write;
-	s->rf_close = _close;
+	s->rf_write = _rf_write;
+	s->rf_close = _rf_close;
 	
 	return(HACKTV_OK);
 };

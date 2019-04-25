@@ -13,6 +13,13 @@ ifeq ($(SOAPYSDR),SoapySDR)
 	CFLAGS += -DHAVE_SOAPYSDR
 endif
 
+FL2K := $(shell $(PKGCONF) --exists libosmo-fl2k && echo fl2k)
+ifeq ($(FL2K),fl2k)
+	OBJS += fl2k.o
+	PKGS += libosmo-fl2k
+	CFLAGS += -DHAVE_FL2K
+endif
+
 CFLAGS  += $(shell $(PKGCONF) --cflags $(PKGS))
 LDFLAGS += $(shell $(PKGCONF) --libs $(PKGS))
 

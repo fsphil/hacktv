@@ -22,6 +22,9 @@
 #include <stdint.h>
 #include "video.h"
 
+#define NG_VBI_WIDTH 284
+#define NG_VBI_BYTES 28
+
 #define NG_FIELD_1_START   23
 #define NG_FIELD_2_START   336
 #define NG_LINES_PER_FIELD 287
@@ -35,6 +38,14 @@
 typedef struct {
 	
 	vid_t *vid;
+	
+	/* VBI */
+	int16_t *lut;
+	int vbi_line;
+	
+	int vbi_seq;
+	int block_seq;
+	int block_seq2;
 	
 	/* PRNG seed values */
 	int s; /* 0, ..., 127 */
