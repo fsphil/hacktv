@@ -118,6 +118,12 @@ static void print_usage(void)
 		"\n"
 		"  -o, --output fl2k[:<dev>]      Open an fl2k device for output.\n"
 		"\n"
+		"  Real signals are output on the Red channel. Complex signals are output\n"
+		"  on the Red (I) and Green (Q) channels.\n"
+		"\n"
+		"  The 0.7v p-p voltage level of the FL2K is too low to create a correct\n"
+		"  composite video signal, it will appear too dark without amplification.\n"
+		"\n"
 #endif
 		"File output options\n"
 		"\n"
