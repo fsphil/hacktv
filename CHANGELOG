@@ -8,7 +8,7 @@ Widescreen/anamorphic videos are now appropriately letterboxed instead of being 
 
 Extra options added:
   --position <value>  Set start position of video in minutes.
-  --timecode          Overlay video timecode over video.
+  --timestamp          Overlay video timestamp over video.
   --logo <path>       Overlay picture logo over video. Logos are kept in
                       resources/logos folder.
 
