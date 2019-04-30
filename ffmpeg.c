@@ -1069,7 +1069,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		if(s->conf.logo)
 		{
 			asprintf(&_vid_logo_filter,"movie=%s,scale=iw/(%i/%i)/%f:iw/(iw/ih)/(%i/%i)/(4/3)[tvlogo];",s->conf.logo,video_width,source_width,(source_ratio >= (float) 14/9 ? (float) 4/3 : 1),video_height,source_height);
-			asprintf(&_vid_output_filter,"[tvlogo]overlay=W*(18/22):H*(1/15)");
+			asprintf(&_vid_output_filter,"[tvlogo]overlay=W*(21/25):H*(1/15)");
 		}
 		else
 		{
