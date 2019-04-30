@@ -122,6 +122,7 @@ typedef struct {
 	char *logo;
 	int timestamp;
 	int position;
+	char *mode;
 	
 	char *wss;
 	

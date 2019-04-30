@@ -36,8 +36,15 @@
 */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
+
+#define CHAR_WIDTH  8
+#define CHAR_HEIGHT 9
+#define CHARS 40
+#define LOGO_SCALE  4
+
 #endif
 #include <pthread.h>
+#include <ctype.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavdevice/avdevice.h>
@@ -50,6 +57,7 @@
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 #include "hacktv.h"
+#include  "ascii.h"
 
 /* Maximum length of the packet queue */
 /* Taken from ffplay.c */
@@ -97,6 +105,12 @@ typedef struct {
 typedef struct {
 	
 	AVFormatContext *format_ctx;
+	
+	/* Seek stuff */
+	uint32_t *video;
+	int seekflag;
+	int width;
+	int height;
 	
 	/* Video decoder */
 	AVRational video_time_base;
@@ -529,6 +543,11 @@ static void *_video_decode_thread(void *arg)
 			/* We have received a frame! */
 			av_frame_ref(_frame_dbuffer_back_buffer(&av->in_video_buffer), frame);
 			_frame_dbuffer_ready(&av->in_video_buffer, 0);
+			if(av->seekflag < 3)
+			{
+				av->seekflag++;
+			}
+			
 		}
 		else if(r != AVERROR(EAGAIN))
 		{
@@ -653,7 +672,14 @@ static uint32_t *_av_ffmpeg_read_video(void *private, float *ratio)
 		}
 	}
 	
-	return((uint32_t *) frame->data[0]);
+	if(av->seekflag > 2)
+	{
+		return((uint32_t *) frame->data[0]);
+	}
+	else
+	{
+		return(av->video);
+	}
 }
 
 static void *_audio_decode_thread(void *arg)
@@ -892,6 +918,61 @@ static int _av_ffmpeg_close(void *private)
 	return(HACKTV_OK);
 }
 
+static uint32_t *_overlay_text(void *private, char *logotext, int pos)
+{
+	av_ffmpeg_t *av = private;
+	
+	int l, x, y, z, charindex = 0;
+	int logotextlength = strlen(logotext);
+	uint32_t c;
+		
+	for (z=0 ; z < logotextlength; z++)
+	{
+		/* Find char index within ASCII table */
+		for(l=0;l<CHARS;l++)  if(toupper(logotext[z]) == chars[l]) charindex = l;
+
+		for (x=0; x < CHAR_WIDTH * LOGO_SCALE; x++) 
+		{
+				for(y=0; y < CHAR_HEIGHT * LOGO_SCALE; y++)
+				{
+						c = (ascii[(y / LOGO_SCALE * CHAR_WIDTH + x / LOGO_SCALE) + (CHAR_WIDTH * CHAR_HEIGHT * charindex)  ] ==  ' ' ? 0x000000 : 0xFFFFFF ) ;
+						av->video[(av->height / pos + y) * av->width + ((av->width - CHAR_WIDTH * (logotextlength - z * 2) * LOGO_SCALE) / 2 ) + x] = c;
+				 }
+			}
+	}
+	
+	return(av->video);
+}
+
+static int _seek_screen(void *private, vid_t *s)
+{
+	av_ffmpeg_t *av = private;
+	int x, y;
+	
+	av->video = malloc(vid_get_framebuffer_length(s));
+	if(!av->video)
+	{
+		free(av);
+		return(HACKTV_OUT_OF_MEMORY);
+	}
+	
+	for(y = 0; y < s->conf.active_lines; y++)
+	{
+		for(x = 0; x < s->active_width; x++)
+		{		
+			av->video[y * s->active_width + x] = 0x000000;	
+		}
+	}
+	/* Overlay the logo */
+	av->width = s->active_width;
+	av->height = s->conf.active_lines;
+	
+	_overlay_text(av,"PLEASE WAIT..", 3);	
+	_overlay_text(av,"SEEKING VIDEO", 2);	
+	
+	return(HACKTV_OK);
+}
+
 int av_ffmpeg_open(vid_t *s, char *input_url)
 {
 	av_ffmpeg_t *av;
@@ -906,6 +987,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	{
 		return(HACKTV_OUT_OF_MEMORY);
 	}
+	
+	_seek_screen(av,s);
 	
 	/* Use 'pipe:' for stdin */
 	if(strcmp(input_url, "-") == 0)
@@ -1248,7 +1331,6 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	{
 		if (s->conf.position > 0) 
 		{
-			printf("\n\nSEEKING VIDEO TO KEYFRAME AT %i MINUTES....\n\n", s->conf.position);
 			av->video_start_time = av_rescale_q(request_timestamp, time_base, av->video_time_base);
 			av_seek_frame(av->format_ctx, av->video_stream->index, request_timestamp, 0);
 		}

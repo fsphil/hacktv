@@ -82,6 +82,7 @@ extern void vc_free(vc_t *s);
 extern void vc_render_line(vc_t *s, const char *mode, const char *key);
 extern void _vc_kernel(uint64_t *out, int *oi, const unsigned char in);
 extern void _vc_rand_seed(_vc_block_t *s);
-
+extern void _vc_rand_seed_tac(_vc_block_t *s);
+extern void _vc_rand_seed_xtea(_vc_block_t *s);
 #endif
 

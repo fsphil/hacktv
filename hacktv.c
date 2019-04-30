@@ -210,6 +210,8 @@ static void print_usage(void)
 		"  tac             = A valid TAC card or supplied PIC16F84 hex flashed\n"
 	  "                    on a \"gold card\" is required to decode . Sample data from TAC.\n"
 		"                    This mode uses totally random control words\n"
+		"  xtea            = Uses xtea encryption for control words. Needs Funcard programmed with\n"
+		"                    supplied hex files.\n"
 		"\n"
 		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
@@ -507,6 +509,7 @@ int main(int argc, char *argv[])
 	}
 	
 	vid_conf.level *= s.level;
+	vid_conf.mode = s.mode;
 	
 	if(s.teletext)
 	{

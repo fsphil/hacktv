@@ -29,7 +29,7 @@
 /* A small 2-bit hacktv logo */
 #define CHAR_WIDTH  8
 #define CHAR_HEIGHT 9
-#define CHARS 39
+#define CHARS 40
 #define LOGO_SCALE  4
 	
 static char _logo_text[] = "HACKTV";

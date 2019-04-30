@@ -39,6 +39,7 @@
  * 
  * Alex L. James for providing an active Sky subscriber card, VBI samples and testing.
  *
+ * Marco Wabbel for xtea algo and Funcard (ATMEL based) hex files - needed for xtea.
 */
 
 #include <stdint.h>
@@ -77,7 +78,7 @@ static _vc_block_t _fa_blocks[] = {
 
 /* Sequence for Conditional-access sample, taken from MTV UK and modified. */
 /* Requires an active Sky card to decode. */
-static _vc_block_t _mtv_blocks[] = {
+static _vc_block_t _sky_blocks[] = {
 	{
 		0x07, 0xB2DD55A7BCE178EUL,
 		{
@@ -150,6 +151,10 @@ static _vc_block_t _dynamic_blocks[] = {
 static const char key[32]= {
 	0x48,0x9B,0x4D,0xA6,0xF9,0xD9,0xDF,0x6E,0xAC,0x84,0xFA,0x8B,0x2E,0xB6,0x76,0x19,
 	0xC1,0xB0,0xA3,0xBB,0x0C,0xFD,0x70,0x72,0xCA,0x55,0xEF,0xA0,0x7F,0xBF,0x59,0xAD
+};
+
+static const uint32_t xtea_key[4]= {
+	0x00112233,0x44556677,0x8899aabb,0xccddeeff
 };
 
 /* Reverse bits in an 8-bit value */
@@ -236,20 +241,26 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *key)
 	}
 	else if(strcmp(mode, "conditional") == 0)
 	{
-		s->blocks    = _mtv_blocks;
-		s->block_len = 2;
 		if(key)
 		{
 			if(strcmp(key, "sky") == 0)
 			{
-				s->blocks    = _mtv_blocks;
+				s->blocks    = _sky_blocks;
 				s->block_len = 2;
 			}
-			else if (strcmp(key, "tac") == 0) {
+			else if (strcmp(key, "tac") == 0) 
+			{
 				s->blocks    = _dynamic_blocks;
 				s->block_len = 2;
-				_vc_rand_seed(&s->blocks[0]);
-				_vc_rand_seed(&s->blocks[1]);
+				_vc_rand_seed_tac(&s->blocks[0]);
+				_vc_rand_seed_tac(&s->blocks[1]);
+			}
+			else if (strcmp(key, "xtea") == 0) 
+			{
+				s->blocks    = _dynamic_blocks;
+				s->block_len = 2;
+				_vc_rand_seed_xtea(&s->blocks[0]);
+				_vc_rand_seed_xtea(&s->blocks[1]);
 			}
 			else
 			{
@@ -386,7 +397,8 @@ void vc_render_line(vc_t *s, const char *mode, const char *key)
 			s->cw = s->blocks[s->block].codeword;
 			
 			/* Generate new seed for TAC key mode */
-			if( strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0) _vc_rand_seed(&s->blocks[s->block]);
+			if( strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0) _vc_rand_seed_tac(&s->blocks[s->block]);
+			if( strcmp(mode,"conditional") == 0 && strcmp(key,"xtea") == 0) _vc_rand_seed_xtea(&s->blocks[s->block]);
 
 			/* Move to the next block */
 			s->block++;
@@ -490,7 +502,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *key)
 	}
 }
 
-void _vc_rand_seed(_vc_block_t *s)
+void _vc_rand_seed_tac(_vc_block_t *s)
 {
 	int i;
 	int oi = 0;	
@@ -523,6 +535,63 @@ void _vc_rand_seed(_vc_block_t *s)
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
+}
+
+void _vc_rand_seed_xtea(_vc_block_t *s)
+{
+	/* Random seed for bytes 11 to 31 */
+	for(int i=11; i < 32; i++) s->messages[6][i] = rand() + 0xFF;
+
+	int i;
+	uint32_t v0 = 0;
+	uint32_t v1 = 0;
+	uint32_t sum = 0;
+	uint32_t delta = 0x9E3779B9;
+	uint64_t answ[8];
+	
+	/* Reset answers */
+	for (i = 0; i < 8; i++)  answ[i] = 0;
+	
+	s->messages[6][6] = 0x63;
+
+	for(i=11;i<15;i++)
+	{
+		v0 = v0 << 8;
+		v0 |= s->messages[6][i];
+		v1 = v1 << 8;
+		v1 |= s->messages[6][i+4];
+	}
+
+	for (i = 0; i < 32;i++)
+	{
+		v0 += (((v1 << 4)^(v1 >> 5)) + v1)^(sum + xtea_key[sum & 3]);
+		sum += delta;
+		v1 += (((v0 << 4)^(v0>>5))+v0)^(sum + xtea_key[(sum>>11) & 3]);
+
+		if(i == 7)
+		{
+			s->messages[6][19] = (v0 >> 24) & 0xff;
+			s->messages[6][20] = (v0 >> 16) & 0xff;
+			s->messages[6][21] = (v0 >> 8) & 0xff;
+			s->messages[6][22] = v0 & 0xff;
+			s->messages[6][23] = (v1 >> 24) & 0xff;
+			s->messages[6][24] = (v1 >> 16) & 0xff;
+			s->messages[6][25] = (v1 >> 8) & 0xff;
+			s->messages[6][26] = v1 & 0xff;
+		}
+	}
+
+	for( i = 0; i < 4;i++)
+	{
+		answ[i] |= (v0>>(24-i*8))&0xff;
+		answ[i+4] |= (v1>>(24-i*8))&0xff;
+	}
+	answ[7] &= 0x0f;
+	
+	/* Reverse calculated control word */
+	s->codeword = 0x000000000000000UL;
+	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
+
 }
 
 void _vc_kernel(uint64_t *out, int *oi, const unsigned char in)

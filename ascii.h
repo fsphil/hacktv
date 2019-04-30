@@ -1,5 +1,5 @@
-char *chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:+ ";
-char *ascii =
+static char *chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.+ ";
+static char *ascii =
 "        "
 "   ##   "
 "  ####  "
@@ -333,6 +333,16 @@ char *ascii =
 "  ####  "
 "   ##   "
 "        "
+"        "
+"        "
+"        "
+"        "
+"        "
+"   ##   "
+"  ####  "
+"   ##   "
+"        "
+
 "        "
 "   ##   "
 "   ##   "
