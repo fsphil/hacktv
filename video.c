@@ -805,14 +805,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	memset(s, 0, sizeof(vid_t));
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
-	
-	/* Some adjustments for Videocrypt levels in AM mode */
-	if((s->conf.videocrypt) && (strcmp(s->conf.mode, "i") == 0 || strcmp(s->conf.mode, "b") == 0))
-	{
-		s->conf.white_level    = 0.30;
-		s->conf.black_level    = 0.74;
-	}
-	
+		
 	/* Calculate the number of samples per line */
 	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);

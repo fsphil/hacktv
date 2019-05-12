@@ -53,7 +53,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/time.h>
 #include <libavutil/imgutils.h>
-#include <libavfilter/avfiltergraph.h>
+#include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 #include "hacktv.h"

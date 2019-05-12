@@ -20,9 +20,6 @@
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
-#include <libavfilter/avfiltergraph.h>
-#include <libavfilter/buffersink.h>
-#include <libavfilter/buffersrc.h>
 #include "hacktv.h"
 #include  "ascii.h"
 
