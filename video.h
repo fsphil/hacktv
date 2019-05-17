@@ -260,14 +260,6 @@ struct vid_t {
 	int16_t *output;
 };
 
-extern const vid_config_t vid_config_pal_i;
-extern const vid_config_t vid_config_pal;
-extern const vid_config_t vid_config_ntsc_m;
-extern const vid_config_t vid_config_ntsc;
-extern const vid_config_t vid_config_405_a;
-extern const vid_config_t vid_config_405;
-extern const vid_config_t vid_config_baird_240_am;
-extern const vid_config_t vid_config_baird_240;
 extern const vid_configs_t vid_configs[];
 
 extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf);
