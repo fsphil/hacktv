@@ -6,17 +6,17 @@ warrant inclusions into original source.
 
 I will try and keep this as up to date as possible with official releases.
 
-####2019-05-17:
+######2019-05-17:
 Added Discret 11 scrambling in audience 7/free access mode. Use --d11 option.
   - Best results with sampling rate 10MHz or 20MHz (until I figure out how to delay properly)
 Added PIC hex file for Syster and D11 when used in Syster decoder.
 
-####2019-04-30:
+######2019-04-30:
 Holding screen for when position of the video is defined - can sometimes takes a few seconds.
 Added xtea algo for Videocrypt 1. Use --key xtea option.
 Added Funcard hex for Videocrypt 1.
 
-####2019-04-25:
+######2019-04-25:
 Merged hardware support for Syster from original repository.
 
 Changes and additions:
@@ -30,7 +30,7 @@ Extra options added:
   --logo <path>       Overlay picture logo over video. Logos are kept in
                       resources/logos folder.
 
-####2019-04-07:
+######2019-04-07:
 PAL FM deviation changed to 6000000 kHz and default signal level reduced to 0.8
 
 Conditional Videocrypt mode requires --key sky|tac parameter. This specifies
@@ -88,17 +88,17 @@ make install
 
 EXAMPLES
 
-# Generate a file containing a PAL baseband signal from a video
+###### Generate a file containing a PAL baseband signal from a video
 $ hacktv -o baseband.bin -m pal example.mkv
 
-# Transmit a test pattern on UHF channel 31 (PAL System I), 47dB TX gain
+###### Transmit a test pattern on UHF channel 31 (PAL System I), 47dB TX gain
 $ hacktv -f 551250000 -m i -g 47 test
 
-# Transmit a test pattern with teletext
+###### Transmit a test pattern with teletext
 $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
 
-# Download and transmit teletext pages from the Teefax service
-# http://teastop.co.uk/teletext/
+###### Download and transmit teletext pages from the Teefax service
+###### http://teastop.co.uk/teletext/
 $ svn checkout http://teastop.plus.com/svn/teletext/ teefax
 $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
