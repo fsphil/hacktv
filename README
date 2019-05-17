@@ -6,6 +6,8 @@ warrant inclusions into original source.
 
 I will try and keep this as up to date as possible with official releases.
 
+**All credit for original code goes to author.**
+
 2019-05-17:
 Added Discret 11 scrambling in audience 7/free access mode. Use --d11 option.
   - Best results with sampling rate 10MHz or 20MHz (until I figure out how to delay properly)
@@ -46,7 +48,7 @@ which card you want to use to decode video.
   These cards are also known as "Goldwafer" or "Multimac" - only PIC chip
   needs to be flashed. External EEPROM is not used.
 
-**All credit for original code goes to author. Original README text is below.**
+**Original README text is below.**
 
 WHAT'S IT DO
 
