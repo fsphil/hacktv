@@ -1082,11 +1082,10 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_RGB32 };
 			
 		AVFilterGraph *vfilter_graph;
-		avfilter_register_all();
 		
 		AVBufferSinkParams *buffersink_params;
-		AVFilter *vbuffersrc  = avfilter_get_by_name("buffer");
-		AVFilter *vbuffersink = avfilter_get_by_name("buffersink");
+		const AVFilter *vbuffersrc  = avfilter_get_by_name("buffer");
+		const AVFilter *vbuffersink = avfilter_get_by_name("buffersink");
 		AVFilterInOut *vinputs  = avfilter_inout_alloc();
 		AVFilterInOut *voutputs = avfilter_inout_alloc();
 		vfilter_graph = avfilter_graph_alloc();

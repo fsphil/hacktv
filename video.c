@@ -1039,6 +1039,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Initalise D11 encoder */
+ if(s->conf.d11 && (r = d11_init(&s->ng, s)) != VID_OK)
+ {
+	 vid_free(s);
+	 return(r);
+ }
+	
 	return(VID_OK);
 }
 
@@ -1047,7 +1054,7 @@ void vid_free(vid_t *s)
 	/* Close the AV source */
 	vid_av_close(s);
 	
-	if(s->conf.syster)
+	if(s->conf.syster || s->conf.d11)
 	{
 		ng_free(&s->ng);
 	}
@@ -1536,6 +1543,12 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	if(s->conf.syster == 1)
 	{
 		ng_render_line(&s->ng);
+	}
+	
+	/* D11 scrambling, if enabled */
+	if(s->conf.d11 == 1)
+	{
+		d11_render_line(&s->ng);
 	}
 	
 	/* Clear the Q channel */

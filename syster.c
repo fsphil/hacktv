@@ -24,6 +24,14 @@
  * There is some limited support for real hardware decoders.
 */
 
+/* -=== Discret 11 encoder ===-
+ *
+ * This system uses one of three line delays. 
+ * Implementation here uses free access mode (audience 7)
+ * which works with real D11 decoders as well as Syster decoders
+ * when used with a valid card (or PIC file provided).
+*/
+
 /* Syster VBI data
  * 
  * Some or all of the notes here might be wrong. They're based on
@@ -57,6 +65,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 #include "video.h"
 #include "vbidata.h"
 
@@ -206,7 +215,39 @@ static const uint8_t _permutations[] = {
 	0x37,0xE2, 0x46,0xCB,
 	0x00,0x83, 0x39,0x42,
 	0x33,0xFF, 0x1A,0x00,
+	
+/* PIC permute table for some decoders */
+	0x12,0x2E, 0x4F,0xAC,
+	0x2E,0xF5, 0x09,0x9A,
+	0x61,0x94, 0x23,0x80,
+	0x05,0x40, 0x68,0x3A,
+	0x44,0xC7, 0x39,0xC1,
+	0x49,0xD7, 0x6E,0xC4,
+	0x27,0x06, 0x0B,0x1F,
+	0x24,0x56, 0x78,0x2D,
+	0x1E,0x8C, 0x2D,0xBB,
+	0x00,0xF6, 0x28,0xFF,
+	0x6A,0x2D, 0x40,0x77,
+	0x51,0x1E, 0x68,0x70,
+	0x22,0xF7, 0x28,0x36,
+	0x72,0x37, 0x10,0x2C,
+	0x13,0x37, 0x72,0xC4,
+	0x22,0x8E, 0x77,0x67,
+	0x04,0x67, 0x39,0x2C,
+	0x13,0xFA, 0x1E,0x7E,
+	0x1B,0x75, 0x33,0x18,
+	0x3B,0x46, 0x00,0x8C,
+	0x2F,0x82, 0x46,0xB3,
+	0x7B,0x0E, 0x37,0x11,
+	0x25,0x70, 0x63,0x7E,
+	0x01,0x72, 0x49,0x9F,
+	0x62,0x4B, 0x3D,0xE8,
+	
 };
+
+ static const int d11_lookup_table[8] = {
+	 0x00,0x01,0x02,0x02,0x02,0x00,0x00,0x01 
+ };
 
 static uint16_t _crc(const uint8_t *data, size_t length)
 {
@@ -251,12 +292,56 @@ static void _update_field_order(ng_t *s)
 	}
 }
 
-int ng_init(ng_t *s, vid_t *vid)
+/* 
+ * This function generates the line delays for each of the 6 frames
+ * within a D11 cycle period in audience 7 mode (free access).
+ *
+ * Most of the information has been obtained from author of CryptImage
+ * http://cryptimage.vot.pl/cryptimage.php
+ *
+ * Additional info here:
+ * https://web.archive.org/web/20180726143048/http://wintzx.fr/blog/2014/01/codage-et-decodage-des-chaines-analogiques-en-1984-partie-1/
+*/
+
+void _create_d11_delay_table(ng_t *s)
+{
+ /* Magic starting seed = 1337d shifted 177 times */
+ int nCode = 0x672;
+ int b10,b8, d11_delay_index;
+ int d11_field = -1;
+
+ for(int line = 0; line < D11_LINES_PER_FIELD * D11_FIELDS ; line++)
+ {
+	 if(line % D11_LINES_PER_FIELD == 0) d11_field++;
+
+	 /* Get bit 10 */
+	 b10 = ((nCode & 0x400) >> 10) & 0x01;
+
+	 /* Get bit 8 */
+	 b8  = ((nCode & 0x100) >> 8) & 0x01;
+
+	 /* Get z bit */
+	 d11_delay_index  = ((d11_field / 3) & 0x1) << 2;
+
+	 /* Bit y b0 poly */
+	 d11_delay_index |= (nCode & 0x01) << 1;
+
+	 /* Bit x b10 poly */
+	 d11_delay_index |= b10 ;
+
+	 /* Build delay array */
+	 s->d11_line_delay[line] = d11_lookup_table[d11_delay_index];
+
+	 /* Shift along */
+	 nCode = (nCode << 1);
+	 nCode |= b10 ^ b8;
+	 nCode &= 0x7FF;
+ }
+}
+
+int _ng_vbi_init(ng_t *s, vid_t *vid)
 {
 	int i;
-	
-	memset(s, 0, sizeof(ng_t));
-	
 	s->vid = vid;
 	
 	/* Calculate the high level for the VBI data, 66% of the white level */
@@ -275,6 +360,164 @@ int ng_init(ng_t *s, vid_t *vid)
 	s->vbi_seq = 0;
 	s->block_seq = 0;
 	s->block_seq2 = 0;
+	
+	return(VID_OK);
+}
+
+void _render_ng_vbi(ng_t *s, int line, int mode)
+{
+	int i;
+	/* Render the VBI data
+	 * These lines where used by Preimere */
+	if(line == 14 || line == 15 || line == 327 || line == 328)
+	{
+		uint8_t vbi[NG_VBI_BYTES];
+		uint16_t crc;
+		
+		/* Prepare the VBI line */
+		memcpy(&vbi[0], _vbi_sync, sizeof(_vbi_sync));
+		vbi[4] = _vbi_sequence[s->vbi_seq];
+		
+		if(s->vbi_seq == 0)
+		{
+			vbi[5] = mode; /* Table ID (0x68 = Discret 11 / 0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or FA = Free access?) */
+			vbi[6] = ((_block_sequence[s->block_seq] >> 4) + s->block_seq2) & 0x07;
+			vbi[7] = (_block_sequence[s->block_seq] << 4) | _block_sequence[s->block_seq + 1];
+			
+			s->block_seq += 2;
+			if(s->block_seq == sizeof(_block_sequence))
+			{
+				s->block_seq = 0;
+				
+				if(++s->block_seq2 == 8)
+				{
+					s->block_seq2 = 0;
+				}
+			}
+			
+			/* Control word */
+			vbi[ 8] = 0x00;
+			vbi[ 9] = 0x00;
+			vbi[10] = 0x00;
+			vbi[11] = 0x00;
+			vbi[12] = 0x00;
+			vbi[13] = 0x00;
+			vbi[14] = 0x00;
+			vbi[15] = 0x00;
+			
+			/* Fill the remainder with random data */
+			for(i = 16; i < 26; i++)
+			{
+				vbi[i] = _filler[i & 0x07];
+			}
+		}
+		else
+		{
+			/* Fill remaining parts of the segment with random data */
+			for(i = 5; i < 26; i++)
+			{
+				vbi[i] = _filler[i & 0x07];
+			}
+		}
+		
+		if(++s->vbi_seq == 10)
+		{
+			s->vbi_seq = 0;
+		}
+		
+		/* Calculate and apply the CRC */
+		crc = _crc(&vbi[4], 22);
+		vbi[26] = (crc & 0x00FF) >> 0;
+		vbi[27] = (crc & 0xFF00) >> 8;
+		
+		/* Render the line */
+		vbidata_render_nrz(s->lut, vbi, -48, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->vid->output, 2);
+	}
+}
+
+int d11_init(ng_t *s, vid_t *vid)
+{			
+	memset(s, 0, sizeof(ng_t));
+	
+	s->vid = vid;
+	
+	/* Initialise VBI sequences - this is still necessary for D11 */
+	_ng_vbi_init(s,vid);
+	
+	s->d11_delay = (1 / s->vid->conf.colour_carrier) * 4 * s->vid->sample_rate;
+	
+	_create_d11_delay_table(s);
+
+	return(VID_OK);
+}
+
+void d11_render_line(ng_t *s)
+{
+	int x, f, i, d11_field, index, line, delay;
+	
+	/* Calculate the field and field line */
+	line = s->vid->line;
+	f = (line < D11_FIELD_2_START ? 0 : 1);
+	i = line - (f == 0 ? D11_FIELD_1_START : D11_FIELD_2_START);
+	d11_field = (s->vid->frame % 3) + (s->vid->frame % 3) + f;
+	
+	if(i > 0 && i < D11_LINES_PER_FIELD)
+	{
+		 /* Calculate index for delay values - sequence starts on last field of the last frame */
+		index = ((d11_field == 5 ? 0 : d11_field + 1) * D11_LINES_PER_FIELD) + i ;
+		
+		/* Calculate delay for this line */
+		delay = s->d11_line_delay[index] * s->d11_delay;
+	  
+		/* Black level on delayed samples */
+		for(x = s->vid->active_left; x < s->vid->active_left + delay; x++)
+		{
+				s->vid->output[x * 2 + 1] = s->vid->y_level_lookup[0x000000];
+		}
+		
+		/* Delay */
+		for(; x < s->vid->active_left + s->vid->active_width; x++)
+		{
+			 s->vid->output[x * 2 + 1] = s->vid->output[(x - delay) * 2];
+		} 	
+		
+		/* Copy delayed line to output buffer */
+		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
+		{
+			s->vid->output[x * 2] = s->vid->output[x * 2 + 1];
+		}	
+	}
+	
+	/* D11 sequence sync line 622 - always white level for audience 7 mode */
+	if(line == 622)
+	{		
+			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
+			{
+				s->vid->output[x * 2] = s->vid->y_level_lookup[0xFFFFFF];;
+			}	
+	}
+	
+	/* D11 sequence sync line 310 - triggers white level on the last field of the last frame  */
+	if(line == 310)
+	{		
+			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
+			{
+				s->vid->output[x * 2] = (s->vid->frame % 3 == 2 ? s->vid->y_level_lookup[0xFFFFFF] : s->vid->y_level_lookup[0x000000]);
+			}	
+	}
+	
+	_render_ng_vbi(s,line,0x68);
+}
+
+int ng_init(ng_t *s, vid_t *vid)
+{
+	int i;
+	
+	memset(s, 0, sizeof(ng_t));
+	
+	s->vid = vid;
+
+	_ng_vbi_init(s,vid);
 	
 	/* Initial seeds. Updated every field. */
 	s->s = 0;
@@ -334,6 +577,12 @@ void ng_render_line(ng_t *s)
 		{
 			int framesync = (s->vid->frame % 25) * 4;
 			
+			/* Set _OPT_PIC_CARD to 1 in syster.h if using PIC card on some decoders */
+			if (_OPT_PIC_CARD)
+			{
+				framesync += 100;
+			}
+			
 			/* Check is field is odd or even */
 			if(s->vid->line == 310)
 			{
@@ -379,71 +628,5 @@ void ng_render_line(ng_t *s)
 	}
 	s->delay_line[x] = dline;
 	
-	/* Render the VBI data
-	 * These lines where used by Preimere */
-	if(line == 14 || line == 15 || line == 327 || line == 328)
-	{
-		uint8_t vbi[NG_VBI_BYTES];
-		uint16_t crc;
-		
-		/* Prepare the VBI line */
-		memcpy(&vbi[0], _vbi_sync, sizeof(_vbi_sync));
-		vbi[4] = _vbi_sequence[s->vbi_seq];
-		
-		if(s->vbi_seq == 0)
-		{
-			vbi[5] = 0x72; /* Table ID (0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or FA = Free access?) */
-			vbi[6] = ((_block_sequence[s->block_seq] >> 4) + s->block_seq2) & 0x07;
-			vbi[7] = (_block_sequence[s->block_seq] << 4) | _block_sequence[s->block_seq + 1];
-			
-			s->block_seq += 2;
-			if(s->block_seq == sizeof(_block_sequence))
-			{
-				s->block_seq = 0;
-				
-				if(++s->block_seq2 == 8)
-				{
-					s->block_seq2 = 0;
-				}
-			}
-			
-			/* Control word */
-			vbi[ 8] = 0x00;
-			vbi[ 9] = 0x00;
-			vbi[10] = 0x00;
-			vbi[11] = 0x00;
-			vbi[12] = 0x00;
-			vbi[13] = 0x00;
-			vbi[14] = 0x00;
-			vbi[15] = 0x00;
-			
-			/* Fill the remainder with random data */
-			for(i = 16; i < 26; i++)
-			{
-				vbi[i] = _filler[i & 0x07];
-			}
-		}
-		else
-		{
-			/* Fill remaining parts of the segment with random data */
-			for(i = 5; i < 26; i++)
-			{
-				vbi[i] = _filler[i & 0x07];
-			}
-		}
-		
-		if(++s->vbi_seq == 10)
-		{
-			s->vbi_seq = 0;
-		}
-		
-		/* Calculate and apply the CRC */
-		crc = _crc(&vbi[4], 22);
-		vbi[26] = (crc & 0x00FF) >> 0;
-		vbi[27] = (crc & 0xFF00) >> 8;
-		
-		/* Render the line */
-		vbidata_render_nrz(s->lut, vbi, -48, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->vid->output, 2);
-	}
+	_render_ng_vbi(s,line,0x72);
 }
-

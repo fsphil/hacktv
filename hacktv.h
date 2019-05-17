@@ -69,6 +69,7 @@ typedef struct {
 	int timestamp;
 	int position;
 	int syster;
+	int d11;
 	int filter;
 	uint64_t frequency;
 	int amp;

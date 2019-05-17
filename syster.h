@@ -29,6 +29,14 @@
 #define NG_FIELD_2_START   336
 #define NG_LINES_PER_FIELD 287
 
+/* Set this to 1 if your decoder uses different permutations with PIC card */
+#define _OPT_PIC_CARD 0
+
+#define D11_FIELD_1_START   23
+#define D11_FIELD_2_START   335
+#define D11_LINES_PER_FIELD 286
+#define D11_FIELDS 6
+
 /* NG_DELAY_LINES needs to be long enough for the scrambler to access any
  * line in the next field from at least the last 32 lines of the current.
  * This is a safe amount and can probably be reduced. */
@@ -54,15 +62,21 @@ typedef struct {
 	/* The line order for the next field (0-287) */
 	int order[NG_LINES_PER_FIELD];
 	
-	/* Delay line */
+	/* Syster delay line */
 	int16_t *delay;
 	int16_t *delay_line[NG_DELAY_LINES];
+	
+	
+  /* D11 delay values */
+	int d11_delay;
+	int d11_line_delay[D11_LINES_PER_FIELD * D11_FIELDS];
 	
 } ng_t;
 
 extern int ng_init(ng_t *s, vid_t *vs);
 extern void ng_free(ng_t *s);
 extern void ng_render_line(ng_t *s);
+extern int d11_init(ng_t *s, vid_t *vs);
+extern void d11_render_line(ng_t *s);
 
 #endif
-

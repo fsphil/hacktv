@@ -91,6 +91,7 @@ static void print_usage(void)
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --key <key>                Key to use for Videocrypt. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
+		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"\n"
 		"Input options\n"
@@ -240,6 +241,7 @@ static void print_usage(void)
 #define _OPT_FILTER     1004
 #define _OPT_LOGO       2000
 #define _OPT_TIMECODE   2001
+#define _OPT_DISCRET    2002
 
 int main(int argc, char *argv[])
 {
@@ -258,6 +260,7 @@ int main(int argc, char *argv[])
 		{ "videocrypt", required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "key", 				required_argument, 0, 'k'},
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
+		{ "d11",        no_argument,       0, _OPT_DISCRET },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
 		{ "logo",       required_argument, 0, _OPT_LOGO },
 		{ "timestamp",  no_argument,       0, _OPT_TIMECODE },
@@ -296,6 +299,7 @@ int main(int argc, char *argv[])
 	s.timestamp = 0;
 	s.key = NULL;
 	s.syster = 0;
+	s.d11 = 0;
 	s.filter = 0;
 	s.frequency = 0;
 	s.amp = 0;
@@ -403,7 +407,11 @@ int main(int argc, char *argv[])
 		case _OPT_SYSTER: /* --syster */
 			s.syster = 1;
 			break;
-		
+			
+		case _OPT_DISCRET: /* --syster */
+			s.d11 = 1;
+			break;
+	
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
 			break;
@@ -580,6 +588,23 @@ int main(int argc, char *argv[])
 		vid_conf.key = s.key;
 	}
 	
+	if(s.d11)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Discret 11 is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		if(vid_conf.videocrypt)
+		{
+			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
+			return(-1);
+		}
+		
+		vid_conf.d11 = 1;
+	}
+	
 	if(s.syster)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -588,7 +613,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		if(vid_conf.videocrypt)
+		if(vid_conf.videocrypt || vid_conf.d11)
 		{
 			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
 			return(-1);
