@@ -88,19 +88,17 @@ make install
 
 EXAMPLES
 
-###### Generate a file containing a PAL baseband signal from a video
+# Generate a file containing a PAL baseband signal from a video
 $ hacktv -o baseband.bin -m pal example.mkv
 
-###### Transmit a test pattern on UHF channel 31 (PAL System I), 47dB TX gain
+# Transmit a test pattern on UHF channel 31 (PAL System I), 47dB TX gain
 $ hacktv -f 551250000 -m i -g 47 test
 
-###### Transmit a test pattern with teletext
+# Transmit a test pattern with teletext
 $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
 
-###### Download and transmit teletext pages from the Teefax service
-###### http://teastop.co.uk/teletext/
+# Download and transmit teletext pages from the Teefax service http://teastop.co.uk/teletext/
 $ svn checkout http://teastop.plus.com/svn/teletext/ teefax
-
 $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
 -Philip Heron <phil@sanslogic.co.uk>
