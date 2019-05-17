@@ -100,6 +100,7 @@ $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
 ###### Download and transmit teletext pages from the Teefax service
 ###### http://teastop.co.uk/teletext/
 $ svn checkout http://teastop.plus.com/svn/teletext/ teefax
+
 $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
 -Philip Heron <phil@sanslogic.co.uk>
