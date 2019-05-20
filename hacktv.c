@@ -89,7 +89,8 @@ static void print_usage(void)
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
-		"      --key <key>                Key to use for Videocrypt. (PAL only)\n"
+		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
+		"      --key <key>                Key to use for Videocrypt I. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
@@ -223,6 +224,17 @@ static void print_usage(void)
 		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
 		"\n"
+		"Videocrypt II\n"
+		"\n"
+		"A variation of Videocrypt I used throughout Europe. It is funcinoally identical\n"
+		"to VC1 but has a higher VBI data rate.\n"
+		"\n"
+		"hacktv supports the following modes:\n"
+		"\n"
+		"  free        = Free-access, no subscription card is required to decode.\n"
+		"\n"
+		"Both VC1 and VC2 cannot be used together except when both are in free-access mode.\n"
+		"\n"
 		"Nagravision Syster (Simulation)\n"
 		"\n"
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
@@ -234,11 +246,12 @@ static void print_usage(void)
 	);
 }
 
-#define _OPT_TELETEXT   1000
-#define _OPT_WSS        1001
-#define _OPT_VIDEOCRYPT 1002
-#define _OPT_SYSTER     1003
-#define _OPT_FILTER     1004
+#define _OPT_TELETEXT    1000
+#define _OPT_WSS         1001
+#define _OPT_VIDEOCRYPT  1002
+#define _OPT_VIDEOCRYPT2 1003
+#define _OPT_SYSTER      1004
+#define _OPT_FILTER      1005
 #define _OPT_LOGO       2000
 #define _OPT_TIMECODE   2001
 #define _OPT_DISCRET    2002
@@ -258,7 +271,8 @@ int main(int argc, char *argv[])
 		{ "teletext",   required_argument, 0, _OPT_TELETEXT },
 		{ "wss",        required_argument, 0, _OPT_WSS },
 		{ "videocrypt", required_argument, 0, _OPT_VIDEOCRYPT },
-		{ "key", 				required_argument, 0, 'k'},
+		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
+		{ "key", 		required_argument, 0, 'k'},
 		{ "syster",     no_argument,       0, _OPT_SYSTER },
 		{ "d11",        no_argument,       0, _OPT_DISCRET },
 		{ "filter",     no_argument,       0, _OPT_FILTER },
@@ -295,6 +309,7 @@ int main(int argc, char *argv[])
 	s.position = 0;
 	s.wss = "auto";
 	s.videocrypt = NULL;
+	s.videocrypt2 = NULL;
 	s.logo = NULL;
 	s.timestamp = 0;
 	s.key = NULL;
@@ -402,6 +417,11 @@ int main(int argc, char *argv[])
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
 			free(s.videocrypt);
 			s.videocrypt = strdup(optarg);
+			break;
+		
+		case _OPT_VIDEOCRYPT2: /* --videocrypt2 */
+			free(s.videocrypt2);
+			s.videocrypt2 = strdup(optarg);
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
@@ -578,6 +598,24 @@ int main(int argc, char *argv[])
 		vid_conf.videocrypt = s.videocrypt;
 	}
 	
+	if(s.videocrypt2)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Videocrypt II is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		/* Only allow both VC1 and VC2 if both are in free-access mode */
+		if(s.videocrypt && !(strcmp(s.videocrypt, "free") == 0 && strcmp(s.videocrypt2, "free") == 0))
+		{
+			fprintf(stderr, "Videocrypt I and II cannot be used together except in free-access mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.videocrypt2 = s.videocrypt2;
+	}
+	
 	if(s.key)
 	{		
 		if(!s.videocrypt || strcmp(s.videocrypt, "conditional") != 0)
@@ -603,6 +641,24 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.d11 = 1;
+	}
+	
+	if(s.videocrypt2)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Videocrypt II is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		/* Only allow both VC1 and VC2 if both are in free-access mode */
+		if(s.videocrypt && !(strcmp(s.videocrypt, "free") == 0 && strcmp(s.videocrypt2, "free") == 0))
+		{
+			fprintf(stderr, "Videocrypt I and II cannot be used together except in free-access mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.videocrypt2 = s.videocrypt2;
 	}
 	
 	if(s.syster)

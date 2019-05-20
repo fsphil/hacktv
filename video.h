@@ -127,6 +127,7 @@ typedef struct {
 	char *wss;
 	
 	char *videocrypt;
+	char *videocrypt2;
 	char *key;
 	int syster;
 	int d11;

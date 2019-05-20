@@ -65,6 +65,7 @@ typedef struct {
 	char *logo;
 	char *wss;
 	char *videocrypt;
+	char *videocrypt2;
 	char *key;
 	int timestamp;
 	int position;

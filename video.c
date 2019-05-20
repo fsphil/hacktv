@@ -1026,7 +1026,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* Initialise videocrypt encoder */
-	if(s->conf.videocrypt && (r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.key)) != VID_OK)
+	if((s->conf.videocrypt || s->conf.videocrypt2) && 
+	(r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2, s->conf.key)) != VID_OK)
 	{
 		vid_free(s);
 		return(r);
@@ -1059,7 +1060,7 @@ void vid_free(vid_t *s)
 		ng_free(&s->ng);
 	}
 	
-	if(s->conf.videocrypt)
+	if(s->conf.videocrypt || s->conf.videocrypt2)
 	{
 		vc_free(&s->vc);
 	}
@@ -1533,12 +1534,12 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		wss_render_line(&s->wss);
 	}
 	
-	/* Videocrypt scrambling, if enabled */
-	if(s->conf.videocrypt)
+	/* Videocrypt I/II scrambling, if enabled */
+	if(s->conf.videocrypt || s->conf.videocrypt2)
 	{
-		vc_render_line(&s->vc, s->conf.videocrypt, s->conf.key);
+		vc_render_line(&s->vc, s->conf.videocrypt, s->conf.videocrypt2, s->conf.key);
 	}
-	
+		
 	/* Syster scrambling, if enabled */
 	if(s->conf.syster == 1)
 	{
