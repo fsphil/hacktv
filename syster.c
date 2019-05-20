@@ -380,7 +380,7 @@ void ng_render_line(ng_t *s)
 	s->delay_line[x] = dline;
 	
 	/* Render the VBI data
-	 * These lines where used by Preimere */
+	 * These lines where used by Premiere */
 	if(line == 14 || line == 15 || line == 327 || line == 328)
 	{
 		uint8_t vbi[NG_VBI_BYTES];
