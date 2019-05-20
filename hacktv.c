@@ -85,6 +85,7 @@ static void print_usage(void)
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
+		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"\n"
@@ -209,6 +210,17 @@ static void print_usage(void)
 		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
 		"\n"
+		"Videocrypt II\n"
+		"\n"
+		"A variation of Videocrypt I used throughout Europe. It is funcinoally identical\n"
+		"to VC1 but has a higher VBI data rate.\n"
+		"\n"
+		"hacktv supports the following modes:\n"
+		"\n"
+		"  free        = Free-access, no subscription card is required to decode.\n"
+		"\n"
+		"Both VC1 and VC2 cannot be used together except when both are in free-access mode.\n"
+		"\n"
 		"Nagravision Syster (Simulation)\n"
 		"\n"
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
@@ -220,35 +232,37 @@ static void print_usage(void)
 	);
 }
 
-#define _OPT_TELETEXT   1000
-#define _OPT_WSS        1001
-#define _OPT_VIDEOCRYPT 1002
-#define _OPT_SYSTER     1003
-#define _OPT_FILTER     1004
+#define _OPT_TELETEXT    1000
+#define _OPT_WSS         1001
+#define _OPT_VIDEOCRYPT  1002
+#define _OPT_VIDEOCRYPT2 1003
+#define _OPT_SYSTER      1004
+#define _OPT_FILTER      1005
 
 int main(int argc, char *argv[])
 {
 	int c;
 	int option_index;
 	static struct option long_options[] = {
-		{ "output",     required_argument, 0, '0' },
-		{ "mode",       required_argument, 0, 'm' },
-		{ "samplerate", required_argument, 0, 's' },
-		{ "level",      required_argument, 0, 'l' },
-		{ "gamma",      required_argument, 0, 'G' },
-		{ "repeat",     no_argument,       0, 'r' },
-		{ "verbose",    no_argument,       0, 'v' },
-		{ "teletext",   required_argument, 0, _OPT_TELETEXT },
-		{ "wss",        required_argument, 0, _OPT_WSS },
-		{ "videocrypt", required_argument, 0, _OPT_VIDEOCRYPT },
-		{ "syster",     no_argument,       0, _OPT_SYSTER },
-		{ "filter",     no_argument,       0, _OPT_FILTER },
-		{ "frequency",  required_argument, 0, 'f' },
-		{ "amp",        no_argument,       0, 'a' },
-		{ "gain",       required_argument, 0, 'x' },
-		{ "antenna",    required_argument, 0, 'A' },
-		{ "type",       required_argument, 0, 't' },
-		{ 0,            0,                 0,  0  }
+		{ "output",      required_argument, 0, '0' },
+		{ "mode",        required_argument, 0, 'm' },
+		{ "samplerate",  required_argument, 0, 's' },
+		{ "level",       required_argument, 0, 'l' },
+		{ "gamma",       required_argument, 0, 'G' },
+		{ "repeat",      no_argument,       0, 'r' },
+		{ "verbose",     no_argument,       0, 'v' },
+		{ "teletext",    required_argument, 0, _OPT_TELETEXT },
+		{ "wss",         required_argument, 0, _OPT_WSS },
+		{ "videocrypt",  required_argument, 0, _OPT_VIDEOCRYPT },
+		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
+		{ "syster",      no_argument,       0, _OPT_SYSTER },
+		{ "filter",      no_argument,       0, _OPT_FILTER },
+		{ "frequency",   required_argument, 0, 'f' },
+		{ "amp",         no_argument,       0, 'a' },
+		{ "gain",        required_argument, 0, 'x' },
+		{ "antenna",     required_argument, 0, 'A' },
+		{ "type",        required_argument, 0, 't' },
+		{ 0,             0,                 0,  0  }
 	};
 	static hacktv_t s;
 	const vid_configs_t *vid_confs;
@@ -272,6 +286,7 @@ int main(int argc, char *argv[])
 	s.teletext = NULL;
 	s.wss = NULL;
 	s.videocrypt = NULL;
+	s.videocrypt2 = NULL;
 	s.syster = 0;
 	s.filter = 0;
 	s.frequency = 0;
@@ -376,6 +391,11 @@ int main(int argc, char *argv[])
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
 			free(s.videocrypt);
 			s.videocrypt = strdup(optarg);
+			break;
+		
+		case _OPT_VIDEOCRYPT2: /* --videocrypt2 */
+			free(s.videocrypt2);
+			s.videocrypt2 = strdup(optarg);
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
@@ -508,6 +528,24 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.videocrypt = s.videocrypt;
+	}
+	
+	if(s.videocrypt2)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Videocrypt II is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		/* Only allow both VC1 and VC2 if both are in free-access mode */
+		if(s.videocrypt && !(strcmp(s.videocrypt, "free") == 0 && strcmp(s.videocrypt2, "free") == 0))
+		{
+			fprintf(stderr, "Videocrypt I and II cannot be used together except in free-access mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.videocrypt2 = s.videocrypt2;
 	}
 	
 	if(s.syster)

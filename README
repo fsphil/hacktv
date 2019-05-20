@@ -8,7 +8,7 @@ Input is any file type or URL supported by ffmpeg.
 Output can be to a file or directly to a HackRF.
 Teletext support.
 NICAM stereo audio.
-Videocrypt I hardware support.
+Videocrypt I/II hardware support.
 Partial Nagravision Syster hardware support.
 
 WHAT'S IT NOT DO (yet)

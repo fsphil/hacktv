@@ -46,6 +46,9 @@
 #define VC_PRBS_SR1_MASK (((uint32_t) 1 << 31) - 1)
 #define VC_PRBS_SR2_MASK (((uint32_t) 1 << 29) - 1)
 
+#define VC2_VBI_FIELD_1_START (VC_VBI_FIELD_1_START - 4)
+#define VC2_VBI_FIELD_2_START (VC_VBI_FIELD_2_START - 4)
+
 typedef struct {
 	uint8_t mode;
 	uint64_t codeword;
@@ -53,18 +56,30 @@ typedef struct {
 } _vc_block_t;
 
 typedef struct {
+	uint8_t mode;
+	uint64_t codeword;
+	uint8_t messages[32][32];
+} _vc2_block_t;
+
+typedef struct {
 	
 	vid_t *vid;
 	
 	uint8_t counter;
-	uint8_t mode;
-	uint8_t vbi[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
 	
 	/* VC1 blocks */
 	const _vc_block_t *blocks;
 	size_t block;
 	size_t block_len;
 	uint8_t message[32];
+	uint8_t vbi[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
+	
+	/* VC2 blocks */
+	const _vc2_block_t *blocks2;
+	size_t block2;
+	size_t block2_len;
+	uint8_t message2[32];
+	uint8_t vbi2[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
 	
 	/* PRBS generator */
 	uint64_t cw;
@@ -77,7 +92,7 @@ typedef struct {
 	
 } vc_t;
 
-extern int vc_init(vc_t *s, vid_t *vs, const char *mode);
+extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);
 extern void vc_free(vc_t *s);
 extern void vc_render_line(vc_t *s);
 
