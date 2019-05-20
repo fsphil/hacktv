@@ -44,6 +44,26 @@ if [[ ! -f $PREFIX/lib/libhackrf.a ]]; then
 	find $PREFIX -name libhackrf\*.dll\* -delete
 fi
 
+if [[ ! -f $PREFIX/lib/libosmo-fl2k.a ]]; then
+	
+	if [[ ! -d osmo-fl2k ]]; then
+		git clone --depth 1 git://git.osmocom.org/osmo-fl2k
+	fi
+	
+	rm -rf osmo-fl2k/build
+	mkdir -p osmo-fl2k/build
+	cd osmo-fl2k/build
+	mingw64-cmake \
+		-DCMAKE_INSTALL_PREFIX=$PREFIX \
+		-DCMAKE_INSTALL_LIBPREFIX=$PREFIX \
+		-DCMAKE_INSTALL_LIBDIR=$PREFIX/lib \
+		-DLIBUSB_INCLUDE_DIR=$PREFIX/include/libusb-1.0 \
+		-DLIBUSB_LIBRARIES=$PREFIX/lib/libusb-1.0.a
+	make -j4 install
+	cd ../..
+	mv $PREFIX/lib/liblibosmo-fl2k_static.a $PREFIX/lib/libosmo-fl2k.a
+fi
+
 if [[ ! -f $PREFIX/lib/libfdk-aac.a ]]; then
 	
 	if [[ ! -d fdk-aac ]]; then
