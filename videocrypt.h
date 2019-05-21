@@ -74,13 +74,13 @@ typedef struct {
 	size_t block_len;
 	uint8_t message[32];
 	uint8_t vbi[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
- 	
- 	/* VC2 blocks */
- 	const _vc2_block_t *blocks2;
- 	size_t block2;
- 	size_t block2_len;
- 	uint8_t message2[32];
- 	uint8_t vbi2[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
+	
+	/* VC2 blocks */
+	const _vc2_block_t *blocks2;
+	size_t block2;
+	size_t block2_len;
+	uint8_t message2[32];
+	uint8_t vbi2[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
 	
 	/* PRBS generator */
 	uint64_t cw;

@@ -1534,7 +1534,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		wss_render_line(&s->wss);
 	}
 	
-	/* Videocrypt I/II scrambling, if enabled */
+	/* Videocrypt scrambling, if enabled */
 	if(s->conf.videocrypt || s->conf.videocrypt2)
 	{
 		vc_render_line(&s->vc, s->conf.videocrypt, s->conf.videocrypt2, s->conf.key);
