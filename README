@@ -77,7 +77,7 @@ REQUIREMENTS
 Depends on libhackrf and various ffmpeg libraries.
 
 * For Fedora (with rpmfusion)
-yum install hackrf-devel ffmpeg-devel
+yum install hackrf-devel osmo-fl2k-devel SoapySDR-devel ffmpeg-devel
 
 * For Debian and related
 apt-get update
