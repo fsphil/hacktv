@@ -66,6 +66,7 @@ typedef struct {
 	char *wss;
 	char *videocrypt;
 	char *videocrypt2;
+	char *videocrypts;
 	int syster;
 	int filter;
 	uint64_t frequency;

@@ -86,6 +86,7 @@ static void print_usage(void)
 		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
+		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"\n"
@@ -221,13 +222,27 @@ static void print_usage(void)
 		"\n"
 		"Both VC1 and VC2 cannot be used together except if both are in free-access mode.\n"
 		"\n"
-		"Nagravision Syster (Simulation)\n"
+		"Videocrypt S (Simulation)\n"
+		"\n"
+		"A variation of Videocrypt II used on the short lived BBC Select service. This mode\n"
+		"uses line-shuffling rather than line cut-and-rotate.\n"
+		"\n"
+		"hacktv supports the following modes:\n"
+		"\n"
+		"  free        = Free-access, no subscription card is required to decode.\n"
+		"\n"
+		"This is a simulation and will not work with real hardware.\n"
+		"Audio inversion is not yet supported.\n"
+		"\n"
+		"Nagravision Syster\n"
 		"\n"
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
 		"are vertically shuffled within a field.\n"
 		"\n"
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
 		"with most hardware.\n"
+		"\n"
+		"Audio inversion is not yet supported.\n"
 		"\n"
 	);
 }
@@ -236,8 +251,9 @@ static void print_usage(void)
 #define _OPT_WSS         1001
 #define _OPT_VIDEOCRYPT  1002
 #define _OPT_VIDEOCRYPT2 1003
-#define _OPT_SYSTER      1004
-#define _OPT_FILTER      1005
+#define _OPT_VIDEOCRYPTS 1004
+#define _OPT_SYSTER      1005
+#define _OPT_FILTER      1006
 
 int main(int argc, char *argv[])
 {
@@ -255,6 +271,7 @@ int main(int argc, char *argv[])
 		{ "wss",         required_argument, 0, _OPT_WSS },
 		{ "videocrypt",  required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
+		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
 		{ "syster",      no_argument,       0, _OPT_SYSTER },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
 		{ "frequency",   required_argument, 0, 'f' },
@@ -287,6 +304,7 @@ int main(int argc, char *argv[])
 	s.wss = NULL;
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
+	s.videocrypts = NULL;
 	s.syster = 0;
 	s.filter = 0;
 	s.frequency = 0;
@@ -396,6 +414,11 @@ int main(int argc, char *argv[])
 		case _OPT_VIDEOCRYPT2: /* --videocrypt2 */
 			free(s.videocrypt2);
 			s.videocrypt2 = strdup(optarg);
+			break;
+		
+		case _OPT_VIDEOCRYPTS: /* --videocrypts */
+			free(s.videocrypts);
+			s.videocrypts = strdup(optarg);
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
@@ -548,6 +571,23 @@ int main(int argc, char *argv[])
 		vid_conf.videocrypt2 = s.videocrypt2;
 	}
 	
+	if(s.videocrypts)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Videocrypt S is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		if(s.videocrypt || s.videocrypt2)
+		{
+			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
+			return(-1);
+		}
+		
+		vid_conf.videocrypts = s.videocrypts;
+	}
+	
 	if(s.syster)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -556,7 +596,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		if(vid_conf.videocrypt)
+		if(vid_conf.videocrypt || vid_conf.videocrypt2 || vid_conf.videocrypts)
 		{
 			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
 			return(-1);
