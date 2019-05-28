@@ -480,8 +480,7 @@ const vid_config_t vid_config_405 = {
 	.output_type    = HACKTV_INT16_REAL,
 	
 	.level          = 1.0, /* Overall signal level */
-	.video_level    = 0.8, /* Power level of video */
-	.am_audio_level = 0.2, /* Power level of audio */
+	.video_level    = 1.0, /* Power level of video */
 	
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
@@ -502,10 +501,6 @@ const vid_config_t vid_config_405 = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	
-	/* AM modulated */
-	.am_mono_carrier = -3500000, /* Hz */
-	.am_mono_bandwidth = 10000, /* Hz */
 };
 
 const vid_config_t vid_config_baird_240_am = {
