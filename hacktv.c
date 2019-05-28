@@ -153,6 +153,8 @@ static void print_usage(void)
 		"  pal    = PAL colour, 25 fps, 625 lines, unmodulated (real)\n"
 		"  m      = NTSC colour, 30/1.001 fps, 525 lines, AM (complex)\n"
 		"  ntsc   = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
+		"  e      = No colour, 25 fps, 819 lines, AM (complex)\n"
+		"  819    = No colour, 25 fps, 819 lines, unmodulated (real)\n"
 		"  a      = No colour, 25 fps, 405 lines, AM (complex)\n"
 		"  405    = No colour, 25 fps, 405 lines, unmodulated (real)\n"
 		"  240-am = No colour, 25 fps, 240 lines, AM (complex)\n"

@@ -436,6 +436,73 @@ const vid_config_t vid_config_ntsc = {
 	.qv_co          = -0.082,
 };
 
+const vid_config_t vid_config_819_e = {
+	
+	/* System E (819 line monochrome, French variant) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   =  2000000, /* Hz */
+	.vsb_lower_bw   = 10400000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 0.8, /* Power level of video */
+	.am_audio_level = 0.2, /* Power level of audio */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 819,
+	.active_lines   = 720, /* Normally 738 */
+	.active_width   = 0.00003944, /* 39.44µs */
+	.active_left    = 0.00000890, /* |-->| 8.9µs */
+	
+	.hsync_width      = 0.00000250, /* 2.50 ±0.10µs */
+	.vsync_long_width = 0.00002000, /* 20.0 ±1.00µs */
+	
+	.white_level    = 1.00,
+	.black_level    = 0.35,
+	.blanking_level = 0.30,
+	.sync_level     = 0.00,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	
+	/* AM modulated */
+	.am_mono_carrier   = 11500000, /* Hz */
+	.am_mono_bandwidth =    10000, /* Hz */
+};
+
+const vid_config_t vid_config_819 = {
+	
+	/* 819 line video, French variant */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 819,
+	.active_lines   = 720, /* Normally 738 */
+	.active_width   = 0.00003944, /* 39.44µs */
+	.active_left    = 0.00000890, /* |-->| 8.9µs */
+	
+	.hsync_width      = 0.00000250, /* 2.50 ±0.10µs */
+	.vsync_long_width = 0.00002000, /* 20.0 ±1.00µs */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.05,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
 const vid_config_t vid_config_405_a = {
 	
 	/* System A (405 line monochrome) */
@@ -573,6 +640,8 @@ const vid_configs_t vid_configs[] = {
 	{ "secam",  &vid_config_secam        },
 	{ "m",      &vid_config_ntsc_m       },
 	{ "ntsc",   &vid_config_ntsc         },
+	{ "e",      &vid_config_819_e        },
+	{ "819",    &vid_config_819          },
 	{ "a",      &vid_config_405_a        },
 	{ "405",    &vid_config_405          },
 	{ "240-am", &vid_config_baird_240_am },
@@ -1332,6 +1401,102 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		 * 286-525 from the second. */
 		
 		vy = (s->line < 265 ? (s->line - 23) * 2 : (s->line - 286) * 2 + 1);
+		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
+	}
+	else if(s->conf.lines == 819)
+	{
+		switch(s->line)
+		{
+		case 817: seq = "h___"; break;
+		case 818: seq = "h___"; break;
+		case 819: seq = "h___"; break;
+		case 1:   seq = "V___"; break;
+		case 2:   seq = "h___"; break;
+		case 3:   seq = "h___"; break;
+		case 4:   seq = "h___"; break;
+		case 5:   seq = "h___"; break;
+		case 6:   seq = "h___"; break;
+		case 7:   seq = "h___"; break;
+		case 8:   seq = "h___"; break;
+		case 9:   seq = "h___"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		case 16:  seq = "h___"; break;
+		case 17:  seq = "h___"; break;
+		case 18:  seq = "h___"; break;
+		case 19:  seq = "h___"; break;
+		case 20:  seq = "h___"; break;
+		case 21:  seq = "h___"; break;
+		case 22:  seq = "h___"; break;
+		case 23:  seq = "h___"; break;
+		case 24:  seq = "h___"; break;
+		case 25:  seq = "h___"; break;
+		case 26:  seq = "h___"; break;
+		case 27:  seq = "h___"; break;
+		case 28:  seq = "h___"; break;
+		case 29:  seq = "h___"; break;
+		case 30:  seq = "h___"; break;
+		case 31:  seq = "h___"; break;
+		case 32:  seq = "h___"; break;
+		case 33:  seq = "h___"; break;
+		case 34:  seq = "h___"; break;
+		case 35:  seq = "h___"; break;
+		case 36:  seq = "h___"; break;
+		case 37:  seq = "h___"; break;
+		case 38:  seq = "h___"; break;
+		
+		case 406: seq = "h_a_"; break;
+		case 407: seq = "h___"; break;
+		case 408: seq = "h___"; break;
+		case 409: seq = "h__V"; break;
+		case 410: seq = "h___"; break;
+		case 411: seq = "h___"; break;
+		case 412: seq = "h___"; break;
+		case 413: seq = "h___"; break;
+		case 414: seq = "h___"; break;
+		case 415: seq = "h___"; break;
+		case 416: seq = "h___"; break;
+		case 417: seq = "h___"; break;
+		case 418: seq = "h___"; break;
+		case 419: seq = "h___"; break;
+		case 420: seq = "h___"; break;
+		case 421: seq = "h___"; break;
+		case 422: seq = "h___"; break;
+		case 423: seq = "h___"; break;
+		case 424: seq = "h___"; break;
+		case 425: seq = "h___"; break;
+		case 426: seq = "h___"; break;
+		case 427: seq = "h___"; break;
+		case 428: seq = "h___"; break;
+		case 429: seq = "h___"; break;
+		case 430: seq = "h___"; break;
+		case 431: seq = "h___"; break;
+		case 432: seq = "h___"; break;
+		case 433: seq = "h___"; break;
+		case 434: seq = "h___"; break;
+		case 435: seq = "h___"; break;
+		case 436: seq = "h___"; break;
+		case 437: seq = "h___"; break;
+		case 438: seq = "h___"; break;
+		case 439: seq = "h___"; break;
+		case 440: seq = "h___"; break;
+		case 441: seq = "h___"; break;
+		case 442: seq = "h___"; break;
+		case 443: seq = "h___"; break;
+		case 444: seq = "h___"; break;
+		case 445: seq = "h___"; break;
+		case 446: seq = "h___"; break;
+		case 447: seq = "h___"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (s->line < 406 ? (s->line - 48) * 2 : (s->line - 458) * 2 + 1);
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 405)
