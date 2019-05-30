@@ -1490,13 +1490,13 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		case 444: seq = "h___"; break;
 		case 445: seq = "h___"; break;
 		case 446: seq = "h___"; break;
-		case 447: seq = "h___"; break;
+		case 447: seq = "h__a"; break;
 		
 		default:  seq = "h_aa"; break;
 		}
 		
 		/* Calculate the active line number */
-		vy = (s->line < 406 ? (s->line - 48) * 2 : (s->line - 458) * 2 + 1);
+		vy = (s->line < 406 ? (s->line - 48) * 2 : (s->line - 457) * 2 + 1);
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 405)
