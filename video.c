@@ -1540,7 +1540,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		}
 		
 		/* Calculate the active line number */
-		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 218) * 2 + 1);
+		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 240)
