@@ -630,6 +630,60 @@ const vid_config_t vid_config_baird_240 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_baird_30_am = {
+	
+	/* Baird 30 line, AM modulation */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_AM,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 2,
+	.lines          = 30,
+	.active_lines   = 30,
+	.active_width   = 0.002666667, /* 2.667ms */
+	.active_left    = 0,
+	
+	.white_level    = 1.00,
+	.black_level    = 0.00,
+	.blanking_level = 0.00,
+	.sync_level     = 0.00,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
+const vid_config_t vid_config_baird_30 = {
+	
+	/* Baird 30 line */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 25,
+	.frame_rate_den = 2,
+	.lines          = 30,
+	.active_lines   = 30,
+	.active_width   = 0.002666667, /* 2.667ms */
+	.active_left    = 0,
+	
+	.white_level    =  1.00,
+	.black_level    = -1.00,
+	.blanking_level = -1.00,
+	.sync_level     = -1.00,
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
 const vid_configs_t vid_configs[] = {
 	{ "i",      &vid_config_pal_i        },
 	{ "b",      &vid_config_pal_bg       },
@@ -646,6 +700,8 @@ const vid_configs_t vid_configs[] = {
 	{ "405",    &vid_config_405          },
 	{ "240-am", &vid_config_baird_240_am },
 	{ "240",    &vid_config_baird_240    },
+	{ "30-am",  &vid_config_baird_30_am  },
+	{ "30",     &vid_config_baird_30     },
 	{ NULL,     NULL },
 };
 
@@ -1569,6 +1625,12 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		
 		/* Calculate the active line number */
 		vy = s->line - 20;
+	}
+	else if(s->conf.lines == 30)
+	{
+		/* The original Baird 30 line standard has no sync pulses */
+		seq = "__aa";
+		vy = s->line - 1;
 	}
 	
 	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;

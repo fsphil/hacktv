@@ -159,6 +159,8 @@ static void print_usage(void)
 		"  405    = No colour, 25 fps, 405 lines, unmodulated (real)\n"
 		"  240-am = No colour, 25 fps, 240 lines, AM (complex)\n"
 		"  240    = No colour, 25 fps, 240 lines, unmodulated (real)\n"
+		"  30-am  = No colour, 12.5 fps, 30 lines, AM (complex)\n"
+		"  30     = no colour, 12.5 fps, 30 lines, unmodulated (real)\n"
 		"\n"
 		"NOTE: The number of samples per line is rounded to the nearest integer,\n"
 		"which may result in a slight frame rate error.\n"
