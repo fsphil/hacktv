@@ -1340,7 +1340,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		
 		/* Calculate the active line number */
 		vy = (s->line < 313 ? (s->line - 23) * 2 : (s->line - 336) * 2 + 1);
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 525)
 	{
@@ -1401,7 +1400,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		 * 286-525 from the second. */
 		
 		vy = (s->line < 265 ? (s->line - 23) * 2 : (s->line - 286) * 2 + 1);
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 819)
 	{
@@ -1497,7 +1495,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		
 		/* Calculate the active line number */
 		vy = (s->line < 406 ? (s->line - 48) * 2 : (s->line - 457) * 2 + 1);
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 405)
 	{
@@ -1541,7 +1538,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		
 		/* Calculate the active line number */
 		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
 	else if(s->conf.lines == 240)
 	{
@@ -1573,8 +1569,9 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		
 		/* Calculate the active line number */
 		vy = s->line - 20;
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
+	
+	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	
 	/* Does this line use colour? */
 	pal  = seq[1] == '0';
