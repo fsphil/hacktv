@@ -27,6 +27,7 @@ typedef struct vid_t vid_t;
 #include "teletext.h"
 #include "wss.h"
 #include "videocrypt.h"
+#include "videocrypts.h"
 #include "syster.h"
 
 /* Return codes */
@@ -128,9 +129,10 @@ typedef struct {
 	
 	char *videocrypt;
 	char *videocrypt2;
-	char *key;
+	char *videocrypts;
 	int syster;
 	int d11;
+	char *key;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;
@@ -232,6 +234,7 @@ struct vid_t {
 	
 	/* Videocrypt state */
 	vc_t vc;
+	vcs_t vcs;
 	
 	/* Nagravision Syster state */
 	ng_t ng;

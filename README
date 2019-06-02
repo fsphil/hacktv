@@ -53,11 +53,13 @@ which card you want to use to decode video.
 WHAT'S IT DO
 
 Generates a PAL/NTSC video signal from a video file or test pattern.
+Also supports the older 819, 405, 240 and 30 line standards.
 Input is any file type or URL supported by ffmpeg.
 Output can be to a file or directly to a HackRF.
 Teletext support.
 NICAM stereo audio.
 Videocrypt I/II hardware support.
+Videocrypt S simulator.
 Partial Nagravision Syster hardware support.
 
 WHAT'S IT NOT DO (yet)

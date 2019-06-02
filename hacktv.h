@@ -66,9 +66,7 @@ typedef struct {
 	char *wss;
 	char *videocrypt;
 	char *videocrypt2;
-	char *key;
-	int timestamp;
-	int position;
+	char *videocrypts;
 	int syster;
 	int d11;
 	int filter;
@@ -77,6 +75,9 @@ typedef struct {
 	int gain;
 	char *antenna;
 	int file_type;
+	char *key;
+	int timestamp;
+	int position;
 	
 	/* Video encoder state */
 	vid_t vid;
