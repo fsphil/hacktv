@@ -3,3 +3,7 @@
 *.exe
 build_win64
 hacktv
+.DS_Store
+cards/.DS_Store
+resources/.DS_Store
+resources/logos/.DS_Store
