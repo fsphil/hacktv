@@ -134,16 +134,20 @@ int av_test_open(vid_t *s)
 	}
 	
 	/* Overlay the logo */
-	x = s->active_width / 2;
-	y = s->conf.active_lines / 10;
-	
-	for(x = 0; x < LOGO_WIDTH * LOGO_SCALE; x++)
+	if(s->active_width >= LOGO_WIDTH * LOGO_SCALE &&
+	   s->conf.active_lines >= LOGO_HEIGHT * LOGO_SCALE)
 	{
-		for(y = 0; y < LOGO_HEIGHT * LOGO_SCALE; y++)
+		x = s->active_width / 2;
+		y = s->conf.active_lines / 10;
+		
+		for(x = 0; x < LOGO_WIDTH * LOGO_SCALE; x++)
 		{
-			c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
-			
-			av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
+			for(y = 0; y < LOGO_HEIGHT * LOGO_SCALE; y++)
+			{
+				c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
+				
+				av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
+			}
 		}
 	}
 	
