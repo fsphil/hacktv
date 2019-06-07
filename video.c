@@ -945,6 +945,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	/* Calculate the active video width and offset */
 	s->active_width = ceil(s->sample_rate * s->conf.active_width);
+	if(s->active_width > s->width) s->active_width = s->width;
+	
 	s->active_left  = round(s->sample_rate * s->conf.active_left);
 	
 	s->hsync_width       = round(s->sample_rate * s->conf.hsync_width);
