@@ -46,6 +46,7 @@ typedef struct vid_t vid_t;
 #define VID_PAL        1
 #define VID_NTSC       2
 #define VID_SECAM      3
+#define VID_APOLLO_FSC 4
 
 /* AV source function prototypes */
 typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
@@ -141,6 +142,10 @@ typedef struct {
 	double burst_left;
 	double burst_level;
 	
+	double fsc_flag_width;
+	double fsc_flag_left;
+	double fsc_flag_level;
+	
 	double iu_co;
 	double iv_co;
 	double qu_co;
@@ -205,6 +210,10 @@ struct vid_t {
 	int burst_left;
 	int burst_width;
 	int16_t burst_level;
+	
+	int fsc_flag_left;
+	int fsc_flag_width;
+	int16_t fsc_flag_level;
 	
 	/* Video state */
 	uint32_t *framebuffer;

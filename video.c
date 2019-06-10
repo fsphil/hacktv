@@ -684,25 +684,102 @@ const vid_config_t vid_config_baird_30 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_apollo_colour = {
+	
+	/* Apollo Colour Lunar Television */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 30000,
+	.frame_rate_den = 1001,
+	.lines          = 525,
+	.active_lines   = 480,
+	.active_width   = 0.00005290, /* 52.90µs */
+	.active_left    = 0.00000920, /* |-->| 9.20µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 2.71 */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.0525,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.colour_mode    = VID_APOLLO_FSC,
+	.fsc_flag_width = 0.00002000, /* 20.00µs */
+	.fsc_flag_left  = 0.00001470, /* |-->| 14.70µs */
+	.fsc_flag_level = 1.00,
+	
+	.gamma          =  1.2,
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+};
+
+const vid_config_t vid_config_apollo_mono = {
+	
+	/* Apollo Lunar Television 10 fps video (Mode 1) */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.frame_rate_num = 10,
+	.frame_rate_den = 1,
+	.lines          = 320,
+	.active_lines   = 312,
+	.active_width   = 0.00028250, /* 282.5µs */
+	.active_left    = 0.00002500, /* |-->| 25.0µs */
+	
+	.hsync_width       = 0.00002000, /* 20.00µs */
+	.vsync_long_width  = 0.00026750, /* 267.5µs */
+	
+	/* Hacky: hacktv can't generate a single pulse wider than half a line,
+	 * which we need here. Use the vsync short pulse to complete the long */
+        .vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
+	
+	/* The Apollo TV camera supports a pulse and tone sync mode. The
+	 * pulse mode is a normal negative pulse, and the tone mode uses
+	 * a 409600 Hz tone. I'm not sure which was used for the live
+	 * transmissions from the surface. This implementation uses the
+	 * negative pulse mode. */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.00,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	/* These are copied from the NTSC values */
+	.gamma          = 1.0,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
 const vid_configs_t vid_configs[] = {
-	{ "i",      &vid_config_pal_i        },
-	{ "b",      &vid_config_pal_bg       },
-	{ "g",      &vid_config_pal_bg       },
-	{ "pal-fm", &vid_config_pal_fm       },
-	{ "pal",    &vid_config_pal          },
-	{ "l",      &vid_config_secam_l      },
-	{ "secam",  &vid_config_secam        },
-	{ "m",      &vid_config_ntsc_m       },
-	{ "ntsc",   &vid_config_ntsc         },
-	{ "e",      &vid_config_819_e        },
-	{ "819",    &vid_config_819          },
-	{ "a",      &vid_config_405_a        },
-	{ "405",    &vid_config_405          },
-	{ "240-am", &vid_config_baird_240_am },
-	{ "240",    &vid_config_baird_240    },
-	{ "30-am",  &vid_config_baird_30_am  },
-	{ "30",     &vid_config_baird_30     },
-	{ NULL,     NULL },
+	{ "i",          &vid_config_pal_i         },
+	{ "b",          &vid_config_pal_bg        },
+	{ "g",          &vid_config_pal_bg        },
+	{ "pal-fm",     &vid_config_pal_fm        },
+	{ "pal",        &vid_config_pal           },
+	{ "l",          &vid_config_secam_l       },
+	{ "secam",      &vid_config_secam         },
+	{ "m",          &vid_config_ntsc_m        },
+	{ "ntsc",       &vid_config_ntsc          },
+	{ "e",          &vid_config_819_e         },
+	{ "819",        &vid_config_819           },
+	{ "a",          &vid_config_405_a         },
+	{ "405",        &vid_config_405           },
+	{ "240-am",     &vid_config_baird_240_am  },
+	{ "240",        &vid_config_baird_240     },
+	{ "30-am",      &vid_config_baird_30_am   },
+	{ "30",         &vid_config_baird_30      },
+	{ "apollo-fsc", &vid_config_apollo_colour },
+	{ "apollo",     &vid_config_apollo_mono   },
+	{ NULL,            NULL },
 };
 
 static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
@@ -1039,6 +1116,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->burst_width = round(s->sample_rate * s->conf.burst_width);
 	s->burst_level = round(s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level * INT16_MAX);
 	
+	s->fsc_flag_left  = round(s->sample_rate * s->conf.fsc_flag_left);
+	s->fsc_flag_width = round(s->sample_rate * s->conf.fsc_flag_width);
+	s->fsc_flag_level = round(s->conf.fsc_flag_level * (s->conf.white_level - s->conf.blanking_level) * level * INT16_MAX);
+	
 	/* Set the next line/frame counter */
 	/* NOTE: TV line and frame numbers start at 1 rather than 0 */
 	s->line = 1;
@@ -1287,6 +1368,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	uint32_t rgb;
 	int pal;
 	int odd;
+	int fsc = 0;
 	int16_t *lut_b;
 	int16_t *lut_i;
 	int16_t *lut_q;
@@ -1597,6 +1679,14 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		/* Calculate the active line number */
 		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
 	}
+	else if(s->conf.lines == 320)
+	{
+		if(s->line <= 8) seq = "V__v";
+		else seq = "h_aa";
+		
+		vy = s->line - 9;
+		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
+	}
 	else if(s->conf.lines == 240)
 	{
 		switch(s->line)
@@ -1660,6 +1750,15 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		lut_i = _colour_subcarrier_phase(s, 90);
 		lut_q = _colour_subcarrier_phase(s, 0);
 	}
+	else if(s->conf.colour_mode == VID_APOLLO_FSC)
+	{
+		/* Apollo Field Sequential Colour */
+		fsc = (s->frame * 2 + (s->line < 264 ? 0 : 1)) % 3;
+		lut_b = NULL;
+		lut_i = NULL;
+		lut_q = NULL;
+		pal = 0;
+	}
 	else
 	{
 		/* No colour */
@@ -1691,6 +1790,13 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		for(; x < s->half_width; x++)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
+			
+			if(s->conf.colour_mode == VID_APOLLO_FSC)
+			{
+				rgb  = (rgb >> (8 * fsc)) & 0xFF;
+				rgb |= (rgb << 8) | (rgb << 16);
+			}
+			
 			s->output[x * 2] = s->y_level_lookup[rgb];
 			
 			if(pal)
@@ -1713,6 +1819,13 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		for(; x < s->active_left + s->active_width; x++)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
+			
+			if(s->conf.colour_mode == VID_APOLLO_FSC)
+			{
+				rgb  = (rgb >> (8 * fsc)) & 0xFF;
+				rgb |= (rgb << 8) | (rgb << 16);
+			}
+			
 			s->output[x * 2] = s->y_level_lookup[rgb];
 			
 			if(pal)
@@ -1746,6 +1859,21 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
 			s->output[x * 2] += (lut_b[x] * s->burst_level) >> 16;
+		}
+	}
+	
+	/* Render the FSC flag */
+	if(s->conf.colour_mode == VID_APOLLO_FSC && fsc == 1 &&
+	  (s->line == 18 || s->line == 281))
+	{
+		/* The Apollo colour standard transmits one colour per field
+		 * (Blue, Red, Green), with the green field indicated by a flag
+		 * on field line 18. The flag also indicates the temperature of
+		 * the camera by its duration, varying between 5 and 45 μs. The
+		 * duration is fixed to 20 μs in hacktv. */
+		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
+		{
+			s->output[x * 2] = s->fsc_flag_level;
 		}
 	}
 	
