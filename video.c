@@ -708,10 +708,10 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 2.71 */
 	
-	.white_level    =  0.70,
-	.black_level    =  0.0525,
-	.blanking_level =  0.00,
-	.sync_level     = -0.30,
+	.white_level    =  0.5000,
+	.black_level    = -0.1475,
+	.blanking_level = -0.2000,
+	.sync_level     = -0.5000,
 	
 	.colour_mode    = VID_APOLLO_FSC,
 	.fsc_flag_width = 0.00002000, /* 20.00µs */
@@ -800,10 +800,10 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	 * transmissions from the surface. This implementation uses the
 	 * negative pulse mode. */
 	
-	.white_level    =  0.70,
-	.black_level    =  0.00,
-	.blanking_level =  0.00,
-	.sync_level     = -0.30,
+	.white_level    =  0.50,
+	.black_level    = -0.20,
+	.blanking_level = -0.20,
+	.sync_level     = -0.50,
 	
 	/* These are copied from the NTSC values */
 	.gamma          = 1.0,
