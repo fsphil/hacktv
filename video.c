@@ -38,10 +38,6 @@
  * 
  * - PAL colour carrier (4 full frames in length + 1 line) or
  *   NTSC colour carrier (2 full lines + 1 line).
- * 
- * - Mono audio carrier. The length of this is calculated
- *   so that the full int16_t range provides the required
- *   frequency deviation.
 */
 
 const vid_config_t vid_config_pal_i = {
@@ -364,9 +360,9 @@ const vid_config_t vid_config_ntsc_m = {
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 2.71 */
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
 	.white_level    = 0.2000,
 	.black_level    = 0.7280,
@@ -410,9 +406,9 @@ const vid_config_t vid_config_ntsc = {
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 2.71 */
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.0525,
@@ -704,9 +700,9 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 2.71 */
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
 	.white_level    =  0.5000,
 	.black_level    = -0.1475,
@@ -747,9 +743,9 @@ const vid_config_t vid_config_apollo_colour = {
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 2.71 */
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.0525,
@@ -1533,7 +1529,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		case 14:  seq = "h0__"; break;
 		case 15:  seq = "h0__"; break;
 		case 16:  seq = "h0__"; break;
-		case 17:  seq = "h0__"; break; 
+		case 17:  seq = "h0__"; break;
 		case 18:  seq = "h0__"; break;
 		case 19:  seq = "h0__"; break;
 		case 20:  seq = "h0__"; break;
@@ -1561,7 +1557,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		case 327: seq = "h0__"; break;
 		case 328: seq = "h0__"; break;
 		case 329: seq = "h0__"; break;
-		case 330: seq = "h0__"; break; 
+		case 330: seq = "h0__"; break;
 		case 331: seq = "h0__"; break;
 		case 332: seq = "h0__"; break;
 		case 333: seq = "h0__"; break;
@@ -2023,7 +2019,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 			fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
 		}
 	}
-	 
+	
 	/* Generate the FM audio subcarrier(s) */
 	if(s->conf.fm_audio_level > 0 || s->conf.am_audio_level > 0)
 	{
