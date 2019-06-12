@@ -211,6 +211,9 @@ struct vid_t {
 	int burst_width;
 	int16_t burst_level;
 	
+	_mod_fm_t fm_secam_cr;
+	_mod_fm_t fm_secam_cb;
+
 	int fsc_flag_left;
 	int fsc_flag_width;
 	int16_t fsc_flag_level;

@@ -280,22 +280,18 @@ const vid_config_t vid_config_secam_l = {
 	.sync_level     = 0.00,
 	
 	.colour_mode    = VID_SECAM,
-	//.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
-	//.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
-	//.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
-	//.colour_carrier = 4433618.75,
-	//.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.gamma          = 1.2,
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	//.iu_co          = 0.000,
-	//.iv_co          = 0.877,
-	//.qu_co          = 0.493,
-	//.qv_co          = 0.000,
+	.iu_co          = 1.000,
+	.iv_co          = 0.000,
+	.qu_co          = 0.000,
+	.qv_co          = -1.000,
 	
-	.am_mono_carrier    = 6500000, /* Hz */
+	.am_mono_carrier = 6500000, /* Hz */
 };
 
 const vid_config_t vid_config_secam = {
@@ -323,20 +319,16 @@ const vid_config_t vid_config_secam = {
 	.sync_level     = -0.30,
 	
 	.colour_mode    = VID_SECAM,
-	//.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
-	//.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
-	//.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
-	//.colour_carrier = 4433618.75,
-	//.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.gamma          = 1.2,
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	//.iu_co          = 0.000,
-	//.iv_co          = 0.877,
-	//.qu_co          = 0.493,
-	//.qv_co          = 0.000,
+	.iu_co          = 1.000,
+	.iv_co          = 0.000,
+	.qu_co          = 0.000,
+	.qv_co          = -1.000,
 };
 
 const vid_config_t vid_config_ntsc_m = {
@@ -1214,6 +1206,25 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->fsc_flag_width = round(s->sample_rate * s->conf.fsc_flag_width);
 	s->fsc_flag_level = round(s->conf.fsc_flag_level * (s->conf.white_level - s->conf.blanking_level) * level * INT16_MAX);
 	
+	if(s->conf.colour_mode == VID_SECAM)
+	{
+		int secam_level = round((s->conf.white_level - s->conf.blanking_level) * 0.200 * s->conf.video_level * level * INT16_MAX);
+		
+		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		r = _init_fm_modulator(&s->fm_secam_cb, s->sample_rate, 4406260, 280000, secam_level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+	}
+	
 	/* Set the next line/frame counter */
 	/* NOTE: TV line and frame numbers start at 1 rather than 0 */
 	s->line = 1;
@@ -1389,6 +1400,8 @@ void vid_free(vid_t *s)
 	if(s->i_level_lookup != NULL) free(s->i_level_lookup);
 	if(s->q_level_lookup != NULL) free(s->q_level_lookup);
 	if(s->colour_lookup != NULL) free(s->colour_lookup);
+	_free_fm_modulator(&s->fm_secam_cr);
+	_free_fm_modulator(&s->fm_secam_cb);
 	_free_fm_modulator(&s->fm_video);
 	_free_fm_modulator(&s->fm_mono);
 	_free_fm_modulator(&s->fm_left);
@@ -1968,6 +1981,38 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
 		{
 			s->output[x * 2] = s->fsc_flag_level;
+		}
+	}
+	
+	/* Render the SECAM colour subcarrier */
+	if(s->conf.colour_mode == VID_SECAM &&
+	   (seq[2] == 'a' || seq[3] == 'a'))
+	{
+		x = s->active_left;
+		w = x + s->active_width;
+		
+		if(seq[2] != 'a') x = s->half_width;
+		if(seq[3] != 'a') w = s->half_width;
+		
+		x -= s->burst_left;
+		
+		for(; x < w; x++)
+		{
+			rgb = 0x000000;
+			
+			if(x >= s->active_left && x < s->active_left + s->active_width)
+			{
+				rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
+			}
+			
+			if(((s->frame * s->conf.lines) + s->line) & 1)
+			{
+				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
+			}
+			else
+			{
+				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
+			}
 		}
 	}
 	
