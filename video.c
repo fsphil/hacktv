@@ -37,6 +37,10 @@
  * 
  * - PAL colour carrier (4 full frames in length + 1 line) or
  *   NTSC colour carrier (2 full lines + 1 line).
+ * 
+ * - Mono audio carrier. The length of this is calculated
+ *   so that the full int16_t range provides the required
+ *   frequency deviation.
 */
 
 const vid_config_t vid_config_pal_i = {
@@ -279,18 +283,22 @@ const vid_config_t vid_config_secam_l = {
 	.sync_level     = 0.00,
 	
 	.colour_mode    = VID_SECAM,
-	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	//.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
+	//.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	//.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
+	//.colour_carrier = 4433618.75,
+	//.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
 	
 	.gamma          = 1.2,
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
-	.iv_co          = 0.000,
-	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	//.iu_co          = 0.000,
+	//.iv_co          = 0.877,
+	//.qu_co          = 0.493,
+	//.qv_co          = 0.000,
 	
-	.am_mono_carrier = 6500000, /* Hz */
+	.am_mono_carrier    = 6500000, /* Hz */
 };
 
 const vid_config_t vid_config_secam = {
@@ -318,16 +326,20 @@ const vid_config_t vid_config_secam = {
 	.sync_level     = -0.30,
 	
 	.colour_mode    = VID_SECAM,
-	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	//.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
+	//.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	//.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
+	//.colour_carrier = 4433618.75,
+	//.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
 	
 	.gamma          = 1.2,
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
-	.iv_co          = 0.000,
-	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	//.iu_co          = 0.000,
+	//.iv_co          = 0.877,
+	//.qu_co          = 0.493,
+	//.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_ntsc_m = {
@@ -351,9 +363,9 @@ const vid_config_t vid_config_ntsc_m = {
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
 	
-	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.hsync_width       = 0.00000470, /* 4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 2.71 */
 	
 	.white_level    = 0.2000,
 	.black_level    = 0.7280,
@@ -397,9 +409,9 @@ const vid_config_t vid_config_ntsc = {
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
 	
-	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.hsync_width       = 0.00000470, /* 4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /* 2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 2.71 */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.0525,
@@ -671,200 +683,25 @@ const vid_config_t vid_config_baird_30 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
-const vid_config_t vid_config_apollo_colour_fm = {
-	
-	/* Unified S-Band, Apollo Colour Lunar Television */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.level          = 1.000, /* Overall signal level */
-	.video_level    = 0.850, /* Power level of video */
-	.fm_audio_level = 0.150, /* Power level of audio */
-	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 1000000 / 0.850, /* kHz */
-	
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
-	.lines          = 525,
-	.active_lines   = 480,
-	.active_width   = 0.00005290, /* 52.90µs */
-	.active_left    = 0.00000920, /* |-->| 9.20µs */
-	
-	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 27.10 µs */
-	
-	.white_level    =  0.5000,
-	.black_level    = -0.1475,
-	.blanking_level = -0.2000,
-	.sync_level     = -0.5000,
-	
-	.colour_mode    = VID_APOLLO_FSC,
-	.fsc_flag_width = 0.00002000, /* 20.00µs */
-	.fsc_flag_left  = 0.00001470, /* |-->| 14.70µs */
-	.fsc_flag_level = 1.00,
-	
-	.gamma          =  1.2,
-	.rw_co          =  0.299, /* R weight */
-	.gw_co          =  0.587, /* G weight */
-	.bw_co          =  0.114, /* B weight */
-	
-	/* The audio carrier overlaps the video signal and
-	 * requires the video to either be low pass filtered
-	 * to 750kHz (Apollo 10 to 14) or cancelled out
-	 * in post-processing (Apollo 15-17). */
-	
-	.fm_mono_carrier    = 1250000, /* Hz */
-	.fm_audio_deviation = 25000, /* +/- Hz */
-};
-
-const vid_config_t vid_config_apollo_colour = {
-	
-	/* Apollo Colour Lunar Television */
-	.output_type    = HACKTV_INT16_REAL,
-	
-	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
-	
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
-	.lines          = 525,
-	.active_lines   = 480,
-	.active_width   = 0.00005290, /* 52.90µs */
-	.active_left    = 0.00000920, /* |-->| 9.20µs */
-	
-	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
-	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 27.10 µs */
-	
-	.white_level    =  0.70,
-	.black_level    =  0.0525,
-	.blanking_level =  0.00,
-	.sync_level     = -0.30,
-	
-	.colour_mode    = VID_APOLLO_FSC,
-	.fsc_flag_width = 0.00002000, /* 20.00µs */
-	.fsc_flag_left  = 0.00001470, /* |-->| 14.70µs */
-	.fsc_flag_level = 1.00,
-	
-	.gamma          =  1.2,
-	.rw_co          =  0.299, /* R weight */
-	.gw_co          =  0.587, /* G weight */
-	.bw_co          =  0.114, /* B weight */
-};
-
-const vid_config_t vid_config_apollo_mono_fm = {
-	
-	/* Unified S-Band, Apollo Lunar Television 10 fps video (Mode 1) */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.level          = 1.000, /* Overall signal level */
-	.video_level    = 0.850, /* Power level of video */
-	.fm_audio_level = 0.150, /* Power level of audio */
-	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 1000000 / 0.850, /* kHz */
-	
-	.frame_rate_num = 10,
-	.frame_rate_den = 1,
-	.lines          = 320,
-	.active_lines   = 312,
-	.active_width   = 0.00028250, /* 282.5µs */
-	.active_left    = 0.00002500, /* |-->| 25.0µs */
-	
-	.hsync_width       = 0.00002000, /* 20.00µs */
-	.vsync_long_width  = 0.00026750, /* 267.5µs */
-	
-	/* Hacky: hacktv can't generate a single pulse wider than half a line,
-	 * which we need here. Use the vsync short pulse to complete the long */
-        .vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
-	
-	/* The Apollo TV camera supports a pulse and tone sync mode. The
-	 * pulse mode is a normal negative pulse, and the tone mode uses
-	 * a 409600 Hz tone. I'm not sure which was used for the live
-	 * transmissions from the surface. This implementation uses the
-	 * negative pulse mode. */
-	
-	.white_level    =  0.50,
-	.black_level    = -0.20,
-	.blanking_level = -0.20,
-	.sync_level     = -0.50,
-	
-	/* These are copied from the NTSC values */
-	.gamma          = 1.0,
-	.rw_co          = 0.299, /* R weight */
-	.gw_co          = 0.587, /* G weight */
-	.bw_co          = 0.114, /* B weight */
-	
-	.fm_mono_carrier    = 1250000, /* Hz */
-	.fm_audio_deviation = 25000, /* +/- Hz */
-};
-
-const vid_config_t vid_config_apollo_mono = {
-	
-	/* Apollo Lunar Television 10 fps video (Mode 1) */
-	.output_type    = HACKTV_INT16_REAL,
-	
-	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
-	
-	.frame_rate_num = 10,
-	.frame_rate_den = 1,
-	.lines          = 320,
-	.active_lines   = 312,
-	.active_width   = 0.00028250, /* 282.5µs */
-	.active_left    = 0.00002500, /* |-->| 25.0µs */
-	
-	.hsync_width       = 0.00002000, /* 20.00µs */
-	.vsync_long_width  = 0.00026750, /* 267.5µs */
-	
-	/* Hacky: hacktv can't generate a single pulse wider than half a line,
-	 * which we need here. Use the vsync short pulse to complete the long */
-        .vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
-	
-	/* The Apollo TV camera supports a pulse and tone sync mode. The
-	 * pulse mode is a normal negative pulse, and the tone mode uses
-	 * a 409600 Hz tone. I'm not sure which was used for the live
-	 * transmissions from the surface. This implementation uses the
-	 * negative pulse mode. */
-	
-	.white_level    =  0.70,
-	.black_level    =  0.00,
-	.blanking_level =  0.00,
-	.sync_level     = -0.30,
-	
-	/* These are copied from the NTSC values */
-	.gamma          = 1.0,
-	.rw_co          = 0.299, /* R weight */
-	.gw_co          = 0.587, /* G weight */
-	.bw_co          = 0.114, /* B weight */
-};
-
 const vid_configs_t vid_configs[] = {
-	{ "i",             &vid_config_pal_i            },
-	{ "b",             &vid_config_pal_bg           },
-	{ "g",             &vid_config_pal_bg           },
-	{ "pal-fm",        &vid_config_pal_fm           },
-	{ "pal",           &vid_config_pal              },
-	{ "l",             &vid_config_secam_l          },
-	{ "secam",         &vid_config_secam            },
-	{ "m",             &vid_config_ntsc_m           },
-	{ "ntsc",          &vid_config_ntsc             },
-	{ "e",             &vid_config_819_e            },
-	{ "819",           &vid_config_819              },
-	{ "a",             &vid_config_405_a            },
-	{ "405",           &vid_config_405              },
-	{ "240-am",        &vid_config_baird_240_am     },
-	{ "240",           &vid_config_baird_240        },
-	{ "30-am",         &vid_config_baird_30_am      },
-	{ "30",            &vid_config_baird_30         },
-	{ "apollo-fsc-fm", &vid_config_apollo_colour_fm },
-	{ "apollo-fsc",    &vid_config_apollo_colour    },
-	{ "apollo-fm",     &vid_config_apollo_mono_fm   },
-	{ "apollo",        &vid_config_apollo_mono      },
-	{ NULL,            NULL },
+	{ "i",      &vid_config_pal_i        },
+	{ "b",      &vid_config_pal_bg       },
+	{ "g",      &vid_config_pal_bg       },
+	{ "pal-fm", &vid_config_pal_fm       },
+	{ "pal",    &vid_config_pal          },
+	{ "l",      &vid_config_secam_l      },
+	{ "secam",  &vid_config_secam        },
+	{ "m",      &vid_config_ntsc_m       },
+	{ "ntsc",   &vid_config_ntsc         },
+	{ "e",      &vid_config_819_e        },
+	{ "819",    &vid_config_819          },
+	{ "a",      &vid_config_405_a        },
+	{ "405",    &vid_config_405          },
+	{ "240-am", &vid_config_baird_240_am },
+	{ "240",    &vid_config_baird_240    },
+	{ "30-am",  &vid_config_baird_30_am  },
+	{ "30",     &vid_config_baird_30     },
+	{ NULL,     NULL },
 };
 
 static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
@@ -1107,8 +944,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	/* Calculate the active video width and offset */
 	s->active_width = ceil(s->sample_rate * s->conf.active_width);
-	if(s->active_width > s->width) s->active_width = s->width;
-	
 	s->active_left  = round(s->sample_rate * s->conf.active_left);
 	
 	s->hsync_width       = round(s->sample_rate * s->conf.hsync_width);
@@ -1200,29 +1035,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->burst_left  = round(s->sample_rate * s->conf.burst_left);
 	s->burst_width = round(s->sample_rate * s->conf.burst_width);
 	s->burst_level = round(s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level * INT16_MAX);
-	
-	s->fsc_flag_left  = round(s->sample_rate * s->conf.fsc_flag_left);
-	s->fsc_flag_width = round(s->sample_rate * s->conf.fsc_flag_width);
-	s->fsc_flag_level = round(s->conf.fsc_flag_level * (s->conf.white_level - s->conf.blanking_level) * level * INT16_MAX);
-	
-	if(s->conf.colour_mode == VID_SECAM)
-	{
-		int secam_level = round((s->conf.white_level - s->conf.blanking_level) * 0.200 * s->conf.video_level * level * INT16_MAX);
-		
-		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-		
-		r = _init_fm_modulator(&s->fm_secam_cb, s->sample_rate, 4406260, 280000, secam_level);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-	}
 	
 	/* Set the next line/frame counter */
 	/* NOTE: TV line and frame numbers start at 1 rather than 0 */
@@ -1406,8 +1218,6 @@ void vid_free(vid_t *s)
 	if(s->i_level_lookup != NULL) free(s->i_level_lookup);
 	if(s->q_level_lookup != NULL) free(s->q_level_lookup);
 	if(s->colour_lookup != NULL) free(s->colour_lookup);
-	_free_fm_modulator(&s->fm_secam_cr);
-	_free_fm_modulator(&s->fm_secam_cb);
 	_free_fm_modulator(&s->fm_video);
 	_free_fm_modulator(&s->fm_mono);
 	_free_fm_modulator(&s->fm_left);
@@ -1481,7 +1291,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	uint32_t rgb;
 	int pal;
 	int odd;
-	int fsc = 0;
 	int16_t *lut_b;
 	int16_t *lut_i;
 	int16_t *lut_q;
@@ -1548,7 +1357,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		case 14:  seq = "h0__"; break;
 		case 15:  seq = "h0__"; break;
 		case 16:  seq = "h0__"; break;
-		case 17:  seq = "h0__"; break;
+		case 17:  seq = "h0__"; break; 
 		case 18:  seq = "h0__"; break;
 		case 19:  seq = "h0__"; break;
 		case 20:  seq = "h0__"; break;
@@ -1576,7 +1385,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		case 327: seq = "h0__"; break;
 		case 328: seq = "h0__"; break;
 		case 329: seq = "h0__"; break;
-		case 330: seq = "h0__"; break;
+		case 330: seq = "h0__"; break; 
 		case 331: seq = "h0__"; break;
 		case 332: seq = "h0__"; break;
 		case 333: seq = "h0__"; break;
@@ -1792,14 +1601,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		/* Calculate the active line number */
 		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
 	}
-	else if(s->conf.lines == 320)
-	{
-		if(s->line <= 8) seq = "V__v";
-		else seq = "h_aa";
-		
-		vy = s->line - 9;
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
-	}
 	else if(s->conf.lines == 240)
 	{
 		switch(s->line)
@@ -1863,15 +1664,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		lut_i = _colour_subcarrier_phase(s, 90);
 		lut_q = _colour_subcarrier_phase(s, 0);
 	}
-	else if(s->conf.colour_mode == VID_APOLLO_FSC)
-	{
-		/* Apollo Field Sequential Colour */
-		fsc = (s->frame * 2 + (s->line < 264 ? 0 : 1)) % 3;
-		lut_b = NULL;
-		lut_i = NULL;
-		lut_q = NULL;
-		pal = 0;
-	}
 	else
 	{
 		/* No colour */
@@ -1903,13 +1695,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		for(; x < s->half_width; x++)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-			
-			if(s->conf.colour_mode == VID_APOLLO_FSC)
-			{
-				rgb  = (rgb >> (8 * fsc)) & 0xFF;
-				rgb |= (rgb << 8) | (rgb << 16);
-			}
-			
 			s->output[x * 2] = s->y_level_lookup[rgb];
 			
 			if(pal)
@@ -1932,13 +1717,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		for(; x < s->active_left + s->active_width; x++)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-			
-			if(s->conf.colour_mode == VID_APOLLO_FSC)
-			{
-				rgb  = (rgb >> (8 * fsc)) & 0xFF;
-				rgb |= (rgb << 8) | (rgb << 16);
-			}
-			
 			s->output[x * 2] = s->y_level_lookup[rgb];
 			
 			if(pal)
@@ -1972,53 +1750,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
 			s->output[x * 2] += (lut_b[x] * s->burst_level) >> 16;
-		}
-	}
-	
-	/* Render the FSC flag */
-	if(s->conf.colour_mode == VID_APOLLO_FSC && fsc == 1 &&
-	  (s->line == 18 || s->line == 281))
-	{
-		/* The Apollo colour standard transmits one colour per field
-		 * (Blue, Red, Green), with the green field indicated by a flag
-		 * on field line 18. The flag also indicates the temperature of
-		 * the camera by its duration, varying between 5 and 45 μs. The
-		 * duration is fixed to 20 μs in hacktv. */
-		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
-		{
-			s->output[x * 2] = s->fsc_flag_level;
-		}
-	}
-	
-	/* Render the SECAM colour subcarrier */
-	if(s->conf.colour_mode == VID_SECAM &&
-	   (seq[2] == 'a' || seq[3] == 'a'))
-	{
-		x = s->active_left;
-		w = x + s->active_width;
-		
-		if(seq[2] != 'a') x = s->half_width;
-		if(seq[3] != 'a') w = s->half_width;
-		
-		x -= s->burst_left;
-		
-		for(; x < w; x++)
-		{
-			rgb = 0x000000;
-			
-			if(x >= s->active_left && x < s->active_left + s->active_width)
-			{
-				rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-			}
-			
-			if(((s->frame * s->conf.lines) + s->line) & 1)
-			{
-				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
-			}
-			else
-			{
-				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
-			}
 		}
 	}
 	
@@ -2076,7 +1807,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 			fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
 		}
 	}
-	
+	 
 	/* Generate the FM audio subcarrier(s) */
 	if(s->conf.fm_audio_level > 0 || s->conf.am_audio_level > 0)
 	{
