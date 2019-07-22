@@ -558,8 +558,6 @@ int main(int argc, char *argv[])
 	if(s.noaudio > 0)
 	{
 		/* Disable all audio sub-carriers */
-		fprintf(stderr, "Disabling audio sub-carriers.\n");
-		
 		vid_conf.fm_audio_level = 0;
 		vid_conf.am_audio_level = 0;
 		vid_conf.nicam_level = 0;
