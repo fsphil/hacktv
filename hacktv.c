@@ -79,6 +79,7 @@ static void print_usage(void)
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
 		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
+		"  -D, --deviation <value>        Override the mode's FM deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
@@ -89,6 +90,7 @@ static void print_usage(void)
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
+		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -263,6 +265,7 @@ static void print_usage(void)
 #define _OPT_VIDEOCRYPTS 1004
 #define _OPT_SYSTER      1005
 #define _OPT_FILTER      1006
+#define _OPT_NOAUDIO     1007
 
 int main(int argc, char *argv[])
 {
@@ -273,6 +276,7 @@ int main(int argc, char *argv[])
 		{ "mode",        required_argument, 0, 'm' },
 		{ "samplerate",  required_argument, 0, 's' },
 		{ "level",       required_argument, 0, 'l' },
+		{ "deviation",   required_argument, 0, 'D' },
 		{ "gamma",       required_argument, 0, 'G' },
 		{ "repeat",      no_argument,       0, 'r' },
 		{ "verbose",     no_argument,       0, 'v' },
@@ -283,6 +287,7 @@ int main(int argc, char *argv[])
 		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
 		{ "syster",      no_argument,       0, _OPT_SYSTER },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
+		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
 		{ "frequency",   required_argument, 0, 'f' },
 		{ "amp",         no_argument,       0, 'a' },
 		{ "gain",        required_argument, 0, 'x' },
@@ -306,6 +311,7 @@ int main(int argc, char *argv[])
 	s.mode = "i";
 	s.samplerate = 16000000;
 	s.level = 1.0;
+	s.deviation = -1;
 	s.gamma = -1;
 	s.repeat = 0;
 	s.verbose = 0;
@@ -316,6 +322,7 @@ int main(int argc, char *argv[])
 	s.videocrypts = NULL;
 	s.syster = 0;
 	s.filter = 0;
+	s.noaudio = 0;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -323,7 +330,7 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvf:al:g:A:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:D:G:rvf:al:g:A:t:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -393,6 +400,10 @@ int main(int argc, char *argv[])
 			s.level = atof(optarg);
 			break;
 		
+		case 'D': /* -D, --deviation <value> */
+			s.deviation = atof(optarg);
+			break;
+		
 		case 'G': /* -G, --gamma <value> */
 			s.gamma = atof(optarg);
 			break;
@@ -436,6 +447,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
+			break;
+		
+		case _OPT_NOAUDIO: /* --noaudio */
+			s.noaudio = 1;
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -522,9 +537,32 @@ int main(int argc, char *argv[])
 	signal(SIGABRT, &_sigint_callback_handler);
 	
 	memcpy(&vid_conf, vid_confs->conf, sizeof(vid_config_t));
+	
+	if(s.deviation > 0)
+	{
+		/* Override the FM deviation value */
+		vid_conf.fm_deviation = s.deviation;
+	}
+	
 	if(s.gamma > 0)
 	{
+		/* Override the gamma value */
 		vid_conf.gamma = s.gamma;
+	}
+	
+	if(s.noaudio > 0)
+	{
+		/* Disable all audio sub-carriers */
+		fprintf(stderr, "Disabling audio sub-carriers.\n");
+		
+		vid_conf.fm_audio_level = 0;
+		vid_conf.am_audio_level = 0;
+		vid_conf.nicam_level = 0;
+		vid_conf.fm_mono_carrier = 0;
+		vid_conf.fm_left_carrier = 0;
+		vid_conf.fm_right_carrier = 0;
+		vid_conf.nicam_carrier = 0;
+		vid_conf.am_mono_carrier = 0;
 	}
 	
 	vid_conf.level *= s.level;

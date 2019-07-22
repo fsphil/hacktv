@@ -59,6 +59,7 @@ typedef struct {
 	char *mode;
 	int samplerate;
 	float level;
+	float deviation;
 	float gamma;
 	int repeat;
 	int verbose;
@@ -69,6 +70,7 @@ typedef struct {
 	char *videocrypts;
 	int syster;
 	int filter;
+	int noaudio;
 	uint64_t frequency;
 	int amp;
 	int gain;
