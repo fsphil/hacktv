@@ -177,10 +177,10 @@ const vid_config_t vid_config_pal_fm = {
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
 	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
 	
-	.white_level    =  1.00,
-	.black_level    = -0.40,
-	.blanking_level = -0.40,
-	.sync_level     = -1.00,
+	.white_level    =  0.50,
+	.black_level    = -0.20,
+	.blanking_level = -0.20,
+	.sync_level     = -0.50,
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
