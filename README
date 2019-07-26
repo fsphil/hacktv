@@ -61,6 +61,7 @@ WHAT'S IT DO
 
 Generates a PAL/NTSC/SECAM* video signal from a video file or test pattern.
 Also supports the older 819, 405, 240 and 30 line standards.
+Supports NASA Apollo video standards, both colour and mono.
 Input is any file type or URL supported by ffmpeg.
 Output can be to a file or directly to a HackRF.
 Teletext support.

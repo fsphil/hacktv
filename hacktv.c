@@ -80,6 +80,7 @@ static void print_usage(void)
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
 		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
+		"  -D, --deviation <value>        Override the mode's FM deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -p, --position <value>         Set start position of video in minutes.\n"
@@ -95,6 +96,7 @@ static void print_usage(void)
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
+		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -154,24 +156,29 @@ static void print_usage(void)
 		"\n"
 		"Supported television modes:\n"
 		"\n"
-		"  i          = PAL colour, 25 fps, 625 lines, AM (complex), 6.0 MHz FM audio\n"
-		"  b, g       = PAL colour, 25 fps, 625 lines, AM (complex), 5.5 MHz FM audio\n"
-		"  pal        = PAL colour, 25 fps, 625 lines, unmodulated (real)\n"
-		"  m          = NTSC colour, 30/1.001 fps, 525 lines, AM (complex)\n"
-		"  ntsc       = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
-		"  l          = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz AM audio\n"
-		"  secam      = SECAM colour, 25 fps, 625 lines, unmodulated (real)\n"
-		"  e          = No colour, 25 fps, 819 lines, AM (complex)\n"
-		"  819        = No colour, 25 fps, 819 lines, unmodulated (real)\n"
-		"  a          = No colour, 25 fps, 405 lines, AM (complex)\n"
-		"  405        = No colour, 25 fps, 405 lines, unmodulated (real)\n"
-		"  240-am     = No colour, 25 fps, 240 lines, AM (complex)\n"
-		"  240        = No colour, 25 fps, 240 lines, unmodulated (real)\n"
-		"  30-am      = No colour, 12.5 fps, 30 lines, AM (complex)\n"
-		"  30         = No colour, 12.5 fps, 30 lines, unmodulated (real)\n"
-		"  apollo-fsc = Field sequential colour, 30/1.001 fps, 525 lines, unmodulated\n"
-		"               (real)\n"
-		"  apollo     = No colour, 10 fps, 320 lines, unmodulated (real)\n"
+		"  i             = PAL colour, 25 fps, 625 lines, AM (complex), 6.0 MHz FM audio\n"
+		"  b, g          = PAL colour, 25 fps, 625 lines, AM (complex), 5.5 MHz FM audio\n"
+		"  pal-fm        = PAL colour, 25 fps, 625 lines, FM (complex), 6.5 MHz FM audio\n"
+		"  pal           = PAL colour, 25 fps, 625 lines, unmodulated (real)\n"
+		"  m             = NTSC colour, 30/1.001 fps, 525 lines, AM (complex)\n"
+		"  ntsc          = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
+		"  l             = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz AM\n"
+		"                  audio\n"
+		"  secam         = SECAM colour, 25 fps, 625 lines, unmodulated (real)\n"
+		"  e             = No colour, 25 fps, 819 lines, AM (complex)\n"
+		"  819           = No colour, 25 fps, 819 lines, unmodulated (real)\n"
+		"  a             = No colour, 25 fps, 405 lines, AM (complex)\n"
+		"  405           = No colour, 25 fps, 405 lines, unmodulated (real)\n"
+		"  240-am        = No colour, 25 fps, 240 lines, AM (complex)\n"
+		"  240           = No colour, 25 fps, 240 lines, unmodulated (real)\n"
+		"  30-am         = No colour, 12.5 fps, 30 lines, AM (complex)\n"
+		"  30            = No colour, 12.5 fps, 30 lines, unmodulated (real)\n"
+		"  apollo-fsc-fm = Field sequential colour, 30/1.001 fps, 525 lines, FM (complex)\n"
+		"                  1.25 MHz FM audio\n"
+		"  apollo-fsc    = Field sequential colour, 30/1.001 fps, 525 lines, unmodulated\n"
+		"                  (real)\n"
+		"  apollo-fm     = No colour, 10 fps, 320 lines, FM (complex), 1.25 MHz FM audio\n"
+		"  apollo        = No colour, 10 fps, 320 lines, unmodulated (real)\n"
 		"\n"
 		"NOTE: The number of samples per line is rounded to the nearest integer,\n"
 		"which may result in a slight frame rate error.\n"
@@ -278,6 +285,8 @@ static void print_usage(void)
 #define _OPT_VIDEOCRYPTS 1004
 #define _OPT_SYSTER      1005
 #define _OPT_FILTER      1006
+#define _OPT_NOAUDIO     1007
+
 #define _OPT_LOGO        2000
 #define _OPT_TIMECODE    2001
 #define _OPT_DISCRET     2002
@@ -291,6 +300,7 @@ int main(int argc, char *argv[])
 		{ "mode",        required_argument, 0, 'm' },
 		{ "samplerate",  required_argument, 0, 's' },
 		{ "level",       required_argument, 0, 'l' },
+		{ "deviation",   required_argument, 0, 'D' },
 		{ "gamma",       required_argument, 0, 'G' },
 		{ "repeat",      no_argument,       0, 'r' },
 		{ "verbose",     no_argument,       0, 'v' },
@@ -303,14 +313,15 @@ int main(int argc, char *argv[])
 		{ "syster",      no_argument,       0, _OPT_SYSTER },
 		{ "d11",         no_argument,       0, _OPT_DISCRET },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
-		{ "logo",        required_argument, 0, _OPT_LOGO },
-		{ "timestamp",   no_argument,       0, _OPT_TIMECODE },
-		{ "position",    required_argument, 0, 'p' },
+		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
 		{ "frequency",   required_argument, 0, 'f' },
 		{ "amp",         no_argument,       0, 'a' },
 		{ "gain",        required_argument, 0, 'x' },
 		{ "antenna",     required_argument, 0, 'A' },
 		{ "type",        required_argument, 0, 't' },
+		{ "logo",        required_argument, 0, _OPT_LOGO },
+		{ "timestamp",   no_argument,       0, _OPT_TIMECODE },
+		{ "position",    required_argument, 0, 'p' },
 		{ 0,             0,                 0,  0  }
 	};
 	static hacktv_t s;
@@ -329,6 +340,7 @@ int main(int argc, char *argv[])
 	s.mode = "i";
 	s.samplerate = 16000000;
 	s.level = 1.0;
+	s.deviation = -1;
 	s.gamma = -1;
 	s.repeat = 0;
 	s.verbose = 0;
@@ -341,6 +353,7 @@ int main(int argc, char *argv[])
 	s.syster = 0;
 	s.d11 = 0;
 	s.filter = 0;
+	s.noaudio = 0;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -351,7 +364,7 @@ int main(int argc, char *argv[])
 	s.key = NULL;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:G:rvk:f:al:g:A:t:p:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:D:G:rvf:al:g:A:t:p:k:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -421,6 +434,10 @@ int main(int argc, char *argv[])
 			s.level = atof(optarg);
 			break;
 		
+		case 'D': /* -D, --deviation <value> */
+			s.deviation = atof(optarg);
+			break;
+		
 		case 'G': /* -G, --gamma <value> */
 			s.gamma = atof(optarg);
 			break;
@@ -484,6 +501,10 @@ int main(int argc, char *argv[])
 			
 		case 'k': /* -k, --key sky|tac */
 			s.key = strdup(optarg);
+			break;
+		
+		case _OPT_NOAUDIO: /* --noaudio */
+			s.noaudio = 1;
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -570,9 +591,30 @@ int main(int argc, char *argv[])
 	signal(SIGABRT, &_sigint_callback_handler);
 	
 	memcpy(&vid_conf, vid_confs->conf, sizeof(vid_config_t));
+	
+	if(s.deviation > 0)
+	{
+		/* Override the FM deviation value */
+		vid_conf.fm_deviation = s.deviation;
+	}
+	
 	if(s.gamma > 0)
 	{
+		/* Override the gamma value */
 		vid_conf.gamma = s.gamma;
+	}
+	
+	if(s.noaudio > 0)
+	{
+		/* Disable all audio sub-carriers */
+		vid_conf.fm_audio_level = 0;
+		vid_conf.am_audio_level = 0;
+		vid_conf.nicam_level = 0;
+		vid_conf.fm_mono_carrier = 0;
+		vid_conf.fm_left_carrier = 0;
+		vid_conf.fm_right_carrier = 0;
+		vid_conf.nicam_carrier = 0;
+		vid_conf.am_mono_carrier = 0;
 	}
 	
 	vid_conf.level *= s.level;

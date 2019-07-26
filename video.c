@@ -162,8 +162,8 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.level          = 0.8, /* Overall signal level */
 	
-	.video_level    = 0.92, /* Power level of video */
-	.fm_audio_level = 0.08, /* FM audio carrier power level */
+	.video_level    = 1.00, /* Power level of video */
+	.fm_audio_level = 0.05, /* FM audio carrier power level */
 	
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
@@ -176,10 +176,10 @@ const vid_config_t vid_config_pal_fm = {
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
 	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
 	
-	.white_level    =  1.00,
-	.black_level    = -0.40,
-	.blanking_level = -0.40,
-	.sync_level     = -1.00,
+	.white_level    =  0.50,
+	.black_level    = -0.20,
+	.blanking_level = -0.20,
+	.sync_level     = -0.50,
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
@@ -677,12 +677,12 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.level          = 1.000, /* Overall signal level */
-	.video_level    = 0.850, /* Power level of video */
+	.video_level    = 1.000, /* Power level of video */
 	.fm_audio_level = 0.150, /* Power level of audio */
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 1000000 / 0.850, /* kHz */
+	.fm_deviation   = 1000000, /* Hz */
 	
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
@@ -705,7 +705,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.fsc_flag_left  = 0.00001470, /* |-->| 14.70µs */
 	.fsc_flag_level = 1.00,
 	
-	.gamma          =  1.2,
+	.gamma          =  1.0,
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
@@ -748,7 +748,7 @@ const vid_config_t vid_config_apollo_colour = {
 	.fsc_flag_left  = 0.00001470, /* |-->| 14.70µs */
 	.fsc_flag_level = 1.00,
 	
-	.gamma          =  1.2,
+	.gamma          =  1.0,
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
@@ -760,12 +760,12 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.level          = 1.000, /* Overall signal level */
-	.video_level    = 0.850, /* Power level of video */
+	.video_level    = 1.000, /* Power level of video */
 	.fm_audio_level = 0.150, /* Power level of audio */
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 1000000 / 0.850, /* kHz */
+	.fm_deviation   = 1000000, /* Hz */
 	
 	.frame_rate_num = 10,
 	.frame_rate_den = 1,
@@ -1084,7 +1084,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	int64_t c;
 	double d;
 	double glut[0x100];
-	double level;
+	double level, slevel;
 	
 	memset(s, 0, sizeof(vid_t));
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
@@ -1116,7 +1116,11 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->vsync_long_width  = round(s->sample_rate * s->conf.vsync_long_width);
 	
 	/* Calculate signal levels */
-	level = s->conf.video_level * s->conf.level;
+	/* slevel is the the sub-carrier level. When FM modulating
+	 * this is always 1.0, otherwise it equals the overall level */
+	slevel = s->conf.modulation == VID_FM ? 1.0 : s->conf.level;
+	
+	level = s->conf.video_level * slevel;
 	
 	/* Calculate 16-bit blank and sync levels */
 	s->blanking_level = round(s->conf.blanking_level * level * INT16_MAX);
@@ -1239,7 +1243,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* FM audio */
 	if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
 	{
-		r = _init_fm_modulator(&s->fm_mono, s->sample_rate, s->conf.fm_mono_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level);
+		r = _init_fm_modulator(&s->fm_mono, s->sample_rate, s->conf.fm_mono_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
 		if(r != VID_OK)
 		{
 			vid_free(s);
@@ -1251,7 +1255,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
 	{
-		r = _init_fm_modulator(&s->fm_left, s->sample_rate, s->conf.fm_left_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level);
+		r = _init_fm_modulator(&s->fm_left, s->sample_rate, s->conf.fm_left_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
 		if(r != VID_OK)
 		{
 			vid_free(s);
@@ -1263,7 +1267,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
 	{
-		r = _init_fm_modulator(&s->fm_right, s->sample_rate, s->conf.fm_right_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level);
+		r = _init_fm_modulator(&s->fm_right, s->sample_rate, s->conf.fm_right_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
 		if(r != VID_OK)
 		{
 			vid_free(s);
@@ -1276,7 +1280,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* NICAM audio */
 	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
 	{
-		r = nicam_mod_init(&s->nicam, NICAM_MODE_STEREO, 0, s->sample_rate, s->conf.nicam_carrier, s->conf.nicam_beta, s->conf.nicam_level);
+		r = nicam_mod_init(&s->nicam, NICAM_MODE_STEREO, 0, s->sample_rate, s->conf.nicam_carrier, s->conf.nicam_beta, s->conf.nicam_level * slevel);
 		
 		if(r != 0)
 		{
@@ -1290,7 +1294,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* AM audio */
 	if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
 	{
-		r = _init_am_modulator(&s->am_mono, s->sample_rate, s->conf.am_mono_carrier, s->conf.am_audio_level);
+		r = _init_am_modulator(&s->am_mono, s->sample_rate, s->conf.am_mono_carrier, s->conf.am_audio_level * slevel);
 		if(r != VID_OK)
 		{
 			vid_free(s);
@@ -1303,7 +1307,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* FM video */
 	if(s->conf.modulation == VID_FM)
 	{
-		r = _init_fm_modulator(&s->fm_video, s->sample_rate, 0, s->conf.fm_deviation, s->conf.fm_level);
+		r = _init_fm_modulator(&s->fm_video, s->sample_rate, 0, s->conf.fm_deviation, s->conf.fm_level * s->conf.level);
 		if(r != VID_OK)
 		{
 			vid_free(s);
