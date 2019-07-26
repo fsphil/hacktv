@@ -8,6 +8,13 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author.**
 
+2019-07-26:
+Added Sky 09 series card to Videocrypt.
+  - Activate with --key sky09
+  - Sky 11 series can be activated with --key sky11
+  
+Minor changes and tidy-ups.
+
 2019-05-17:
 Added Discret 11 scrambling in audience 7/free access mode. Use --d11 option.
   - Best results with sampling rate 10MHz or 20MHz (until I figure out how to delay properly)

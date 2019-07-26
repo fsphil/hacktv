@@ -96,8 +96,10 @@ typedef struct {
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2, const char *key);
 extern void vc_free(vc_t *s);
 extern void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *key);
-extern void _vc_kernel(uint64_t *out, int *oi, const unsigned char in);
-extern void _vc_rand_seed(_vc_block_t *s);
+extern void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset);
+extern void _vc_kernel09(const unsigned char in, unsigned char *answ);
+extern void _vc_rand_seed_sky07(_vc_block_t *s);
+extern void _vc_rand_seed_sky09(_vc_block_t *s);
 extern void _vc_rand_seed_tac(_vc_block_t *s);
 extern void _vc_rand_seed_xtea(_vc_block_t *s);
 #endif

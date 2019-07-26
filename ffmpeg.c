@@ -939,6 +939,7 @@ static int _seek_screen(void *private, vid_t *s)
 {
 	av_ffmpeg_t *av = private;
 	int x, y;
+	int white_noise[2] = {0xFFFFFF,0x000000};
 	
 	av->video = malloc(vid_get_framebuffer_length(s));
 	if(!av->video)
@@ -951,7 +952,7 @@ static int _seek_screen(void *private, vid_t *s)
 	{
 		for(x = 0; x < s->active_width; x++)
 		{		
-			av->video[y * s->active_width + x] = 0x000000;	
+			av->video[y * s->active_width + x] = white_noise[rand() & 1];	
 		}
 	}
 	/* Overlay the logo */

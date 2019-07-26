@@ -62,11 +62,11 @@ static const uint8_t _hamming[16] = {
 };
 
 /* Blocks for VC1 free-access decoding */
-static const _vc_block_t _fa_blocks[] = { { 0x05, VC_PRBS_CW_FA } };
+static _vc_block_t _fa_blocks[] = { { 0x05, VC_PRBS_CW_FA } };
 
 /* Blocks for VC1 conditional-access sample, taken from MTV UK and modified, */
 /* requires an active Sky card to decode */
-static _vc_block_t _sky_blocks[] = {
+static _vc_block_t _sky11_blocks[] = {
 	{
 		0x07, 0xB2DD55A7BCE178EUL,
 		{
@@ -94,9 +94,9 @@ static _vc_block_t _sky_blocks[] = {
 	},
 };
 
-/* Sequence for Conditional-access sample, taken from MTV UK and modified. */
-/* Requires a PIC16F84 based card flashed with supplied hex file. */
-static _vc_block_t _dynamic_blocks[] = {
+/* Sequence for Conditional-access sample, taken from The Adult Channel and modified. */
+/* Requires a PIC16F84 based card flashed with supplied hex file or a genuine TAC card. */
+static _vc_block_t _tac_blocks[] = {
 	{
 		0x07, 0x1A298F7C70F4F65UL,
 		{
@@ -125,12 +125,44 @@ static _vc_block_t _dynamic_blocks[] = {
 	},
 };
 
+/* Blocks for VC1 conditional-access sample, taken from Sky Movies and modified, */
+/* requires an active Sky 09 card to decode */
+static _vc_block_t _sky09_blocks[] = {
+	{
+		0x07, 0x3376C8EE28F0F2AUL,
+		{
+ 			{ 0x20 },
+ 			{ },
+ 			{ },
+ 			{ },
+ 			{ },
+ 			{ },
+ 			{ 0xe8,0x43,0x0a,0x88,0x82,0x61,0x0c,0x29,0xe4,0x03,0xf6,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0xfb,0x54,0xac,0x02 }
+		},
+	},
+	{
+		0x07, 0x3376C8EE28F0F2AUL,
+		{
+			/* Modify the following line to change the channel name displayed by the decoder.
+			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
+ 			{ 0x20,0x00,0x69,0x20,0x20,0x20,0x48,0x41,0x43,0x4B,0x54,0x56 },
+ 			{ },
+ 			{ },
+ 			{ },
+ 			{ },
+ 			{ },
+ 			{ 0xe8,0x43,0x0a,0x88,0x82,0x61,0x0c,0x29,0xe4,0x03,0xf6,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0xfb,0x54,0xac,0x02 }
+		},
+	},
+};
+
+
 /* Blocks for VC2 free-access decoding */
 static const _vc2_block_t _fa2_blocks[] = { { 0x9C, VC_PRBS_CW_FA } };
 
 /* 
   * Videocrypt key used for Eurotica and The Adult Channel 
-  * Sky 07 card used a 64-byte key with three possible key offsets 
+  * Sky 07 card used a 56-byte key with three possible key offsets 
   * depending on msg[1] byte value (month). Otherwise, the whole algo 
   * is the same. Here offset is always 0.
   *
@@ -138,9 +170,52 @@ static const _vc2_block_t _fa2_blocks[] = { { 0x9C, VC_PRBS_CW_FA } };
   * and you will receive "THIS CHANNEL IS BLOCKED" message. You can 
   * update the key in hex file at address 0000 in EEPROM data.
 */
-static const char key[32]= {
-	0x48,0x9B,0x4D,0xA6,0xF9,0xD9,0xDF,0x6E,0xAC,0x84,0xFA,0x8B,0x2E,0xB6,0x76,0x19,
-	0xC1,0xB0,0xA3,0xBB,0x0C,0xFD,0x70,0x72,0xCA,0x55,0xEF,0xA0,0x7F,0xBF,0x59,0xAD
+static const char tac_key[96]= {
+	0xd9, 0x45, 0x08, 0xdb, 0x7c, 0xf9, 0x56, 0xf7,
+  0x58, 0x18, 0x22, 0x54, 0x38, 0xcd, 0x3d, 0x94,
+  0x09, 0xe6, 0x8e, 0x0d, 0x9a, 0x86, 0xfc, 0x1c,
+  0xa0, 0x19, 0x8f, 0xbc, 0xfd, 0x8d, 0xd1, 0x57,
+  0x56, 0xf2, 0xb6, 0x4f, 0xc9, 0xbd, 0x2a, 0xb3,
+  0x9d, 0x81, 0x5d, 0xe0, 0x05, 0xb5, 0xb9, 0x26,
+  0x67, 0x3c, 0x65, 0xa0, 0xba, 0x39, 0xc7, 0xaf,
+  0x33, 0x24, 0x47, 0xa6, 0x20, 0x1e, 0x14, 0x6f,
+  0x48, 0x9b, 0x4d, 0xa6, 0xf9, 0xd9, 0xdf, 0x6e,
+  0xac, 0x84, 0xfa, 0x8b, 0x2e, 0xb6, 0x76, 0x19,
+  0xc1, 0xb0, 0xa3, 0xbb, 0x0c, 0xfd, 0x70, 0x72,
+  0xca, 0x55, 0xef, 0xa0, 0x7f, 0xbf, 0x59, 0xad
+};
+
+/*
+	* Videocrypt key used for Sky 09 series cards 
+*/
+const unsigned char sky09_key[216] = {
+  0x91, 0x61, 0x9d, 0x53, 0xb3, 0x27, 0xd5, 0xd9,
+  0x0f, 0x59, 0xa6, 0x6f, 0x73, 0xfb, 0x99, 0x4c,
+  0xfb, 0x45, 0x54, 0x8e, 0x20, 0x5f, 0xb3, 0xb1,
+  0x38, 0xd0, 0x6b, 0xa7, 0x40, 0x39, 0xed, 0x2a,
+  0xda, 0x43, 0x8d, 0x51, 0x92, 0xd6, 0xe3, 0x61,
+  0x65, 0x8c, 0x71, 0xe6, 0x84, 0x65, 0x87, 0x03,
+  0x55, 0xbc, 0x64, 0x07, 0xbb, 0x79, 0x9e, 0x40,
+  0x97, 0x89, 0xc4, 0x14, 0x8f, 0x8b, 0x41, 0x4d,
+  0x2a, 0xaa, 0xe8, 0xe1, 0x08, 0xcd, 0x82, 0x43,
+  0x8f, 0x6f, 0x36, 0x9b, 0x72, 0x47, 0xf2, 0xa4,
+  0x49, 0xdd, 0x8b, 0x6e, 0x26, 0xc6, 0xbf, 0xb7,
+  0xd8, 0x44, 0xc3, 0x70, 0xa3, 0x4c, 0xb6, 0xb2,
+  0x37, 0x9b, 0x09, 0xdf, 0x32, 0x28, 0x24, 0x86,
+  0x8d, 0x5f, 0xe6, 0x4b, 0x5d, 0xd0, 0x2f, 0xdb,
+  0xac, 0x2e, 0x78, 0x1e, 0xcc, 0x52, 0xc1, 0x61,
+  0xea, 0x82, 0xca, 0xb3, 0xf4, 0x8f, 0x63, 0x8e,
+  0x6c, 0xbc, 0xaf, 0xc3, 0x2b, 0xb5, 0xdc, 0x90,
+  0xf9, 0x05, 0xea, 0x51, 0x46, 0x9d, 0xe2, 0x60,
+  0x01, 0x35, 0x59, 0x79, 0x00, 0x00, 0x55, 0x0f,
+  0x00, 0x00, 0x00, 0x00, 0x10, 0x6e, 0x1c, 0xbd,
+  0xfe, 0x44, 0xeb, 0x79, 0xf3, 0xab, 0x5d, 0x23,
+  0xb3, 0x20, 0xd2, 0xe7, 0xfc, 0x00, 0x03, 0x6f,
+  0xd8, 0xb7, 0xf7, 0xf3, 0x55, 0x72, 0x47, 0x13,
+  0x7b, 0x0c, 0x08, 0x01, 0x8a, 0x2c, 0x70, 0x56,
+  0x0a, 0x85, 0x18, 0x14, 0x43, 0xc9, 0x46, 0x64,
+  0x6c, 0x9a, 0x99, 0x59, 0x0a, 0x6c, 0x40, 0xd5,
+  0x17, 0xb3, 0x2c, 0x69, 0x41, 0xe8, 0xe7, 0x0e
 };
 
 static const uint32_t xtea_key[4]= {
@@ -277,28 +352,35 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 	{
 		if(key)
 		{
-			if(strcmp(key, "sky") == 0)
+			if(strcmp(key, "sky11") == 0)
 			{
-				s->blocks    = _sky_blocks;
+				s->blocks    = _sky11_blocks;
 				s->block_len = 2;
+			}
+			else if(strcmp(key, "sky09") == 0)
+			{
+				s->blocks    = _sky09_blocks;
+				s->block_len = 2;
+				_vc_rand_seed_sky09(&s->blocks[0]);
+				_vc_rand_seed_sky09(&s->blocks[1]);
 			}
 			else if (strcmp(key, "tac") == 0) 
 			{
-				s->blocks    = _dynamic_blocks;
+				s->blocks    = _tac_blocks;
 				s->block_len = 2;
-				_vc_rand_seed_tac(&s->blocks[0]);
-				_vc_rand_seed_tac(&s->blocks[1]);
+				_vc_rand_seed_sky07(&s->blocks[0]);
+				_vc_rand_seed_sky07(&s->blocks[1]);
 			}
 			else if (strcmp(key, "xtea") == 0) 
 			{
-				s->blocks    = _dynamic_blocks;
+				s->blocks    = _tac_blocks;
 				s->block_len = 2;
 				_vc_rand_seed_xtea(&s->blocks[0]);
 				_vc_rand_seed_xtea(&s->blocks[1]);
 			}
 			else
 			{
-				fprintf(stderr, "Unrecognised key '%s' for conditional access (valid options are \"sky\" and \"tac\").\n", key);
+				fprintf(stderr, "Unrecognised key '%s' for conditional access (valid options are \"sky09\", \"sky11\", \"xtea\" and \"tac\").\n", key);
 				return(VID_ERROR);
 			}
 		}
@@ -462,7 +544,8 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 			if(s->blocks2) s->cw = s->blocks2[s->block2].codeword;
 			
 			/* Generate new seed for TAC/Xtea key mode for Videocrypt I */
-			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0) _vc_rand_seed_tac(&s->blocks[s->block]);
+			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0) _vc_rand_seed_sky07(&s->blocks[s->block]);
+			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"sky9") == 0) _vc_rand_seed_sky09(&s->blocks[s->block]);
 			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"xtea") == 0) _vc_rand_seed_xtea(&s->blocks[s->block]);
 
 			/* Move to the next block */
@@ -588,32 +671,82 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 	}
 }
 
-void _vc_rand_seed_tac(_vc_block_t *s)
+void _vc_rand_seed_sky09(_vc_block_t *s)
+{
+	int i;
+	uint64_t d;
+	unsigned char b = 0;
+	unsigned char answ[8];
+	
+	/* Random seed for bytes 11 to 26 */
+	for(int i=11; i < 27; i++) s->messages[6][i] = rand() + 0xFF;
+
+	/* Reset answers */
+	for (i = 0; i < 8; i++) answ[i] = 0;
+	
+	for (i = 0; i < 27; i++) _vc_kernel09(s->messages[6][i],answ);
+	
+	/* Calculate signature */
+	for (i = 27; i < 31; i++)
+	{
+		_vc_kernel09(b, answ);
+		_vc_kernel09(b, answ);
+		b = s->messages[6][i] = answ[7];
+	}
+	
+	/* Generate checksum */
+	b = 0;
+	for (i = 0; i < 31; i++) b += s->messages[6][i];
+	s->messages[6][i] = 0x00 - b;
+	
+	/* Iterate through _vc_kernel09 64 more times (99 in total)*/
+	for (i = 0; i < 64; i++) _vc_kernel09(s->messages[6][31], answ);
+	
+	/* Mask high nibble of last byte as it's not used */
+	answ[7] &= 0x0f;
+		
+	/* Reverse calculated control word */
+	s->codeword = 0x000000000000000UL;
+	for(int i=0;i < 8; i++)	
+	{
+		d = answ[i];
+		s->codeword = d << (i * 8) | s->codeword;
+	}
+}
+
+void _vc_rand_seed_sky07(_vc_block_t *s)
 {
 	int i;
 	int oi = 0;	
 	unsigned char b = 0;
 	uint64_t answ[8];
-	
+	int offset;
+
+	if (s->messages[6][1] > 0x4a) offset = 0x48;
+	else if (s->messages[6][1] > 0x43) offset = 0x40;
+	else if (s->messages[6][1] > 0x3a) offset = 0x32;
+	else if (s->messages[6][1] > 0x33) offset = 0x08;
+	else offset = 0;
+		
 	/* Random seed for bytes 11 to 26 */
 	for(int i=11; i < 27; i++) s->messages[6][i] = rand() + 0xFF;
 	
 	/* Reset answers */
 	for (i = 0; i < 8; i++)  answ[i] = 0;
 	
-	for (i = 0; i < 27; i++) _vc_kernel(answ, &oi, s->messages[6][i]);
+	for (i = 0; i < 27; i++) _vc_kernel07(answ, &oi, s->messages[6][i], offset);
 
 	/* Calculate signature */
 	for (i = 27; i < 31; i++)
 	{
-		_vc_kernel(answ, &oi, b);
-		_vc_kernel(answ, &oi, b);
+		_vc_kernel07(answ, &oi, b, offset);
+		_vc_kernel07(answ, &oi, b, offset);
 		b = s->messages[6][i] = answ[oi];
 		oi = (oi + 1) & 7;
 	}
 
-	/* Iterate through _vc_kernel 64 more times (99 in total)*/
-	for (i = 0; i < 64; i++) _vc_kernel(answ, &oi, 0x0d);
+	/* Iterate through _vc_kernel07 64 more times (99 in total)*/
+	for (i = 0; i < 64; i++) _vc_kernel07(answ, &oi, 0x0d, offset);
 	
 	/* Mask high nibble of last byte as it's not used */
 	answ[7] &= 0x0f;
@@ -680,14 +813,45 @@ void _vc_rand_seed_xtea(_vc_block_t *s)
 
 }
 
-void _vc_kernel(uint64_t *out, int *oi, const unsigned char in)
+void _vc_kernel09(const unsigned char in, unsigned char *answ)
 {
-	int offset = 0;
+	unsigned char a, b, c, d;
+  unsigned short m;
+  int i;
+
+  a = in;
+  for (i = 0; i <= 4; i += 2) 
+  {
+    b = answ[i] & 0x3f;
+    b =  sky09_key[b] ^ sky09_key[b + 0x98];
+    c = a + b - answ[i+1];
+    d = (answ[i] - answ[i+1]) ^ a;
+    m = d * c;
+    answ[i + 2] ^= (m & 0xff);
+    answ[i + 3] += m >> 8;
+    a = (a << 1) | (a >> 7);
+    a += 0x49;
+  }
+
+  m = answ[6] * answ[7];
+  a = (m & 0xff) + answ[0];
+  if (a < answ[0]) a++;
+  answ[0] = a + 0x39;
+  a = (m >> 8) + answ[1];
+  if (a < answ[1]) a++;
+  answ[1] = a + 0x8f;
+
+  return;
+}
+
+
+void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset)
+{
   unsigned char b, c;
 
   out[*oi] ^= in;
-  b = key[offset + (out[*oi] >> 4)];
-  c = key[offset + (out[*oi] & 0x0f) + 16];
+  b = tac_key[offset + (out[*oi] >> 4)];
+  c = tac_key[offset + (out[*oi] & 0x0f) + 16];
   c = ~(c + b);
   c = (c << 1) | (c >> 7);   
   c += in;
