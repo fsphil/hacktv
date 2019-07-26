@@ -12,7 +12,6 @@ I will try and keep this as up to date as possible with official releases.
 Added Sky 09 series card to Videocrypt.
   - Activate with --key sky09
   - Sky 11 series can be activated with --key sky11
-  
 Minor changes and tidy-ups.
 
 2019-05-17:
@@ -45,14 +44,16 @@ PAL FM deviation changed to 6000000 kHz and default signal level reduced to 0.8
 Conditional Videocrypt mode requires --key sky|tac parameter. This specifies
 which card you want to use to decode video. 
 
-  sky = this works with an active Sky 11 series card (blue semi-oval logo) and 
-        uses two fixed control words.
-  tac = this works with an active The Adult Channel or Eurotica card and uses 
-        randomly generated control words.
+  sky09 = this works with an active Sky 09 series card and uses randomly generated 
+          control words.
+  sky11 = this works with an active Sky 11 series card (blue semi-oval logo) and 
+          uses two fixed control words.
+  tac   = this works with an active The Adult Channel or Eurotica card and uses 
+          randomly generated control words.
 
-  Hex files for both modes are included in PIC directory to flash your own
-  PIC16F84 based cards. Old pirate D2MAC cards based on this chip will work.
-  These cards are also known as "Goldwafer" or "Multimac" - only PIC chip
+  Hex files for "sky09" and "tac" modes are included in PIC directory to flash 
+  your own PIC16F84 based cards. Old pirate D2MAC cards based on this chip will 
+  work. These cards are also known as "Goldwafer" or "Multimac" - only PIC chip
   needs to be flashed. External EEPROM is not used.
 
 **Original README text is below.**
