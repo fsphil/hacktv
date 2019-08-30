@@ -1918,8 +1918,8 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 			
 			if(pal)
 			{
-				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 16;
-				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 16;
+				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 15;
+				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 15;
 			}
 		}
 	}
@@ -1947,8 +1947,8 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 			
 			if(pal)
 			{
-				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 16;
-				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 16;
+				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 15;
+				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 15;
 			}
 		}
 	}
@@ -1975,7 +1975,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	{
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
-			s->output[x * 2] += (lut_b[x] * s->burst_level) >> 16;
+			s->output[x * 2] += (lut_b[x] * s->burst_level) >> 15;
 		}
 	}
 	
