@@ -4,8 +4,8 @@
 WHAT'S IT DO
 
 Generates a PAL/NTSC/SECAM* video signal from a video file or test pattern.
-Also supports the older 819, 405, 240 and 30 line standards.
-Supports NASA Apollo video standards, both colour and mono.
+Also supports older 819, 405, 240 and 30 line standards, as well as the
+NASA Apollo video standards, both colour and mono.
 Input is any file type or URL supported by ffmpeg.
 Output can be to a file or directly to a HackRF.
 Teletext support.
@@ -58,7 +58,6 @@ $ hacktv -f 551250000 -m i -g 47 test
 $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
 
 # Download and transmit teletext pages from the Teefax service
-# http://teastop.co.uk/teletext/
 $ svn checkout http://teastop.plus.com/svn/teletext/ teefax
 $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 
