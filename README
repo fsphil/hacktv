@@ -13,6 +13,7 @@ NICAM stereo audio.
 Videocrypt I/II hardware support.
 Videocrypt S simulator.
 Partial Nagravision Syster hardware support.
+Analogue Copy Protection system, similar to Macrovision.
 
 * SECAM support is very basic and won't produce a good image.
 

@@ -29,6 +29,7 @@ typedef struct vid_t vid_t;
 #include "videocrypt.h"
 #include "videocrypts.h"
 #include "syster.h"
+#include "acp.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -128,6 +129,7 @@ typedef struct {
 	char *videocrypt2;
 	char *videocrypts;
 	int syster;
+	int acp;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;
@@ -244,6 +246,9 @@ struct vid_t {
 	
 	/* Nagravision Syster state */
 	ng_t ng;
+	
+	/* ACP state */
+	acp_t acp;
 	
 	/* Audio state */
 	int audio;
