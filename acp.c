@@ -76,6 +76,22 @@ void acp_render_line(acp_t *s)
 	
 	i = 0;
 	
+	if(s->vid->line == 1)
+	{
+		/* Vary the AGC pulse level, clipped sawtooth waveform */
+		i = abs(s->vid->frame * 2 % 1000 - 500);
+		i = i - 250 + 128;
+		
+		if(i < 0) i = 0;
+		else if(i > 255) i = 255;
+		
+		i = s->vid->y_level_lookup[i << 16 | i << 8 | i];
+		
+		s->pagc_level = s->vid->sync_level + round((i - s->vid->sync_level) * 1.10);
+	}
+	
+	i = 0;
+	
 	if(s->vid->conf.lines == 625)
 	{
 		/* For 625-line modes, ACP is rendered on lines 9-18 and 321-330 */
