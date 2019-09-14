@@ -120,6 +120,9 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	/* Group 4 (Reserved) */
 	o = _group_bits(s->vbi, 0x00, o, 3);
 	
+	/* Calculate width of line to blank */
+	s->blank_width = round(s->vid->sample_rate * 42.5e-6);
+	
 	return(VID_OK);
 }
 
@@ -146,9 +149,9 @@ void wss_render_line(wss_t *s)
 			_group_bits(s->vbi, s->vid->ratio <= (14.0 / 9.0) ? 0x08 : 0x07, 29 + 24, 4);
 		}
 		
-		/* The second half of line 23 contains some active video, which overlaps
-		 * with the WSS bits. We need to ensure this is clear before rendering. */
-		for(x = s->vid->half_width; x < s->vid->active_left + s->vid->active_width; x++)
+		/* 42.5μs of line 23 needs to be blanked otherwise the WSS bits may
+		 * overlap active video */
+		for(x = s->vid->half_width; x < s->blank_width; x++)
 		{
 			s->vid->output[x * 2] = s->vid->y_level_lookup[0x000000];
 		}

@@ -26,6 +26,7 @@ typedef struct {
 	uint8_t code;
 	int16_t *lut;
 	uint8_t vbi[18];
+	int blank_width;
 } wss_t;
 
 extern int wss_init(wss_t *s, vid_t *vid, char *mode);
