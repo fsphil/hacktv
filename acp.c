@@ -80,8 +80,7 @@ void acp_render_line(acp_t *s)
 	if(s->vid->line == 1)
 	{
 		/* Vary the AGC pulse level, clipped sawtooth waveform */
-		i = abs(s->vid->frame * 2 % 1000 - 500);
-		i = i - 250 + 128;
+		i = abs(s->vid->frame * 4 % 1712 - 856) - 150;
 		
 		if(i < 0) i = 0;
 		else if(i > 255) i = 255;
