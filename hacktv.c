@@ -95,6 +95,7 @@ static void print_usage(void)
 		"      --key <key>                Key to use for Videocrypt I. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
+		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"\n"
@@ -284,8 +285,9 @@ static void print_usage(void)
 #define _OPT_VIDEOCRYPT2 1003
 #define _OPT_VIDEOCRYPTS 1004
 #define _OPT_SYSTER      1005
-#define _OPT_FILTER      1006
-#define _OPT_NOAUDIO     1007
+#define _OPT_ACP         1006
+#define _OPT_FILTER      1007
+#define _OPT_NOAUDIO     1008
 
 #define _OPT_LOGO        2000
 #define _OPT_TIMECODE    2001
@@ -312,6 +314,7 @@ int main(int argc, char *argv[])
 		{ "key", 		     required_argument, 0, 'k'},
 		{ "syster",      no_argument,       0, _OPT_SYSTER },
 		{ "d11",         no_argument,       0, _OPT_DISCRET },
+		{ "acp",         no_argument,       0, _OPT_ACP },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
 		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
 		{ "frequency",   required_argument, 0, 'f' },
@@ -352,6 +355,7 @@ int main(int argc, char *argv[])
 	s.videocrypts = NULL;
 	s.syster = 0;
 	s.d11 = 0;
+	s.acp = 0;
 	s.filter = 0;
 	s.noaudio = 0;
 	s.frequency = 0;
@@ -478,8 +482,12 @@ int main(int argc, char *argv[])
 			s.syster = 1;
 			break;
 			
-		case _OPT_DISCRET: /* --syster */
-			s.d11 = 1;
+			case _OPT_DISCRET: /* --d11 */
+				s.d11 = 1;
+				break;		
+				
+		case _OPT_ACP: /* --acp */
+			s.acp = 1;
 			break;
 	
 		case _OPT_FILTER: /* --filter */
@@ -750,6 +758,23 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.syster = 1;
+	}
+	
+	if(s.acp)
+	{
+		if(vid_conf.lines != 625 && vid_conf.lines != 525)
+		{
+			fprintf(stderr, "Analogue Copy Protection is only compatible with 525 and 625 line modes.\n");
+			return(-1);
+		}
+		
+		if(vid_conf.videocrypt || vid_conf.videocrypt2 || vid_conf.videocrypts || vid_conf.syster)
+		{
+			fprintf(stderr, "Analogue Copy Protection cannot be used with video scrambling enabled.\n");
+			return(-1);
+		}
+		
+		vid_conf.acp = 1;
 	}
 	
 	/* Setup video encoder */

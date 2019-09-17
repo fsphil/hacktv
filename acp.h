@@ -1,6 +1,6 @@
 /* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
-/* Copyright 2018 Philip Heron <phil@sanslogic.co.uk>                    */
+/* Copyright 2019 Philip Heron <phil@sanslogic.co.uk>                    */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
 /* it under the terms of the GNU General Public License as published by  */
@@ -15,23 +15,28 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _WSS_H
-#define _WSS_H
+#ifndef _ACP_H
+#define _ACP_H
 
 #include <stdint.h>
 #include "video.h"
 
 typedef struct {
 	vid_t *vid;
-	uint8_t code;
-	int16_t *lut;
-	uint8_t vbi[18];
-	int blank_width;
-} wss_t;
+	
+	int left[6];
+	
+	int16_t psync_level;
+	int16_t pagc_level;
+	
+	int psync_width;
+	int pagc_width;
+	
+} acp_t;
 
-extern int wss_init(wss_t *s, vid_t *vid, char *mode);
-extern void wss_free(wss_t *s);
-extern void wss_render_line(wss_t *s);
+extern int acp_init(acp_t *s, vid_t *vid);
+extern void acp_free(acp_t *s);
+extern void acp_render_line(acp_t *s);
 
 #endif
 
