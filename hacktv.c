@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 	s.verbose = 0;
 	s.teletext = NULL;
 	s.position = 0;
-	s.wss = "auto";
+	s.wss = NULL;
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;

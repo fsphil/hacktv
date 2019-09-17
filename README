@@ -28,7 +28,6 @@ Added Funcard hex for Videocrypt 1.
 Merged hardware support for Syster from original repository.
 
 Changes and additions:
-Default wss signalling has been changed to auto.
 Control Word change for Videocrypt TAC mode - tested working on a real TAC card.
 Widescreen/anamorphic videos are now appropriately letterboxed instead of being stretched vertically.
 
