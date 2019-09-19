@@ -546,7 +546,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 			
 			/* Generate new seed for TAC/Xtea key mode for Videocrypt I */
 			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0) _vc_rand_seed_sky07(&s->blocks[s->block]);
-			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"sky9") == 0) _vc_rand_seed_sky09(&s->blocks[s->block]);
+			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"sky09") == 0) _vc_rand_seed_sky09(&s->blocks[s->block]);
 			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"xtea") == 0) _vc_rand_seed_xtea(&s->blocks[s->block]);
 
 			/* Move to the next block */
