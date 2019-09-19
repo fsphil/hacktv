@@ -534,7 +534,7 @@ int main(int argc, char *argv[])
 	
 	if(optind >= argc)
 	{
-		printf("No input specified.\n");
+		fprintf(stderr, "No input specified.\n");
 		return(-1);
 	}
 	
@@ -800,6 +800,8 @@ int main(int argc, char *argv[])
 	vid_free(&s.vid);
 	
 	av_ffmpeg_deinit();
+	
+	fprintf(stderr, "\n");
 	
 	return(0);
 }
