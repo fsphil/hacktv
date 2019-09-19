@@ -2111,6 +2111,11 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 				if(s->audiobuffer_samples == 0)
 				{
 					s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
+					
+					if(s->conf.systeraudio == 1)
+					{
+						ng_invert_audio(&s->ng, s->audiobuffer, s->audiobuffer_samples);
+					}
 				}
 				
 				if(s->audiobuffer)

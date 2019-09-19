@@ -89,6 +89,7 @@ static void print_usage(void)
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
+		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
@@ -259,7 +260,8 @@ static void print_usage(void)
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
 		"with most hardware.\n"
 		"\n"
-		"Audio inversion is not yet supported.\n"
+		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
+		"to use the --systeraudio option.\n"
 		"\n"
 	);
 }
@@ -270,9 +272,10 @@ static void print_usage(void)
 #define _OPT_VIDEOCRYPT2 1003
 #define _OPT_VIDEOCRYPTS 1004
 #define _OPT_SYSTER      1005
-#define _OPT_ACP         1006
-#define _OPT_FILTER      1007
-#define _OPT_NOAUDIO     1008
+#define _OPT_SYSTERAUDIO 1006
+#define _OPT_ACP         1007
+#define _OPT_FILTER      1008
+#define _OPT_NOAUDIO     1009
 
 int main(int argc, char *argv[])
 {
@@ -293,6 +296,7 @@ int main(int argc, char *argv[])
 		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
 		{ "syster",      no_argument,       0, _OPT_SYSTER },
+		{ "systeraudio", no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",         no_argument,       0, _OPT_ACP },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
 		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
@@ -329,6 +333,7 @@ int main(int argc, char *argv[])
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
 	s.syster = 0;
+	s.systeraudio = 0;
 	s.acp = 0;
 	s.filter = 0;
 	s.noaudio = 0;
@@ -452,6 +457,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_SYSTER: /* --syster */
 			s.syster = 1;
+			break;
+		
+		case _OPT_SYSTERAUDIO: /* --systeraudio */
+			s.systeraudio = 1;
 			break;
 		
 		case _OPT_ACP: /* --acp */
@@ -661,6 +670,7 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.syster = 1;
+		vid_conf.systeraudio = s.systeraudio;
 	}
 	
 	if(s.acp)

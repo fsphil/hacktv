@@ -49,6 +49,9 @@ Enable Videocrypt S scrambling. (PAL only)
 \fB\-\-syster\fR
 Enable Nagravision Syster scambling. (PAL only)
 .TP
+\fB\-\-systeraudio\fR
+Invert the audio spectrum when using Syster.
+.TP
 \fB\-\-filter\fR
 Enable experimental VSB modulation filter.
 .TP
@@ -274,7 +277,8 @@ are vertically shuffled within a field.
 Syster is only compatible with 625 line PAL modes and does not currently work
 with most hardware.
 .PP
-Audio inversion is not yet supported.
+Some decoders will invert the audio around 12.8 kHz. For these devices you need
+to use the --systeraudio option.
 .PP
 Usage: hacktv [options] input [input...]
 .TP

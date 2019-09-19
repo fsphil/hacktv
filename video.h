@@ -129,6 +129,7 @@ typedef struct {
 	char *videocrypt2;
 	char *videocrypts;
 	int syster;
+	int systeraudio;
 	int acp;
 	
 	/* RGB weights, should add up to 1.0 */
