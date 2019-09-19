@@ -1040,7 +1040,11 @@ static void _free_am_modulator(_mod_am_t *am)
 /* AV source callback handlers */
 static uint32_t *_av_read_video(vid_t *s, float *ratio)
 {
-	if(s->av_read_video) return(s->av_read_video(s->av_private, ratio));
+	if(s->av_read_video)
+	{
+		return(s->av_read_video(s->av_private, ratio));
+	}
+	
 	return(NULL);
 }
 
@@ -1073,6 +1077,7 @@ int vid_av_close(vid_t *s)
 	s->av_private = NULL;
 	s->av_read_video = NULL;
 	s->av_read_audio = NULL;
+	s->av_eof = NULL;
 	s->av_close = NULL;
 	
 	return(r);
@@ -2117,6 +2122,11 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 				if(s->audiobuffer_samples == 0)
 				{
 					s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
+					
+					if(s->conf.systeraudio == 1)
+					{
+						ng_invert_audio(&s->ng, s->audiobuffer, s->audiobuffer_samples);
+					}
 				}
 				
 				if(s->audiobuffer)

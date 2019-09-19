@@ -66,15 +66,21 @@ typedef struct {
 	int16_t *delay;
 	int16_t *delay_line[NG_DELAY_LINES];
 	
-	
-  /* D11 delay values */
+	/* D11 delay values */
 	int d11_delay;
 	int d11_line_delay[D11_LINES_PER_FIELD * D11_FIELDS];
+	
+	/* Audio inversion FIR filter */
+	int16_t *firli, *firlq; /* Left channel, I + Q */
+	int16_t *firri, *firrq; /* Right channel, I + Q */
+	int mixx;
+	int firx;
 	
 } ng_t;
 
 extern int ng_init(ng_t *s, vid_t *vs);
 extern void ng_free(ng_t *s);
+extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
 extern void ng_render_line(ng_t *s);
 extern int d11_init(ng_t *s, vid_t *vs);
 extern void d11_render_line(ng_t *s);

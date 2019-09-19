@@ -95,6 +95,7 @@ static void print_usage(void)
 		"      --key <key>                Key to use for Videocrypt I. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
+		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
@@ -274,7 +275,8 @@ static void print_usage(void)
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
 		"with most hardware.\n"
 		"\n"
-		"Audio inversion is not yet supported.\n"
+		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
+		"to use the --systeraudio option.\n"
 		"\n"
 	);
 }
@@ -285,9 +287,10 @@ static void print_usage(void)
 #define _OPT_VIDEOCRYPT2 1003
 #define _OPT_VIDEOCRYPTS 1004
 #define _OPT_SYSTER      1005
-#define _OPT_ACP         1006
-#define _OPT_FILTER      1007
-#define _OPT_NOAUDIO     1008
+#define _OPT_SYSTERAUDIO 1006
+#define _OPT_ACP         1007
+#define _OPT_FILTER      1008
+#define _OPT_NOAUDIO     1009
 
 #define _OPT_LOGO        2000
 #define _OPT_TIMECODE    2001
@@ -314,6 +317,7 @@ int main(int argc, char *argv[])
 		{ "key", 		     required_argument, 0, 'k'},
 		{ "syster",      no_argument,       0, _OPT_SYSTER },
 		{ "d11",         no_argument,       0, _OPT_DISCRET },
+		{ "systeraudio", no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",         no_argument,       0, _OPT_ACP },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
 		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
@@ -355,6 +359,7 @@ int main(int argc, char *argv[])
 	s.videocrypts = NULL;
 	s.syster = 0;
 	s.d11 = 0;
+	s.systeraudio = 0;
 	s.acp = 0;
 	s.filter = 0;
 	s.noaudio = 0;
@@ -486,6 +491,10 @@ int main(int argc, char *argv[])
 				s.d11 = 1;
 				break;		
 				
+		case _OPT_SYSTERAUDIO: /* --systeraudio */
+			s.systeraudio = 1;
+			break;
+					
 		case _OPT_ACP: /* --acp */
 			s.acp = 1;
 			break;
@@ -728,7 +737,7 @@ int main(int argc, char *argv[])
 	
 	if(s.d11)
 	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_SECAM)
 		{
 			fprintf(stderr, "Discret 11 is only compatible with 625 line PAL modes.\n");
 			return(-1);
@@ -741,6 +750,7 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.d11 = 1;
+		vid_conf.systeraudio = s.systeraudio;
 	}
 
 	if(s.syster)
@@ -758,6 +768,7 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.syster = 1;
+		vid_conf.systeraudio = s.systeraudio;
 	}
 	
 	if(s.acp)
