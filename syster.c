@@ -397,7 +397,7 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 		
 		if(s->vbi_seq == 0)
 		{
-			vbi[5] = mode; /* Table ID (0x68 = Discret 11 / 0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or FA = Free access?) */
+			vbi[5] = mode; /* Table ID (0x71 = Discret 11 / 0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or FA = Free access?) */
 			vbi[6] = ((_block_sequence[s->block_seq] >> 4) + s->block_seq2) & 0x07;
 			vbi[7] = (_block_sequence[s->block_seq] << 4) | _block_sequence[s->block_seq + 1];
 			
@@ -543,7 +543,7 @@ void d11_render_line(ng_t *s)
 			}	
 	}
 	
-	_render_ng_vbi(s,line,0x68);
+	_render_ng_vbi(s,line,0x71);
 }
 
 int ng_init(ng_t *s, vid_t *vid)
