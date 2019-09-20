@@ -481,7 +481,7 @@ int d11_init(ng_t *s, vid_t *vid)
 	_ng_vbi_init(s,vid);
 	_ng_audio_init(s);
 	
-	s->d11_delay = (1 / s->vid->conf.colour_carrier) * 4 * s->vid->sample_rate;
+	s->d11_delay = (1 / 4433618.75) * 4 * s->vid->sample_rate;
 	
 	_create_d11_delay_table(s);
 
