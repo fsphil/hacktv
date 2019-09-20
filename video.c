@@ -55,6 +55,7 @@ const vid_config_t vid_config_pal_i = {
 	.fm_audio_level = 0.22, /* FM audio carrier power level */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
+	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -111,6 +112,7 @@ const vid_config_t vid_config_pal_bg = {
 	.fm_audio_level = 0.22, /* FM audio carrier power level */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
+	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -166,6 +168,7 @@ const vid_config_t vid_config_pal_fm = {
 	.video_level    = 1.00, /* Power level of video */
 	.fm_audio_level = 0.05, /* FM audio carrier power level */
 	
+	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -214,6 +217,7 @@ const vid_config_t vid_config_pal = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -263,6 +267,7 @@ const vid_config_t vid_config_secam_l = {
 	.video_level    = 0.80, /* Power level of video */
 	.am_audio_level = 0.20, /* FM audio carrier power level */
 	
+	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -302,6 +307,7 @@ const vid_config_t vid_config_secam = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -345,6 +351,7 @@ const vid_config_t vid_config_ntsc_m = {
 	.video_level    = 0.83, /* Power level of video */
 	.fm_audio_level = 0.17, /* FM audio carrier power level */
 	
+	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
@@ -391,6 +398,7 @@ const vid_config_t vid_config_ntsc = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
@@ -437,6 +445,7 @@ const vid_config_t vid_config_819_e = {
 	.video_level    = 0.8, /* Power level of video */
 	.am_audio_level = 0.2, /* Power level of audio */
 	
+	.type           = VID_RASTER_819,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 819,
@@ -470,6 +479,7 @@ const vid_config_t vid_config_819 = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_RASTER_819,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 819,
@@ -504,6 +514,7 @@ const vid_config_t vid_config_405_a = {
 	.video_level    = 0.8, /* Power level of video */
 	.am_audio_level = 0.2, /* Power level of audio */
 	
+	.type           = VID_RASTER_405,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 405,
@@ -537,6 +548,7 @@ const vid_config_t vid_config_405 = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_RASTER_405,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 405,
@@ -568,6 +580,7 @@ const vid_config_t vid_config_baird_240_am = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_BAIRD_240,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 240,
@@ -597,6 +610,7 @@ const vid_config_t vid_config_baird_240 = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_BAIRD_240,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 240,
@@ -628,6 +642,7 @@ const vid_config_t vid_config_baird_30_am = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_BAIRD_30,
 	.frame_rate_num = 25,
 	.frame_rate_den = 2,
 	.lines          = 30,
@@ -654,6 +669,7 @@ const vid_config_t vid_config_baird_30 = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_BAIRD_30,
 	.frame_rate_num = 25,
 	.frame_rate_den = 2,
 	.lines          = 30,
@@ -685,6 +701,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.fm_level       = 1.0,
 	.fm_deviation   = 1000000, /* Hz */
 	
+	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
@@ -728,6 +745,7 @@ const vid_config_t vid_config_apollo_colour = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
@@ -768,6 +786,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	.fm_level       = 1.0,
 	.fm_deviation   = 1000000, /* Hz */
 	
+	.type           = VID_APOLLO_320,
 	.frame_rate_num = 10,
 	.frame_rate_den = 1,
 	.lines          = 320,
@@ -811,6 +830,7 @@ const vid_config_t vid_config_apollo_mono = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.type           = VID_APOLLO_320,
 	.frame_rate_num = 10,
 	.frame_rate_den = 1,
 	.lines          = 320,
@@ -1543,7 +1563,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	vy = -1;
 	seq = "____";
 	
-	if(s->conf.lines == 625)
+	if(s->conf.type == VID_RASTER_625)
 	{
 		switch(s->line)
 		{
@@ -1609,7 +1629,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		/* Calculate the active line number */
 		vy = (s->line < 313 ? (s->line - 23) * 2 : (s->line - 336) * 2 + 1);
 	}
-	else if(s->conf.lines == 525)
+	else if(s->conf.type == VID_RASTER_525)
 	{
 		switch(s->line)
 		{
@@ -1669,7 +1689,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		
 		vy = (s->line < 265 ? (s->line - 23) * 2 : (s->line - 286) * 2 + 1);
 	}
-	else if(s->conf.lines == 819)
+	else if(s->conf.type == VID_RASTER_819)
 	{
 		switch(s->line)
 		{
@@ -1764,7 +1784,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		/* Calculate the active line number */
 		vy = (s->line < 406 ? (s->line - 48) * 2 : (s->line - 457) * 2 + 1);
 	}
-	else if(s->conf.lines == 405)
+	else if(s->conf.type == VID_RASTER_405)
 	{
 		switch(s->line)
 		{
@@ -1807,7 +1827,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		/* Calculate the active line number */
 		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
 	}
-	else if(s->conf.lines == 320)
+	else if(s->conf.type == VID_APOLLO_320)
 	{
 		if(s->line <= 8) seq = "V__v";
 		else seq = "h_aa";
@@ -1815,7 +1835,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		vy = s->line - 9;
 		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
-	else if(s->conf.lines == 240)
+	else if(s->conf.type == VID_BAIRD_240)
 	{
 		switch(s->line)
 		{
@@ -1846,7 +1866,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		/* Calculate the active line number */
 		vy = s->line - 20;
 	}
-	else if(s->conf.lines == 30)
+	else if(s->conf.type == VID_BAIRD_30)
 	{
 		/* The original Baird 30 line standard has no sync pulses */
 		seq = "__aa";

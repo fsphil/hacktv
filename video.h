@@ -36,6 +36,16 @@ typedef struct vid_t vid_t;
 #define VID_ERROR         -1
 #define VID_OUT_OF_MEMORY -2
 
+/* Frame type */
+#define VID_RASTER_625 0
+#define VID_RASTER_525 1
+#define VID_RASTER_405 2
+#define VID_RASTER_819 3
+#define VID_BAIRD_240  4
+#define VID_BAIRD_30   5
+#define VID_APOLLO_320 6
+#define VID_MAC        7
+
 /* Output modulation types */
 #define VID_NONE 0
 #define VID_AM   1
@@ -101,6 +111,7 @@ typedef struct {
 	double nicam_level;
 	
 	/* Video */
+	int type;
 	int frame_rate_num;
 	int frame_rate_den;
 	
