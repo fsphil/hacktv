@@ -73,6 +73,7 @@ typedef struct {
 	int acp;
 	int filter;
 	int noaudio;
+	int nonicam;
 	uint64_t frequency;
 	int amp;
 	int gain;
