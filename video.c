@@ -1106,7 +1106,7 @@ int vid_av_close(vid_t *s)
 
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
 {
-	int r;
+	int r, x;
 	int64_t c;
 	double d;
 	double glut[0x100];
@@ -1256,12 +1256,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	/* Set the next line/frame counter */
 	/* NOTE: TV line and frame numbers start at 1 rather than 0 */
-	s->line = 1;
-	s->frame = 1;
+	s->bline  = s->line = 1;
+	s->bframe = s->frame = 1;
 	
 	s->framebuffer = NULL;
 	
-	s->delay = 0;
+	s->olines = 1;
 	
 	/* Audio */
 	s->audio = 0;
@@ -1341,14 +1341,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 	}
 	
-	/* Output line buffer */
-	s->output = malloc(sizeof(int16_t) * 2 * s->width);
-	if(!s->output)
-	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
-	}
-	
 	/* Initalise the teletext system */
 	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
 	{
@@ -1392,11 +1384,37 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Output line buffer(s) */
+	s->oline = calloc(sizeof(int16_t *), s->olines);
+	if(!s->oline)
+	{
+		vid_free(s);
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	for(r = 0; r < s->olines; r++)
+	{
+		s->oline[r] = malloc(sizeof(int16_t) * 2 * s->width);
+		if(!s->oline[r])
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		/* Blank the lines */
+		for(x = 0; x < s->width; x++)
+		{
+			s->oline[r][x * 2] = s->blanking_level;
+		}
+	}
+	
 	return(VID_OK);
 }
 
 void vid_free(vid_t *s)
 {
+	int i;
+	
 	/* Close the AV source */
 	vid_av_close(s);
 	
@@ -1449,7 +1467,15 @@ void vid_free(vid_t *s)
 	_free_fm_modulator(&s->fm_right);
 	nicam_mod_free(&s->nicam);
 	_free_am_modulator(&s->am_mono);
-	if(s->output != NULL) free(s->output);
+	
+	if(s->oline)
+	{
+		for(i = 0; i < s->olines; i++)
+		{
+			free(s->oline[i]);
+		}
+		free(s->oline);
+	}
 	
 	memset(s, 0, sizeof(vid_t));
 }
@@ -1507,6 +1533,21 @@ size_t vid_get_framebuffer_length(vid_t *s)
 	return(sizeof(uint32_t) * s->active_width * s->conf.active_lines);
 }
 
+int16_t *vid_adj_delay(vid_t *s, int lines)
+{
+	s->odelay -= lines;
+	s->output = s->oline[s->odelay];
+	
+	s->line -= lines;
+	while(s->line < 1)
+	{
+		s->line += s->conf.lines;
+		s->frame--;
+	}
+	
+	return(s->output);
+}
+
 static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 {
 	const char *seq;
@@ -1520,6 +1561,12 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	int16_t *lut_b;
 	int16_t *lut_i;
 	int16_t *lut_q;
+	
+	s->odelay = s->olines - 1;
+	s->output = s->oline[s->odelay];
+	
+	s->frame = s->bframe;
+	s->line = s->bline;
 	
 	/* Load the next frame */
 	if(s->line == 1)
@@ -2206,26 +2253,37 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	}
 	
 	/* Advance the next line/frame counter */
-	if(s->line++ == s->conf.lines)
+	if(s->bline++ == s->conf.lines)
 	{
-		s->line = 1;
-		s->frame++;
+		s->bline = 1;
+		s->bframe++;
 	}
 	
 	/* Return a pointer to the line buffer */
 	*samples = s->width;
+	
+	/* Rotate the output lines */
+	s->output = s->oline[0];
+	for(x = 1; x < s->olines; x++)
+	{
+		s->oline[x - 1] = s->oline[x];
+	}
+	s->oline[x - 1] = s->output;
+	
 	return(s->output);
 }
 
 int16_t *vid_next_line(vid_t *s, size_t *samples)
 {
-	/* Drop any delay lines introduced by scramblers / filters */
-	while(s->delay)
-	{
-		_vid_next_line(s, samples);
-		s->delay--;
-	}
+	int16_t *output;
 	
-	return(_vid_next_line(s, samples));
+	/* Drop any delay lines introduced by scramblers / filters */
+	do
+	{
+		output = _vid_next_line(s, samples);
+	}
+	while(s->frame < 1);
+	
+	return(output);
 }
 

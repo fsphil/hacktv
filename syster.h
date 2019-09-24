@@ -54,10 +54,6 @@ typedef struct {
 	/* The line order for the next field (0-287) */
 	int order[NG_LINES_PER_FIELD];
 	
-	/* Delay line */
-	int16_t *delay;
-	int16_t *delay_line[NG_DELAY_LINES];
-	
 	/* Audio inversion FIR filter */
 	int16_t *firli, *firlq; /* Left channel, I + Q */
 	int16_t *firri, *firrq; /* Right channel, I + Q */

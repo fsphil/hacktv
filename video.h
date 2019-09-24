@@ -235,12 +235,16 @@ struct vid_t {
 	/* Video state */
 	uint32_t *framebuffer;
 	
-	unsigned int frame;
-	unsigned int line;
+	/* The frame and line number being rendered next */
+	int bframe;
+	int bline;
 	
+	/* The frame and line number returned by vid_next_line() */
+	int frame;
+	int line;
+	
+	/* Current frame's aspect ratio */
 	float ratio;
-	
-	unsigned int delay;
 	
 	/* Video filter */
 	int16_t *video_filter_taps;
@@ -283,8 +287,11 @@ struct vid_t {
 	/* FM Video state */
 	_mod_fm_t fm_video;
 	
-	/* Output line buffer */
-	int16_t *output;
+	/* Output line(s) buffer */
+	int olines;		/* The number of lines */
+	int16_t **oline;	/* Pointer to each line */
+	int16_t *output;	/* Pointer to the current line */
+	int odelay;		/* Index of the current line */
 };
 
 extern const vid_configs_t vid_configs[];
@@ -295,6 +302,7 @@ extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
 extern int vid_init_filter(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
+extern int16_t *vid_adj_delay(vid_t *s, int lines);
 extern int16_t *vid_next_line(vid_t *s, size_t *samples);
 
 #endif

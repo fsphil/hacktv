@@ -167,32 +167,20 @@ int vcs_init(vcs_t *s, vid_t *vid, const char *mode)
 	}
 	
 	/* Allocate memory for the delay */
-	s->vid->delay += VCS_DELAY_LINES;
-	s->delay = calloc(2 * vid->width * VCS_DELAY_LINES, sizeof(int16_t));
-	if(!s->delay)
-	{
-		return(VID_OUT_OF_MEMORY);
-	}
-	
-	/* Setup the delay line pointers */
-	for(x = 0; x < VCS_DELAY_LINES; x++)
-	{
-		s->delay_line[x] = &s->delay[2 * vid->width * x];
-	}
+	s->vid->olines += VCS_DELAY_LINES;
 	
 	return(VID_OK);
 }
 
 void vcs_free(vcs_t *s)
 {
-	free(s->delay);
+	/* Nothing */
 }
 
 void vcs_render_line(vcs_t *s)
 {
 	int x, j;
 	uint8_t *bline = NULL;
-	int16_t *dline;
 	int line;
 	
 	/* Calculate which line is about to be transmitted due to the delay */
@@ -233,20 +221,16 @@ void vcs_render_line(vcs_t *s)
 		if(j < 0) j += s->vid->conf.lines - 1;
 	}
 	
-	for(x = 0; x < s->vid->width * 2; x += 2)
-	{
-		int16_t t = s->vid->output[x];
-		s->vid->output[x] = s->delay_line[x >= s->vid->active_left * 2 ? j : 0][x];
-		s->delay_line[0][x] = t;
-	}
+	vid_adj_delay(s->vid, VCS_DELAY_LINES);
 	
-	/* Advance the delay buffer */
-	dline = s->delay_line[0];
-	for(x = 0; x < VCS_DELAY_LINES - 1; x++)
+	if(j > 0)
 	{
-		s->delay_line[x] = s->delay_line[x + 1];
+		int16_t *dline = s->vid->oline[s->vid->odelay + j];
+		for(x = s->vid->active_left * 2; x < s->vid->width * 2; x += 2)
+		{
+			s->vid->output[x] = dline[x];
+		}
 	}
-	s->delay_line[x] = dline;
 	
 	/* On the first line of each frame, generate the VBI data */
 	if(line == 1)

@@ -52,10 +52,6 @@ typedef struct {
 	
 	int video_scale[VCS_WIDTH];
 	
-	/* Delay line */
-	int16_t *delay;
-	int16_t *delay_line[VCS_DELAY_LINES];
-	
 } vcs_t;
 
 extern int vcs_init(vcs_t *s, vid_t *vs, const char *mode);

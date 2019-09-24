@@ -263,23 +263,15 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		s->video_scale[x] = round((l + x) * f);
 	}
 	
-	/* Allocate memory for the 1-line delay */
-	s->vid->delay += 1;
-	s->delay = calloc(2 * vid->width, sizeof(int16_t));
-	if(!s->delay)
-	{
-		return(VID_OUT_OF_MEMORY);
-	}
+	/* Add one delay line */
+	s->vid->olines += 1;
 	
 	return(VID_OK);
 }
 
 void vc_free(vc_t *s)
 {
-	if(s->delay)
-	{
-		free(s->delay);
-	}
+	/* Nothing */
 }
 
 void vc_render_line(vc_t *s)
@@ -474,6 +466,7 @@ void vc_render_line(vc_t *s)
 		int cut;
 		int lshift;
 		int y;
+		int16_t *delay = s->vid->oline[s->vid->odelay - 1];
 		
 		cut = 105 + (0xFF - x) * 2;
 		lshift = 710 - cut;
@@ -481,22 +474,16 @@ void vc_render_line(vc_t *s)
 		y = s->video_scale[VC_LEFT + lshift];
 		for(x = s->video_scale[VC_LEFT]; x < s->video_scale[VC_LEFT + cut]; x++, y++)
 		{
-			s->delay[x * 2] = s->vid->output[y * 2];
+			delay[x * 2] = s->vid->output[y * 2];
 		}
 		
 		y = s->video_scale[VC_LEFT];
 		for(; x < s->video_scale[VC_RIGHT + VC_OVERLAP]; x++, y++)
 		{
-			s->delay[x * 2] = s->vid->output[y * 2];
+			delay[x * 2] = s->vid->output[y * 2];
 		}
 	}
 	
-	/* Delay by 1 line. Uses the Q part for temporary storage */
-	for(x = 0; x < s->vid->width * 2; x += 2)
-	{
-		s->delay[x + 1] = s->vid->output[x];
-		s->vid->output[x] = s->delay[x];
-		s->delay[x] = s->delay[x + 1];
-	}
+	vid_adj_delay(s->vid, 1);
 }
 

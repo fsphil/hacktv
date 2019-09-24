@@ -299,18 +299,7 @@ int ng_init(ng_t *s, vid_t *vid)
 	_update_field_order(s);
 	
 	/* Allocate memory for the delay */
-	s->vid->delay += NG_DELAY_LINES;
-	s->delay = calloc(2 * vid->width * NG_DELAY_LINES, sizeof(int16_t));
-	if(!s->delay)
-	{
-		return(VID_OUT_OF_MEMORY);
-	}
-	
-	/* Setup the delay line pointers */
-	for(i = 0; i < NG_DELAY_LINES; i++)
-	{
-		s->delay_line[i] = &s->delay[2 * vid->width * i];
-	}
+	s->vid->olines += NG_DELAY_LINES;
 	
 	/* Allocate memory for the audio inversion FIR filters */
 	s->firli = calloc(NTAPS * 2, sizeof(int16_t));
@@ -335,8 +324,6 @@ void ng_free(ng_t *s)
 	free(s->firlq);
 	free(s->firri);
 	free(s->firrq);
-	
-	free(s->delay);
 	free(s->lut);
 }
 
@@ -404,7 +391,6 @@ void ng_render_line(ng_t *s)
 	int j = 0;
 	int x, f, i;
 	int line;
-	int16_t *dline;
 	
 	/* Calculate which line is about to be transmitted due to the delay */
 	line = s->vid->line - NG_DELAY_LINES;
@@ -457,22 +443,18 @@ void ng_render_line(ng_t *s)
 		}
 	}
 	
+	vid_adj_delay(s->vid, NG_DELAY_LINES);
+	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
-	for(x = 0; x < s->vid->width * 2; x += 2)
+	if(j > 0)
 	{
-		int16_t t = s->vid->output[x];
-		s->vid->output[x] = s->delay_line[x >= s->vid->active_left * 2 ? j : 0][x];
-		s->delay_line[0][x] = t;
+		int16_t *dline = s->vid->oline[s->vid->odelay + j];
+		for(x = s->vid->active_left * 2; x < s->vid->width * 2; x += 2)
+		{
+			s->vid->output[x] = dline[x];
+		}
 	}
-	
-	/* Advance the delay buffer */
-	dline = s->delay_line[0];
-	for(x = 0; x < NG_DELAY_LINES - 1; x++)
-	{
-		s->delay_line[x] = s->delay_line[x + 1];
-	}
-	s->delay_line[x] = dline;
 	
 	/* Render the VBI data
 	 * These lines where used by Premiere */
