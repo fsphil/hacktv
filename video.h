@@ -211,6 +211,8 @@ struct vid_t {
 	int vsync_short_width;
 	int vsync_long_width;
 	
+	int16_t white_level;
+	int16_t black_level;
 	int16_t blanking_level;
 	int16_t sync_level;
 	

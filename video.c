@@ -1149,6 +1149,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	level = s->conf.video_level * slevel;
 	
 	/* Calculate 16-bit blank and sync levels */
+	s->white_level    = round(s->conf.white_level    * level * INT16_MAX);
+	s->black_level    = round(s->conf.black_level    * level * INT16_MAX);
 	s->blanking_level = round(s->conf.blanking_level * level * INT16_MAX);
 	s->sync_level     = round(s->conf.sync_level     * level * INT16_MAX);
 	

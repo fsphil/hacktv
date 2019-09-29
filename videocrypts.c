@@ -292,7 +292,7 @@ void vcs_render_line(vcs_t *s)
 		/* Videocrypt S's VBI data sits in the active video area. Clear it first */
 		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
 		{
-			s->vid->output[x * 2] = s->vid->y_level_lookup[0x000000];
+			s->vid->output[x * 2] = s->vid->black_level;
 		}
 		
 		x = s->video_scale[VCS_VBI_LEFT];
@@ -300,11 +300,11 @@ void vcs_render_line(vcs_t *s)
 		for(b = 0; b < VCS_VBI_BITS_PER_LINE; b++)
 		{
 			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? 0xFFFFFF : 0x000000;
+			c = c ? s->vid->white_level : s->vid->black_level;
 			
 			for(; x < s->video_scale[VCS_VBI_LEFT + VCS_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->vid->output[x * 2] = s->vid->y_level_lookup[c];
+				s->vid->output[x * 2] = c;
 			}
 		}
 	}

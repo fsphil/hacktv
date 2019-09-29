@@ -277,7 +277,7 @@ int ng_init(ng_t *s, vid_t *vid)
 	s->vid = vid;
 	
 	/* Calculate the high level for the VBI data, 66% of the white level */
-	i = round((vid->y_level_lookup[0xFFFFFF] - vid->y_level_lookup[0x000000]) * 0.66);
+	i = round((vid->white_level - vid->black_level) * 0.66);
 	s->lut = vbidata_init(
 		NG_VBI_WIDTH, s->vid->width,
 		i,

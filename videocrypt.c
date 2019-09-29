@@ -422,11 +422,11 @@ void vc_render_line(vc_t *s)
 		for(b = 0; b < VC_VBI_BITS_PER_LINE; b++)
 		{
 			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? 0xFFFFFF : 0x000000;
+			c = c ? s->vid->white_level : s->vid->black_level;
 			
 			for(; x < s->video_scale[VC_VBI_LEFT + VC_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->vid->output[x * 2] = s->vid->y_level_lookup[c];
+				s->vid->output[x * 2] = c;
 			}
 		}
 	}
