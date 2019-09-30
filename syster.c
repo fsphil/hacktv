@@ -362,7 +362,7 @@ int _ng_vbi_init(ng_t *s, vid_t *vid)
 	s->vid = vid;
 	
 	/* Calculate the high level for the VBI data, 66% of the white level */
-	i = round((vid->y_level_lookup[0xFFFFFF] - vid->y_level_lookup[0x000000]) * 0.66);
+	i = round((vid->white_level - vid->black_level) * 0.66);
 	s->lut = vbidata_init(
 		NG_VBI_WIDTH, s->vid->width,
 		i,
@@ -563,17 +563,20 @@ int ng_init(ng_t *s, vid_t *vid)
 	_update_field_order(s);
 	
 	/* Allocate memory for the delay */
-	s->vid->delay += NG_DELAY_LINES;
-	s->delay = calloc(2 * vid->width * NG_DELAY_LINES, sizeof(int16_t));
-	if(!s->delay)
+	s->vid->olines += NG_DELAY_LINES;
+	
+	/* Allocate memory for the audio inversion FIR filters */
+	s->firli = calloc(NTAPS * 2, sizeof(int16_t));
+	s->firlq = calloc(NTAPS * 2, sizeof(int16_t));
+	s->firri = calloc(NTAPS * 2, sizeof(int16_t));
+	s->firrq = calloc(NTAPS * 2, sizeof(int16_t));
+	s->mixx = 0;
+	s->firx = 0;
+	
+	if(s->firli == NULL || s->firlq == NULL ||
+	   s->firri == NULL || s->firrq == NULL)
 	{
 		return(VID_OUT_OF_MEMORY);
-	}
-	
-	/* Setup the delay line pointers */
-	for(i = 0; i < NG_DELAY_LINES; i++)
-	{
-		s->delay_line[i] = &s->delay[2 * vid->width * i];
 	}
 
 	return(VID_OK);
@@ -585,7 +588,6 @@ void ng_free(ng_t *s)
 	free(s->firlq);
 	free(s->firri);
 	free(s->firrq);
-	
 	free(s->delay);
 	free(s->lut);
 }
@@ -654,7 +656,6 @@ void ng_render_line(ng_t *s)
 	int j = 0;
 	int x, f, i;
 	int line;
-	int16_t *dline;
 	
 	/* Calculate which line is about to be transmitted due to the delay */
 	line = s->vid->line - NG_DELAY_LINES;
@@ -713,22 +714,18 @@ void ng_render_line(ng_t *s)
 		}
 	}
 	
+	vid_adj_delay(s->vid, NG_DELAY_LINES);
+	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
-	for(x = 0; x < s->vid->width * 2; x += 2)
+	if(j > 0)
 	{
-		int16_t t = s->vid->output[x];
-		s->vid->output[x] = s->delay_line[x >= s->vid->active_left * 2 ? j : 0][x];
-		s->delay_line[0][x] = t;
+		int16_t *dline = s->vid->oline[s->vid->odelay + j];
+		for(x = s->vid->active_left * 2; x < s->vid->width * 2; x += 2)
+		{
+			s->vid->output[x] = dline[x];
+		}
 	}
-	
-	/* Advance the delay buffer */
-	dline = s->delay_line[0];
-	for(x = 0; x < NG_DELAY_LINES - 1; x++)
-	{
-		s->delay_line[x] = s->delay_line[x + 1];
-	}
-	s->delay_line[x] = dline;
 	
 	_render_ng_vbi(s,line,0x72);
 }

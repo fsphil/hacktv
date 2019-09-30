@@ -85,7 +85,7 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	}
 	
 	/* Calculate the high level for the VBI data */
-	level = round((vid->y_level_lookup[0xFFFFFF] - vid->y_level_lookup[0x000000]) * (5.0 / 7.0));
+	level = round((vid->white_level - vid->black_level) * (5.0 / 7.0));
 	
 	s->vid = vid;
 	s->lut = vbidata_init(
@@ -153,7 +153,7 @@ void wss_render_line(wss_t *s)
 		 * overlap active video */
 		for(x = s->vid->half_width; x < s->blank_width; x++)
 		{
-			s->vid->output[x * 2] = s->vid->y_level_lookup[0x000000];
+			s->vid->output[x * 2] = s->vid->black_level;
 		}
 		
 		vbidata_render_nrz(s->lut, s->vbi, -55, 137, VBIDATA_MSB_FIRST, s->vid->output, 2);

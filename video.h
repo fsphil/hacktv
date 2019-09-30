@@ -36,6 +36,16 @@ typedef struct vid_t vid_t;
 #define VID_ERROR         -1
 #define VID_OUT_OF_MEMORY -2
 
+/* Frame type */
+#define VID_RASTER_625 0
+#define VID_RASTER_525 1
+#define VID_RASTER_405 2
+#define VID_RASTER_819 3
+#define VID_BAIRD_240  4
+#define VID_BAIRD_30   5
+#define VID_APOLLO_320 6
+#define VID_MAC        7
+
 /* Output modulation types */
 #define VID_NONE 0
 #define VID_AM   1
@@ -101,6 +111,7 @@ typedef struct {
 	double nicam_level;
 	
 	/* Video */
+	int type;
 	int frame_rate_num;
 	int frame_rate_den;
 	
@@ -206,6 +217,8 @@ struct vid_t {
 	int vsync_short_width;
 	int vsync_long_width;
 	
+	int16_t white_level;
+	int16_t black_level;
 	int16_t blanking_level;
 	int16_t sync_level;
 	
@@ -230,12 +243,16 @@ struct vid_t {
 	/* Video state */
 	uint32_t *framebuffer;
 	
-	unsigned int frame;
-	unsigned int line;
+	/* The frame and line number being rendered next */
+	int bframe;
+	int bline;
 	
+	/* The frame and line number returned by vid_next_line() */
+	int frame;
+	int line;
+	
+	/* Current frame's aspect ratio */
 	float ratio;
-	
-	unsigned int delay;
 	
 	/* Video filter */
 	int16_t *video_filter_taps;
@@ -278,8 +295,11 @@ struct vid_t {
 	/* FM Video state */
 	_mod_fm_t fm_video;
 	
-	/* Output line buffer */
-	int16_t *output;
+	/* Output line(s) buffer */
+	int olines;		/* The number of lines */
+	int16_t **oline;	/* Pointer to each line */
+	int16_t *output;	/* Pointer to the current line */
+	int odelay;		/* Index of the current line */
 };
 
 extern const vid_configs_t vid_configs[];
@@ -290,6 +310,7 @@ extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
 extern int vid_init_filter(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
+extern int16_t *vid_adj_delay(vid_t *s, int lines);
 extern int16_t *vid_next_line(vid_t *s, size_t *samples);
 
 #endif

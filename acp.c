@@ -48,8 +48,8 @@ int acp_init(acp_t *s, vid_t *vid)
 	}
 	
 	/* Calculate the levels */
-	s->psync_level = vid->sync_level + round((vid->y_level_lookup[0xFFFFFF] - vid->sync_level) * 0.06);
-	s->pagc_level  = vid->sync_level + round((vid->y_level_lookup[0xFFFFFF] - vid->sync_level) * 1.10);
+	s->psync_level = vid->sync_level + round((vid->white_level - vid->sync_level) * 0.06);
+	s->pagc_level  = vid->sync_level + round((vid->white_level - vid->sync_level) * 1.10);
 	
 	/* Calculate the width of each pulse */
 	s->psync_width = round(vid->sample_rate * psync_width);

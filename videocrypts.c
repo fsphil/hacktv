@@ -167,32 +167,20 @@ int vcs_init(vcs_t *s, vid_t *vid, const char *mode)
 	}
 	
 	/* Allocate memory for the delay */
-	s->vid->delay += VCS_DELAY_LINES;
-	s->delay = calloc(2 * vid->width * VCS_DELAY_LINES, sizeof(int16_t));
-	if(!s->delay)
-	{
-		return(VID_OUT_OF_MEMORY);
-	}
-	
-	/* Setup the delay line pointers */
-	for(x = 0; x < VCS_DELAY_LINES; x++)
-	{
-		s->delay_line[x] = &s->delay[2 * vid->width * x];
-	}
+	s->vid->olines += VCS_DELAY_LINES;
 	
 	return(VID_OK);
 }
 
 void vcs_free(vcs_t *s)
 {
-	free(s->delay);
+	/* Nothing */
 }
 
 void vcs_render_line(vcs_t *s)
 {
 	int x, j;
 	uint8_t *bline = NULL;
-	int16_t *dline;
 	int line;
 	
 	/* Calculate which line is about to be transmitted due to the delay */
@@ -233,20 +221,16 @@ void vcs_render_line(vcs_t *s)
 		if(j < 0) j += s->vid->conf.lines - 1;
 	}
 	
-	for(x = 0; x < s->vid->width * 2; x += 2)
-	{
-		int16_t t = s->vid->output[x];
-		s->vid->output[x] = s->delay_line[x >= s->vid->active_left * 2 ? j : 0][x];
-		s->delay_line[0][x] = t;
-	}
+	vid_adj_delay(s->vid, VCS_DELAY_LINES);
 	
-	/* Advance the delay buffer */
-	dline = s->delay_line[0];
-	for(x = 0; x < VCS_DELAY_LINES - 1; x++)
+	if(j > 0)
 	{
-		s->delay_line[x] = s->delay_line[x + 1];
+		int16_t *dline = s->vid->oline[s->vid->odelay + j];
+		for(x = s->vid->active_left * 2; x < s->vid->width * 2; x += 2)
+		{
+			s->vid->output[x] = dline[x];
+		}
 	}
-	s->delay_line[x] = dline;
 	
 	/* On the first line of each frame, generate the VBI data */
 	if(line == 1)
@@ -308,7 +292,7 @@ void vcs_render_line(vcs_t *s)
 		/* Videocrypt S's VBI data sits in the active video area. Clear it first */
 		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
 		{
-			s->vid->output[x * 2] = s->vid->y_level_lookup[0x000000];
+			s->vid->output[x * 2] = s->vid->black_level;
 		}
 		
 		x = s->video_scale[VCS_VBI_LEFT];
@@ -316,11 +300,11 @@ void vcs_render_line(vcs_t *s)
 		for(b = 0; b < VCS_VBI_BITS_PER_LINE; b++)
 		{
 			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? 0xFFFFFF : 0x000000;
+			c = c ? s->vid->white_level : s->vid->black_level;
 			
 			for(; x < s->video_scale[VCS_VBI_LEFT + VCS_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->vid->output[x * 2] = s->vid->y_level_lookup[c];
+				s->vid->output[x * 2] = c;
 			}
 		}
 	}

@@ -95,10 +95,11 @@ static void print_usage(void)
 		"      --key <key>                Key to use for Videocrypt I. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
-		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
+		"      --systeraudio              Invert the audio spectrum when using Syster or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
+		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -291,7 +292,7 @@ static void print_usage(void)
 #define _OPT_ACP         1007
 #define _OPT_FILTER      1008
 #define _OPT_NOAUDIO     1009
-
+#define _OPT_NONICAM     1010
 #define _OPT_LOGO        2000
 #define _OPT_TIMECODE    2001
 #define _OPT_DISCRET     2002
@@ -321,6 +322,7 @@ int main(int argc, char *argv[])
 		{ "acp",         no_argument,       0, _OPT_ACP },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
 		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
+		{ "nonicam",     no_argument,       0, _OPT_NONICAM },
 		{ "frequency",   required_argument, 0, 'f' },
 		{ "amp",         no_argument,       0, 'a' },
 		{ "gain",        required_argument, 0, 'x' },
@@ -363,6 +365,7 @@ int main(int argc, char *argv[])
 	s.acp = 0;
 	s.filter = 0;
 	s.noaudio = 0;
+	s.nonicam = 0;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -494,7 +497,7 @@ int main(int argc, char *argv[])
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
 			s.systeraudio = 1;
 			break;
-					
+			
 		case _OPT_ACP: /* --acp */
 			s.acp = 1;
 			break;
@@ -522,6 +525,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_NOAUDIO: /* --noaudio */
 			s.noaudio = 1;
+			break;
+		
+		case _OPT_NONICAM: /* --nonicam */
+			s.nonicam = 1;
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -583,7 +590,7 @@ int main(int argc, char *argv[])
 	
 	if(optind >= argc)
 	{
-		printf("No input specified.\n");
+		fprintf(stderr, "No input specified.\n");
 		return(-1);
 	}
 	
@@ -632,6 +639,13 @@ int main(int argc, char *argv[])
 		vid_conf.fm_right_carrier = 0;
 		vid_conf.nicam_carrier = 0;
 		vid_conf.am_mono_carrier = 0;
+	}
+	
+	if(s.nonicam > 0)
+	{
+		/* Disable the NICAM sub-carrier */
+		vid_conf.nicam_level = 0;
+		vid_conf.nicam_carrier = 0;
 	}
 	
 	vid_conf.level *= s.level;
@@ -898,6 +912,8 @@ int main(int argc, char *argv[])
 	vid_free(&s.vid);
 	
 	av_ffmpeg_deinit();
+	
+	fprintf(stderr, "\n");
 	
 	return(0);
 }

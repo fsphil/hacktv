@@ -430,23 +430,15 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 		s->video_scale[x] = round((l + x) * f);
 	}
 	
-	/* Allocate memory for the 1-line delay */
-	s->vid->delay += 1;
-	s->delay = calloc(2 * vid->width, sizeof(int16_t));
-	if(!s->delay)
-	{
-		return(VID_OUT_OF_MEMORY);
-	}
+	/* Add one delay line */
+	s->vid->olines += 1;
 	
 	return(VID_OK);
 }
 
 void vc_free(vc_t *s)
 {
-	if(s->delay)
-	{
-		free(s->delay);
-	}
+	/* Nothing */
 }
 
 void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *key)
@@ -602,11 +594,11 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 		for(b = 0; b < VC_VBI_BITS_PER_LINE; b++)
 		{
 			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? 0xFFFFFF : 0x000000;
+			c = c ? s->vid->white_level : s->vid->black_level;
 			
 			for(; x < s->video_scale[VC_VBI_LEFT + VC_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->vid->output[x * 2] = s->vid->y_level_lookup[c];
+				s->vid->output[x * 2] = c;
 			}
 		}
 	}
@@ -646,6 +638,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 		int cut;
 		int lshift;
 		int y;
+		int16_t *delay = s->vid->oline[s->vid->odelay - 1];
 		
 		cut = 105 + (0xFF - x) * 2;
 		lshift = 710 - cut;
@@ -653,23 +646,17 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 		y = s->video_scale[VC_LEFT + lshift];
 		for(x = s->video_scale[VC_LEFT]; x < s->video_scale[VC_LEFT + cut]; x++, y++)
 		{
-			s->delay[x * 2] = s->vid->output[y * 2];
+			delay[x * 2] = s->vid->output[y * 2];
 		}
 		
 		y = s->video_scale[VC_LEFT];
 		for(; x < s->video_scale[VC_RIGHT + VC_OVERLAP]; x++, y++)
 		{
-			s->delay[x * 2] = s->vid->output[y * 2];
+			delay[x * 2] = s->vid->output[y * 2];
 		}
 	}
 	
-	/* Delay by 1 line. Uses the Q part for temporary storage */
-	for(x = 0; x < s->vid->width * 2; x += 2)
-	{
-		s->delay[x + 1] = s->vid->output[x];
-		s->vid->output[x] = s->delay[x];
-		s->delay[x] = s->delay[x + 1];
-	}
+	vid_adj_delay(s->vid, 1);
 }
 
 void _vc_rand_seed_sky09(_vc_block_t *s)

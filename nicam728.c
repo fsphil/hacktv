@@ -137,6 +137,51 @@ static uint8_t _parity(unsigned int value)
 	return(p);
 }
 
+void _process_audio(nicam_enc_t *s, int16_t dst[NICAM_AUDIO_LEN * 2], const int16_t src[NICAM_AUDIO_LEN * 2])
+{
+	const _scale_factor_t *scale[2];
+	int32_t l, r;
+	int x, xi;
+	
+	/* Apply J.17 pre-emphasis filter */
+	for(x = 0; x < NICAM_AUDIO_LEN; x++)
+	{
+		s->fir_l[s->fir_p] = src ? src[x * 2 + 0] : 0;
+		s->fir_r[s->fir_p] = src ? src[x * 2 + 1] : 0;
+		if(++s->fir_p == _J17_NTAPS) s->fir_p = 0;
+		
+		for(l = r = xi = 0; xi < _J17_NTAPS; xi++)
+		{
+			l += (int32_t) s->fir_l[s->fir_p] * _j17_taps[xi];
+			r += (int32_t) s->fir_r[s->fir_p] * _j17_taps[xi];
+			if(++s->fir_p == _J17_NTAPS) s->fir_p = 0;
+		}
+		
+		dst[x * 2 + 0] = l >> 15;
+		dst[x * 2 + 1] = r >> 15;
+	}
+	
+	/* Calculate the scale factors for each channel */
+	scale[0] = _scale_factor(dst + 0, 2);
+	scale[1] = _scale_factor(dst + 1, 2);
+	
+	/* Scale and append each sample to the frame */
+	for(xi = x = 0; x < NICAM_AUDIO_LEN * 2; x++)
+	{
+		/* Shift down the selected range */
+		dst[x] = (dst[x] >> scale[x & 1]->shift) & 0x3FF;
+		
+		/* Add the parity bit (6 MSBs only) */
+		dst[x] |= _parity(dst[x] >> 4) << 10;
+		
+		/* Add scale-factor code if necessary */
+		if(x < 54)
+		{
+			dst[x] ^= ((scale[x & 1]->factor >> (2 - (x / 2 % 3))) & 1) << 10;
+		}
+	}
+}
+
 void nicam_encode_init(nicam_enc_t *s, uint8_t mode, uint8_t reserve)
 {
 	memset(s, 0, sizeof(nicam_enc_t));
@@ -150,27 +195,10 @@ void nicam_encode_init(nicam_enc_t *s, uint8_t mode, uint8_t reserve)
 void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], const int16_t audio[NICAM_AUDIO_LEN * 2])
 {
 	int16_t j17_audio[NICAM_AUDIO_LEN * 2];
-	const _scale_factor_t *scale[2];
-	int32_t l, r;
 	int x, xi;
 	
-	/* Apply J.17 pre-emphasis filter */
-	for(x = 0; x < NICAM_AUDIO_LEN; x++)
-	{
-		s->fir_l[s->fir_p] = audio ? audio[x * 2 + 0] : 0;
-		s->fir_r[s->fir_p] = audio ? audio[x * 2 + 1] : 0;
-		if(++s->fir_p == _J17_NTAPS) s->fir_p = 0;
-		
-		for(l = r = xi = 0; xi < _J17_NTAPS; xi++)
-		{
-			l += (int32_t) s->fir_l[s->fir_p] * _j17_taps[xi];
-			r += (int32_t) s->fir_r[s->fir_p] * _j17_taps[xi];
-			if(++s->fir_p == _J17_NTAPS) s->fir_p = 0;
-		}
-		
-		j17_audio[x * 2 + 0] = l >> 15;
-		j17_audio[x * 2 + 1] = r >> 15;
-	}
+	/* Encode the audio */
+	_process_audio(s, j17_audio, audio);
 	
 	/* Initialise the NICAM frame header with the FAW (Frame Alignment Word) */
 	frame[0] = NICAM_FAW;
@@ -188,33 +216,15 @@ void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], const 
 		frame[x] = 0;
 	}
 	
-	/* Calculate the scale factors for each channel */
-	scale[0] = _scale_factor(j17_audio + 0, 2);
-	scale[1] = _scale_factor(j17_audio + 1, 2);
-	
-	/* Scale and append each sample to the frame */
+	/* Pack the encoded audio into the frame */
 	for(xi = x = 0; x < NICAM_AUDIO_LEN * 2; x++)
 	{
-		int16_t a;
 		int b;
 		
-		/* Shift down the selected range */
-		a = (j17_audio[x] >> scale[x & 1]->shift) & 0x3FF;
-		
-		/* Add the parity bit (6 MSBs only) */
-		a |= _parity(a >> 4) << 10;
-		
-		/* Add scale-factor code if necessary */
-		if(x < 54)
-		{
-			a ^= ((scale[x & 1]->factor >> (2 - (x / 2 % 3))) & 1) << 10;
-		}
-		
-		/* Pack the compressed samples into the frame */
-		for(b = 0; b < 11; b++, a >>= 1)
+		for(b = 0; b < 11; b++, j17_audio[x] >>= 1)
 		{
 			/* Apply the bit to the interleaved location */
-			if(a & 1)
+			if(j17_audio[x] & 1)
 			{
 				frame[3 + (xi / 8)] |= 1 << (7 - (xi % 8));
 			}
@@ -235,6 +245,42 @@ void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], const 
 	}
 	
 	/* Increment the frame counter */
+	s->frame++;
+}
+
+void nicam_encode_mac_packet(nicam_enc_t *s, uint8_t pkt[91], const int16_t audio[NICAM_AUDIO_LEN * 2])
+{
+	/* Creates a 90 byte companded sound coding block, first level protection */
+	int16_t j17[NICAM_AUDIO_LEN * 2];
+	int i, x;
+	
+	/* Encode the audio */
+	_process_audio(s, j17, audio);
+	
+	/* PT Packet Type */
+	pkt[0] = 0xC7;
+	
+	/* Unallocated */
+	pkt[1] = 0x00;
+	pkt[2] = 0x00;
+	
+	/* Pack the 11-bit compressed samples into the packet */
+	for(x = 3, i = 0; i < NICAM_AUDIO_LEN * 2; i += 8, x += 11)
+	{
+		pkt[x +  0] =                     (j17[i + 0] >> 0);
+		pkt[x +  1] = (j17[i + 1] << 3) | (j17[i + 0] >> 8);
+		pkt[x +  2] = (j17[i + 2] << 6) | (j17[i + 1] >> 5);
+		pkt[x +  3] =                     (j17[i + 2] >> 2);
+		pkt[x +  4] = (j17[i + 3] << 1) | (j17[i + 2] >> 10);
+		pkt[x +  5] = (j17[i + 4] << 4) | (j17[i + 3] >> 7);
+		pkt[x +  6] = (j17[i + 5] << 7) | (j17[i + 4] >> 4);
+		pkt[x +  7] =                     (j17[i + 5] >> 1);
+		pkt[x +  8] = (j17[i + 6] << 2) | (j17[i + 5] >> 9);
+		pkt[x +  9] = (j17[i + 7] << 5) | (j17[i + 6] >> 6);
+		pkt[x + 10] =                     (j17[i + 7] >> 3);
+	}
+	
+	/* Increment the frame counter (not used for MAC) */
 	s->frame++;
 }
 

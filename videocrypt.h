@@ -88,7 +88,6 @@ typedef struct {
 	uint64_t sr2;
 	uint16_t c;
 	
-	int16_t *delay;
 	int video_scale[VC_WIDTH];
 	
 } vc_t;

@@ -1068,7 +1068,7 @@ int tt_init(tt_t *s, vid_t *vid, char *path)
 	memset(s, 0, sizeof(tt_t));
 	
 	/* Calculate the high level for teletext data, 66% of the white level */
-	level = round((vid->y_level_lookup[0xFFFFFF] - vid->y_level_lookup[0x000000]) * 0.66);
+	level = round((vid->white_level - vid->black_level) * 0.66);
 	
 	s->vid = vid;
 	s->lut = vbidata_init(
