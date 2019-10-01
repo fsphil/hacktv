@@ -235,7 +235,7 @@ static void _packet830(uint8_t line[45], time_t timestamp)
 	
 	/* Modified Julian Date */
 	gmtime_r(&timestamp, &tm);
-	mjd = _mjd(1900 + tm.tm_year, tm.tm_mon, tm.tm_mday);
+	mjd = _mjd(1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday);
 	
 	line[15] = mjd % 100000 / 10000 + 1;
 	line[16] = (mjd % 10000 / 1000 + 1) << 4
