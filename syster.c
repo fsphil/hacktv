@@ -509,7 +509,7 @@ void d11_render_line(ng_t *s)
 		/* Black level on delayed samples */
 		for(x = s->vid->active_left; x < s->vid->active_left + delay; x++)
 		{
-				s->vid->output[x * 2 + 1] = s->vid->y_level_lookup[0x000000];
+				s->vid->output[x * 2 + 1] = s->vid->black_level;
 		}
 		
 		/* Delay */
@@ -530,7 +530,7 @@ void d11_render_line(ng_t *s)
 	{		
 			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
 			{
-				s->vid->output[x * 2] = s->vid->y_level_lookup[0xFFFFFF];;
+				s->vid->output[x * 2] = s->vid->white_level;
 			}	
 	}
 	
@@ -539,7 +539,7 @@ void d11_render_line(ng_t *s)
 	{		
 			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
 			{
-				s->vid->output[x * 2] = (s->vid->frame % 3 == 2 ? s->vid->y_level_lookup[0xFFFFFF] : s->vid->y_level_lookup[0x000000]);
+				s->vid->output[x * 2] = (s->vid->frame % 3 == 2 ? s->vid->white_level : s->vid->black_level);
 			}	
 	}
 	
