@@ -888,6 +888,13 @@ const vid_configs_t vid_configs[] = {
 	{ NULL,            NULL },
 };
 
+static double _dlimit(double v, double min, double max)
+{
+	if(v < min) return(min);
+	if(v > max) return(max);
+	return(v);
+}
+
 static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 {
 	int frame = (s->frame - 1) & 3;
@@ -1201,9 +1208,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		q *= s->conf.white_level - s->conf.black_level;
 		
 		/* Convert to INT16 range and store in tables */
-		s->y_level_lookup[c] = round(y * level * INT16_MAX);
-		s->i_level_lookup[c] = round(i * level * INT16_MAX);
-		s->q_level_lookup[c] = round(q * level * INT16_MAX);
+		s->y_level_lookup[c] = round(_dlimit(y * level, -1, 1) * INT16_MAX);
+		s->i_level_lookup[c] = round(_dlimit(i * level, -1, 1) * INT16_MAX);
+		s->q_level_lookup[c] = round(_dlimit(q * level, -1, 1) * INT16_MAX);
 	}
 	
 	if(s->conf.colour_lookup_lines > 0)
