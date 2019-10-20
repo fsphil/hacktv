@@ -23,6 +23,11 @@
 #include <time.h>
 #include "video.h"
 
+#define TT_OK            0
+#define TT_ERROR         1
+#define TT_NO_PACKET     2
+#define TT_OUT_OF_MEMORY 3
+
 typedef struct _tt_page_t {
 	
 	/* The page number, 0x100 - 0x8FF */
@@ -130,6 +135,7 @@ typedef struct {
 
 extern int tt_init(tt_t *s, vid_t *vid, char *path);
 extern void tt_free(tt_t *s);
+extern int tt_next_packet(tt_t *s, uint8_t vbi[45]);
 extern void tt_render_line(tt_t *s);
 
 #endif

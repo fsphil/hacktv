@@ -43,11 +43,6 @@
 #include "video.h"
 #include "vbidata.h"
 
-#define TT_OK            0
-#define TT_ERROR         1
-#define TT_NO_PACKET     2
-#define TT_OUT_OF_MEMORY 3
-
 static const uint8_t _parity[0x80] = {
 	0x80, 0x01, 0x02, 0x83, 0x04, 0x85, 0x86, 0x07,
 	0x08, 0x89, 0x8A, 0x0B, 0x8C, 0x0D, 0x0E, 0x8F,
@@ -1179,6 +1174,39 @@ void tt_free(tt_t *s)
 	memset(s, 0, sizeof(tt_t));
 }
 
+int tt_next_packet(tt_t *s, uint8_t vbi[45])
+{
+	int r;
+	
+	/* Update the timecode */
+	s->timecode  = (s->vid->frame - 1) * s->vid->conf.lines;
+	s->timecode += s->vid->line - 1;
+	
+	/* Fetch the next line, or TT_NO_PACKET */
+	if(s->raw)
+	{
+		if(feof(s->raw))
+		{
+			/* Return to the start of the file when we hit the end */
+			fseek(s->raw, 0, SEEK_SET);
+		}
+		
+		/* Synchronization sequence (Clock run-in and framing code) */
+		vbi[0] = 0x55;
+		vbi[1] = 0x55;
+		vbi[2] = 0x27;
+		
+		r = fread(&vbi[3], 1, 42, s->raw);
+		r = r == 42 ? TT_OK : TT_NO_PACKET;
+	}
+	else
+	{
+		r = _next_packet(&s->service, vbi, s->timecode);
+	}
+	
+	return(r);
+}
+
 void tt_render_line(tt_t *s)
 {
 	uint8_t vbi[45];
@@ -1188,33 +1216,12 @@ void tt_render_line(tt_t *s)
 	if((s->vid->line >= 7 && s->vid->line <= 22) ||
 	   (s->vid->line >= 320 && s->vid->line <= 335))
 	{
-		if(s->raw)
-		{
-			if(feof(s->raw))
-			{
-				/* Return to the start of the file when we hit the end */
-				fseek(s->raw, 0, SEEK_SET);
-			}
-			
-			/* Synchronization sequence (Clock run-in and framing code) */
-			vbi[0] = 0x55;
-			vbi[1] = 0x55;
-			vbi[2] = 0x27;
-			
-			r = fread(&vbi[3], 1, 42, s->raw);
-			r = r == 42 ? TT_OK : TT_NO_PACKET;
-		}
-		else
-		{
-			r = _next_packet(&s->service, vbi, s->timecode);
-		}
+		r = tt_next_packet(s, vbi);
 		
 		if(r == TT_OK)
 		{
 			vbidata_render_nrz(s->lut, vbi, -70, 360, VBIDATA_LSB_FIRST, s->vid->output, 2);
 		}
 	}
-	
-	s->timecode++;
 }
 
