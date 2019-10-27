@@ -161,7 +161,7 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 16000000, /* Hz */
+	.fm_deviation   = 10000000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
