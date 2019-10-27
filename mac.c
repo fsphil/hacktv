@@ -1171,13 +1171,13 @@ void mac_next_line(vid_t *s)
 	_render_duobinary(s, data, (s->conf.mac_mode == MAC_MODE_D2 ? 648 : 1296));
 	
 	/* Flatten the clamping areas */
-	if(s->line <= 624)
+	/*if(s->line <= 624)
 	{
 		for(x = s->mac.video_scale[207]; x < s->mac.video_scale[207 + 20]; x++)
 		{
 			s->output[x * 2] = s->blanking_level;
 		}
-	}
+	}*/
 	
 	/* Lines 23 and 335 have a black luminance reference area */
 	if(s->line == 23 || s->line == 335)
