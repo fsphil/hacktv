@@ -207,7 +207,7 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *output, size_t ostep, const in
 					if(p == -1) p = s->lwin - 1;
 				}
 				
-				*output = a >> 16;
+				*output = a >> 15;
 				output += ostep;
 				osamples++;
 				
