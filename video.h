@@ -24,6 +24,7 @@
 
 typedef struct vid_t vid_t;
 
+#include "mac.h"
 #include "teletext.h"
 #include "wss.h"
 #include "videocrypt.h"
@@ -112,6 +113,8 @@ typedef struct {
 	
 	/* Video */
 	int type;
+	int mac_mode;
+	
 	int frame_rate_num;
 	int frame_rate_den;
 	
@@ -288,6 +291,9 @@ struct vid_t {
 	
 	/* FM Video state */
 	_mod_fm_t fm_video;
+	
+	/* D/D2-MAC specific data */
+	mac_t mac;
 	
 	/* Output line(s) buffer */
 	int olines;		/* The number of lines */
