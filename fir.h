@@ -39,6 +39,7 @@ extern void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double samp
 
 extern int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, unsigned int interpolation, unsigned int decimation);
 extern size_t fir_int16_process(fir_int16_t *s, int16_t *output, size_t ostep, const int16_t *input, size_t samples, size_t istep);
+extern size_t fir_int16_process_simple(fir_int16_t *s, int16_t *signal, size_t samples);
 extern void fir_int16_free(fir_int16_t *s);
 
 extern int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, unsigned int interpolation, unsigned int decimation);
