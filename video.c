@@ -160,7 +160,7 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 6000000, /* kHz */
+	.fm_deviation   = 10000000, /* Hz */
 	
 	.level          = 0.8, /* Overall signal level */
 	
@@ -429,6 +429,222 @@ const vid_config_t vid_config_ntsc = {
 	.iv_co          =  0.768,
 	.qu_co          =  0.626,
 	.qv_co          = -0.082,
+};
+
+const vid_config_t vid_config_d2mac_am = {
+	
+	/* D2-MAC AM */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_AM,
+	
+	.type           = VID_MAC,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	
+	.active_left    = 0.000028938,
+	.active_width   = 0.000034667,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.white_level    =  0.10,
+	.black_level    =  1.00,
+	.blanking_level =  0.55,
+	.sync_level     =  0.55,
+	
+	.mac_mode       = MAC_MODE_D2,
+	
+	.gamma          = 1.0,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.927,
+	.qu_co          = 0.733,
+	.qv_co          = 0.000,
+};
+
+const vid_config_t vid_config_d2mac_fm = {
+	
+	/* D2-MAC FM (Satellite) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_FM,
+	.fm_level       = 1.0,
+	.fm_deviation   = 10000000, /* Hz */
+	
+	.type           = VID_MAC,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	
+	.active_left    = 0.000028938,
+	.active_width   = 0.000034667,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.white_level    =  0.50,
+	.black_level    = -0.50,
+	.blanking_level =  0.00,
+	.sync_level     =  0.00,
+	
+	.mac_mode       = MAC_MODE_D2,
+	
+	.gamma          = 1.0,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.927,
+	.qu_co          = 0.733,
+	.qv_co          = 0.000,
+};
+
+const vid_config_t vid_config_d2mac = {
+	
+	/* D2-MAC */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.type           = VID_MAC,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	
+	.active_left    = 0.000028938,
+	.active_width   = 0.000034667,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.white_level    =  0.50,
+	.black_level    = -0.50,
+	.blanking_level =  0.00,
+	.sync_level     =  0.00,
+	
+	.mac_mode       = MAC_MODE_D2,
+	
+	.gamma          = 1.0,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.927,
+	.qu_co          = 0.733,
+	.qv_co          = 0.000,
+};
+
+const vid_config_t vid_config_dmac_am = {
+	
+	/* D-MAC AM */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_AM,
+	
+	.type           = VID_MAC,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	
+	.active_left    = 0.000028938,
+	.active_width   = 0.000034667,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.white_level    =  0.10,
+	.black_level    =  1.00,
+	.blanking_level =  0.55,
+	.sync_level     =  0.55,
+	
+	.mac_mode       = MAC_MODE_D,
+	
+	.gamma          = 1.0,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.927,
+	.qu_co          = 0.733,
+	.qv_co          = 0.000,
+};
+
+const vid_config_t vid_config_dmac_fm = {
+	
+	/* D2-MAC FM (Satellite) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_FM,
+	.fm_level       = 1.0,
+	.fm_deviation   = 10000000, /* Hz */
+	
+	.type           = VID_MAC,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	
+	.active_left    = 584.0 / MAC_CLOCK_RATE, // 0.000028938,
+	.active_width   = 702.0 / MAC_CLOCK_RATE,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.white_level    =  0.50,
+	.black_level    = -0.50,
+	.blanking_level =  0.00,
+	.sync_level     =  0.00,
+	
+	.mac_mode       = MAC_MODE_D,
+	
+	.gamma          = 1.0,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.927,
+	.qu_co          = 0.733,
+	.qv_co          = 0.000,
+};
+
+const vid_config_t vid_config_dmac = {
+	
+	/* D-MAC */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.type           = VID_MAC,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	
+	.active_left    = 0.000028938,
+	.active_width   = 0.000034667,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.white_level    =  0.50,
+	.black_level    = -0.50,
+	.blanking_level =  0.00,
+	.sync_level     =  0.00,
+	
+	.mac_mode       = MAC_MODE_D,
+	
+	.gamma          = 1.0,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.927,
+	.qu_co          = 0.733,
+	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_819_e = {
@@ -872,6 +1088,12 @@ const vid_configs_t vid_configs[] = {
 	{ "secam",         &vid_config_secam            },
 	{ "m",             &vid_config_ntsc_m           },
 	{ "ntsc",          &vid_config_ntsc             },
+	{ "d2mac-am",      &vid_config_d2mac_am         },
+	{ "d2mac-fm",      &vid_config_d2mac_fm         },
+	{ "d2mac",         &vid_config_d2mac            },
+	{ "dmac-am",       &vid_config_dmac_am          },
+	{ "dmac-fm",       &vid_config_dmac_fm          },
+	{ "dmac",          &vid_config_dmac             },
 	{ "e",             &vid_config_819_e            },
 	{ "819",           &vid_config_819              },
 	{ "a",             &vid_config_405_a            },
@@ -886,6 +1108,24 @@ const vid_configs_t vid_configs[] = {
 	{ "apollo",        &vid_config_apollo_mono      },
 	{ NULL,            NULL },
 };
+
+/* Test taps for a CCIR-405 video pre-emphasis filter at 16 MHz */
+#define FM_TAPS 47
+const int16_t fm_taps[FM_TAPS] = {
+	-1,-1,-2,-2,-4,-5,-8,-12,-18,-26,-39,-56,-82,-117,-172,-247,-363,-526,-776,-1131,-1682,-2457,-3711,32767,-3711,-2457,-1682,-1131,-776,-526,-363,-247,-172,-117,-82,-56,-39,-26,-18,-12,-8,-5,-4,-2,-2,-1,-1
+};
+
+/* Test taps for D/D2-MAC pre-emphasis at 20.25 MHz */
+const int16_t fm_mac_taps[FM_TAPS] = {
+	-1,0,-1,0,-1,-1,-2,-2,-4,-5,-9,-13,-22,-33,-55,-86,-141,-222,-360,-567,-919,-1442,-2361,32767,-2361,-1442,-919,-567,-360,-222,-141,-86,-55,-33,-22,-13,-9,-5,-4,-2,-2,-1,-1,0,-1,0,-1
+};
+
+static double _dlimit(double v, double min, double max)
+{
+	if(v < min) return(min);
+	if(v > max) return(max);
+	return(v);
+}
 
 static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 {
@@ -1131,10 +1371,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->sample_rate = sample_rate;
 	
 	/* Calculate the active video width and offset */
+	s->active_left = round(s->sample_rate * s->conf.active_left);
 	s->active_width = ceil(s->sample_rate * s->conf.active_width);
 	if(s->active_width > s->width) s->active_width = s->width;
-	
-	s->active_left  = round(s->sample_rate * s->conf.active_left);
 	
 	s->hsync_width       = round(s->sample_rate * s->conf.hsync_width);
 	s->vsync_short_width = round(s->sample_rate * s->conf.vsync_short_width);
@@ -1200,9 +1439,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		q *= s->conf.white_level - s->conf.black_level;
 		
 		/* Convert to INT16 range and store in tables */
-		s->y_level_lookup[c] = round(y * level * INT16_MAX);
-		s->i_level_lookup[c] = round(i * level * INT16_MAX);
-		s->q_level_lookup[c] = round(q * level * INT16_MAX);
+		s->y_level_lookup[c] = round(_dlimit(y * level, -1, 1) * INT16_MAX);
+		s->i_level_lookup[c] = round(_dlimit(i * level, -1, 1) * INT16_MAX);
+		s->q_level_lookup[c] = round(_dlimit(q * level, -1, 1) * INT16_MAX);
 	}
 	
 	if(s->conf.colour_lookup_lines > 0)
@@ -1261,11 +1500,14 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->bframe = s->frame = 1;
 	
 	s->framebuffer = NULL;
-	
 	s->olines = 1;
-	
-	/* Audio */
 	s->audio = 0;
+	
+	/* Initalise D/D2-MAC state */
+	if(s->conf.type == VID_MAC)
+	{
+		mac_init(s);
+	}
 	
 	/* FM audio */
 	if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
@@ -1458,8 +1700,13 @@ void vid_free(vid_t *s)
 	
 	if(s->video_filter_taps)
 	{
-		fir_int16_complex_free(&s->video_filter);
+		fir_int16_free(&s->video_filter);
 		free(s->video_filter_taps);
+	}
+	
+	if(s->conf.type == VID_MAC)
+	{
+		mac_free(s);
 	}
 	
 	/* Free allocated memory */
@@ -1500,11 +1747,12 @@ void vid_info(vid_t *s)
 
 int vid_init_filter(vid_t *s)
 {
-	int taps = 51; /* Magic number :( */
+	int taps;
 	
 	if(s->conf.modulation == VID_VSB)
 	{
-		/* Prepare the video filter */
+		taps = 51;
+		
 		s->video_filter_taps = calloc(taps, sizeof(int16_t) * 2);
 		if(!s->video_filter_taps)
 		{
@@ -1516,21 +1764,25 @@ int vid_init_filter(vid_t *s)
 	}
 	else if(s->conf.modulation == VID_FM)
 	{
-		/* Test taps for a CCIR-405 video pre-emphasis filter at 16MHz */
-		const int16_t fm_taps[47] = {
-			-1, -1, -1, -1, -2, -3, -5, -8, -13, -18, -28, -41, -62, -91, -140, -207, -322, -490, -777, -1209, -1962, -3110, -5215,
-			/*38620,*/ 32767, -5215, -3110, -1962, -1209, -777, -490, -322, -207, -140, -91, -62, -41, -28, -18, -13, -8, -5, -3, -2, -1, -1, -1, -1
-		};
+		taps = FM_TAPS;
 		
-		s->video_filter_taps = calloc(47, sizeof(int16_t));
+		s->video_filter_taps = calloc(taps, sizeof(int16_t));
 		if(!s->video_filter_taps)
 		{
 			return(VID_OUT_OF_MEMORY);
 		}
 		
-		memcpy(s->video_filter_taps, fm_taps, 47 * sizeof(int16_t));
-		
-		fir_int16_init(&s->video_filter, s->video_filter_taps, 47, 1, 1);
+		memcpy(s->video_filter_taps, s->conf.type == VID_MAC ? fm_mac_taps : fm_taps, taps * sizeof(int16_t));
+		fir_int16_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
+
+		if(s->conf.type == VID_MAC && s->sample_rate != 20250000)
+		{
+			fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz only.\n");
+		}
+		else if(s->conf.type != VID_MAC && s->sample_rate != 16000000)
+		{
+			fprintf(stderr, "Warning: The FM video pre-emphasis filter is designed to run at 16 MHz only.\n");
+		}
 	}
 	
 	return(VID_OK);
@@ -1556,7 +1808,7 @@ int16_t *vid_adj_delay(vid_t *s, int lines)
 	return(s->output);
 }
 
-static int16_t *_vid_next_line(vid_t *s, size_t *samples)
+static void _vid_next_line_raster(vid_t *s)
 {
 	const char *seq;
 	int x;
@@ -1569,24 +1821,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	int16_t *lut_b;
 	int16_t *lut_i;
 	int16_t *lut_q;
-	
-	s->odelay = s->olines - 1;
-	s->output = s->oline[s->odelay];
-	
-	s->frame = s->bframe;
-	s->line = s->bline;
-	
-	/* Load the next frame */
-	if(s->line == 1)
-	{
-		/* Have we reached the end of the video? */
-		if(_av_eof(s))
-		{
-			return(NULL);
-		}
-		
-		s->framebuffer = _av_read_video(s, &s->ratio);
-	}
 	
 	/* Sequence codes: abcd
 	 * 
@@ -2158,6 +2392,132 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	{
 		s->output[x * 2 + 1] = 0;
 	}
+}
+
+static void _process_audio(vid_t *s)
+{
+	static int16_t audio[2] = { 0, 0 };
+	static int interp = 0;
+	int x;
+	
+	for(x = 0; x < s->width; x++)
+	{
+		int16_t add[2] = { 0, 0 };
+		
+		/* TODO: Replace this with a real FIR filter... */
+		interp += HACKTV_AUDIO_SAMPLE_RATE;
+		if(interp >= s->sample_rate)
+		{
+			interp -= s->sample_rate;
+			
+			if(s->audiobuffer_samples == 0)
+			{
+				s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
+				
+				if(s->conf.systeraudio == 1)
+				{
+					ng_invert_audio(&s->ng, s->audiobuffer, s->audiobuffer_samples);
+				}
+			}
+			
+			if(s->audiobuffer)
+			{
+				/* Fetch next sample */
+				audio[0] = s->audiobuffer[0];
+				audio[1] = s->audiobuffer[1];
+				s->audiobuffer += 2;
+				s->audiobuffer_samples--;
+			}
+			else
+			{
+				/* No audio from the source */
+				audio[0] = 0;
+				audio[1] = 0;
+			}
+			
+			if((s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0) ||
+			   s->conf.type == VID_MAC)
+			{
+				s->nicam_buf[s->nicam_buf_len++] = audio[0];
+				s->nicam_buf[s->nicam_buf_len++] = audio[1];
+				
+				if(s->nicam_buf_len == NICAM_AUDIO_LEN * 2)
+				{
+					if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+					{
+						nicam_mod_input(&s->nicam, s->nicam_buf);
+					}
+					
+					if(s->conf.type == VID_MAC)
+					{
+						mac_write_audio(s, s->nicam_buf);
+					}
+					
+					s->nicam_buf_len = 0;
+				}
+			}
+		}
+		
+		if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
+		{
+			_fm_modulator_add(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
+		}
+		
+		if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
+		{
+			_fm_modulator_add(&s->fm_left, add, audio[0]);
+		}
+		
+		if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
+		{
+			_fm_modulator_add(&s->fm_right, add, audio[1]);
+		}
+		
+		if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
+		{
+			_am_modulator_add(&s->am_mono, add, (audio[0] + audio[1]) / 2);
+		}
+		
+		s->output[x * 2 + 0] += add[0];
+		s->output[x * 2 + 1] += add[1];
+	}
+	
+	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+	{
+		nicam_mod_output(&s->nicam, s->output, s->width);
+	}
+}
+
+static int16_t *_vid_next_line(vid_t *s, size_t *samples)
+{
+	int x;
+	
+	s->odelay = s->olines - 1;
+	s->output = s->oline[s->odelay];
+	
+	s->frame = s->bframe;
+	s->line = s->bline;
+	
+	/* Load the next frame */
+	if(s->line == 1)
+	{
+		/* Have we reached the end of the video? */
+		if(_av_eof(s))
+		{
+			return(NULL);
+		}
+		
+		s->framebuffer = _av_read_video(s, &s->ratio);
+	}
+	
+	if(s->conf.type == VID_MAC)
+	{
+		mac_next_line(s);
+	}
+	else
+	{
+		_vid_next_line_raster(s);
+	}
 	
 	/* Apply video filter if enabled */
 	if(s->video_filter_taps)
@@ -2168,92 +2528,15 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		}
 		else if(s->conf.modulation == VID_FM)
 		{
-			fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
+			//fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
+			fir_int16_process_simple(&s->video_filter, s->output, s->width);
 		}
 	}
 	
-	/* Generate the FM audio subcarrier(s) */
-	if(s->conf.fm_audio_level > 0 || s->conf.am_audio_level > 0)
+	/* Process the audio */
+	if(s->audio == 1)
 	{
-		static int16_t audio[2] = { 0, 0 };
-		static int interp = 0;
-		
-		for(x = 0; x < s->width; x++)
-		{
-			int16_t add[2] = { 0, 0 };
-			
-			/* TODO: Replace this with a real FIR filter... */
-			interp += HACKTV_AUDIO_SAMPLE_RATE;
-			if(interp >= s->sample_rate)
-			{
-				interp -= s->sample_rate;
-				
-				if(s->audiobuffer_samples == 0)
-				{
-					s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
-					
-					if(s->conf.systeraudio == 1)
-					{
-						ng_invert_audio(&s->ng, s->audiobuffer, s->audiobuffer_samples);
-					}
-				}
-				
-				if(s->audiobuffer)
-				{
-					/* Fetch next sample */
-					audio[0] = s->audiobuffer[0];
-					audio[1] = s->audiobuffer[1];
-					s->audiobuffer += 2;
-					s->audiobuffer_samples--;
-				}
-				else
-				{
-					/* No audio from the source */
-					audio[0] = 0;
-					audio[1] = 0;
-				}
-				
-				if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
-				{
-					s->nicam_buf[s->nicam_buf_len++] = audio[0];
-					s->nicam_buf[s->nicam_buf_len++] = audio[1];
-					
-					if(s->nicam_buf_len == NICAM_AUDIO_LEN * 2)
-					{
-						nicam_mod_input(&s->nicam, s->nicam_buf);
-						s->nicam_buf_len = 0;
-					}
-				}
-			}
-			
-			if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
-			{
-				_fm_modulator_add(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
-			}
-			
-			if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
-			{
-				_fm_modulator_add(&s->fm_left, add, audio[0]);
-			}
-			
-			if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
-			{
-				_fm_modulator_add(&s->fm_right, add, audio[1]);
-			}
-			
-			if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
-			{
-				_am_modulator_add(&s->am_mono, add, (audio[0] + audio[1]) / 2);
-			}
-			
-			s->output[x * 2 + 0] += add[0];
-			s->output[x * 2 + 1] += add[1];
-		}
-	}
-	
-	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
-	{
-		nicam_mod_output(&s->nicam, s->output, s->width);
+		_process_audio(s);
 	}
 	
 	/* FM modulate the video and audio if requested */

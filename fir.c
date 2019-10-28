@@ -207,7 +207,7 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *output, size_t ostep, const in
 					if(p == -1) p = s->lwin - 1;
 				}
 				
-				*output = a >> 16;
+				*output = a >> 15;
 				output += ostep;
 				osamples++;
 				
@@ -220,6 +220,41 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *output, size_t ostep, const in
 	
 	return(osamples);
 }
+
+size_t fir_int16_process_simple(fir_int16_t *s, int16_t *signal, size_t samples)
+{
+	int a;
+	int x;
+	int y;
+	int p;
+	
+	for(x = 0; x < samples; x++)
+	{
+		/* Append the next input sample to the round buffer */
+		s->win[s->owin++] = *signal;
+		if(s->owin == s->lwin) s->owin = 0;
+		
+		/* Calculate the next output sample */
+		a = 0;
+		p = s->owin;
+		
+		for(y = 0; y < s->lwin - s->owin; y++)
+		{
+			a += s->win[p++] * s->taps[y];
+		}
+		
+		for(p = 0; y < s->ntaps; y++)
+		{
+			a += s->win[p++] * s->taps[y];
+		}
+		
+		*signal = a >> 15;
+		signal += 2;
+	}
+	
+	return(samples);
+}
+
 
 void fir_int16_free(fir_int16_t *s)
 {

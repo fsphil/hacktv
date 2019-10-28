@@ -59,30 +59,38 @@ which card you want to use to decode video.
 
 WHAT'S IT DO
 
-Generates a PAL/NTSC/SECAM* video signal from a video file or test pattern.
-Also supports older 819, 405, 240 and 30 line standards, as well as the
-NASA Apollo video standards, both colour and mono.
-Input is any file type or URL supported by ffmpeg.
-Output can be to a file or directly to a HackRF.
-Teletext support.
-NICAM stereo audio.
-Videocrypt I/II hardware support.
-Videocrypt S simulator.
-Partial Nagravision Syster hardware support.
-Analogue Copy Protection system, similar to Macrovision.
+Generates a PAL, NTSC, SECAM*, D/D2-MAC video signal from a video file, stream
+or test pattern. Also supports older 819, 405, 240 and 30 line standards, as
+well as the NASA Apollo video standards, both colour and mono.
 
-* SECAM support is very basic and won't produce a good image.
+Input is any file type or URL supported by ffmpeg.
+
+Output can be to a file, HackRF, fl2k-supported VGA adaptors or any SDR
+supported by SoapySDR.
+
+It also supports:
+
++ Teletext (625-line only)
++ NICAM stereo audio
++ Videocrypt I/II hardware support
++ Videocrypt S simulator
++ Partial Nagravision Syster hardware support
++ Analogue Copy Protection system, similar to Macrovision
+
+* SECAM support is very basic and won't produce a good image
+
 
 WHAT'S IT NOT DO (yet)
 
-There are no filters. Needed for proper audio and VSB modulation.
-An optional notch filter for the colour subcarrier would be nice.
-D-MAC / D2-MAC standards.
++ There are no filters. Needed for proper audio and VSB modulation
++ An optional notch filter for the colour subcarrier would be nice
+
 
 WHAT IT WON'T DO
 
-DVB or other pure digital signals.
-Bring back Firefly. :(
++ DVB or other pure digital signals
++ Bring back Firefly :(
+
 
 REQUIREMENTS
 
@@ -98,10 +106,12 @@ apt-get install libhackrf-dev libavutil-dev libavdevice-dev libswresample-dev li
 * On Debian (sid)
 apt-get install hacktv
 
+
 INSTALL
 
 make
 make install
+
 
 EXAMPLES
 
@@ -117,6 +127,7 @@ $ hacktv -f 551250000 -m i -g 47 --teletext demo.tti test
 # Download and transmit teletext pages from the Teefax service
 $ svn checkout http://teastop.plus.com/svn/teletext/ teefax
 $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
+
 
 -Philip Heron <phil@sanslogic.co.uk>
 
