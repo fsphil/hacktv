@@ -114,7 +114,7 @@ static int16_t *_duobinary_lut(int mode, int width, double level)
 		
 		for(x = 0; x < ntaps; x++)
 		{
-			*(p++) = lround(_rrc((double) (x - htaps - err) / samples_per_symbol * 0.9) * level);
+			*(p++) = lround(_rrc((double) (x - htaps - err) / samples_per_symbol) * level);
 		}
 	}
 	
