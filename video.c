@@ -1015,7 +1015,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	
 	/* Hacky: hacktv can't generate a single pulse wider than half a line,
 	 * which we need here. Use the vsync short pulse to complete the long */
-        .vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
+	.vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
 	
 	/* The Apollo TV camera supports a pulse and tone sync mode. The
 	 * pulse mode is a normal negative pulse, and the tone mode uses
@@ -1059,7 +1059,7 @@ const vid_config_t vid_config_apollo_mono = {
 	
 	/* Hacky: hacktv can't generate a single pulse wider than half a line,
 	 * which we need here. Use the vsync short pulse to complete the long */
-        .vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
+	.vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
 	
 	/* The Apollo TV camera supports a pulse and tone sync mode. The
 	 * pulse mode is a normal negative pulse, and the tone mode uses
@@ -1768,7 +1768,7 @@ int vid_init_filter(vid_t *s)
 		
 		memcpy(s->video_filter_taps, s->conf.type == VID_MAC ? fm_mac_taps : fm_taps, taps * sizeof(int16_t));
 		fir_int16_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
-
+		
 		if(s->conf.type == VID_MAC && s->sample_rate != 20250000)
 		{
 			fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz only.\n");
@@ -1917,10 +1917,10 @@ static void _vid_next_line_raster(vid_t *s)
 		switch(s->line)
 		{
 		case 1:   seq = "v__v"; break;
-	        case 2:   seq = "v__v"; break;
-	        case 3:   seq = "v__v"; break;
-	        case 4:   seq = "V__V"; break;
-	        case 5:   seq = "V__V"; break;
+		case 2:   seq = "v__v"; break;
+		case 3:   seq = "v__v"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
 		case 6:   seq = "V__V"; break;
 		case 7:   seq = "v__v"; break;
 		case 8:   seq = "v__v"; break;
