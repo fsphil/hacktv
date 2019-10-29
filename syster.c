@@ -450,7 +450,14 @@ void ng_render_line(ng_t *s)
 	if(j > 0)
 	{
 		int16_t *dline = s->vid->oline[s->vid->odelay + j];
-		for(x = s->vid->active_left * 2; x < s->vid->width * 2; x += 2)
+		
+		/* For PAL the colour burst is not moved, just the active
+		 * video. For SECAM the entire line is moved. */
+		x = s->vid->active_left * 2;
+		
+		if(s->vid->conf.colour_mode == VID_SECAM) x = 0;
+		
+		for(; x < s->vid->width * 2; x += 2)
 		{
 			s->vid->output[x] = dline[x];
 		}

@@ -1478,7 +1478,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	if(s->conf.colour_mode == VID_SECAM)
 	{
-		int secam_level = round((s->conf.white_level - s->conf.blanking_level) * 0.200 * s->conf.video_level * level * INT16_MAX);
+		double secam_level = 0.23 * (s->conf.white_level - s->conf.blanking_level) * level;
 		
 		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
 		if(r != VID_OK)
