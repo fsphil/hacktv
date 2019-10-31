@@ -35,7 +35,7 @@ static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 	const void *buffs[] = { iq_data };
 	int flags = 0;
 	
-	SoapySDRDevice_writeStream(rf->d, rf->s, buffs, samples, &flags, 0, 0);
+	SoapySDRDevice_writeStream(rf->d, rf->s, buffs, samples, &flags, 0, 100000);
 	
 	return(HACKTV_OK);
 }

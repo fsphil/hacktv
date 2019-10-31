@@ -1014,7 +1014,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	
 	/* Hacky: hacktv can't generate a single pulse wider than half a line,
 	 * which we need here. Use the vsync short pulse to complete the long */
-        .vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
+	.vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
 	
 	/* The Apollo TV camera supports a pulse and tone sync mode. The
 	 * pulse mode is a normal negative pulse, and the tone mode uses
@@ -1058,7 +1058,7 @@ const vid_config_t vid_config_apollo_mono = {
 	
 	/* Hacky: hacktv can't generate a single pulse wider than half a line,
 	 * which we need here. Use the vsync short pulse to complete the long */
-        .vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
+	.vsync_short_width = 1.0 / 10.0 / 320.0 / 2.0 - 45e-6,
 	
 	/* The Apollo TV camera supports a pulse and tone sync mode. The
 	 * pulse mode is a normal negative pulse, and the tone mode uses
@@ -1477,7 +1477,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	if(s->conf.colour_mode == VID_SECAM)
 	{
-		int secam_level = round((s->conf.white_level - s->conf.blanking_level) * 0.200 * s->conf.video_level * level * INT16_MAX);
+		double secam_level = 0.23 * (s->conf.white_level - s->conf.blanking_level) * level;
 		
 		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
 		if(r != VID_OK)
@@ -1774,7 +1774,7 @@ int vid_init_filter(vid_t *s)
 		
 		memcpy(s->video_filter_taps, s->conf.type == VID_MAC ? fm_mac_taps : fm_taps, taps * sizeof(int16_t));
 		fir_int16_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
-
+		
 		if(s->conf.type == VID_MAC && s->sample_rate != 20250000)
 		{
 			fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz only.\n");
