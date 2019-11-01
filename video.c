@@ -2513,7 +2513,8 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	{
 		if(s->conf.modulation == VID_VSB)
 		{
-			fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
+			//fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
+			fir_int16_complex_process_simple(&s->video_filter, s->output, s->width);
 		}
 		else if(s->conf.modulation == VID_FM)
 		{
