@@ -451,8 +451,8 @@ const vid_config_t vid_config_d2mac_am = {
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
-	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
+	.level          = 1.00, /* Overall signal level */
+	.video_level    = 0.85, /* Chrominance may clip if this is set to 1 */
 	
 	.white_level    =  0.10,
 	.black_level    =  1.00,
@@ -559,8 +559,8 @@ const vid_config_t vid_config_dmac_am = {
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
-	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
+	.level          = 1.00, /* Overall signal level */
+	.video_level    = 0.85, /* Chrominance may clip if this is set to 1 */
 	
 	.white_level    =  0.10,
 	.black_level    =  1.00,
