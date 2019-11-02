@@ -263,9 +263,9 @@ const vid_config_t vid_config_secam_l = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	/* TODO: Find out what the usual video/audio power ratio is */
 	.video_level    = 0.80, /* Power level of video */
-	.am_audio_level = 0.20, /* FM audio carrier power level */
+	.am_audio_level = 0.10, /* AM audio carrier power level */
+	.nicam_level    = 0.04, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -297,6 +297,9 @@ const vid_config_t vid_config_secam_l = {
 	.qv_co          = -1.000,
 	
 	.am_mono_carrier = 6500000, /* Hz */
+	
+	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_beta     = 0.4,
 };
 
 const vid_config_t vid_config_secam = {
