@@ -2511,6 +2511,12 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		_vid_next_line_raster(s);
 	}
 	
+	/* Ensure the Q part of the signal is zero */
+	for(x = 0; x < s->width; x++)
+	{
+		s->output[x * 2 + 1] = 0;
+	}
+	
 	/* Apply video filter if enabled */
 	if(s->video_filter_taps)
 	{
