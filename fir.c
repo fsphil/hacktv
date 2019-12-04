@@ -353,6 +353,48 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *output, size_t ostep, 
 	return(osamples);
 }
 
+size_t fir_int16_complex_process_simple(fir_int16_t *s, int16_t *signal, size_t samples)
+{
+	int32_t ai, aq;
+	int x;
+	int y;
+	int p;
+	
+	for(x = 0; x < samples; x++)
+	{
+		/* Append the next input sample to the round buffer */
+		s->win[s->owin * 2 + 0] = signal[0];
+		s->win[s->owin * 2 + 1] = signal[1];
+		if(++s->owin == s->lwin) s->owin = 0;
+		
+		/* Calculate the next output sample */
+		ai = 0;
+		aq = 0;
+		p = s->owin;
+		
+		for(y = 0; y < s->lwin - s->owin; y++)
+		{
+			ai += s->win[p * 2 + 0] * s->taps[y * 2 + 0] - s->win[p * 2 + 1] * s->taps[y * 2 + 1];
+			aq += s->win[p * 2 + 1] * s->taps[y * 2 + 0] + s->win[p * 2 + 0] * s->taps[y * 2 + 1];
+			p++;
+		}
+		
+		for(p = 0; y < s->ntaps; y++)
+		{
+			ai += s->win[p * 2 + 0] * s->taps[y * 2 + 0] - s->win[p * 2 + 1] * s->taps[y * 2 + 1];
+			aq += s->win[p * 2 + 1] * s->taps[y * 2 + 0] + s->win[p * 2 + 0] * s->taps[y * 2 + 1];
+			p++;
+		}
+		
+		signal[0] = aq >> 15;
+		signal[1] = ai >> 15;
+		
+		signal += 2;
+	}
+	
+	return(samples);
+}
+
 void fir_int16_complex_free(fir_int16_t *s)
 {
 	free(s->win);
