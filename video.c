@@ -262,9 +262,9 @@ const vid_config_t vid_config_secam_l = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	/* TODO: Find out what the usual video/audio power ratio is */
 	.video_level    = 0.80, /* Power level of video */
-	.am_audio_level = 0.20, /* FM audio carrier power level */
+	.am_audio_level = 0.10, /* AM audio carrier power level */
+	.nicam_level    = 0.04, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -296,6 +296,9 @@ const vid_config_t vid_config_secam_l = {
 	.qv_co          = -1.000,
 	
 	.am_mono_carrier = 6500000, /* Hz */
+	
+	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_beta     = 0.4,
 };
 
 const vid_config_t vid_config_secam = {
@@ -447,8 +450,8 @@ const vid_config_t vid_config_d2mac_am = {
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
-	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
+	.level          = 1.00, /* Overall signal level */
+	.video_level    = 0.85, /* Chrominance may clip if this is set to 1 */
 	
 	.white_level    =  0.10,
 	.black_level    =  1.00,
@@ -555,8 +558,8 @@ const vid_config_t vid_config_dmac_am = {
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
-	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
+	.level          = 1.00, /* Overall signal level */
+	.video_level    = 0.85, /* Chrominance may clip if this is set to 1 */
 	
 	.white_level    =  0.10,
 	.black_level    =  1.00,
@@ -2519,12 +2522,19 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		_vid_next_line_raster(s);
 	}
 	
+	/* Ensure the Q part of the signal is zero */
+	for(x = 0; x < s->width; x++)
+	{
+		s->output[x * 2 + 1] = 0;
+	}
+	
 	/* Apply video filter if enabled */
 	if(s->video_filter_taps)
 	{
 		if(s->conf.modulation == VID_VSB)
 		{
-			fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
+			//fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
+			fir_int16_complex_process_simple(&s->video_filter, s->output, s->width);
 		}
 		else if(s->conf.modulation == VID_FM)
 		{

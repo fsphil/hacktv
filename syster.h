@@ -25,12 +25,14 @@
 #define NG_VBI_WIDTH 284
 #define NG_VBI_BYTES 28
 
+#define NG_MSG_BYTES 84
+
 #define NG_FIELD_1_START   23
 #define NG_FIELD_2_START   336
 #define NG_LINES_PER_FIELD 287
 
 /* Set this to 1 if your decoder uses different permutations with PIC card */
-#define _OPT_PIC_CARD 0
+#define _OPT_PIC_CARD 1
 
 #define D11_FIELD_1_START   23
 #define D11_FIELD_2_START   335
@@ -43,17 +45,29 @@
 
 #define NG_DELAY_LINES (625 + NG_FIELD_1_START + NG_LINES_PER_FIELD - (NG_FIELD_2_START + NG_LINES_PER_FIELD - 32))
 
+/* Entitlement control messages */
+typedef struct {
+	uint64_t cw;
+	uint8_t ecm[16];
+} ng_ecm_t;
+
 typedef struct {
 	
 	vid_t *vid;
 	
 	/* VBI */
 	int16_t *lut;
-	int vbi_line;
-	
+	uint8_t vbi[10][NG_VBI_BYTES];
 	int vbi_seq;
 	int block_seq;
-	int block_seq2;
+	
+	/* EMM */
+	int next_ppua;
+	
+	/* PRBS state */
+	uint64_t cw;
+	uint32_t sr1;
+	uint32_t sr2;
 	
 	/* PRNG seed values */
 	int s; /* 0, ..., 127 */
