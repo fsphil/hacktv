@@ -939,7 +939,6 @@ static int _seek_screen(void *private, vid_t *s)
 {
 	av_ffmpeg_t *av = private;
 	int x, y;
-	int white_noise[2] = {0xFFFFFF,0x000000};
 	
 	av->video = malloc(vid_get_framebuffer_length(s));
 	if(!av->video)
@@ -1083,7 +1082,6 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_RGB32 };
 			
 		AVFilterGraph *vfilter_graph;
-		avfilter_register_all();
 		
 		AVBufferSinkParams *buffersink_params;
 		const AVFilter *vbuffersrc  = avfilter_get_by_name("buffer");
@@ -1156,7 +1154,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		if(s->conf.timestamp)
 		{
 			asprintf(&_vid_timecode_filter,
-				"drawtext=resources/fonts/Stencil:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/20: y=h*16/18:shadowx=1:shadowy=1",
+				"drawtext=resources/fonts/Stencil.ttf:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/20: y=h*16/18:shadowx=1:shadowy=1",
 				s->conf.position,fps);
 		}
 		else

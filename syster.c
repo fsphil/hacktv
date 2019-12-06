@@ -513,7 +513,7 @@ int _ng_vbi_init(ng_t *s, vid_t *vid)
 
 void _render_ng_vbi(ng_t *s, int line, int mode)
 {
-	int i, x;
+	int x;
 	/* Render the VBI data
 	 * These lines where used by Premiere */
 	if(line == 14 || line == 15 || line == 327 || line == 328)
@@ -670,8 +670,6 @@ void d11_render_line(ng_t *s)
 
 int ng_init(ng_t *s, vid_t *vid)
 {
-	int i;
-	
 	memset(s, 0, sizeof(ng_t));
 	
 	s->vid = vid;

@@ -49,6 +49,9 @@
 #define VC2_VBI_FIELD_1_START (VC_VBI_FIELD_1_START - 4)
 #define VC2_VBI_FIELD_2_START (VC_VBI_FIELD_2_START - 4)
 
+#define VC_TAC 0
+#define VC_SKY 1
+
 typedef struct {
 	uint8_t mode;
 	uint64_t codeword;
@@ -95,11 +98,10 @@ typedef struct {
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2, const char *key);
 extern void vc_free(vc_t *s);
 extern void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *key);
-extern void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset);
+extern void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, int ca);
 extern void _vc_kernel09(const unsigned char in, unsigned char *answ);
-extern void _vc_rand_seed_sky07(_vc_block_t *s);
+extern void _vc_rand_seed_sky07(_vc_block_t *s, int ca);
 extern void _vc_rand_seed_sky09(_vc_block_t *s);
-extern void _vc_rand_seed_tac(_vc_block_t *s);
 extern void _vc_rand_seed_xtea(_vc_block_t *s);
 #endif
 
