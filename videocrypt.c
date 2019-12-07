@@ -46,6 +46,9 @@
 #include <math.h>
 #include "video.h"
 
+/* Experimental - Sky 06/07 mode channel ID */
+#define SKY07_CHID 0x01
+
 /* Packet header sequences */
 static const uint8_t _sequence[8] = {
 	0x87,0x96,0xA5,0xB4,0xC3,0xD2,0xE1,0x87,
@@ -693,6 +696,7 @@ void _vc_rand_seed_sky07(_vc_block_t *s, int ca)
 	else
 	/* Sky 07 key offsets */
 	{
+		s->messages[6][6] = SKY07_CHID;
 		if (s->messages[6][1] > 0x32) offset = 0x08;
   		if (s->messages[6][1] > 0x3a) offset = 0x18;
 	}
@@ -805,7 +809,8 @@ void _vc_kernel09(const unsigned char in, unsigned char *answ)
   	a = in;
   	for (i = 0; i <= 4; i += 2) 
   	{
-    	b =  sky09_key[answ[i] & 0x3F] ^ sky09_key[b + 0x98];
+		b = answ[i] & 0x3F;
+    	b =  sky09_key[b] ^ sky09_key[b + 0x98];
     	c = a + b - answ[i+1];
     	d = (answ[i] - answ[i+1]) ^ a;
     	m = d * c;
