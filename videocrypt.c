@@ -46,8 +46,8 @@
 #include <math.h>
 #include "video.h"
 
-/* Experimental - Sky 06/07 mode channel ID */
-#define SKY07_CHID 0x01
+/* Experimental - Sky 07 mode channel ID */
+#define SKY07_CHID 0x06	
 
 /* Packet header sequences */
 static const uint8_t _sequence[8] = {
