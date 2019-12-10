@@ -573,7 +573,7 @@ void ng_render_line(ng_t *s)
 		}
 		
 		/* Render the line */
-		vbidata_render_nrz(s->lut, s->vbi[s->vbi_seq++], -48, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->vid->output, 2);
+		vbidata_render_nrz(s->lut, s->vbi[s->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->vid->output, 2);
 		
 		if(s->vbi_seq == 10)
 		{
