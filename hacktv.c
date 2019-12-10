@@ -245,6 +245,7 @@ static void print_usage(void)
 		"\n"
 		"  sky07           = A valid Sky series 07 or 06 card is required to decode. Random control words.\n"
 		"  sky09           = A valid Sky series 09 card is required to decode. Random control words.\n"
+		"  sky10           = A valid Sky series 10 card is required to decode. Sample data from Sky One.\n"
 		"  sky11           = A valid Sky series 11 card is required to decode. Sample data from MTV.\n"
 		"  tac             = A valid TAC card or supplied PIC16F84 hex flashed.\n"
 		"                    on a \"gold card\" is required to decode. Random control words.\n"

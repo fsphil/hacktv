@@ -113,6 +113,29 @@ static _vc_block_t _sky09_blocks[] = {
 	},
 };
 
+/* Blocks for VC1 conditional-access sample, taken from Sky One and modified, */
+/* requires an active Sky 10 (0A) series card to decode */
+static _vc_block_t _sky10_blocks[] = {
+	{
+		0x07, 0x2D0300F0BE48EE5AUL,
+		{
+ 			{ 0x20 },
+ 			{ }, { }, { }, { },	{ },
+ 			{ 0xf8,0x90,0x44,0x22,0xca,0x60,0x57,0x07,0xd3,0x19,0xb9,0x24,0x12,0x04,0x8e,0xcf,0x44,0xca,0x29,0x6e,0x96,0xf8,0xc0,0x3f,0x28,0x40,0x2b,0x80,0x14,0x68,0xe9 }
+		},
+	},
+	{
+		0x07, 0x2B8294A5CC14D57FUL,
+		{
+			/* Modify the following line to change the channel name displayed by the decoder.
+			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
+ 			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x31,0x30,0x20,0x4d,0x4f,0x44,0x45 },
+ 			{ }, { }, { }, { },	{ },
+ 			{ 0xf8,0x90,0x4b,0x22,0x0a,0x8c,0x26,0xd2,0xa6,0x63,0x38,0x2d,0x17,0xd5,0xe9,0xea,0xe0,0x2c,0xe2,0xac,0xb8,0xe0,0x11,0xa1,0x01,0x4b,0x87,0x80,0x6a,0xa9,0x78 }	
+		},
+	},
+};
+
 /* Blocks for VC1 conditional-access sample, taken from MTV UK and modified, */
 /* requires an active Sky 11 series card to decode */
 static _vc_block_t _sky11_blocks[] = {
@@ -346,7 +369,6 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 	
 	s->vid      = vid;
 	s->counter  = 0;
-	s->cw       = VC_PRBS_CW_FA;
 	
 	/* Videocrypt I setup */
 	if(mode == NULL)
@@ -376,6 +398,11 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 				s->block_len = 2;
 				_vc_rand_seed_sky09(&s->blocks[0]);
 				_vc_rand_seed_sky09(&s->blocks[1]);
+			}
+			else if(strcmp(key, "sky10") == 0)
+			{
+				s->blocks    = _sky10_blocks;
+				s->block_len = 2;
 			}
 			else if(strcmp(key, "sky11") == 0)
 			{
@@ -415,6 +442,7 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 	}
 	
 	s->block = 0;
+	s->cw = s->blocks[s->block].codeword;
 	
 	/* Videocrypt II setup */
 	if(mode2 == NULL)
