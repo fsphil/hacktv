@@ -56,6 +56,7 @@ typedef struct {
 	uint8_t mode;
 	uint64_t codeword;
 	uint8_t messages[7][32];
+	uint8_t command;
 } _vc_block_t;
 
 typedef struct {
@@ -103,5 +104,6 @@ extern void _vc_kernel09(const unsigned char in, unsigned char *answ);
 extern void _vc_rand_seed_sky07(_vc_block_t *s, int ca);
 extern void _vc_rand_seed_sky09(_vc_block_t *s);
 extern void _vc_rand_seed_xtea(_vc_block_t *s);
+extern void _vc_ppv(_vc_block_t *s);
 #endif
 

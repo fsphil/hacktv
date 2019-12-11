@@ -113,8 +113,8 @@ static _vc_block_t _sky09_blocks[] = {
 	},
 };
 
-/* Blocks for VC1 conditional-access sample, taken from Sky One and modified, */
-/* requires an active Sky 10 (0A) series card to decode */
+/* Blocks for VC1 conditional-access sample, taken from Tyson fight and modified, */
+/* requires an active Sky 10 (0A) series card to decode enabled */
 static _vc_block_t _sky10_blocks[] = {
 	{
 		0x07, 0x2D0300F0BE48EE5AUL,
@@ -132,6 +132,63 @@ static _vc_block_t _sky10_blocks[] = {
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x31,0x30,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { },	{ },
  			{ 0xf8,0x90,0x4b,0x22,0x0a,0x8c,0x26,0xd2,0xa6,0x63,0x38,0x2d,0x17,0xd5,0xe9,0xea,0xe0,0x2c,0xe2,0xac,0xb8,0xe0,0x11,0xa1,0x01,0x4b,0x87,0x80,0x6a,0xa9,0x78 }	
+		},
+	},
+};
+
+/* Blocks for VC1 conditional-access sample, taken from Tyson fight and modified, */
+/* requires an active Sky 10 (0A) series card with PPV enabled to decode */
+
+/*
+This packet sets up the credits and events
+you wish to purchase. The 12h/34h bytes are
+the first program/credit pair. The 56h/78h
+bytes are the second program/credit pair.
+The six bytes 01h-06h are the six event
+numbers to enable.
+
+53 86 01 00 2D 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 12
+34 56 78 01 02 03 04 05 06 00 00 00 00 
+
+For these CWs, the following needs to be sent to the 
+card to activate it for event 66.
+
+53 86 01 00 2D
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 42
+34 00 00 42 00 00 00 00 00 00 00 00 00 
+
+This packet forces the new Pay Per View
+data into the card without authorization.
+
+53 74 01 00 20
+C0 8F 40 00 00 2E AB F5 19 26 98 B5 46 77 BB E3
+32 12 ED 50 49 FF 57 B7 52 C0 0A 02 02 02 02 02
+*/
+
+static _vc_block_t _sky10ppv_blocks[] = {
+	{
+		0x07, 0x7298D7112703C5D9UL,
+		{
+ 			{ 0x20 },
+			/* Packet below removes PPV credits - uncomment at your own risk! */
+ 			//{ 0xC0,0x8F,0x40,0x00,0x00,0x2E,0xAB,0xF5,0x19,0x26,0x98,0xB5,0x46,0x77,0xBB,0xE3,0x32,0x12,0xED,0x50,0x49,0xFF,0x57,0xB7,0x52,0xC0,0x0A,0x02,0x02,0x02,0x02,0x02 }, 
+			/* Comment out below line is above is enabled */
+			{ }, 
+			{ }, { }, { },	{ },
+ 			{ 0xf8,0x94,0x9c,0xf0,0x42,0xe6,0x2f,0x2a,0xb7,0x25,0xbc,0x62,0xd8,0x95,0x1e,0x93,0x7c,0x55,0xb8,0x71,0xd5,0x2f,0x29,0x65,0xa2,0x1e,0x3a,0x63,0xf6,0x59,0xf6 }
+		},
+	},
+	{
+		0x07, 0x20222974682EFF97UL,
+		{
+			/* Modify the following line to change the channel name displayed by the decoder.
+			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
+ 			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x31,0x30,0x20,0x4d,0x4f,0x44,0x45 },
+ 			{ }, { }, { }, { }, { },
+			{ 0xf8,0x94,0x8e,0xf0,0x42,0x7e,0x13,0xcc,0x19,0xdd,0x87,0x60,0x5a,0x78,0x61,0x0b,0x66,0x44,0x51,0x87,0xae,0x01,0xbc,0x4d,0x47,0x31,0x03,0x80,0x7f,0x8d,0x74 }	
 		},
 	},
 };
@@ -253,7 +310,7 @@ const unsigned char sky09_key[216] = {
 };
 
 static const uint32_t xtea_key[4]= {
-	0x00112233,0x44556677,0x8899aabb,0xccddeeff
+	0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff
 };
 
 /* Reverse bits in an 8-bit value */
@@ -403,6 +460,11 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 			{
 				s->blocks    = _sky10_blocks;
 				s->block_len = 2;
+			}			
+			else if(strcmp(key, "sky10ppv") == 0)
+			{
+				s->blocks    = _sky10ppv_blocks;
+				s->block_len = 2;
 			}
 			else if(strcmp(key, "sky11") == 0)
 			{
@@ -443,6 +505,8 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 	
 	s->block = 0;
 	s->cw = s->blocks[s->block].codeword;
+	s->blocks[0].command = 0x00;
+	s->blocks[1].command = 0x01;
 	
 	/* Videocrypt II setup */
 	if(mode2 == NULL)
@@ -582,10 +646,13 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 			if(s->blocks2) s->cw = s->blocks2[s->block2].codeword;
 			
 			/* Generate new seed for TAC/Xtea key mode for Videocrypt I */
-			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0) _vc_rand_seed_sky07(&s->blocks[s->block], VC_TAC);
-			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"sky07") == 0) _vc_rand_seed_sky07(&s->blocks[s->block], VC_SKY);
-			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"sky09") == 0) _vc_rand_seed_sky09(&s->blocks[s->block]);
-			if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"xtea") == 0) _vc_rand_seed_xtea(&s->blocks[s->block]);
+			if(mode && strcmp(mode,"conditional") == 0)
+			{
+				if(strcmp(key,"tac") == 0) _vc_rand_seed_sky07(&s->blocks[s->block], VC_TAC);
+				if(strcmp(key,"sky07") == 0) _vc_rand_seed_sky07(&s->blocks[s->block], VC_SKY);
+				if(strcmp(key,"sky09") == 0) _vc_rand_seed_sky09(&s->blocks[s->block]);
+				if(strcmp(key,"xtea") == 0) _vc_rand_seed_xtea(&s->blocks[s->block]);
+			}
 
 			/* Move to the next block */
 			if(++s->block == s->block_len)
@@ -703,6 +770,13 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 	}
 	
 	vid_adj_delay(s->vid, 1);
+}
+
+void _vc_ppv(_vc_block_t *s)
+{
+//	s->command+=2;
+//	s->messages[5][0] = s->command;
+//	fprintf(stderr,"Mess - > %02X\n", s->messages[5][0]);
 }
 
 void _vc_rand_seed_sky07(_vc_block_t *s, int ca)
