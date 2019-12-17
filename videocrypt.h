@@ -58,7 +58,7 @@ typedef struct {
 typedef struct {
 	uint8_t mode;
 	uint64_t codeword;
-	uint8_t messages[32][32];
+	uint8_t messages[8][32];
 } _vc2_block_t;
 
 typedef struct {

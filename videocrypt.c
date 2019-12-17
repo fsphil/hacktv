@@ -328,7 +328,7 @@ void vc_render_line(vc_t *s)
 				/* The active message is updated every 2nd frame */
 				for(crc = x = 0; x < 31; x++)
 				{
-					crc += s->message2[x] = s->blocks2[s->block2].messages[(s->counter >> 1) & 0x1F][x];
+					crc += s->message2[x] = s->blocks2[s->block2].messages[(s->counter >> 1) & 7][x];
 				}
 				
 				s->message2[x] = ~crc + 1;
@@ -359,22 +359,34 @@ void vc_render_line(vc_t *s)
 		s->sr1 = iw & VC_PRBS_SR1_MASK;
 		s->sr2 = (iw >> 31) & VC_PRBS_SR2_MASK;
 		
-		/* After 64 frames, advance to the next block and codeword */
 		s->counter++;
 		
+		/* After 64 frames, advance to the next VC1 block and codeword */
 		if((s->counter & 0x3F) == 0)
 		{
 			/* Apply the current block codeword */
-			s->cw = VC_PRBS_CW_FA;
-			if(s->blocks)  s->cw = s->blocks[s->block].codeword;
-			if(s->blocks2) s->cw = s->blocks2[s->block2].codeword;
+			if(s->blocks)
+			{
+				s->cw = s->blocks[s->block].codeword;
+			}
 			
 			/* Move to the next block */
 			if(++s->block == s->block_len)
 			{
 				s->block = 0;
 			}
+		}
+		
+		/* After 16 frames, advance to the next VC2 block and codeword */
+		if((s->counter & 0x0F) == 0)
+		{
+			/* Apply the current block codeword */
+			if(s->blocks2)
+			{
+				s->cw = s->blocks2[s->block2].codeword;
+			}
 			
+			/* Move to the next block */
 			if(++s->block2 == s->block2_len)
 			{
 				s->block2 = 0;
