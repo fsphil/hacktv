@@ -719,7 +719,7 @@ int mac_init(vid_t *s)
 	
 	memset(mac, 0, sizeof(mac_t));
 	
-	mac->vsam = MAC_VSAM_FREE_ACCESS_UNSCRAMBLED; /* <-- check the mac.h file for the options here */
+	mac->vsam = MAC_VSAM_FREE_ACCESS_SINGLE_CUT; /* <-- check the mac.h file for the options here */
 	
 	if(s->conf.mac_mode == MAC_MODE_D)
 	{

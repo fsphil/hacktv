@@ -525,8 +525,8 @@ const vid_config_t vid_config_d2mac = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.50,
+	.white_level    =  1.00,
+	.black_level    = -1.00,
 	.blanking_level =  0.00,
 	.sync_level     =  0.00,
 	
@@ -633,8 +633,8 @@ const vid_config_t vid_config_dmac = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.50,
+	.white_level    =  1.00,
+	.black_level    = -1.00,
 	.blanking_level =  0.00,
 	.sync_level     =  0.00,
 	

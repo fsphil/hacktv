@@ -80,7 +80,6 @@ typedef struct {
 	int gain;
 	char *antenna;
 	int file_type;
-	char *key;
 	int timestamp;
 	int position;
 	

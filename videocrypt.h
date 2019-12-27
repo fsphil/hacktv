@@ -49,20 +49,21 @@
 #define VC2_VBI_FIELD_1_START (VC_VBI_FIELD_1_START - 4)
 #define VC2_VBI_FIELD_2_START (VC_VBI_FIELD_2_START - 4)
 
-#define VC_TAC 0
-#define VC_SKY 1
+#define VC_TAC1 3001
+#define VC_TAC2 3002
+#define VC_SKY7 3003
+#define VC2_MC  3004
 
 typedef struct {
 	uint8_t mode;
 	uint64_t codeword;
 	uint8_t messages[7][32];
-	uint8_t command;
 } _vc_block_t;
 
 typedef struct {
 	uint8_t mode;
 	uint64_t codeword;
-	uint8_t messages[32][32];
+	uint8_t messages[8][32];
 } _vc2_block_t;
 
 typedef struct {
@@ -80,7 +81,7 @@ typedef struct {
 	uint8_t vbi[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
 	
 	/* VC2 blocks */
-	const _vc2_block_t *blocks2;
+	_vc2_block_t *blocks2;
 	size_t block2;
 	size_t block2_len;
 	uint8_t message2[32];
@@ -101,9 +102,9 @@ extern void vc_free(vc_t *s);
 extern void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *key);
 extern void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, int ca);
 extern void _vc_kernel09(const unsigned char in, unsigned char *answ);
-extern void _vc_rand_seed_sky07(_vc_block_t *s, int ca);
-extern void _vc_rand_seed_sky09(_vc_block_t *s);
-extern void _vc_rand_seed_xtea(_vc_block_t *s);
-extern void _vc_ppv(_vc_block_t *s);
+extern void _vc_seed_sky07(_vc_block_t *s, int ca);
+extern void _vc_seed_vc2(_vc2_block_t *s);
+extern void _vc_seed_sky09(_vc_block_t *s);
+extern void _vc_seed_xtea(_vc_block_t *s);
 #endif
 

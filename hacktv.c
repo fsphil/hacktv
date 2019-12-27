@@ -92,7 +92,6 @@ static void print_usage(void)
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
-		"      --key <key>                Key to use for Videocrypt I. (PAL only)\n"
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster or D11 scrambling.\n"
@@ -239,15 +238,13 @@ static void print_usage(void)
 		"hacktv supports the following modes:\n"
 		"\n"
 		"  free            = Free-access, no subscription card is required to decode.\n"
-		"  conditional     = A valid card is required to decode; required --key option, below.\n"
-		"\n"
-		"hacktv supports the following key options:\n"
-		"\n"
 		"  sky07           = A valid Sky series 07 or 06 card is required to decode. Random control words.\n"
 		"  sky09           = A valid Sky series 09 card is required to decode. Random control words.\n"
 		"  sky10           = A valid Sky series 10 card is required to decode. Sample data from Sky One.\n"
 		"  sky11           = A valid Sky series 11 card is required to decode. Sample data from MTV.\n"
-		"  tac             = A valid TAC card or supplied PIC16F84 hex flashed.\n"
+		"  sky12           = A valid Sky series 12 card is required to decode. Sample data from Sky One.\n"
+		"  tac1            = A valid older TAC card is required to decode. Random control words.\n"
+		"  tac2            = A valid newer TAC card or supplied PIC16F84 hex flashed.\n"
 		"                    on a \"gold card\" is required to decode. Random control words.\n"
 		"  xtea            = Uses xtea encryption for control words. Needs Funcard programmed with\n"
 		"                    supplied hex files. Random control words.\n"
@@ -262,7 +259,8 @@ static void print_usage(void)
 		"\n"
 		"hacktv supports the following modes:\n"
 		"\n"
-		"  free        = Free-access, no subscription card is required to decode.\n"
+		"  free            = Free-access, no subscription card is required to decode.\n"
+		"  conditional     = A valid Multichoice card is required to decode. Random control words.\n"
 		"\n"
 		"Both VC1 and VC2 cannot be used together except if both are in free-access mode.\n"
 		"\n"
@@ -325,7 +323,7 @@ int main(int argc, char *argv[])
 		{ "videocrypt",  required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
-		{ "key", 		     required_argument, 0, 'k'},
+		{ "key", 		 required_argument, 0, 'k'},
 		{ "syster",      no_argument,       0, _OPT_SYSTER },
 		{ "d11",         no_argument,       0, _OPT_DISCRET },
 		{ "systeraudio", no_argument,       0, _OPT_SYSTERAUDIO },
@@ -383,7 +381,6 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	s.logo = NULL;
 	s.timestamp = 0;
-	s.key = NULL;
 	
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:D:G:rvf:al:g:A:t:p:k:", long_options, &option_index)) != -1)
@@ -529,8 +526,9 @@ int main(int argc, char *argv[])
 			s.position = atof(optarg);
 			break;
 			
-		case 'k': /* -k, --key sky|tac */
-			s.key = strdup(optarg);
+		case 'k': /* -k, --key */
+			fprintf(stderr,"\nERROR: key option has been deprecated. Please see help text for details.\n\n");
+			return(0);
 			break;
 		
 		case _OPT_NOAUDIO: /* --noaudio */
@@ -731,17 +729,7 @@ int main(int argc, char *argv[])
 		
 		vid_conf.videocrypt2 = s.videocrypt2;
 	}
-	
-	if(s.key)
-	{		
-		if(!s.videocrypt || strcmp(s.videocrypt, "conditional") != 0)
-		{
-				fprintf(stderr, "Key can only be specified in conditional Videocrypt mode.\n");
-				return(-1);
-		}
-		vid_conf.key = s.key;
-	}
-		
+
 	if(s.videocrypts)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)

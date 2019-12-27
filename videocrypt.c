@@ -71,7 +71,7 @@ static _vc_block_t _fa_blocks[] = { { 0x05, VC_PRBS_CW_FA } };
 /* requires an active Sky 07 card to decode */
 static _vc_block_t _sky07_blocks[] = {
 	{
-		0x07, 0x000000000000000UL,
+		0x07, 0,
 		{
  			{ 0x20 },
  			{ }, { }, { }, { },	{ },
@@ -79,10 +79,8 @@ static _vc_block_t _sky07_blocks[] = {
 		},
 	},
 	{
-		0x07, 0x000000000000000UL,
+		0x07, 0,
 		{
-			/* Modify the following line to change the channel name displayed by the decoder.
-			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x30,0x37,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { },	{ },
  			{ 0xE8,0x29,0x3E,0xED,0xF0,0x1C,0x01,0x6F,0xE9,0x06,0xD6 }
@@ -94,7 +92,7 @@ static _vc_block_t _sky07_blocks[] = {
 /* requires an active Sky 09 card to decode */
 static _vc_block_t _sky09_blocks[] = {
 	{
-		0x07, 0x000000000000000UL,
+		0x07, 0,
 		{
  			{ 0x20 }, 
 			 { }, { }, { }, { },{ },
@@ -102,10 +100,8 @@ static _vc_block_t _sky09_blocks[] = {
 		},
 	},
 	{
-		0x07, 0x000000000000000UL,
+		0x07, 0,
 		{
-			/* Modify the following line to change the channel name displayed by the decoder.
-			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x30,0x39,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { },	{ },
  			{ 0xe8,0x43,0x0a,0x88,0x82,0x61,0x0c,0x29,0xe4,0x03,0xf6 }
@@ -117,30 +113,28 @@ static _vc_block_t _sky09_blocks[] = {
 /* requires an active Sky 10 (0A) series card to decode enabled */
 static _vc_block_t _sky10_blocks[] = {
 	{
-		0x07, 0x2D0300F0BE48EE5AUL,
+		0x07, 0x16DEC6F6FD37145BUL,
 		{
  			{ 0x20 },
  			{ }, { }, { }, { },	{ },
- 			{ 0xf8,0x90,0x44,0x22,0xca,0x60,0x57,0x07,0xd3,0x19,0xb9,0x24,0x12,0x04,0x8e,0xcf,0x44,0xca,0x29,0x6e,0x96,0xf8,0xc0,0x3f,0x28,0x40,0x2b,0x80,0x14,0x68,0xe9 }
+ 			{ 0xF8,0x91,0x45,0x24,0xE9,0xEB,0x8F,0x00,0xE8,0x78,0x86,0x13,0x63,0x92,0xB3,0x14,0x73,0x32,0xBA,0xC3,0xCE,0x7B,0x41,0xE6,0x4B,0x53,0xB7,0x76,0x82,0x8B,0xFD }
 		},
 	},
 	{
-		0x07, 0x2B8294A5CC14D57FUL,
+		0x07, 0x7DE3581091A306E5UL,
 		{
-			/* Modify the following line to change the channel name displayed by the decoder.
-			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x31,0x30,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { },	{ },
- 			{ 0xf8,0x90,0x4b,0x22,0x0a,0x8c,0x26,0xd2,0xa6,0x63,0x38,0x2d,0x17,0xd5,0xe9,0xea,0xe0,0x2c,0xe2,0xac,0xb8,0xe0,0x11,0xa1,0x01,0x4b,0x87,0x80,0x6a,0xa9,0x78 }	
+ 			{ 0xF8,0x91,0x54,0x24,0x4B,0xFE,0x9F,0xA7,0x26,0x75,0x11,0x65,0xE5,0x11,0x70,0x75,0xDA,0xF1,0x0B,0x99,0x6B,0x95,0x0A,0x53,0xC0,0xCA,0xAE,0x76,0xEF,0x5D,0xD8 }	
 		},
-	},
+	},	
 };
 
 /* Blocks for VC1 conditional-access sample, taken from Tyson fight and modified, */
 /* requires an active Sky 10 (0A) series card with PPV enabled to decode */
 
 /*
-This packet sets up the credits and events
+This packet sets up credits and events
 you wish to purchase. The 12h/34h bytes are
 the first program/credit pair. The 56h/78h
 bytes are the second program/credit pair.
@@ -184,8 +178,6 @@ static _vc_block_t _sky10ppv_blocks[] = {
 	{
 		0x07, 0x20222974682EFF97UL,
 		{
-			/* Modify the following line to change the channel name displayed by the decoder.
-			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x31,0x30,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { }, { },
 			{ 0xf8,0x94,0x8e,0xf0,0x42,0x7e,0x13,0xcc,0x19,0xdd,0x87,0x60,0x5a,0x78,0x61,0x0b,0x66,0x44,0x51,0x87,0xae,0x01,0xbc,0x4d,0x47,0x31,0x03,0x80,0x7f,0x8d,0x74 }	
@@ -207,8 +199,6 @@ static _vc_block_t _sky11_blocks[] = {
 	{
 		0x07, 0xF9885DA50770B80UL,
 		{
-			/* Modify the following line to change the channel name displayed by the decoder.
-			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x31,0x31,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { },	{ },
  			{ 0xF8,0x19,0x10,0x83,0x20,0xD1,0xB5,0xA9,0x1F,0x82,0xFE,0xB3,0x6B,0x0A,0x82,0xC3,0x30,0x7B,0x65,0x9C,0xF2,0xBD,0x5C,0xB0,0x6A,0x3B,0x64,0x0F,0xA2,0x66,0xBB }	
@@ -216,31 +206,96 @@ static _vc_block_t _sky11_blocks[] = {
 	},
 };
 
+/* Blocks for VC1 conditional-access sample, taken from Sky One and modified, */
+/* requires an active Sky 12 series card to decode */
+static _vc_block_t _sky12_blocks[] = {
+	{
+		0x07, 0xC73805F6EF5A1AAB,
+		{
+ 			{ 0x20 },
+ 			{ }, { }, { }, { },	{ },
+ 			{ 0xE8,0xCD,0xA7,0x83,0xD1,0x21,0xE5,0x42,0x30,0xF1,0x09,0xBD,0x74,0xB5,0x24,0xC5,0xBF,0x62,0x08,0x1F,0x43,0xE9,0x17,0xA9,0x69,0xE0,0xF6,0x3A,0x35,0x88,0x61 }
+		},
+	},
+	{
+		0x07, 0xc389AED26500336B,
+		{
+ 			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x31,0x32,0x20,0x4d,0x4f,0x44,0x45 },
+ 			{ }, { }, { }, { },	{ },
+ 			{ 0xE8,0xCD,0xA7,0x83,0xD1,0x31,0x3F,0xF3,0xB5,0x71,0x01,0x9C,0xF9,0xAE,0xB9,0x8D,0x9C,0x19,0xB1,0x75,0xFA,0xCC,0x90,0x33,0x1E,0xDC,0x38,0xCA,0x58,0x10,0xFA }
+		},
+	},
+};
+
 /* Sequence for Conditional-access sample, taken from The Adult Channel and modified. */
-/* Requires a PIC16F84 based card flashed with supplied hex file or a genuine TAC card. */
+/* Requires a PIC16F84 based card flashed with supplied hex file or an active TAC card. */
 static _vc_block_t _tac_blocks[] = {
 	{
-		0x07, 0x000000000000000UL,
+		0x07, 0,
 		{
-			{ 0x20 },
-			{ }, { }, { }, { },	{ },
-			{ 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4 }
+		 	{ 0x20 },
+ 			{ }, { }, { }, { },	{ },
+ 			{ 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4 }
 		}
 	},
 	{
-		0x07, 0x000000000000000UL,
+		0x07, 0,
 		{
-			/* Modify the following line to change the channel name displayed by the decoder.
-			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
-			{ 0x20,0x00,0x79,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x54,0x41,0x43,0x2f,0x58,0x54,0x45,0x41,0x20,0x4d,0x4f,0x44,0x45 },
-			{ }, { }, { }, { },	{ },
-			{ 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4 }
+			{ 0x20,0x00,0x76,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x20,0x54,0x41,0x43,0x20,0x4d,0x4f,0x44,0x45 },
+ 			{ }, { }, { }, { },	{ },
+ 			{ 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4 }
+		}
+	},
+};
+
+static _vc_block_t _xtea_blocks[] = {
+	{
+	    0x07, 0x1A298F7C70F4F65UL,
+	    {
+	        { 0x20 },
+	        { }, { }, { }, { }, { },
+	        { 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4,0xEA,0xB3,0xB3,0xBF,0x8A,0xE3,0xDF,0x26,0x99,0x5E,0x2F,0x0B,0xFB,0x8E,0x45,0x22,0x94,0x4A,0x1A,0x8E }
+	    } 
+	},
+	{
+	    0x07, 0xD491B336D3D54BAUL,
+	    {
+	        { 0x20,0x00,0x79,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x54,0x41,0x43,0x2f,0x58,0x54,0x45,0x41,0x20,0x4d,0x4f,0x44,0x45 },
+	        { }, { }, { }, { }, { },
+	        { 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4,0xD5,0x04,0x5E,0x8E,0x54,0x91,0x58,0xFF,0x44,0x32,0x72,0xBB,0xEF,0x29,0x8E,0x3C,0x98,0x41,0xD1,0x33 }
+	    }
+	},
+};
+
+/* Blocks for VC2 conditional-access sample, taken from Discovery and modified. */
+/* Requires a PIC16F84 based card flashed with supplied hex file or an active Multichoice card.*/
+static _vc2_block_t _vc2_blocks[] = {
+	{
+		0xA0, 0,
+		{
+			{ 0x21,0x02,0x6B,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x56,0x43,0x32 },
+			{ 0xE1 },
+			{ 0xE1 },
+			{ 0xE1 },
+			{ 0xE1 },
+			{ 0xF9,0x62,0x36,0x82,0x04,0xF7,0x87,0x00,0x00,0x5A,0x06 },
+		}
+	},
+	{
+		0xA0, 0,
+		{
+			{ 0x21,0x02 },
+			{ 0xE1 },
+			{ 0xE1 },
+			{ 0xE1 },
+			{ 0xE1 },
+			{ 0xF9,0x62,0x56,0x82,0x04,0xF7,0x87,0x00,0x00,0xA5,0x06 },
 		}
 	},
 };
 
 /* Blocks for VC2 free-access decoding */
-static const _vc2_block_t _fa2_blocks[] = { { 0x9C, VC_PRBS_CW_FA } };
+static _vc2_block_t _fa2_blocks[] = { { 0x9C, VC_PRBS_CW_FA } };
 
 /* 
   * Videocrypt key used for Eurotica and The Adult Channel 
@@ -252,7 +307,7 @@ static const _vc2_block_t _fa2_blocks[] = { { 0x9C, VC_PRBS_CW_FA } };
   * and you will receive "THIS CHANNEL IS BLOCKED" message. You can 
   * update the key in hex file at address 0000 in EEPROM data.
 */
-const unsigned char tac_key[96] = {
+const unsigned char tac_key[] = {
 	0xd9, 0x45, 0x08, 0xdb, 0x7c, 0xf9, 0x56, 0xf7,
 	0x58, 0x18, 0x22, 0x54, 0x38, 0xcd, 0x3d, 0x94,
 	0x09, 0xe6, 0x8e, 0x0d, 0x9a, 0x86, 0xfc, 0x1c,
@@ -268,7 +323,7 @@ const unsigned char tac_key[96] = {
 };
 
 /* Videocrypt key used for Sky 07 series cards */
-const unsigned char sky07_key[56] = {
+const unsigned char sky07_key[] = {
    0x65, 0xe7, 0x71, 0x1a, 0xb4, 0x88, 0xd7, 0x76,
    0x28, 0xd0, 0x4c, 0x6e, 0x86, 0x8c, 0xc8, 0x43,
    0xa9, 0xec, 0x60, 0x42, 0x05, 0xf2, 0x3d, 0x1c,
@@ -309,9 +364,31 @@ const unsigned char sky09_key[216] = {
 	0x17, 0xb3, 0x2c, 0x69, 0x41, 0xe8, 0xe7, 0x0e
 };
 
+/* Key used by Multichoice Central Europe broadcase in Videocrypt 2 */
+const unsigned char vc2_key[] = {
+    0x58,0x6B,0x4D,0x05,0xB0,0x69,0x83,0x16,
+    0xA6,0x48,0xDE,0x5E,0x0B,0xAA,0x49,0xA9,
+    0xC6,0xE5,0x93,0x1A,0xBE,0x56,0x73,0x20,
+    0xFB,0xF8,0xCA,0x08,0x34,0x29,0x8A,0x9B
+};
+
 static const uint32_t xtea_key[4]= {
 	0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff
 };
+
+/* Calculate Videocrypt message CRC */
+static uint8_t _crc(uint8_t *data)
+{
+	int x;
+	uint8_t crc;
+
+	for(crc = x = 0; x < 31; x++) 
+	{
+		crc += data[x];
+	}
+		
+	return (~crc + 1);
+}
 
 /* Reverse bits in an 8-bit value */
 static uint8_t _reverse(uint8_t b)
@@ -333,7 +410,6 @@ static uint64_t _rev(uint64_t b, int x)
 		b >>= 1;
 	}
 	
-
 	return(r);
 }
 
@@ -426,6 +502,7 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 	
 	s->vid      = vid;
 	s->counter  = 0;
+	s->cw       = 0x0;
 	
 	/* Videocrypt I setup */
 	if(mode == NULL)
@@ -438,64 +515,60 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 		s->blocks    = _fa_blocks;
 		s->block_len = 1;
 	}
-	else if(strcmp(mode, "conditional") == 0)
+	else if(strcmp(mode, "sky07") == 0)
 	{
-		if(key)
-		{
-			if(strcmp(key, "sky07") == 0)
-			{
-				s->blocks    = _sky07_blocks;
-				s->block_len = 2;
-				_vc_rand_seed_sky07(&s->blocks[0], VC_SKY);
-				_vc_rand_seed_sky07(&s->blocks[1], VC_SKY);
-			}
-			else if(strcmp(key, "sky09") == 0)
-			{
-				s->blocks    = _sky09_blocks;
-				s->block_len = 2;
-				_vc_rand_seed_sky09(&s->blocks[0]);
-				_vc_rand_seed_sky09(&s->blocks[1]);
-			}
-			else if(strcmp(key, "sky10") == 0)
-			{
-				s->blocks    = _sky10_blocks;
-				s->block_len = 2;
-			}			
-			else if(strcmp(key, "sky10ppv") == 0)
-			{
-				s->blocks    = _sky10ppv_blocks;
-				s->block_len = 2;
-			}
-			else if(strcmp(key, "sky11") == 0)
-			{
-				s->blocks    = _sky11_blocks;
-				s->block_len = 2;
-			}
-			else if (strcmp(key, "tac") == 0) 
-			{
-				s->blocks    = _tac_blocks;
-				s->block_len = 2;
-				_vc_rand_seed_sky07(&s->blocks[0], VC_TAC);
-				_vc_rand_seed_sky07(&s->blocks[1], VC_TAC);
-			}
-			else if (strcmp(key, "xtea") == 0) 
-			{
-				s->blocks    = _tac_blocks;
-				s->block_len = 2;
-				_vc_rand_seed_xtea(&s->blocks[0]);
-				_vc_rand_seed_xtea(&s->blocks[1]);
-			}
-			else
-			{
-				fprintf(stderr, "Unrecognised key '%s' for conditional access (valid options are \"sky09\", \"sky11\", \"xtea\" and \"tac\").\n", key);
-				return(VID_ERROR);
-			}
-		}
-		else
-		{
-			fprintf(stderr, "--key option is required for conditinal access mode\n");
-			return(-1);
-		}
+		s->blocks    = _sky07_blocks;
+		s->block_len = 2;
+		_vc_seed_sky07(&s->blocks[0], VC_SKY7);
+		_vc_seed_sky07(&s->blocks[1], VC_SKY7);
+	}
+	else if(strcmp(mode, "sky09") == 0)
+	{
+		s->blocks    = _sky09_blocks;
+		s->block_len = 2;
+		_vc_seed_sky09(&s->blocks[0]);
+		_vc_seed_sky09(&s->blocks[1]);
+	}
+	else if(strcmp(mode, "sky10") == 0)
+	{
+		s->blocks    = _sky10_blocks;
+		s->block_len = 2;
+	}			
+	else if(strcmp(mode, "sky10ppv") == 0)
+	{
+		s->blocks    = _sky10ppv_blocks;
+		s->block_len = 2;
+	}
+	else if(strcmp(mode, "sky11") == 0)
+	{
+		s->blocks    = _sky11_blocks;
+		s->block_len = 2;
+	}
+	else if(strcmp(mode, "sky12") == 0)
+	{
+		s->blocks    = _sky12_blocks;
+		s->block_len = 2;
+	}
+	else if (strcmp(mode, "tac1") == 0) 
+	{
+		s->blocks    = _tac_blocks;
+		s->block_len = 2;
+		_vc_seed_sky07(&s->blocks[0], VC_TAC1);
+		_vc_seed_sky07(&s->blocks[1], VC_TAC1);
+	}
+	else if (strcmp(mode, "tac2") == 0) 
+	{
+		s->blocks    = _tac_blocks;
+		s->block_len = 2;
+		_vc_seed_sky07(&s->blocks[0], VC_TAC2);
+		_vc_seed_sky07(&s->blocks[1], VC_TAC2);
+	}
+	else if (strcmp(mode, "xtea") == 0) 
+	{
+		s->blocks    = _xtea_blocks;
+		s->block_len = 2;
+		_vc_seed_xtea(&s->blocks[0]);
+		_vc_seed_xtea(&s->blocks[1]);
 	}
 	else
 	{
@@ -504,9 +577,6 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 	}
 	
 	s->block = 0;
-	s->cw = s->blocks[s->block].codeword;
-	s->blocks[0].command = 0x00;
-	s->blocks[1].command = 0x01;
 	
 	/* Videocrypt II setup */
 	if(mode2 == NULL)
@@ -518,6 +588,13 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 	{
 		s->blocks2    = _fa2_blocks;
 		s->block2_len = 1;
+	}
+	else if(strcmp(mode2, "conditional") == 0)
+	{
+		s->blocks2    = _vc2_blocks;
+		s->block2_len = 2;
+		_vc_seed_vc2(&s->blocks2[0]);
+		_vc_seed_vc2(&s->blocks2[1]);
 	}
 	else
 	{
@@ -604,7 +681,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 				/* The active message is updated every 2nd frame */
 				for(crc = x = 0; x < 31; x++)
 				{
-					crc += s->message2[x] = s->blocks2[s->block2].messages[(s->counter >> 1) & 0x1F][x];
+					crc += s->message2[x] = s->blocks2[s->block2].messages[(s->counter >> 1) & 7][x];
 				}
 				
 				s->message2[x] = ~crc + 1;
@@ -635,23 +712,25 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 		s->sr1 = iw & VC_PRBS_SR1_MASK;
 		s->sr2 = (iw >> 31) & VC_PRBS_SR2_MASK;
 		
-		/* After 64 frames, advance to the next block and codeword */
 		s->counter++;
 		
+		/* After 64 frames, advance to the next VC1 block and codeword */
 		if((s->counter & 0x3F) == 0)
 		{
 			/* Apply the current block codeword */
-			s->cw = VC_PRBS_CW_FA;
-			if(s->blocks)  s->cw = s->blocks[s->block].codeword;
-			if(s->blocks2) s->cw = s->blocks2[s->block2].codeword;
-			
-			/* Generate new seed for TAC/Xtea key mode for Videocrypt I */
-			if(mode && strcmp(mode,"conditional") == 0)
+			if(s->blocks)
 			{
-				if(strcmp(key,"tac") == 0) _vc_rand_seed_sky07(&s->blocks[s->block], VC_TAC);
-				if(strcmp(key,"sky07") == 0) _vc_rand_seed_sky07(&s->blocks[s->block], VC_SKY);
-				if(strcmp(key,"sky09") == 0) _vc_rand_seed_sky09(&s->blocks[s->block]);
-				if(strcmp(key,"xtea") == 0) _vc_rand_seed_xtea(&s->blocks[s->block]);
+				s->cw = s->blocks[s->block].codeword;
+			}
+
+			/* Generate new seeds */
+			if(mode)
+			{
+				if(strcmp(mode,"tac1") == 0)  _vc_seed_sky07(&s->blocks[s->block], VC_TAC1);
+				if(strcmp(mode,"tac2") == 0)  _vc_seed_sky07(&s->blocks[s->block], VC_TAC2);
+				if(strcmp(mode,"sky07") == 0) _vc_seed_sky07(&s->blocks[s->block], VC_SKY7);
+				if(strcmp(mode,"sky09") == 0) _vc_seed_sky09(&s->blocks[s->block]);
+				if(strcmp(mode,"xtea") == 0)  _vc_seed_xtea(&s->blocks[s->block]);
 			}
 
 			/* Move to the next block */
@@ -659,8 +738,24 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 			{
 				s->block = 0;
 			}
+		}
+
+		/* After 16 frames, apply the codeword */
+		if((s->counter & 0x0F) == 0)
+		{
+			/* Apply the current block codeword */
+			if(s->blocks2)
+			{
+				s->cw = s->blocks2[s->block2].codeword;
+			}
+
+			if(mode2)
+			{
+				if(strcmp(mode2,"conditional") == 0) _vc_seed_vc2(&s->blocks2[s->block2]);
+			}
 			
-			if(++s->block2 == s->block2_len)
+			/* Move to the next block after 64 frames */
+			if(((s->counter & 0x3F) == 0) && (++s->block2 == s->block2_len))
 			{
 				s->block2 = 0;
 			}
@@ -772,30 +867,23 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 	vid_adj_delay(s->vid, 1);
 }
 
-void _vc_ppv(_vc_block_t *s)
-{
-//	s->command+=2;
-//	s->messages[5][0] = s->command;
-//	fprintf(stderr,"Mess - > %02X\n", s->messages[5][0]);
-}
-
-void _vc_rand_seed_sky07(_vc_block_t *s, int ca)
+void _vc_seed_sky07(_vc_block_t *s, int ca)
 {
 	int i;
 	int oi = 0;	
-	unsigned char b = 0;
+	unsigned char b;
 	uint64_t answ[8];
 	int offset = 0;
 
-	if(ca == VC_TAC)
+	if(ca == VC_TAC2)
 	/* TAC key offsets */
 	{
 		if (s->messages[6][1] > 0x33) offset = 0x08;
 		if (s->messages[6][1] > 0x3a) offset = 0x32;
 		if (s->messages[6][1] > 0x43) offset = 0x40;
-		if (s->messages[6][1] > 0x4a) offset = 0x48;		
+		if (s->messages[6][1] > 0x4a) offset = 0x48;
 	}
-	else
+	else if (ca == VC_SKY7)
 	/* Sky 07 key offsets */
 	{
 		s->messages[6][6] = SKY07_CHID;
@@ -803,17 +891,19 @@ void _vc_rand_seed_sky07(_vc_block_t *s, int ca)
   		if (s->messages[6][1] > 0x3a) offset = 0x18;
 	}
 
-		
+	/* Change date code for old TAC cards */
+	if(ca == VC_TAC1) s->messages[6][1] = 0x29;
+
 	/* Random seed for bytes 11 to 26 */
 	for(int i=11; i < 27; i++) s->messages[6][i] = rand() + 0xFF;
-	
+
 	/* Reset answers */
 	for (i = 0; i < 8; i++)  answ[i] = 0;
 	
 	for (i = 0; i < 27; i++) _vc_kernel07(answ, &oi, s->messages[6][i], offset, ca);
 
 	/* Calculate signature */
-	for (i = 27; i < 31; i++)
+	for (i = 27, b = 0; i < 31; i++)
 	{
 		_vc_kernel07(answ, &oi, b, offset, ca);
 		_vc_kernel07(answ, &oi, b, offset, ca);
@@ -822,34 +912,90 @@ void _vc_rand_seed_sky07(_vc_block_t *s, int ca)
 	}
 
 	/* Generate checksum */
-	b = 0;
-	for (i = 0; i < 31; i++) b += s->messages[6][i];
-	s->messages[6][i] = 0x00 - b;
+	s->messages[6][31] = _crc(s->messages[6]);
 
-	/* Iterate through _vc_kernel07 64 more times (99 in total) */
-	/* Odd bug(?) in newer TAC card where checksum is always 0x0d */
-	for (i = 0; i < 64; i++) 
-		_vc_kernel07(answ, &oi, (ca == VC_TAC && s->messages[6][1] > 0x30) ? 0x0d : s->messages[6][31], offset, ca);
+	/* Iterate through _vc_kernel07 64 more times (99 in total) 
+	   Odd bug(?) in newer TAC card where checksum is always 0x0d */
+	for (i = 0; i < 64; i++)
+	{
+		_vc_kernel07(answ, &oi, (ca == VC_TAC2 && s->messages[6][1] > 0x30) ? 0x0d : s->messages[6][31], offset, ca);
+	}
 	
 	/* Mask high nibble of last byte as it's not used */
 	answ[7] &= 0x0F;
 	
 	/* Reverse calculated control word */
-	s->codeword = 0x000000000000000UL;
-	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
+	for(i = 0, s->codeword = 0; i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
+}
+
+void _vc_seed_vc2(_vc2_block_t *s)
+{
+	int i;
+	int oi = 0;	
+	unsigned char b;
+	uint64_t answ[8];
+
+	/* Random seed for bytes 11 to 26 */
+	for(int i=11; i < 27; i++) s->messages[5][i] = rand() + 0xFF;
+
+	/* Reset answers */
+	for (i = 0; i < 8; i++)  answ[i] = 0;
+	
+	for (i = 0; i < 27; i++) _vc_kernel07(answ, &oi, s->messages[5][i], 0, VC2_MC);
+
+	/* Calculate signature */
+	for (i = 27, b = 0; i < 31; i++)
+	{
+		_vc_kernel07(answ, &oi, b, 0, VC2_MC);
+		_vc_kernel07(answ, &oi, b, 0, VC2_MC);
+		b = s->messages[5][i] = answ[oi];
+		oi = (oi + 1) & 7;
+	}
+
+	/* Generate checksum */
+	s->messages[5][31] = _crc(s->messages[5]);
+
+	for (i = 0; i < 64; i++)
+	{
+		_vc_kernel07(answ, &oi, s->messages[5][31], 0, VC2_MC);
+	}
+	
+	/* Mask high nibble of last byte as it's not used */
+	answ[7] &= 0x0F;
+	
+	/* Reverse calculated control word */
+	for(i = 0, s->codeword = 0; i < 8; i++)	
+	{
+		/* Random bytes 17 - 24 in OSD message 0x21 used in seed generation in Videocrypt II */
+		s->messages[0][i + 17] = rand() + 0xFF;
+		answ[i] ^= s->messages[0][i + 17];
+		
+		s->codeword = answ[i] << (i * 8) | s->codeword;
+	}
 }
 
 void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, int ca)
 {
 	unsigned char b, c;
 
-  	const unsigned char *key;
+  	unsigned char key[32];
 
-  	key = ca == VC_TAC ? &tac_key : &sky07_key;
+	if(ca == VC_SKY7) 
+	{
+		memcpy(key, sky07_key + offset, 32);
+	}
+	else if(ca == VC2_MC) 
+	{
+		memcpy(key, vc2_key, 32);
+	}
+	else
+	{
+		memcpy(key, tac_key + offset, 32);
+	}
 
   	out[*oi] ^= in;
-  	b = key[offset + (out[*oi] >> 4)];
-  	c = key[offset + (out[*oi] & 0x0F) + 16];
+  	b = key[(out[*oi] >> 4)];
+  	c = key[(out[*oi] & 0x0F) + 16];
   	c = ~(c + b);
   	c = (c << 1) | (c >> 7);   
   	c += in;
@@ -859,11 +1005,11 @@ void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, in
   	out[*oi] ^= c;
 }
 
-void _vc_rand_seed_sky09(_vc_block_t *s)
+void _vc_seed_sky09(_vc_block_t *s)
 {
 	int i;
 	uint64_t d;
-	unsigned char b = 0;
+	unsigned char b;
 	unsigned char answ[8];
 	
 	/* Random seed for bytes 11 to 26 */
@@ -875,7 +1021,7 @@ void _vc_rand_seed_sky09(_vc_block_t *s)
 	for (i = 0; i < 27; i++) _vc_kernel09(s->messages[6][i],answ);
 	
 	/* Calculate signature */
-	for (i = 27; i < 31; i++)
+	for (i = 27, b = 0; i < 31; i++)
 	{
 		_vc_kernel09(b, answ);
 		_vc_kernel09(b, answ);
@@ -883,9 +1029,7 @@ void _vc_rand_seed_sky09(_vc_block_t *s)
 	}
 	
 	/* Generate checksum */
-	b = 0;
-	for (i = 0; i < 31; i++) b += s->messages[6][i];
-	s->messages[6][i] = 0x00 - b;
+	s->messages[6][31] = _crc(s->messages[6]);
 	
 	/* Iterate through _vc_kernel09 64 more times (99 in total)*/
 	for (i = 0; i < 64; i++) _vc_kernel09(s->messages[6][31], answ);
@@ -894,8 +1038,7 @@ void _vc_rand_seed_sky09(_vc_block_t *s)
 	answ[7] &= 0x0F;
 		
 	/* Reverse calculated control word */
-	s->codeword = 0x000000000000000UL;
-	for(int i=0;i < 8; i++)	
+	for(i = 0, s->codeword = 0; i < 8; i++)
 	{
 		d = answ[i];
 		s->codeword = d << (i * 8) | s->codeword;
@@ -931,30 +1074,19 @@ void _vc_kernel09(const unsigned char in, unsigned char *answ)
   	answ[1] = a + 0x8F;
 }
 
-void _vc_rand_seed_xtea(_vc_block_t *s)
+void _vc_seed_xtea(_vc_block_t *s)
 {
 	/* Random seed for bytes 11 to 31 */
 	for(int i=11; i < 32; i++) s->messages[6][i] = rand() + 0xFF;
 
 	int i;
-	uint32_t v0 = 0;
-	uint32_t v1 = 0;
-	uint32_t sum = 0;
+	uint32_t v0, v1, sum = 0;
 	uint32_t delta = 0x9E3779B9;
-	uint64_t answ[8];
-	
-	/* Reset answers */
-	for (i = 0; i < 8; i++)  answ[i] = 0;
 	
 	s->messages[6][6] = 0x63;
 
-	for(i=11;i<15;i++)
-	{
-		v0 <<= 8;
-		v0 |= s->messages[6][i];
-		v1 <<= 8;
-		v1 |= s->messages[6][i + 4];
-	}
+	memcpy(&v1,&s->messages[6][11],4);
+ 	memcpy(&v0,&s->messages[6][15],4);
 
 	for (i = 0; i < 32;i++)
 	{
@@ -964,26 +1096,10 @@ void _vc_rand_seed_xtea(_vc_block_t *s)
 
 		if(i == 7)
 		{
-			s->messages[6][19] = (v0 >> 24) & 0xFF;
-			s->messages[6][20] = (v0 >> 16) & 0xFF;
-			s->messages[6][21] = (v0 >> 8) & 0xFF;
-			s->messages[6][22] = v0 & 0xFF;
-			s->messages[6][23] = (v1 >> 24) & 0xFF;
-			s->messages[6][24] = (v1 >> 16) & 0xFF;
-			s->messages[6][25] = (v1 >> 8) & 0xFF;
-			s->messages[6][26] = v1 & 0xFF;
+			memcpy(&s->messages[6][19],&v1,4);
+			memcpy(&s->messages[6][23],&v0,4);
 		}
 	}
-
-	for( i = 0; i < 4;i++)
-	{
-		answ[i]   |= (v0 >> (24 - i * 8)) & 0xFF;
-		answ[i+4] |= (v1 >> (24 - i * 8)) & 0xFF;
-	}
-	answ[7] &= 0x0F;
-	
 	/* Reverse calculated control word */
-	s->codeword = 0x000000000000000UL;
-	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
-
+	s->codeword = ((uint64_t)v0 << 32 | v1) & 0x0fffffffffffffffUL;
 }
