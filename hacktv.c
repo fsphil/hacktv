@@ -492,7 +492,7 @@ int main(int argc, char *argv[])
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
-			s.frequency = atol(optarg);
+			s.frequency = (uint64_t) strtod(optarg, NULL);
 			break;
 		
 		case 'a': /* -a, --amp */
