@@ -1588,13 +1588,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 	}
 	
-	/* Initalise the teletext system */
-	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
 	/* Initalise the WSS system */
 	if(s->conf.wss && (r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
 	{
@@ -1631,9 +1624,23 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Initalise the teletext system */
+	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	/* Output line buffer(s) */
 	s->oline = calloc(sizeof(int16_t *), s->olines);
 	if(!s->oline)
+	{
+		vid_free(s);
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	s->vbialloclist = calloc(sizeof(int), s->olines);
+	if(!s->vbialloclist)
 	{
 		vid_free(s);
 		return(VID_OUT_OF_MEMORY);
@@ -1665,6 +1672,11 @@ void vid_free(vid_t *s)
 	/* Close the AV source */
 	vid_av_close(s);
 	
+	if(s->conf.teletext)
+	{
+		tt_free(&s->tt);
+	}
+	
 	if(s->conf.acp)
 	{
 		acp_free(&s->acp);
@@ -1688,11 +1700,6 @@ void vid_free(vid_t *s)
 	if(s->conf.wss)
 	{
 		wss_free(&s->wss);
-	}
-	
-	if(s->conf.teletext)
-	{
-		tt_free(&s->tt);
 	}
 	
 	if(s->video_filter_taps)
@@ -1728,6 +1735,8 @@ void vid_free(vid_t *s)
 		}
 		free(s->oline);
 	}
+	
+	free(s->vbialloclist);
 	
 	memset(s, 0, sizeof(vid_t));
 }
@@ -1794,6 +1803,7 @@ int16_t *vid_adj_delay(vid_t *s, int lines)
 {
 	s->odelay -= lines;
 	s->output = s->oline[s->odelay];
+	s->vbialloc = &s->vbialloclist[s->odelay];
 	
 	s->line -= lines;
 	while(s->line < 1)
@@ -2343,12 +2353,6 @@ static void _vid_next_line_raster(vid_t *s)
 		}
 	}
 	
-	/* Teletext, if enabled */
-	if(s->conf.teletext)
-	{
-		tt_render_line(&s->tt);
-	}
-	
 	/* WSS, if enabled */
 	if(s->conf.wss)
 	{
@@ -2377,6 +2381,12 @@ static void _vid_next_line_raster(vid_t *s)
 	if(s->conf.acp == 1)
 	{
 		acp_render_line(&s->acp);
+	}
+	
+	/* Teletext, if enabled */
+	if(s->conf.teletext)
+	{
+		tt_render_line(&s->tt);
 	}
 	
 	/* Clear the Q channel */
@@ -2486,6 +2496,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	
 	s->odelay = s->olines - 1;
 	s->output = s->oline[s->odelay];
+	s->vbialloc = &s->vbialloclist[s->odelay];
 	
 	s->frame = s->bframe;
 	s->line = s->bline;
@@ -2562,8 +2573,10 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	for(x = 1; x < s->olines; x++)
 	{
 		s->oline[x - 1] = s->oline[x];
+		s->vbialloclist[x - 1] = s->vbialloclist[x];
 	}
 	s->oline[x - 1] = s->output;
+	s->vbialloclist[x - 1] = 0;
 	
 	return(s->output);
 }

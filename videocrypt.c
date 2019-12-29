@@ -441,6 +441,8 @@ void vc_render_line(vc_t *s)
 				s->vid->output[x * 2] = c;
 			}
 		}
+		
+		*s->vid->vbialloc = 1;
 	}
 	
 	/* Scramble the line if necessary */
