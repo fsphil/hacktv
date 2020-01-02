@@ -161,6 +161,8 @@ static void print_usage(void)
 		"  ntsc          = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
 		"  l             = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz AM\n"
 		"                  audio\n"
+		"  d, k          = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz FM\n"
+		"                  audio\n"
 		"  secam         = SECAM colour, 25 fps, 625 lines, unmodulated (real)\n"
 		"  d2mac-fm      = D2-MAC, 25 fps, 625 lines, FM (complex)\n"
 		"  d2mac-am      = D2-MAC, 25 fps, 625 lines, AM (complex)\n"
