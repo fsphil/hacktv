@@ -1265,7 +1265,7 @@ void mac_next_line(vid_t *s)
 			if((s->mac.vsam & 2) == 0)
 			{
 				/* Double Cut rotation */
-				_rotate(s, 230 + 2 - 4,  587 - 3 - 4, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
+				_rotate(s, 230 + 2 - 3,  587 - 3 - 4, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
 				_rotate(s, 585 + 2 - 2, 1289 - 3 - 2, 682 + ((prbs & 0x00FF) << 1)); /* Luminance */
 			}
 			else

@@ -31,9 +31,6 @@
 #define NG_FIELD_2_START   336
 #define NG_LINES_PER_FIELD 287
 
-/* Set this to 1 if your decoder uses different permutations with PIC card */
-#define _OPT_PIC_CARD 1
-
 #define D11_FIELD_1_START   23
 #define D11_FIELD_2_START   335
 #define D11_LINES_PER_FIELD 286
@@ -54,6 +51,8 @@ typedef struct {
 typedef struct {
 	
 	vid_t *vid;
+
+	char *mode;
 	
 	/* VBI */
 	int16_t *lut;
@@ -83,6 +82,7 @@ typedef struct {
 	/* D11 delay values */
 	int d11_delay;
 	int d11_line_delay[D11_LINES_PER_FIELD * D11_FIELDS];
+
 	
 	/* Audio inversion FIR filter */
 	int16_t *firli, *firlq; /* Left channel, I + Q */
@@ -92,7 +92,7 @@ typedef struct {
 	
 } ng_t;
 
-extern int ng_init(ng_t *s, vid_t *vs);
+extern int ng_init(ng_t *s, vid_t *vs, char *mode);
 extern void ng_free(ng_t *s);
 extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
 extern void ng_render_line(ng_t *s);

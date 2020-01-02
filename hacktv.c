@@ -92,7 +92,7 @@ static void print_usage(void)
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
-		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
+		"      --syster <mode>            Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
@@ -281,6 +281,11 @@ static void print_usage(void)
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
 		"are vertically shuffled within a field.\n"
 		"\n"
+		"hacktv supports the following modes:\n"
+		"\n"
+		"  premiere        = A valid Premiere 'key' is required to decode. Sampled from Premiere channel.\n"
+		"  pirate          = A programmed PIC card with supplied hex is required to decode. Random control words.\n"
+		"\n"
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
 		"with most hardware.\n"
 		"\n"
@@ -324,7 +329,7 @@ int main(int argc, char *argv[])
 		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
 		{ "key", 		 required_argument, 0, 'k'},
-		{ "syster",      no_argument,       0, _OPT_SYSTER },
+		{ "syster",      required_argument, 0, _OPT_SYSTER },
 		{ "d11",         no_argument,       0, _OPT_DISCRET },
 		{ "systeraudio", no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",         no_argument,       0, _OPT_ACP },
@@ -367,7 +372,7 @@ int main(int argc, char *argv[])
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
-	s.syster = 0;
+	s.syster = NULL;
 	s.d11 = 0;
 	s.systeraudio = 0;
 	s.acp = 0;
@@ -482,7 +487,7 @@ int main(int argc, char *argv[])
 			free(s.videocrypt);
 			s.videocrypt = strdup(optarg);
 			break;
-		
+
 		case _OPT_VIDEOCRYPT2: /* --videocrypt2 */
 			free(s.videocrypt2);
 			s.videocrypt2 = strdup(optarg);
@@ -494,12 +499,13 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
-			s.syster = 1;
+			free(s.syster);
+			s.syster = strdup(optarg);
 			break;
 			
-			case _OPT_DISCRET: /* --d11 */
-				s.d11 = 1;
-				break;		
+		case _OPT_DISCRET: /* --d11 */
+			s.d11 = 1;
+			break;		
 				
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
 			s.systeraudio = 1;
@@ -767,11 +773,11 @@ int main(int argc, char *argv[])
 
 	if(s.syster)
 	{
-	if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
-	{
-		fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
-		return(-1);
-	}
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
 		
 		if(vid_conf.videocrypt || vid_conf.videocrypt2 || vid_conf.videocrypts || vid_conf.d11)
 		{
@@ -779,7 +785,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		vid_conf.syster = 1;
+		vid_conf.syster = s.syster;
 		vid_conf.systeraudio = s.systeraudio;
 	}
 	

@@ -491,7 +491,7 @@ static void _encode_vbi(uint8_t vbi[40], const uint8_t data[16], uint8_t a, uint
 }
  
 
-int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char *key)
+int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 {
 	double f, l;
 	int x;
@@ -627,7 +627,7 @@ void vc_free(vc_t *s)
 	/* Nothing */
 }
 
-void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *key)
+void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 {
 	int x;
 	const uint8_t *bline = NULL;

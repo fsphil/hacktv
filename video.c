@@ -525,8 +525,8 @@ const vid_config_t vid_config_d2mac = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
-	.white_level    =  1.00,
-	.black_level    = -1.00,
+	.white_level    =  0.70,
+	.black_level    = -0.70,
 	.blanking_level =  0.00,
 	.sync_level     =  0.00,
 	
@@ -1603,7 +1603,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	/* Initialise videocrypt encoder */
 	if((s->conf.videocrypt || s->conf.videocrypt2) && 
-	(r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2, s->conf.key)) != VID_OK)
+	(r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2)) != VID_OK)
 	{
 		vid_free(s);
 		return(r);
@@ -1617,18 +1617,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* Initalise syster encoder */
-	if(s->conf.syster && (r = ng_init(&s->ng, s)) != VID_OK)
+	if(s->conf.syster && (r = ng_init(&s->ng, s, s->conf.syster)) != VID_OK)
 	{
 		vid_free(s);
 		return(r);
 	}
 	
 	/* Initalise D11 encoder */
- if(s->conf.d11 && (r = d11_init(&s->ng, s)) != VID_OK)
- {
-	 vid_free(s);
-	 return(r);
- }
+ 	if(s->conf.d11 && (r = d11_init(&s->ng, s)) != VID_OK)
+ 	{
+		vid_free(s);
+		return(r);
+ 	}
  
 	/* Initalise ACP renderer */
 	if(s->conf.acp && (r = acp_init(&s->acp, s)) != VID_OK)
@@ -2364,7 +2364,7 @@ static void _vid_next_line_raster(vid_t *s)
 	/* Videocrypt scrambling, if enabled */
 	if(s->conf.videocrypt || s->conf.videocrypt2)
 	{
-		vc_render_line(&s->vc, s->conf.videocrypt, s->conf.videocrypt2, s->conf.key);
+		vc_render_line(&s->vc, s->conf.videocrypt, s->conf.videocrypt2);
 	}
 	
 	/* Videocrypt S scrambling, if enabled */
@@ -2374,7 +2374,7 @@ static void _vid_next_line_raster(vid_t *s)
 	}
 	
 	/* Syster scrambling, if enabled */
-	if(s->conf.syster == 1)
+	if(s->conf.syster)
 	{
 		ng_render_line(&s->ng);
 	}

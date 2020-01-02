@@ -97,9 +97,9 @@ typedef struct {
 	
 } vc_t;
 
-extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2, const char *key);
+extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);
 extern void vc_free(vc_t *s);
-extern void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *key);
+extern void vc_render_line(vc_t *s, const char *mode, const char *mode2);
 extern void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, int ca);
 extern void _vc_kernel09(const unsigned char in, unsigned char *answ);
 extern void _vc_seed_sky07(_vc_block_t *s, int ca);

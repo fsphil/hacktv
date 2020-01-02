@@ -8,6 +8,11 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author.**
 
+2020-01-02:
+Added Syster DES function for random control words.
+'syster' parameter now requires 'premiere' or 'pirate' option.
+New hex file for PIC - use your own decryption keys.
+
 2019-12-27:
 Videocrypt 2 conditional access mode added.
   - use Multichoice Central Europe card or included hex file for PIC16F84 card.
