@@ -157,6 +157,8 @@ void wss_render_line(wss_t *s)
 		}
 		
 		vbidata_render_nrz(s->lut, s->vbi, -55, 137, VBIDATA_MSB_FIRST, s->vid->output, 2);
+		
+		*s->vid->vbialloc = 1;
 	}
 }
 

@@ -305,6 +305,10 @@ struct vid_t {
 	int16_t **oline;	/* Pointer to each line */
 	int16_t *output;	/* Pointer to the current line */
 	int odelay;		/* Index of the current line */
+	
+	/* VBI line allocation flag */
+	int *vbialloclist;
+	int *vbialloc;
 };
 
 extern const vid_configs_t vid_configs[];

@@ -122,5 +122,7 @@ void acp_render_line(acp_t *s)
 			s->vid->output[x * 2] = s->pagc_level;
 		}
 	}
+	
+	*s->vid->vbialloc = 1;
 }
 
