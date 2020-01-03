@@ -225,11 +225,8 @@ uint64_t _get_syster_cw(unsigned char ecm[16], unsigned char k64[8])
 	for(i = 0; i < 4; i++)
 	{
 		cw[i] = buffer1[i + 4] & (i == 3 ? 0x7F : 0xFF);
+		cw[i + 4] = (buffer1[i] << 1 & (i == 3 ? 0x1F : 0xFF)) | (buffer1[(i == 0 ? 7 : i - 1)] >> 7 & 1);
 	}
-	cw[4] = buffer1[0] << 1 | (buffer1[7] >> 7 & 1);
-	cw[5] = buffer1[1] << 1 | (buffer1[0] >> 7 & 1);
-	cw[6] = buffer1[2] << 1 | (buffer1[1] >> 7 & 1);
-	cw[7] = ((buffer1[3] << 1 & 0x1F) | (buffer1[2] >> 7 & 1));
 
     for(i = controlword = 0; i < 8; i++) 
     {

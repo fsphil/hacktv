@@ -1082,6 +1082,9 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_RGB32 };
 			
 		AVFilterGraph *vfilter_graph;
+
+		/* Deprecated - to be removed in later versions */
+		avfilter_register_all();
 		
 		AVBufferSinkParams *buffersink_params;
 		const AVFilter *vbuffersrc  = avfilter_get_by_name("buffer");
