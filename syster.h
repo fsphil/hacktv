@@ -53,6 +53,7 @@ typedef struct {
 	vid_t *vid;
 
 	char *mode;
+	int vbilineoffset;
 	
 	/* VBI */
 	int16_t *lut;
