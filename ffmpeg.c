@@ -951,7 +951,7 @@ static int _seek_screen(void *private, vid_t *s)
 	{
 		for(x = 0; x < s->active_width; x++)
 		{		
-			av->video[y * s->active_width + x] = 0xFFFFFF;	
+			av->video[y * s->active_width + x] = 0x00000000;	
 		}
 	}
 	/* Overlay the logo */
