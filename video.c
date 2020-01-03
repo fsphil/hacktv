@@ -301,6 +301,104 @@ const vid_config_t vid_config_secam_l = {
 	.nicam_beta     = 0.4,
 };
 
+const vid_config_t vid_config_secam_dk = {
+	
+	/* System D/K (SECAM) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 6000000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.70, /* Power level of video */
+	.fm_audio_level = 0.20, /* FM audio carrier power level */
+	
+	.type           = VID_RASTER_625,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	.active_width   = 0.00005195, /* 51.95µs */
+	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	
+	.white_level    = 0.20,
+	.black_level    = 0.76,
+	.blanking_level = 0.76,
+	.sync_level     = 1.00,
+	
+	.colour_mode    = VID_SECAM,
+	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 1.000,
+	.iv_co          = 0.000,
+	.qu_co          = 0.000,
+	.qv_co          = -1.000,
+	
+	.fm_mono_carrier    = 6500000, /* Hz */
+	.fm_audio_preemph   = 0.000050, /* Seconds */
+	.fm_audio_deviation = 50000, /* +/- Hz */
+};
+
+const vid_config_t vid_config_secam_fm = {
+	
+	/* SECAM FM (satellite) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_FM,
+	.fm_level       = 1.0,
+	.fm_deviation   = 10000000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 1.00, /* Power level of video */
+	.fm_audio_level = 0.05, /* FM audio carrier power level */
+	
+	.type           = VID_RASTER_625,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	.active_width   = 0.00005195, /* 51.95µs */
+	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	
+	.white_level    =  0.50,
+	.black_level    = -0.20,
+	.blanking_level = -0.20,
+	.sync_level     = -0.50,
+	
+	.colour_mode    = VID_SECAM,
+	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	
+	.gamma          = 1.2,
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 1.000,
+	.iv_co          = 0.000,
+	.qu_co          = 0.000,
+	.qv_co          = -1.000,
+	
+	.fm_mono_carrier    = 6500000, /* Hz */
+	//.fm_left_carrier    = 7200000, /* Hz */
+	//.fm_right_carrier   = 7020000, /* Hz */
+	.fm_audio_preemph   = 0.000050, /* Seconds */
+	.fm_audio_deviation = 85000, /* +/- Hz */
+};
+
 const vid_config_t vid_config_secam = {
 	
 	/* Composite SECAM */
@@ -390,6 +488,61 @@ const vid_config_t vid_config_ntsc_m = {
 	.fm_mono_carrier    = 4500000, /* Hz */
 	.fm_audio_preemph   = 0.000075, /* Seconds */
 	.fm_audio_deviation = 25000, /* +/- Hz */
+};
+
+const vid_config_t vid_config_ntsc_fm = {
+	
+	/* NTSC FM (satellite) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_FM,
+	.fm_level       = 1.0,
+	.fm_deviation   = 10000000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 1.00, /* Power level of video */
+	.fm_audio_level = 0.05, /* FM audio carrier power level */
+	
+	.type           = VID_RASTER_625,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	.active_width   = 0.00005195, /* 51.95µs */
+	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	
+	.white_level    =  0.50,
+	.black_level    = -0.20,
+	.blanking_level = -0.20,
+	.sync_level     = -0.50,
+	
+	.colour_mode    = VID_NTSC,
+	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
+	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
+	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
+	.colour_carrier = 5000000.0 * 63 / 88,
+	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	
+	.gamma          = 1.2,
+	
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	.iu_co          = -0.177,
+	.iv_co          =  0.768,
+	.qu_co          =  0.626,
+	.qv_co          = -0.082,
+	
+	.fm_mono_carrier    = 6500000, /* Hz */
+	//.fm_left_carrier    = 7200000, /* Hz */
+	//.fm_right_carrier   = 7020000, /* Hz */
+	.fm_audio_preemph   = 0.000050, /* Seconds */
+	.fm_audio_deviation = 85000, /* +/- Hz */
 };
 
 const vid_config_t vid_config_ntsc = {
@@ -1088,8 +1241,12 @@ const vid_configs_t vid_configs[] = {
 	{ "pal-fm",        &vid_config_pal_fm           },
 	{ "pal",           &vid_config_pal              },
 	{ "l",             &vid_config_secam_l          },
+	{ "d",             &vid_config_secam_dk         },
+	{ "k",             &vid_config_secam_dk         },
+	{ "secam-fm",      &vid_config_secam_fm         },
 	{ "secam",         &vid_config_secam            },
 	{ "m",             &vid_config_ntsc_m           },
+	{ "ntsc-fm",       &vid_config_ntsc_fm          },
 	{ "ntsc",          &vid_config_ntsc             },
 	{ "d2mac-am",      &vid_config_d2mac_am         },
 	{ "d2mac-fm",      &vid_config_d2mac_fm         },
@@ -1587,13 +1744,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 	}
 	
-	/* Initalise the teletext system */
-	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
 	/* Initalise the WSS system */
 	if(s->conf.wss && (r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
 	{
@@ -1637,9 +1787,23 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Initalise the teletext system */
+	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	/* Output line buffer(s) */
 	s->oline = calloc(sizeof(int16_t *), s->olines);
 	if(!s->oline)
+	{
+		vid_free(s);
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	s->vbialloclist = calloc(sizeof(int), s->olines);
+	if(!s->vbialloclist)
 	{
 		vid_free(s);
 		return(VID_OUT_OF_MEMORY);
@@ -1671,6 +1835,11 @@ void vid_free(vid_t *s)
 	/* Close the AV source */
 	vid_av_close(s);
 	
+	if(s->conf.teletext)
+	{
+		tt_free(&s->tt);
+	}
+	
 	if(s->conf.acp)
 	{
 		acp_free(&s->acp);
@@ -1694,11 +1863,6 @@ void vid_free(vid_t *s)
 	if(s->conf.wss)
 	{
 		wss_free(&s->wss);
-	}
-	
-	if(s->conf.teletext)
-	{
-		tt_free(&s->tt);
 	}
 	
 	if(s->video_filter_taps)
@@ -1734,6 +1898,8 @@ void vid_free(vid_t *s)
 		}
 		free(s->oline);
 	}
+	
+	free(s->vbialloclist);
 	
 	memset(s, 0, sizeof(vid_t));
 }
@@ -1800,6 +1966,7 @@ int16_t *vid_adj_delay(vid_t *s, int lines)
 {
 	s->odelay -= lines;
 	s->output = s->oline[s->odelay];
+	s->vbialloc = &s->vbialloclist[s->odelay];
 	
 	s->line -= lines;
 	while(s->line < 1)
@@ -2349,12 +2516,6 @@ static void _vid_next_line_raster(vid_t *s)
 		}
 	}
 	
-	/* Teletext, if enabled */
-	if(s->conf.teletext)
-	{
-		tt_render_line(&s->tt);
-	}
-	
 	/* WSS, if enabled */
 	if(s->conf.wss)
 	{
@@ -2388,6 +2549,12 @@ static void _vid_next_line_raster(vid_t *s)
 	if(s->conf.acp == 1)
 	{
 		acp_render_line(&s->acp);
+	}
+	
+	/* Teletext, if enabled */
+	if(s->conf.teletext)
+	{
+		tt_render_line(&s->tt);
 	}
 	
 	/* Clear the Q channel */
@@ -2497,6 +2664,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	
 	s->odelay = s->olines - 1;
 	s->output = s->oline[s->odelay];
+	s->vbialloc = &s->vbialloclist[s->odelay];
 	
 	s->frame = s->bframe;
 	s->line = s->bline;
@@ -2573,8 +2741,10 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	for(x = 1; x < s->olines; x++)
 	{
 		s->oline[x - 1] = s->oline[x];
+		s->vbialloclist[x - 1] = s->vbialloclist[x];
 	}
 	s->oline[x - 1] = s->output;
+	s->vbialloclist[x - 1] = 0;
 	
 	return(s->output);
 }

@@ -1212,6 +1212,9 @@ void tt_render_line(tt_t *s)
 	uint8_t vbi[45];
 	int r;
 	
+	/* Don't render teletext if this VBI line has already been allocated */
+	if(*s->vid->vbialloc != 0) return;
+	
 	/* Use 16 lines per field for teletext */
 	if((s->vid->line >= 7 && s->vid->line <= 22) ||
 	   (s->vid->line >= 320 && s->vid->line <= 335))
@@ -1222,6 +1225,8 @@ void tt_render_line(tt_t *s)
 		{
 			vbidata_render_nrz(s->lut, vbi, -70, 360, VBIDATA_LSB_FIRST, s->vid->output, 2);
 		}
+		
+		*s->vid->vbialloc = 1;
 	}
 }
 

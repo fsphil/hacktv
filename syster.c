@@ -626,6 +626,8 @@ int ng_init(ng_t *s, vid_t *vid, char *mode)
 {
 	ng_ecm_t *ecm;
 	int i, j;
+	time_t t;
+	srand((unsigned) time(&t));
 
 	memset(s, 0, sizeof(ng_t));
 	

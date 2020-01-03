@@ -307,6 +307,8 @@ void vcs_render_line(vcs_t *s)
 				s->vid->output[x * 2] = c;
 			}
 		}
+		
+		*s->vid->vbialloc = 1;
 	}
 	
 }
