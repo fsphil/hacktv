@@ -62,7 +62,7 @@ typedef struct {
 	float gamma;
 	int repeat;
 	int verbose;
-	int d11;
+	char *d11;
 	char *teletext;
 	char *logo;
 	char *wss;

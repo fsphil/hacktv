@@ -93,7 +93,7 @@ static void print_usage(void)
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
 		"      --syster <mode>            Enable Nagravision Syster scambling. (PAL only)\n"
-		"      --d11                      Enable Discret 11 scambling. (PAL only)\n"
+		"      --d11 <mode>               Enable Discret 11 scambling. (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
@@ -289,9 +289,20 @@ static void print_usage(void)
 		"\n"
 		"  premiere        = A valid Premiere 'key' is required to decode. Sampled from Premiere channel.\n"
 		"  pirate          = A programmed PIC card with supplied hex is required to decode. Random control words.\n"
+		"  cfrfa           = A valid Canal+ France 'key' is required to decode. Sampled from documentation.\n"
+		"  cplfa           = A valid Canal+ Poland 'key' is required to decode - 'free access'. Sampled from Canal+ Poland.\n"
+		"  cplca           = A valid Canal+ Poland 'key' is required to decode - subscription level access. Sampled from Canal+ Poland.\n"
 		"\n"
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
 		"with most hardware.\n"
+		"\n"
+		"Discret 11\n"
+		"\n"
+		"This scrambling system is a precursor to Syster in 1980s and mid-1990s. Uses one of three \n"
+		"line delays to create a jagged effect. This will work with Syster decoders and dedicated Discret ones.\n"
+		"Syster decoder will require one of valid keys used in Syster (above).\n"
+		"\n"
+		"Discret parameter requires one of the above modes specified.\n"
 		"\n"
 		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
 		"to use the --systeraudio option.\n"
@@ -334,7 +345,7 @@ int main(int argc, char *argv[])
 		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
 		{ "key", 		 required_argument, 0, 'k'},
 		{ "syster",      required_argument, 0, _OPT_SYSTER },
-		{ "d11",         no_argument,       0, _OPT_DISCRET },
+		{ "d11",         required_argument, 0, _OPT_DISCRET },
 		{ "systeraudio", no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",         no_argument,       0, _OPT_ACP },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
@@ -377,7 +388,7 @@ int main(int argc, char *argv[])
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
 	s.syster = NULL;
-	s.d11 = 0;
+	s.d11 = NULL;
 	s.systeraudio = 0;
 	s.acp = 0;
 	s.filter = 0;
@@ -508,7 +519,8 @@ int main(int argc, char *argv[])
 			break;
 			
 		case _OPT_DISCRET: /* --d11 */
-			s.d11 = 1;
+			free(s.d11);
+			s.d11 = strdup(optarg);
 			break;		
 				
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
@@ -771,7 +783,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		vid_conf.d11 = 1;
+		vid_conf.d11 = s.d11;
 		vid_conf.systeraudio = s.systeraudio;
 	}
 

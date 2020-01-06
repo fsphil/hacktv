@@ -1774,7 +1774,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* Initalise D11 encoder */
- 	if(s->conf.d11 && (r = d11_init(&s->ng, s)) != VID_OK)
+ 	if(s->conf.d11 && (r = d11_init(&s->ng, s, s->conf.d11)) != VID_OK)
  	{
 		vid_free(s);
 		return(r);
@@ -2541,7 +2541,7 @@ static void _vid_next_line_raster(vid_t *s)
 	}
 	
 	/* D11 scrambling, if enabled */
-	if(s->conf.d11 == 1)
+	if(s->conf.d11)
 	{
 		d11_render_line(&s->ng);
 	}

@@ -146,7 +146,7 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	int d11;
+	char *d11;
 	char *syster;
 	int systeraudio;
 	int acp;
