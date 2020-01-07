@@ -36,7 +36,8 @@
 #define D11_LINES_PER_FIELD 286
 #define D11_FIELDS 6
 
-#define _CFR_FIXED 0
+#define NG_ENCRYPT 1
+#define NG_DECRYPT 0
 
 /* NG_DELAY_LINES needs to be long enough for the scrambler to access any
  * line in the next field from at least the last 32 lines of the current.

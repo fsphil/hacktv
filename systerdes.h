@@ -18,6 +18,6 @@
 #ifndef _SYSTER_DES_H
 #define _SYSTER_DES_H
 
-extern uint64_t _get_syster_cw(unsigned char ecm[16], unsigned char k64[8]);
+extern uint64_t _get_syster_cw(unsigned char *ecm, unsigned char k64[8], int m);
 
 #endif

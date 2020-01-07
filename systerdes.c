@@ -19,6 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
+
+#define NG_ENCRYPT 1
+#define NG_DECRYPT 0
 
 /* Key left shift table */
 unsigned char const LS[] = { 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 0 };
@@ -136,12 +140,26 @@ void _key_rotate(int rounds, unsigned char *k)
 }
 
 /* Main DES function */
-void _syster_des_f(unsigned char *k, unsigned char *cw)
+void _syster_des_f(unsigned char *k, unsigned char *cw, int m)
 {
 	int i;
 
 	/* Expanded key and control word */
 	unsigned char ecw[8], ek[8];
+	
+	/* Array for rotated keys */
+	unsigned char *kr[16];
+	
+	/* Create key rotation array */
+	for(i = 0; i < 16 ; i++)
+	{
+		kr[i] = malloc(8);
+		memcpy(kr[i], k, 8);
+		
+		/* Rotate key */
+		_key_rotate(i, k);				
+	}
+
 
 	for(i = 0; i < 16; i++) 
 	{
@@ -150,8 +168,12 @@ void _syster_des_f(unsigned char *k, unsigned char *cw)
 		/* Right half of decoded 8-bit CW */
 		unsigned char r[4];
 		
-		/* Key expansion */
-		_expand(C, k, ek);
+		/* 
+		   Key expansion 
+		   m: 0 = decrypt
+		   m: 1 = encrypt
+		*/
+		_expand(C, kr[(m ? 15 - i : i)], ek);
 
 		/* Plain text expansion */
 		_expand(E, cw, ecw);
@@ -192,7 +214,7 @@ void _syster_des_f(unsigned char *k, unsigned char *cw)
 	}
 }
 
-uint64_t _get_syster_cw(unsigned char ecm[16], unsigned char k64[8])
+uint64_t _get_syster_cw(unsigned char *ecm, unsigned char k64[8], int m)
 {
 	int round, i;
 
@@ -212,10 +234,19 @@ uint64_t _get_syster_cw(unsigned char ecm[16], unsigned char k64[8])
 		_permute(ecm + round * 8, pcw, ip);
 
 		/* Call main DES function */
-		_syster_des_f(k56, pcw);
+		_syster_des_f(k56, pcw, m);
 
 		/* Final permutation of CW */
 		_permute(pcw, buffer2, fp);
+		
+		/* Copy output CW back into input */
+		if(m == NG_ENCRYPT)
+		{
+			for(i = 0; i < 8; i++) 
+			{
+				ecm[i + (8 * round)] = buffer2[i];
+			}
+		}
 		
 		/* Copy each half of decoded CW into output buffer2 */
 		memcpy(buffer1 + round * 4, buffer2 + round * 4, 4);
