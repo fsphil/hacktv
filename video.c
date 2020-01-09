@@ -504,17 +504,17 @@ const vid_config_t vid_config_ntsc_fm = {
 	.video_level    = 1.00, /* Power level of video */
 	.fm_audio_level = 0.05, /* FM audio carrier power level */
 	
-	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
-	.lines          = 625,
-	.active_lines   = 576,
-	.active_width   = 0.00005195, /* 51.95µs */
-	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	.type           = VID_RASTER_525,
+	.frame_rate_num = 30000,
+	.frame_rate_den = 1001,
+	.lines          = 525,
+	.active_lines   = 480,
+	.active_width   = 0.00005290, /* 52.90µs */
+	.active_left    = 0.00000920, /* |-->| 9.20µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.20,
@@ -528,8 +528,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	.colour_carrier = 5000000.0 * 63 / 88,
 	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
 	
-	.gamma          = 1.2,
-	
+	.gamma          =  1.2,
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
