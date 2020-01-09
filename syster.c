@@ -124,7 +124,7 @@ static const uint8_t _key_table1[0x100] = {
 };
 
 /* Canal+ FR (Oct 1997) */
-/*static const uint8_t _key_table2[0x100] = {
+static const uint8_t _key_table2[0x100] = {
 	 0,  1,  2,  3,  4,  5,  6,  7,  2,  5,  4,  7,  8,  9, 10, 11,
 	14, 17, 16, 19, 22, 25, 24, 27, 28, 31, 30,  1, 24, 27, 26, 29,
 	 8, 11, 10, 13, 20, 23, 22, 25, 20, 21, 22, 23, 30, 31,  0,  1,
@@ -141,7 +141,7 @@ static const uint8_t _key_table1[0x100] = {
 	14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,  4,  7,  6,  9,
 	18, 21, 20, 23, 12, 13, 14, 15, 16, 19, 18, 21, 26, 29, 28, 31,
 	10, 11, 12, 13, 10, 13, 12, 15,  6,  7,  8,  9,  0,  3,  2,  5
-};*/
+};
 
 static const uint8_t _vbi_sequence[10] = {
 	0x73, 0x9B, 0x5E, 0xB6, 0x49, 0xA1, 0x02, 0xEA, 0x15, 0xFD
@@ -420,9 +420,9 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 			}
 			
 			/* Build part 1 of the VBI block */
-			msg1[ 0] = mode;	/* Mode? (0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or 0xFA) */
+			msg1[ 0] = mode | ((s->audience >> 5) & 1);	/* Decoder parameters + audience */
 			_ecm_part(s, &msg1[1]);
-			msg1[ 1] |= s->audience << 3;
+			msg1[ 1] |= s->audience << 3; /* Audience uses 5 top bits of msg1[1] */
 			msg1[11] = 0xFF;	/* Simple checksum -- the Premiere VBI sample only has 0x00/0xFF here */
 			for(x = 0; x < 11; x++)
 			{
@@ -493,34 +493,21 @@ void _rand_seed(ng_t *s, unsigned char data[8], unsigned char k64[8])
 			s->blocks[j].ecm[i] = i < 4 || i > 12 ? rand() + 0xFF : data[i-4];
 		}
 		
-		/* Encrypt plain control word */
-		_get_syster_cw(s->blocks[j].ecm, k64, NG_ENCRYPT);
-		
-		/* Decrypt control word  */
-		s->blocks[j].cw = _get_syster_cw(s->blocks[j].ecm, k64, NG_DECRYPT);
+		/* Encrypt plain control word to send to card */
+		s->blocks[j].cw = _get_syster_cw(s->blocks[j].ecm, k64, NG_ENCRYPT);
 	}
+}
+
+uint16_t _get_date(char *dtm)
+{
+	int day, mon, year;
+	sscanf(dtm, "%d/%d/%d", &day, &mon, &year);
+	return (uint16_t) ((0x8000 | (year - 1990) << 9 | (mon > 6 ? 1:0) << 8 | ((mon > 6 ? 1:0) + mon % 7) << 5 | day) & 0x7FFF);
 }
 
 int _init_common(ng_t *s, char *mode)
 {
-	int i, j;
-
-	if(strcmp(mode, "pirate") == 0)
-	{
-		unsigned char k64[8] = { 0x68, 0xAE, 0x0C, 0xE9, 0x64, 0x16, 0x78, 0x8D };
-		s->blocks = _ecm_table_rand;
-
-		/* Generate 64 random control words */
-		for(j =0 ; j < 0x40; j++)
-		{
-			for(i = 0; i < 16; i++)
-			{
-				s->blocks[j].ecm[i] = rand() + 0xFF;
-			}
-			s->blocks[j].cw = _get_syster_cw(s->blocks[j].ecm, k64, NG_DECRYPT);
-		}
-	}
-	else if(strcmp(mode, "premiere") == 0)
+	if(strcmp(mode, "premiere") == 0)
 	{
 		s->vbioffset = 0;
 		/* Free access key */
@@ -537,6 +524,12 @@ int _init_common(ng_t *s, char *mode)
 		   data[7] = ??
 		*/
 		unsigned char data[8] = { 0xFF,0x01,0x11,0x00,0x88,0x15,0x00,0x00 };
+		
+		/* Date of broadcast */
+		uint16_t d = _get_date("01/01/1997");
+		
+		data[4] = d & 0xFF;
+		data[5] = d >> 8;
 		
 		/* 
 		   VBI offset:  0 = works with most keys
@@ -565,6 +558,12 @@ int _init_common(ng_t *s, char *mode)
 		   data[7] = ??
 		*/
 		unsigned char data[8] = { 0xFF,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
+
+		/* Date of broadcast */
+		uint16_t d = _get_date("01/01/1997");
+		
+		data[4] = d & 0xFF;
+		data[5] = d >> 8;
 		
 		s->vbioffset = -4;
 		s->audience = data[2];
@@ -588,7 +587,13 @@ int _init_common(ng_t *s, char *mode)
 		   data[6] = ??
 		   data[7] = ??
 		*/
-		unsigned char data[8] = { 0xFF,0x01,0x11,0x00,0x88,0x15,0x00,0x00 };
+		unsigned char data[8] = { 0x80,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
+		
+		/* Date of broadcast */
+		uint16_t d = _get_date("01/01/2000");
+		
+		data[4] = d & 0xFF;
+		data[5] = d >> 8;
 		
 		/* 
 		   VBI offset: -1 = old Canal+ France keys (white)
@@ -617,6 +622,12 @@ int _init_common(ng_t *s, char *mode)
 		   data[7] = ??
 		*/
 		unsigned char data[8] = { 0xFF,0x01,0x01,0x00,0x7B,0x0A,0x00,0x00 };
+
+		/* Date of broadcast */
+		uint16_t d = _get_date("01/01/1997");
+		
+		data[4] = d & 0xFF;
+		data[5] = d >> 8;
 		
 		/* 
 		   VBI offset: -1 = old Canal+ France keys (white)
@@ -629,7 +640,7 @@ int _init_common(ng_t *s, char *mode)
 		/* Grab random seed */
 		_rand_seed(s, data, k64);
 	}
-	else if(strcmp(mode, "csp") == 0)
+	else if(strcmp(mode, "cspfa") == 0)
 	{
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
@@ -646,7 +657,13 @@ int _init_common(ng_t *s, char *mode)
 		*/
 		
 		unsigned char data[8] = { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 };
-
+		
+		/* Date of broadcast */
+		uint16_t d = _get_date("01/01/1997");
+		
+		data[4] = d & 0xFF;
+		data[5] = d >> 8;
+		
 		s->vbioffset = -4;
 		s->audience = data[2];
 		s->blocks = _ecm_table_rand;
@@ -688,6 +705,7 @@ int d11_init(ng_t *s, vid_t *vid, char *mode)
 void d11_render_line(ng_t *s)
 {
 	int x, f, i, d11_field, index, line, delay;
+	uint8_t b;
 	
 	/* Calculate the field and field line */
 	line = s->vid->line;
@@ -740,7 +758,16 @@ void d11_render_line(ng_t *s)
 			}
 	}
 	
-	_render_ng_vbi(s,line,0x71);
+	b  = 0 << 7;	/* ?? Unused */
+	b |= 0 << 6; 	/* ?? Unused */
+	b |= 1 << 5;	/* 0: clear, 1: scrambled */
+	b |= 1 << 4;	/* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	b |= 0 << 3;    /* 0: full frame scrambling, 1: half-frame scrambling */
+	b |= 0 << 2;	/* Seems to enable cut-and-rotate on some decoders */
+	b |= 0 << 1;	/* Scrambling type: 0: Discret 11, 1: Syster */
+	b |= 0 << 0;	/* 6th high bit of audience level */
+	
+	_render_ng_vbi(s,line, b);
 }
 
 int ng_init(ng_t *s, vid_t *vid, char *mode)
@@ -861,6 +888,7 @@ void ng_render_line(ng_t *s)
 	int j = 0;
 	int x, f, i;
 	int line;
+	uint8_t b;
 	
 	/* Calculate which line is about to be transmitted due to the delay */
 	line = s->vid->line - NG_DELAY_LINES;
@@ -931,5 +959,14 @@ void ng_render_line(ng_t *s)
 		}
 	}
 	
-	_render_ng_vbi(s,line,0x72);
+	b  = 0 << 7;	/* ?? Unused */
+	b |= 0 << 6;	/* ?? Unused */
+	b |= 1 << 5;	/* 0: clear, 1: scrambled */
+	b |= 1 << 4;	/* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	b |= 0 << 3;	/* 0: full frame scrambling, 1: half-frame scrambling */
+	b |= 0 << 2;	/* Seems to enable cut-and-rotate on some decoders */
+	b |= 1 << 1;	/* Scrambling type: 0: Discret 11, 1: Syster */
+	b |= 0 << 0;	/* 6th high bit of audience level */
+	
+	_render_ng_vbi(s, line, b);
 }

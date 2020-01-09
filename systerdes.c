@@ -208,9 +208,6 @@ void _syster_des_f(unsigned char *k, unsigned char *cw, int m)
 			cw[l + 4]  = cw[l + 0];
 			cw[l + 0]  =  r[l + 0];				
 		}
-
-		/* Rotate key */
-		_key_rotate(i, k);
 	}
 }
 
@@ -239,17 +236,19 @@ uint64_t _get_syster_cw(unsigned char *ecm, unsigned char k64[8], int m)
 		/* Final permutation of CW */
 		_permute(pcw, buffer2, fp);
 		
-		/* Copy output CW back into input */
 		if(m == NG_ENCRYPT)
 		{
-			for(i = 0; i < 8; i++) 
-			{
-				ecm[i + (8 * round)] = buffer2[i];
-			}
+			/* Copy plain CW into buffer */
+			memcpy(buffer1 + (round * 4), ecm + (round * 12), 4);
+
+			/* Copy encrypted CW back into input */
+			memcpy(ecm + (round * 8), buffer2, 8);
 		}
-		
-		/* Copy each half of decoded CW into output buffer2 */
-		memcpy(buffer1 + round * 4, buffer2 + round * 4, 4);
+		else
+		{
+			/* Copy decrypted CW into buffer */
+			memcpy(buffer1 + (round * 4), buffer2 + (round * 4), 4);
+		}
 	}
 
 	/* Create final decoded control word */
