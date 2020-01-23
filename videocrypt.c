@@ -742,7 +742,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 			{
 				s->cw = s->blocks[s->block].codeword;
 			}
-
+			
 			/* Generate new seeds */
 			if(mode)
 			{
@@ -911,7 +911,7 @@ void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial)
 	uint64_t answ[8];
 	int offset = 0;
 	
-	int emmdata[7] = { 0xE0, 0x3B, 0x3E, 0xEC, 0x1C, 0x60, 0x0F };
+	int emmdata[7] = { 0xE0, 0x3F, 0x3E, 0xEC, 0x1C, 0x60, 0x0F };
 	
 	for(i = 0; i < 7; i++) s->messages[1][i] = emmdata[i];
 
