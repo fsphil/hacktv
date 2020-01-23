@@ -754,9 +754,9 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 			}
 			
 			/* Print ECM */
-			if(s->vid->conf.showecm)
+			if(s->vid->conf.showecm && mode)
 			{
-				fprintf(stderr, "\nECM In:  ");
+				fprintf(stderr, "\n\nECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[6][i]);
 				fprintf(stderr,"\nECM Out: ");
 				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->blocks[s->block].codeword >> (8 * i) & 0xFF);
@@ -787,6 +787,15 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 			if(mode2)
 			{
 				if(strcmp(mode2,"conditional") == 0) _vc_seed_vc2(&s->blocks2[s->block2]);
+			}
+			
+			/* Print ECM */
+			if(s->vid->conf.showecm && mode2)
+			{
+				fprintf(stderr, "\n\nECM In:  ");
+				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks2[s->block2].messages[5][i]);
+				fprintf(stderr,"\nECM Out: ");
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->blocks2[s->block2].codeword >> (8 * i) & 0xFF);
 			}
 			
 			/* Move to the next block after 64 frames */
