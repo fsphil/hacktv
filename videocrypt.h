@@ -103,6 +103,7 @@ extern void vc_render_line(vc_t *s, const char *mode, const char *mode2);
 extern void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, int ca);
 extern void _vc_kernel09(const unsigned char in, unsigned char *answ);
 extern void _vc_seed_sky07(_vc_block_t *s, int ca);
+extern void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial);
 extern void _vc_seed_vc2(_vc2_block_t *s);
 extern void _vc_seed_sky09(_vc_block_t *s);
 extern void _vc_seed_xtea(_vc_block_t *s);

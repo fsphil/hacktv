@@ -278,7 +278,7 @@ static _vc2_block_t _vc2_blocks[] = {
 			{ 0xE1 },
 			{ 0xE1 },
 			{ 0xE1 },
-			{ 0xF9,0x62,0x36,0x82,0x04,0xF7,0x87,0x00,0x00,0x5A,0x06 },
+			{ 0xF9,0x62 },
 		}
 	},
 	{
@@ -289,7 +289,7 @@ static _vc2_block_t _vc2_blocks[] = {
 			{ 0xE1 },
 			{ 0xE1 },
 			{ 0xE1 },
-			{ 0xF9,0x62,0x56,0x82,0x04,0xF7,0x87,0x00,0x00,0xA5,0x06 },
+			{ 0xF9,0x62 },
 		}
 	},
 };
@@ -521,6 +521,26 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		s->block_len = 2;
 		_vc_seed_sky07(&s->blocks[0], VC_SKY7);
 		_vc_seed_sky07(&s->blocks[1], VC_SKY7);
+		
+		if(s->vid->conf.enableemm) 
+		{
+			/*  
+			 * 0x2C: allow Sky Multichannels
+			 * 0x20: Enable card
+			 */
+			_vc_emm07(&s->blocks[0],0x2C,s->vid->conf.enableemm);
+			_vc_emm07(&s->blocks[1],0x20,s->vid->conf.enableemm);
+		}
+		
+		if(s->vid->conf.disableemm) 
+		{
+			/*  
+			 * 0x0C: switch off Sky Multichannels
+			 * 0x00: Disable card 
+			 */
+			_vc_emm07(&s->blocks[0],0x0C,s->vid->conf.disableemm);
+			_vc_emm07(&s->blocks[1],0x00,s->vid->conf.disableemm);
+		}
 	}
 	else if(strcmp(mode, "sky09") == 0)
 	{
@@ -629,7 +649,7 @@ void vc_free(vc_t *s)
 
 void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 {
-	int x;
+	int i, x;
 	const uint8_t *bline = NULL;
 	
 	/* On the first line of each frame, generate the VBI data */
@@ -731,6 +751,21 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 				if(strcmp(mode,"sky07") == 0) _vc_seed_sky07(&s->blocks[s->block], VC_SKY7);
 				if(strcmp(mode,"sky09") == 0) _vc_seed_sky09(&s->blocks[s->block]);
 				if(strcmp(mode,"xtea") == 0)  _vc_seed_xtea(&s->blocks[s->block]);
+			}
+			
+			/* Print ECM */
+			if(s->vid->conf.showecm)
+			{
+				fprintf(stderr, "\nECM In:  ");
+				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[6][i]);
+				fprintf(stderr,"\nECM Out: ");
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->blocks[s->block].codeword >> (8 * i) & 0xFF);
+				
+				if(s->vid->conf.enableemm || s->vid->conf.disableemm)
+				{
+					fprintf(stderr, "\nEMM In:  ");
+					for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[1][i]);
+				}
 			}
 
 			/* Move to the next block */
@@ -868,7 +903,60 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 	
 	vid_adj_delay(s->vid, 1);
 }
+void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial)
+{
+	int i;
+	int oi = 0;	
+	unsigned char a, b, xor[4];
+	uint64_t answ[8];
+	int offset = 0;
+	
+	int emmdata[7] = { 0xE0, 0x3B, 0x3E, 0xEC, 0x1C, 0x60, 0x0F };
+	
+	for(i = 0; i < 7; i++) s->messages[1][i] = emmdata[i];
 
+	/* Sky 07 key offsets */
+	if (s->messages[1][1] > 0x32) offset = 0x08;
+	if (s->messages[1][1] > 0x3a) offset = 0x18;
+
+	/* XOR round function */
+	a = s->messages[1][1] ^ s->messages[1][2];
+	a = ((a << 4) & 0xF0) | ((a >> 4) & 0x0F);
+	b = s->messages[1][2];
+
+	for (i=0; i < 4;i++)
+	{
+		b = ((b << 1) & 0xFE) | ((b >> 7) & 1);
+		b += a;
+		xor[i] = b;
+	}
+
+	s->messages[1][3] =  cmd  ^ xor[0]; 
+	s->messages[1][7] =  0xA7 ^ xor[0];
+	s->messages[1][8] =  ((cardserial >> 24) & 0xFF) ^ xor[1];
+	s->messages[1][9] =  ((cardserial >> 16) & 0xFF) ^ xor[2];
+	s->messages[1][10] = ((cardserial >> 8)  & 0xFF) ^ xor[3];
+	s->messages[1][11] = ((cardserial >> 0)  & 0xFF);
+	for(i = 12; i < 27; i++) s->messages[1][i] = s->messages[1][11];
+
+	/* Reset answers */
+	for (i = 0; i < 8; i++)  answ[i] = 0;
+	
+	for (i = 0; i < 27; i++) _vc_kernel07(answ, &oi, s->messages[1][i], offset, VC_SKY7);
+
+	/* Calculate signature */
+	for (i = 27, b = 0; i < 31; i++)
+	{
+		_vc_kernel07(answ, &oi, b, offset, VC_SKY7);
+		_vc_kernel07(answ, &oi, b, offset, VC_SKY7);
+		b = s->messages[1][i] = answ[oi];
+		oi = (oi + 1) & 7;
+	}
+
+	/* Generate checksum */
+	s->messages[1][31] = _crc(s->messages[1]);
+	
+}
 void _vc_seed_sky07(_vc_block_t *s, int ca)
 {
 	int i;
@@ -937,8 +1025,8 @@ void _vc_seed_vc2(_vc2_block_t *s)
 	unsigned char b;
 	uint64_t answ[8];
 
-	/* Random seed for bytes 11 to 26 */
-	for(int i=11; i < 27; i++) s->messages[5][i] = rand() + 0xFF;
+	/* Random seed for bytes 19 to 26 */
+	for(int i=20; i < 27; i++) s->messages[5][i] = rand() + 0xFF;
 
 	/* Reset answers */
 	for (i = 0; i < 8; i++)  answ[i] = 0;

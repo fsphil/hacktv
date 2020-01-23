@@ -90,6 +90,8 @@ static void print_usage(void)
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
+		"      --enableemm <serial>       *EXPERIMENTAL* Enable Sky 07 cards\n"
+		"      --disableemm <serial>       *EXPERIMENTAL* Disable Sky 07 cards\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
 		"      --syster <mode>            Enable Nagravision Syster scambling. (PAL only)\n"
@@ -99,6 +101,7 @@ static void print_usage(void)
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
+		"      --showecm                  Show ECM for scrambled broadcasts.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -256,6 +259,11 @@ static void print_usage(void)
 		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
 		"\n"
+		"Enable/Disable EMM\n"
+		"\n"
+		"This option attempts to switch on or off your Sky card. Parameter is first 8 digits of your card number.\n"
+		"Currently only supports Sky 07 cards.\n"
+		"\n"
 		"Videocrypt II\n"
 		"\n"
 		"A variation of Videocrypt I used throughout Europe. The scrambling method is\n"
@@ -324,6 +332,9 @@ static void print_usage(void)
 #define _OPT_LOGO        2000
 #define _OPT_TIMECODE    2001
 #define _OPT_DISCRET     2002
+#define _OPT_ENABLE_EMM  2003
+#define _OPT_DISABLE_EMM 2004
+#define _OPT_SHOW_ECM    2005
 
 int main(int argc, char *argv[])
 {
@@ -359,6 +370,9 @@ int main(int argc, char *argv[])
 		{ "logo",        required_argument, 0, _OPT_LOGO },
 		{ "timestamp",   no_argument,       0, _OPT_TIMECODE },
 		{ "position",    required_argument, 0, 'p' },
+		{ "enableemm",   required_argument, 0, _OPT_ENABLE_EMM },
+		{ "disableemm",  required_argument, 0, _OPT_DISABLE_EMM },
+		{ "showecm",     no_argument,       0, _OPT_SHOW_ECM },
 		{ 0,             0,                 0,  0  }
 	};
 	static hacktv_t s;
@@ -401,6 +415,9 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	s.logo = NULL;
 	s.timestamp = 0;
+	s.enableemm = 0;
+	s.disableemm = 0;
+	s.showecm = 0;
 	
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:D:G:rvf:al:g:A:t:p:k:", long_options, &option_index)) != -1)
@@ -511,6 +528,18 @@ int main(int argc, char *argv[])
 		case _OPT_VIDEOCRYPTS: /* --videocrypts */
 			free(s.videocrypts);
 			s.videocrypts = strdup(optarg);
+			break;
+		
+		case _OPT_ENABLE_EMM: /* --enable-emm <card_serial> */
+			s.enableemm = (uint32_t) strtod(optarg, NULL);
+			break;
+
+		case _OPT_DISABLE_EMM: /* --disable-emm <card_serial> */
+			s.disableemm = (uint32_t) strtod(optarg, NULL);
+			break;
+		
+		case _OPT_SHOW_ECM: /* --showecm */
+			s.showecm = 1;
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
@@ -767,6 +796,33 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.videocrypts = s.videocrypts;
+	}
+
+	if(s.enableemm)
+	{
+		if(s.videocrypt && !(strcmp(s.videocrypt, "sky07") == 0))
+		{
+			fprintf(stderr, "EMMs are currently only supported in sky07 mode\n");
+			return(-1);
+		}
+		
+		vid_conf.enableemm = s.enableemm;
+	}
+	
+	if(s.disableemm)
+	{
+		if(s.videocrypt && !(strcmp(s.videocrypt, "sky07") == 0))	
+		{
+			fprintf(stderr, "EMMs are currently only supported in sky07 mode\n");
+			return(-1);
+		}
+		
+		vid_conf.disableemm = s.disableemm;
+	}
+	
+	if(s.showecm)
+	{
+		vid_conf.showecm = s.showecm;
 	}
 	
 	if(s.d11)
