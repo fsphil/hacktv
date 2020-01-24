@@ -548,6 +548,26 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		s->block_len = 2;
 		_vc_seed_sky09(&s->blocks[0]);
 		_vc_seed_sky09(&s->blocks[1]);
+		
+		if(s->vid->conf.enableemm) 
+		{
+			/*  
+			 * 0x2C: allow Sky Multichannels
+			 * 0x20: Enable card
+			 */
+			_vc_emm09(&s->blocks[0],0x2C,s->vid->conf.enableemm);
+			_vc_emm09(&s->blocks[1],0x20,s->vid->conf.enableemm);
+		}
+		
+		if(s->vid->conf.disableemm) 
+		{
+			/*  
+			 * 0x0C: switch off Sky Multichannels
+			 * 0x00: Disable card 
+			 */
+			_vc_emm09(&s->blocks[0],0x0C,s->vid->conf.disableemm);
+			_vc_emm09(&s->blocks[1],0x00,s->vid->conf.disableemm);
+		}
 	}
 	else if(strcmp(mode, "sky10") == 0)
 	{
@@ -1102,6 +1122,55 @@ void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, in
   	c = (c >> 4) | (c << 4);    
   	*oi = (*oi + 1) & 7;
   	out[*oi] ^= c;
+}
+
+void _vc_emm09(_vc_block_t *s, int cmd, uint32_t cardserial)
+{
+	int i;
+	uint64_t d;
+	unsigned char a, b, xor[4], answ[8];
+	
+	int emmdata[7] = { 0xE8, 0x51, 0x01, 0x25, 0x23, 0x48, 0x21 };
+	
+	for(i = 0; i < 7; i++) s->messages[1][i] = emmdata[i];
+
+	/* XOR round function */
+	a = s->messages[1][1] ^ s->messages[1][2];
+	a = ((a << 4) & 0xF0) | ((a >> 4) & 0x0F);
+	b = s->messages[1][2];
+
+	for (i=0; i < 4;i++)
+	{
+		b = ((b << 1) & 0xFE) | ((b >> 7) & 1);
+		b += a;
+		xor[i] = b;
+	}
+
+	s->messages[1][3] =  cmd  ^ xor[0]; 
+	s->messages[1][7] =  0xA9 ^ xor[0];
+	s->messages[1][8] =  ((cardserial >> 24) & 0xFF) ^ xor[1];
+	s->messages[1][9] =  ((cardserial >> 16) & 0xFF) ^ xor[2];
+	s->messages[1][10] = ((cardserial >> 8)  & 0xFF) ^ xor[3];
+	s->messages[1][11] = ((cardserial >> 0)  & 0xFF);
+	for(i = 12; i < 27; i++) s->messages[1][i] = s->messages[1][11];
+	
+	/* Reset answers */
+	for (i = 0; i < 8; i++) answ[i] = 0;
+	
+	for (i = 0; i < 27; i++) _vc_kernel09(s->messages[1][i],answ);
+	
+	/* Calculate signature */
+	for (i = 27, b = 0; i < 31; i++)
+	{
+		_vc_kernel09(b, answ);
+		_vc_kernel09(b, answ);
+		b = s->messages[1][i] = answ[7];
+	}
+	
+	/* Generate checksum */
+	s->messages[1][31] = _crc(s->messages[1]);
+	
+
 }
 
 void _vc_seed_sky09(_vc_block_t *s)
