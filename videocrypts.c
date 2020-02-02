@@ -231,6 +231,7 @@ void vcs_render_line(vcs_t *s)
 	int x, j;
 	uint8_t *bline = NULL;
 	
+	vid_adj_delay(s->vid, VCS_DELAY_LINES);
 	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
