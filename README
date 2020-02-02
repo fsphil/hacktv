@@ -17,8 +17,7 @@ It also supports:
 
 + Teletext (625-line only)
 + NICAM stereo audio
-+ Videocrypt I/II hardware support
-+ Videocrypt S simulator
++ Videocrypt I/II/S hardware support
 + Partial Nagravision Syster hardware support
 + Analogue Copy Protection system, similar to Macrovision
 
