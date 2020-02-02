@@ -230,18 +230,14 @@ void vcs_render_line(vcs_t *s)
 {
 	int x, j;
 	uint8_t *bline = NULL;
-	int line;
 	
-	/* Calculate which line is about to be transmitted due to the delay */
-	line = s->vid->line - VCS_DELAY_LINES;
-	if(line < 1) line += s->vid->conf.lines;
 	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
 	j = 0;
 	
-	if((line >=  28 && line <= 309) ||
-	   (line >= 340 && line <= 621))
+	if((s->vid->line >=  28 && s->vid->line <= 309) ||
+	   (s->vid->line >= 340 && s->vid->line <= 621))
 	{
 		int block;
 		int bline;
@@ -250,7 +246,7 @@ void vcs_render_line(vcs_t *s)
 		 *   0 - 281 top field,
 		 * 282 - 563 bottom field
 		*/
-		x = line - (line < 340 ? 28 : 340 - 282);
+		x = s->vid->line - (s->vid->line < 340 ? 28 : 340 - 282);
 		
 		/* Calculate block number and block line */
 		block = x / 47;
@@ -271,11 +267,9 @@ void vcs_render_line(vcs_t *s)
 		bline = s->block[bline];
 		
 		/* Calculate position in delay buffer */
-		j = (_block_start[block] + bline) - line;
-		if(j < 0) j += s->vid->conf.lines - 1;
+		j = (_block_start[block] + bline) - s->vid->line;
+		if(j < 0) j += s->vid->conf.lines;
 	}
-	
-	vid_adj_delay(s->vid, VCS_DELAY_LINES);
 	
 	if(j > 0)
 	{
@@ -287,7 +281,7 @@ void vcs_render_line(vcs_t *s)
 	}
 	
 	/* On the first line of each frame, generate the VBI data */
-	if(line == 1)
+	if(s->vid->line == 1)
 	{
 		uint8_t crc;
 		
@@ -341,17 +335,17 @@ void vcs_render_line(vcs_t *s)
 	}
 	
 	/* Set a pointer to the VBI data to render on this line, or NULL if none */
-	if(line >= VCS_VBI_FIELD_1_START &&
-	   line <  VCS_VBI_FIELD_1_START + VCS_VBI_LINES_PER_FIELD)
+	if(s->vid->line >= VCS_VBI_FIELD_1_START &&
+	   s->vid->line <  VCS_VBI_FIELD_1_START + VCS_VBI_LINES_PER_FIELD)
 	{
 		/* Top field VBI */
-		bline = &s->vbi[(line - VCS_VBI_FIELD_1_START) * VCS_VBI_BYTES_PER_LINE];
+		bline = &s->vbi[(s->vid->line - VCS_VBI_FIELD_1_START) * VCS_VBI_BYTES_PER_LINE];
 	}
-	else if(line >= VCS_VBI_FIELD_2_START &&
-	        line <  VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD)
+	else if(s->vid->line >= VCS_VBI_FIELD_2_START &&
+	        s->vid->line <  VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD)
 	{
 		/* Bottom field VBI */
-		bline = &s->vbi[(line - VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD) * VCS_VBI_BYTES_PER_LINE];
+		bline = &s->vbi[(s->vid->line - VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD) * VCS_VBI_BYTES_PER_LINE];
 	}
 	
 	if(bline)
@@ -379,6 +373,5 @@ void vcs_render_line(vcs_t *s)
 		
 		*s->vid->vbialloc = 1;
 	}
-	
 }
 
