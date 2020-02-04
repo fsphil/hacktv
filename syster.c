@@ -271,6 +271,7 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 	const ng_ecm_t *ecm;
 	const uint8_t *d;
 	uint16_t c;
+	int i;
 	
 	/* Calculate ECM table offset for this block */
 	c = (s->block_seq / 20 * 2 + il[s->block_seq % 20]) & 0x7F;
@@ -292,7 +293,14 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 	}
 	else if(s->block_seq % 20 == 13)
 	{
-		/* The ECM is updated here */
+			/* Print ECM */
+			if(s->vid->conf.showecm)
+			{
+				fprintf(stderr, "\n\nECM In:  ");
+				for(i = 0; i < 16; i++) fprintf(stderr, "%02X ", ecm->ecm[i]);
+				fprintf(stderr,"\nECM Out: ");
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02lX ", ecm->cw >> (8 * i) & 0xFF);
+			}
 	}
 }
 

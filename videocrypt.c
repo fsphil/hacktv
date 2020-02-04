@@ -278,7 +278,7 @@ static _vc2_block_t _vc2_blocks[] = {
 			{ 0xE1 },
 			{ 0xE1 },
 			{ 0xE1 },
-			{ 0xF9,0x62 },
+			{ 0xF9,0x3B,0x00,0x80,0x04,0x00,0x00,0x00,0x00,0x00,0x06,0x00 },
 		}
 	},
 	{
@@ -289,7 +289,7 @@ static _vc2_block_t _vc2_blocks[] = {
 			{ 0xE1 },
 			{ 0xE1 },
 			{ 0xE1 },
-			{ 0xF9,0x62 },
+			{ 0xF9,0x3B,0x00,0x80,0x04,0x00,0x00,0x00,0x00,0x00,0x06,0x00 },
 		}
 	},
 };
@@ -779,7 +779,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 				fprintf(stderr, "\n\nECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[6][i]);
 				fprintf(stderr,"\nECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->blocks[s->block].codeword >> (8 * i) & 0xFF);
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02lX ", s->blocks[s->block].codeword >> (8 * i) & 0xFF);
 				
 				if(s->vid->conf.enableemm || s->vid->conf.disableemm)
 				{
@@ -815,7 +815,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 				fprintf(stderr, "\n\nECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks2[s->block2].messages[5][i]);
 				fprintf(stderr,"\nECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->blocks2[s->block2].codeword >> (8 * i) & 0xFF);
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02lX ", s->blocks2[s->block2].codeword >> (8 * i) & 0xFF);
 			}
 			
 			/* Move to the next block after 64 frames */
@@ -1127,7 +1127,6 @@ void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, in
 void _vc_emm09(_vc_block_t *s, int cmd, uint32_t cardserial)
 {
 	int i;
-	uint64_t d;
 	unsigned char a, b, xor[4], answ[8];
 	
 	int emmdata[7] = { 0xE8, 0x51, 0x01, 0x25, 0x23, 0x48, 0x21 };
