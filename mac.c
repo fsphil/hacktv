@@ -380,7 +380,7 @@ static void _update_udt(uint8_t udt[25], time_t timestamp)
 	struct tm tm;
 	int i, mjd;
 	
-	#ifdef WIN32
+	#ifndef WIN32
 	/* Get the timezone offset */
 	localtime_r(&timestamp, &tm);
 	i = tm.tm_gmtoff / 1800;
