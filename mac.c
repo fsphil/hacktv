@@ -391,8 +391,7 @@ static void _update_udt(uint8_t udt[25], time_t timestamp)
 	mjd = 367.0 * (1900 + tm.tm_year)
 	    - (int) (7.0 * (1900 + tm.tm_year + (int) ((1 + tm.tm_mon + 9.0) / 12.0)) / 4.0)
 	    + (int) (275.0 * (1 + tm.tm_mon) / 9.0) + tm.tm_mday - 678987.0;
-	#endif
-	
+		
 	/* Set the Unified Date and Time sequence */
 	memset(udt, 0, 25);
 	udt[ 0] = mjd / 10000 % 10;     /* MJD digit weight 10^4 */
@@ -408,6 +407,7 @@ static void _update_udt(uint8_t udt[25], time_t timestamp)
 	udt[10] = tm.tm_sec / 1 % 10;   /* UTC seconds (units)   */
 	udt[15] = (i >> 4) & 15;        /* Local Offset */
 	udt[16] = i & 15;               /* Local Offset */
+	#endif
 	
 	/* Apply the chain code sequence */
 	/* 0000101011101100011111001 */
