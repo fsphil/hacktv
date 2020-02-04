@@ -490,7 +490,7 @@ void _rand_seed(ng_t *s, unsigned char data[8], unsigned char k64[8])
 	{
 		for(i = 0; i < 16; i++)
 		{
-			s->blocks[j].ecm[i] = i < 4 || i > 12 ? rand() + 0xFF : data[i-4];
+			s->blocks[j].ecm[i] = i < 4 || i > 11 ? rand() + 0xFF : data[i-4];
 		}
 		
 		/* Encrypt plain control word to send to card */
@@ -507,22 +507,22 @@ uint16_t _get_date(char *dtm)
 
 int _init_common(ng_t *s, char *mode)
 {
+	/*
+		data[0] = window (operator?)
+		data[1] = channel
+		data[2] = audience (0x11 = free access)
+		data[3] = ??
+		data[4] = date
+		data[5] = date
+		data[6] = ??
+		data[7] = ??
+	*/
 	if(strcmp(mode, "premiere-fa") == 0)
 	{
 		s->vbioffset = 0;
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
 		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
 		unsigned char data[8] = { 0xFF,0x01,0x11,0x00,0x88,0x15,0x00,0x00 };
 		
 		/* Date of broadcast */
@@ -548,17 +548,7 @@ int _init_common(ng_t *s, char *mode)
 		
 		/* Conditional access key - because Nagra engineers were trolls */
 		unsigned char k64[8] = { 0x00,0x00,0x00,0x00,0x00,0x00,0x12,0x34 };
-		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ?? - seems to be PPV date
-		   data[7] = ?? - seems to be PPV date
-		*/
+
 		unsigned char data[8] = { 0x7F,0x01,0x00,0x00,0xFF,0xFF,0xA9,0x91 };
 		
 		/* 
@@ -576,17 +566,7 @@ int _init_common(ng_t *s, char *mode)
 	{		
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
+
 		unsigned char data[8] = { 0xFF,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
 
 		/* Date of broadcast */
@@ -606,17 +586,7 @@ int _init_common(ng_t *s, char *mode)
 	{
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
+
 		unsigned char data[8] = { 0x80,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
 		
 		/* Date of broadcast */
@@ -641,16 +611,6 @@ int _init_common(ng_t *s, char *mode)
 		/* Key 0 for operator 1 */
 		unsigned char k64[8]  = { 0x00,0xAE,0x52,0x90,0x49,0xF1,0xF1,0xBB };
 		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
 		unsigned char data[8] = { 0xFF,0x01,0x01,0x00,0x7B,0x0A,0x00,0x00 };
 
 		/* Date of broadcast */
@@ -675,17 +635,6 @@ int _init_common(ng_t *s, char *mode)
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
 
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
-		
 		unsigned char data[8] = { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 };
 		
 		/* Date of broadcast */
