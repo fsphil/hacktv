@@ -27,6 +27,12 @@
 #include "file.h"
 #include "hackrf.h"
 
+#ifdef WIN32
+#define OS_SEP '\\'
+#else
+#define OS_SEP '/'
+#endif
+
 #ifdef HAVE_SOAPYSDR
 #include "soapysdr.h"
 #endif
@@ -723,7 +729,7 @@ int main(int argc, char *argv[])
 	
 	if(s.logo)
 	{		
-		asprintf(&vid_conf.logo,"resources/logos/%s",s.logo);
+		asprintf(&vid_conf.logo,"resources%clogos%c%s", OS_SEP, OS_SEP, s.logo);
 		
 		if( access(vid_conf.logo, F_OK ) == -1 ) 
 		{

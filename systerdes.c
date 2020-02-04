@@ -105,7 +105,7 @@ void _permute(unsigned char *in, unsigned char *buffer1, int *p)
 }
 
 /* Expansion */
-void _expand(unsigned char const *e, unsigned char *data, unsigned char *result)
+void _expand_des(unsigned char const *e, unsigned char *data, unsigned char *result)
 {	
 	unsigned char d, i, j;
 
@@ -173,10 +173,10 @@ void _syster_des_f(unsigned char *k, unsigned char *cw, int m)
 		   m: 0 = decrypt
 		   m: 1 = encrypt
 		*/
-		_expand(C, kr[(m ? 15 - i : i)], ek);
+		_expand_des(C, kr[(m ? 15 - i : i)], ek);
 
 		/* Plain text expansion */
-		_expand(E, cw, ecw);
+		_expand_des(E, cw, ecw);
 
 		/* Main */
 		for(j = 31, c = 0; c < 8; c++)
