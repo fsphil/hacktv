@@ -146,6 +146,9 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
+	uint32_t enableemm;
+	uint32_t disableemm;
+	int showecm;
 	char *d11;
 	char *syster;
 	int systeraudio;

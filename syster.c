@@ -124,7 +124,7 @@ static const uint8_t _key_table1[0x100] = {
 };
 
 /* Canal+ FR (Oct 1997) */
-static const uint8_t _key_table2[0x100] = {
+/*static const uint8_t _key_table2[0x100] = {
 	 0,  1,  2,  3,  4,  5,  6,  7,  2,  5,  4,  7,  8,  9, 10, 11,
 	14, 17, 16, 19, 22, 25, 24, 27, 28, 31, 30,  1, 24, 27, 26, 29,
 	 8, 11, 10, 13, 20, 23, 22, 25, 20, 21, 22, 23, 30, 31,  0,  1,
@@ -141,7 +141,7 @@ static const uint8_t _key_table2[0x100] = {
 	14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,  4,  7,  6,  9,
 	18, 21, 20, 23, 12, 13, 14, 15, 16, 19, 18, 21, 26, 29, 28, 31,
 	10, 11, 12, 13, 10, 13, 12, 15,  6,  7,  8,  9,  0,  3,  2,  5
-};
+};*/
 
 static const uint8_t _vbi_sequence[10] = {
 	0x73, 0x9B, 0x5E, 0xB6, 0x49, 0xA1, 0x02, 0xEA, 0x15, 0xFD
@@ -271,6 +271,7 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 	const ng_ecm_t *ecm;
 	const uint8_t *d;
 	uint16_t c;
+	int i;
 	
 	/* Calculate ECM table offset for this block */
 	c = (s->block_seq / 20 * 2 + il[s->block_seq % 20]) & 0x7F;
@@ -292,7 +293,14 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 	}
 	else if(s->block_seq % 20 == 13)
 	{
-		/* The ECM is updated here */
+			/* Print ECM */
+			if(s->vid->conf.showecm)
+			{
+				fprintf(stderr, "\n\nECM In:  ");
+				for(i = 0; i < 16; i++) fprintf(stderr, "%02X ", ecm->ecm[i]);
+				fprintf(stderr,"\nECM Out: ");
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02lX ", ecm->cw >> (8 * i) & 0xFF);
+			}
 	}
 }
 
@@ -432,7 +440,7 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 			
 			/* Build part 2 of the VBI block */
 			msg2[ 0] = 0xFE;	/* ??? Premiere DE: 0xFE, Canal+ PL: 0x00 */
-			msg2[ 1] = 0x28;	/* ??? Premiere DE: 0x28, Canal+ PL: 0x2A */
+			msg2[ 1] = 0x28;	/* ??? Premiere DE: 0x28, Canal+ PL: 0x2A, cut and rotate: 0x29 */
 			msg2[ 2] = 0xB1;	/* ??? Premiere DE: 0xB1, Canal+ PL: 0xE4 */
 			msg2[ 3] = emm1 == _ppua_emm ? 0x01 : 0x00;	/* 0x00, or 0x01 when a broadcast EMM is present */
 			msg2[ 4] = emm2 == _ppua_emm ? 0x01 : 0x00;
@@ -490,7 +498,7 @@ void _rand_seed(ng_t *s, unsigned char data[8], unsigned char k64[8])
 	{
 		for(i = 0; i < 16; i++)
 		{
-			s->blocks[j].ecm[i] = i < 4 || i > 12 ? rand() + 0xFF : data[i-4];
+			s->blocks[j].ecm[i] = i < 4 || i > 11 ? rand() + 0xFF : data[i-4];
 		}
 		
 		/* Encrypt plain control word to send to card */
@@ -507,22 +515,22 @@ uint16_t _get_date(char *dtm)
 
 int _init_common(ng_t *s, char *mode)
 {
-	if(strcmp(mode, "premiere") == 0)
+	/*
+		data[0] = window (operator?)
+		data[1] = channel
+		data[2] = audience (0x11 = free access)
+		data[3] = ??
+		data[4] = date
+		data[5] = date
+		data[6] = ??
+		data[7] = ??
+	*/
+	if(strcmp(mode, "premiere-fa") == 0)
 	{
 		s->vbioffset = 0;
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
 		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
 		unsigned char data[8] = { 0xFF,0x01,0x11,0x00,0x88,0x15,0x00,0x00 };
 		
 		/* Date of broadcast */
@@ -542,21 +550,31 @@ int _init_common(ng_t *s, char *mode)
 		/* Grab random seed */
 		_rand_seed(s, data, k64);
 	}
+	else if(strcmp(mode, "premiere-ca") == 0)
+	{
+		s->vbioffset = 0;
+		
+		/* Conditional access key - because Nagra engineers were trolls */
+		unsigned char k64[8] = { 0x00,0x00,0x00,0x00,0x00,0x00,0x12,0x34 };
+
+		unsigned char data[8] = { 0x7F,0x01,0x00,0x00,0xFF,0xFF,0xA9,0x91 };
+		
+		/* 
+		   VBI offset:  0 = works with most keys
+		   VBI offset: -2 = required for some keys
+		*/
+		s->vbioffset = 0;
+		s->audience = data[2];
+		s->blocks = _ecm_table_rand;
+		
+		/* Grab random seed */
+		_rand_seed(s, data, k64);
+	}
 	else if(strcmp(mode, "cplfa") == 0)
 	{		
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
+
 		unsigned char data[8] = { 0xFF,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
 
 		/* Date of broadcast */
@@ -576,17 +594,7 @@ int _init_common(ng_t *s, char *mode)
 	{
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
+
 		unsigned char data[8] = { 0x80,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
 		
 		/* Date of broadcast */
@@ -611,16 +619,6 @@ int _init_common(ng_t *s, char *mode)
 		/* Key 0 for operator 1 */
 		unsigned char k64[8]  = { 0x00,0xAE,0x52,0x90,0x49,0xF1,0xF1,0xBB };
 		
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
 		unsigned char data[8] = { 0xFF,0x01,0x01,0x00,0x7B,0x0A,0x00,0x00 };
 
 		/* Date of broadcast */
@@ -640,22 +638,11 @@ int _init_common(ng_t *s, char *mode)
 		/* Grab random seed */
 		_rand_seed(s, data, k64);
 	}
-	else if(strcmp(mode, "cspfa") == 0)
+	else if(strcmp(mode, "cesfa") == 0)
 	{
 		/* Free access key */
 		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
 
-		/*
-		   data[0] = window (operator?)
-		   data[1] = channel
-		   data[2] = audience (0x11 = free access)
-		   data[3] = ??
-		   data[4] = date
-		   data[5] = date
-		   data[6] = ??
-		   data[7] = ??
-		*/
-		
 		unsigned char data[8] = { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 };
 		
 		/* Date of broadcast */

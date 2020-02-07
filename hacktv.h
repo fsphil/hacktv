@@ -82,6 +82,9 @@ typedef struct {
 	int file_type;
 	int timestamp;
 	int position;
+	uint32_t enableemm;
+	uint32_t disableemm;
+	int showecm;
 	
 	/* Video encoder state */
 	vid_t vid;

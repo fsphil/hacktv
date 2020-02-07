@@ -69,7 +69,7 @@ static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
 	return(av->video);
 }
 
-int _read_bmp(void *private)
+void _read_bmp(void *private)
 {
 	av_test_t *av = private;
 	

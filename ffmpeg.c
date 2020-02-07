@@ -42,6 +42,12 @@
 #define CHARS 40
 #define LOGO_SCALE  4
 
+#ifdef WIN32
+#define OS_SEP '\\'
+#else
+#define OS_SEP '/'
+#endif
+
 #endif
 #include <pthread.h>
 #include <ctype.h>
@@ -1157,8 +1163,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		if(s->conf.timestamp)
 		{
 			asprintf(&_vid_timecode_filter,
-				"drawtext=resources/fonts/Stencil.ttf:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/20: y=h*16/18:shadowx=1:shadowy=1",
-				s->conf.position,fps);
+				"drawtext=resources%cfonts%cStencil.ttf:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/20: y=h*16/18:shadowx=1:shadowy=1",
+				OS_SEP, OS_SEP, s->conf.position,fps);
 		}
 		else
 		{
