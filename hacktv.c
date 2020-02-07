@@ -263,7 +263,6 @@ static void print_usage(void)
 		"  free        = Free-access, no subscription card is required to decode.\n"
 		"  conditional = A valid BBC Select card is required to decode. (Does not work yet)\n"
 		"\n"
-		"This is a simulation and will not work with real hardware.\n"
 		"Audio inversion is not yet supported.\n"
 		"\n"
 		"Nagravision Syster\n"
