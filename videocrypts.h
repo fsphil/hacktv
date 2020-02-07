@@ -33,18 +33,31 @@
 #define VCS_VBI_BYTES_PER_LINE  (VCS_VBI_BITS_PER_LINE / 8)
 #define VCS_PACKET_LENGTH       32
 
+/* This is not correct - just a placeholder */
+#define VCS_PRBS_CW_FA (((uint64_t) 1 << 60) - 1)
+
 /* VCS_DELAY_LINES needs to be long enough for the scrambler to access any
  * line in the next block, which may be in the next field... */
 
 #define VCS_DELAY_LINES 125
 
 typedef struct {
+	uint8_t mode;
+	uint8_t channel;
+	uint64_t codeword;
+	uint8_t messages[8][32];
+} _vcs_block_t;
+
+typedef struct {
 	
 	vid_t *vid;
 	
-	uint8_t mode;
-	
 	uint8_t counter;
+	
+	/* VCS blocks */
+	const _vcs_block_t *blocks;
+	size_t block_num;
+	size_t block_len;
 	uint8_t message[32];
 	uint8_t vbi[VCS_VBI_BYTES_PER_LINE * VCS_VBI_LINES_PER_FRAME];
 	
