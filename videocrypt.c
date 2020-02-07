@@ -671,6 +671,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 {
 	int i, x;
 	const uint8_t *bline = NULL;
+	uint64_t cw;
 	
 	/* On the first line of each frame, generate the VBI data */
 	if(s->vid->line == 1)
@@ -776,14 +777,14 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 			/* Print ECM */
 			if(s->vid->conf.showecm && mode)
 			{
-				fprintf(stderr, "\n\nECM In:  ");
+				fprintf(stderr, "\n\nVC1 ECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[6][i]);
-				fprintf(stderr,"\nECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02lX ", s->blocks[s->block].codeword >> (8 * i) & 0xFF);
+				fprintf(stderr,"\nVC1 ECM Out: ");
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->cw >> (8 * i) & 0xFF);
 				
 				if(s->vid->conf.enableemm || s->vid->conf.disableemm)
 				{
-					fprintf(stderr, "\nEMM In:  ");
+					fprintf(stderr, "\nVC1 EMM In:  ");
 					for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[1][i]);
 				}
 			}
@@ -798,28 +799,40 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 		/* After 16 frames, apply the codeword */
 		if((s->counter & 0x0F) == 0)
 		{
-			/* Apply the current block codeword */
-			if(s->blocks2)
+			/* Apply the current block codeword only if not simulcrypting with VC1 */
+			if(s->blocks2 && !mode)
 			{
 				s->cw = s->blocks2[s->block2].codeword;
 			}
 
 			if(mode2)
-			{
+			{	
 				if(strcmp(mode2,"conditional") == 0) _vc_seed_vc2(&s->blocks2[s->block2]);
+				
+				/* OSD bytes 17 - 24 in OSD message 0x21 are used in seed generation in Videocrypt II. */
+				/* XOR with VC1 seed for simulcrypt. */
+				if(mode)
+				{
+					/* Hack to sync seeds with Videocrypt I */
+					cw = (s->counter % 0x3F < 0x1F ? s->cw : s->blocks[s->block].codeword) ^ s->blocks2[s->block2].codeword;
+					for(i = 0; i < 8; i++)
+					{
+						s->blocks2[s->block2].messages[0][i + 17] = cw >> (8 * i) & 0xFF;
+					}
+				}				
 			}
 			
 			/* Print ECM */
 			if(s->vid->conf.showecm && mode2)
 			{
-				fprintf(stderr, "\n\nECM In:  ");
+				fprintf(stderr, "\n\nVC2 ECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks2[s->block2].messages[5][i]);
-				fprintf(stderr,"\nECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02lX ", s->blocks2[s->block2].codeword >> (8 * i) & 0xFF);
+				fprintf(stderr,"\nVC2 ECM Out: ");
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->blocks2[s->block2].codeword >> (8 * i) & 0xFF);
 			}
 			
-			/* Move to the next block after 64 frames */
-			if(((s->counter & 0x3F) == 0) && (++s->block2 == s->block2_len))
+			/* Move to the next block after 16 frames */
+			if(((s->counter & 0x0F) == 0) && (++s->block2 == s->block2_len))
 			{
 				s->block2 = 0;
 			}
@@ -950,7 +963,7 @@ void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial)
 
 	/* XOR round function */
 	a = s->messages[1][1] ^ s->messages[1][2];
-	a = ((a << 4) & 0xF0) | ((a >> 4) & 0x0F);
+	a = _rnibble(a);
 	b = s->messages[1][2];
 
 	for (i=0; i < 4;i++)
@@ -1085,10 +1098,6 @@ void _vc_seed_vc2(_vc2_block_t *s)
 	/* Reverse calculated control word */
 	for(i = 0, s->codeword = 0; i < 8; i++)	
 	{
-		/* Random bytes 17 - 24 in OSD message 0x21 used in seed generation in Videocrypt II */
-		s->messages[0][i + 17] = rand() + 0xFF;
-		answ[i] ^= s->messages[0][i + 17];
-		
 		s->codeword = answ[i] << (i * 8) | s->codeword;
 	}
 }
@@ -1119,7 +1128,7 @@ void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, in
   	c = (c << 1) | (c >> 7);   
   	c += in;
   	c = (c << 1) | (c >> 7);    
-  	c = (c >> 4) | (c << 4);    
+  	c = _rnibble(c);    
   	*oi = (*oi + 1) & 7;
   	out[*oi] ^= c;
 }
@@ -1135,7 +1144,7 @@ void _vc_emm09(_vc_block_t *s, int cmd, uint32_t cardserial)
 
 	/* XOR round function */
 	a = s->messages[1][1] ^ s->messages[1][2];
-	a = ((a << 4) & 0xF0) | ((a >> 4) & 0x0F);
+	a = _rnibble(a);
 	b = s->messages[1][2];
 
 	for (i=0; i < 4;i++)

@@ -96,8 +96,8 @@ static void print_usage(void)
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only)\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
-		"      --enableemm <serial>       *EXPERIMENTAL* Enable Sky 07 cards\n"
-		"      --disableemm <serial>       *EXPERIMENTAL* Disable Sky 07 cards\n"
+		"      --enableemm <serial>       Enable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
+		"      --disableemm <serial>      Disable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
 		"      --syster <mode>            Enable Nagravision Syster scambling. (PAL only)\n"
@@ -107,7 +107,7 @@ static void print_usage(void)
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
-		"      --showecm                  Show ECM for scrambled broadcasts.\n"
+		"      --showecm                  Show input and output control wordsfor scrambled modes.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -279,8 +279,6 @@ static void print_usage(void)
 		"\n"
 		"  free            = Free-access, no subscription card is required to decode.\n"
 		"  conditional     = A valid Multichoice card is required to decode. Random control words.\n"
-		"\n"
-		"Both VC1 and VC2 cannot be used together except if both are in free-access mode.\n"
 		"\n"
 		"Videocrypt S (Simulation)\n"
 		"\n"
@@ -777,10 +775,9 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		/* Only allow both VC1 and VC2 if both are in free-access mode */
-		if(s.videocrypt && !(strcmp(s.videocrypt, "free") == 0 && strcmp(s.videocrypt2, "free") == 0))
+		if(s.videocrypt && !(strcmp(s.videocrypt, "conditional") == 0 && strcmp(s.videocrypt2, "free") == 0))
 		{
-			fprintf(stderr, "Videocrypt I and II cannot be used together except in free-access mode.\n");
+			fprintf(stderr, "Videocrypt II in free mode only work with Videocrypt I in free mode.\n");
 			return(-1);
 		}
 		
