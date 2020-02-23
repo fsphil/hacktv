@@ -2070,7 +2070,7 @@ static void _vid_next_line_raster(vid_t *s)
 		case 334: seq = "h0__"; break;
 		case 335: seq = "h0__"; break;
 		
-		case 622: seq = "h2aa"; break;
+		case 622: seq = "h1aa"; break;
 		case 623: seq = "h_av"; break;
 		case 624: seq = "v__v"; break;
 		case 625: seq = "v__v"; break;
