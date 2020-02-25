@@ -74,6 +74,7 @@ const vid_config_t vid_config_pal_i = {
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = 4433618.75,
@@ -131,6 +132,7 @@ const vid_config_t vid_config_pal_bg = {
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = 4433618.75,
@@ -187,6 +189,7 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = 4433618.75,
@@ -236,6 +239,7 @@ const vid_config_t vid_config_pal = {
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = 4433618.75,
@@ -471,6 +475,7 @@ const vid_config_t vid_config_ntsc_m = {
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = 5000000.0 * 63 / 88,
@@ -524,6 +529,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = 5000000.0 * 63 / 88,
@@ -572,6 +578,7 @@ const vid_config_t vid_config_ntsc = {
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = 5000000.0 * 63 / 88,
@@ -1287,6 +1294,41 @@ static double _dlimit(double v, double min, double max)
 	return(v);
 }
 
+static int16_t *_burstwin(unsigned int sample_rate, double width, double rise, double level, int *len)
+{
+	int16_t *win;
+	double t;
+	int i;
+	
+	*len = ceil(sample_rate * (width + rise));
+	win = malloc(*len * sizeof(int16_t));
+	if(!win)
+	{
+		return(NULL);
+	}
+	
+	for(i = 0; i < *len; i++)
+	{
+		t = 1.0 / sample_rate * i;
+		
+		if(t < rise)
+		{
+			win[i] = round((0.5 - cos(t / rise * M_PI) / 2) * level * INT16_MAX);
+		}
+		else if(t >= width)
+		{
+			t -= width;
+			win[i] = round((0.5 + cos(t / rise * M_PI) / 2) * level * INT16_MAX);
+		}
+		else
+		{
+			win[i] = round(level * INT16_MAX);
+		}
+	}
+	
+	return(win);
+}
+
 static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 {
 	int frame = (s->frame - 1) & 3;
@@ -1627,9 +1669,23 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		memcpy(&s->colour_lookup[s->colour_lookup_width], s->colour_lookup, s->width * sizeof(int16_t));
 	}
 	
-	s->burst_left  = round(s->sample_rate * s->conf.burst_left);
-	s->burst_width = round(s->sample_rate * s->conf.burst_width);
-	s->burst_level = round(s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level * INT16_MAX);
+	if(s->conf.burst_level > 0)
+	{
+		/* Generate the colour burst envelope */
+		s->burst_left  = round(s->sample_rate * (s->conf.burst_left - s->conf.burst_rise / 2));
+		s->burst_win   = _burstwin(
+			s->sample_rate,
+			s->conf.burst_width,
+			s->conf.burst_rise,
+			s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level,
+			&s->burst_width
+		);
+		if(!s->burst_win)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+	}
 	
 	s->fsc_flag_left  = round(s->sample_rate * s->conf.fsc_flag_left);
 	s->fsc_flag_width = round(s->sample_rate * s->conf.fsc_flag_width);
@@ -1893,6 +1949,7 @@ void vid_free(vid_t *s)
 	}
 	
 	free(s->vbialloclist);
+	free(s->burst_win);
 	
 	memset(s, 0, sizeof(vid_t));
 }
@@ -2458,7 +2515,7 @@ static void _vid_next_line_raster(vid_t *s)
 	{
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
-			s->output[x * 2] += (lut_b[x] * s->burst_level) >> 15;
+			s->output[x * 2] += (lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
 		}
 	}
 	
