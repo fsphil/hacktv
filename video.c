@@ -248,6 +248,101 @@ const vid_config_t vid_config_pal = {
 	.qv_co          = 0.000,
 };
 
+const vid_config_t vid_config_pal_m = {
+	
+	/* System M (525 PAL) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 4200000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.83, /* Power level of video */
+	.fm_audio_level = 0.17, /* FM audio carrier power level */
+	
+	.type           = VID_RASTER_525,
+	.frame_rate_num = 30000,
+	.frame_rate_den = 1001,
+	.lines          = 525,
+	.active_lines   = 480,
+	
+	.active_width   = 0.00005280, /* 52.80µs */
+	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.10µs */
+	.vsync_short_width = 0.00000230, /* 2.30 ±0.10μs */
+	.vsync_long_width  = 0.00002710, /* 27.1μs */
+	
+	.white_level    = 0.2000,
+	.black_level    = 0.7280,
+	.blanking_level = 0.7712,
+	.sync_level     = 1.0000,
+	
+	.colour_mode    = VID_PAL,
+	.burst_width    = 0.00000252, /* 2.52 ±0.28 μs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
+	.burst_level    = 33.0 / 73.0, /* Approximation */
+	.colour_carrier = 227.25 * 525 * (30.0 / 1.001),
+	.colour_lookup_lines = 4, /* The carrier repeats after 4 lines */
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.877,
+	.qu_co          = 0.493,
+	.qv_co          = 0.000,
+	
+	.fm_mono_carrier    = 4500000, /* Hz */
+	.fm_audio_preemph   = 0.000075, /* Seconds */
+	.fm_audio_deviation = 25000, /* +/- Hz */
+};
+
+const vid_config_t vid_config_525pal = {
+	
+	/* Composite 525PAL */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_RASTER_525,
+	.frame_rate_num = 30000,
+	.frame_rate_den = 1001,
+	.lines          = 525,
+	.active_lines   = 480,
+	.active_width   = 0.00005280, /* 52.80µs */
+	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.10µs */
+	.vsync_short_width = 0.00000230, /* 2.3 ± 0.10μs */
+	.vsync_long_width  = 0.00002710, /* 27.1μs */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.00,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.colour_mode    = VID_PAL,
+	.burst_width    = 0.00000252, /* 2.52 ±0.28 μs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
+	.burst_level    = 33.0 / 73.0, /* Approximation */
+	.colour_carrier = 227.25 * 525 * (30.0 / 1.001),
+	.colour_lookup_lines = 4, /* The carrier repeats after 4 lines */
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.877,
+	.qu_co          = 0.493,
+	.qv_co          = 0.000,
+};
+
 const vid_config_t vid_config_secam_l = {
 	
 	/* System L (SECAM) */
@@ -1213,6 +1308,8 @@ const vid_configs_t vid_configs[] = {
 	{ "g",             &vid_config_pal_bg           },
 	{ "pal-fm",        &vid_config_pal_fm           },
 	{ "pal",           &vid_config_pal              },
+	{ "pal-m",         &vid_config_pal_m            },
+	{ "525pal",        &vid_config_525pal           },
 	{ "l",             &vid_config_secam_l          },
 	{ "d",             &vid_config_secam_dk         },
 	{ "k",             &vid_config_secam_dk         },
