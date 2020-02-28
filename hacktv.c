@@ -85,10 +85,10 @@ static void print_usage(void)
 		"  -v, --verbose                  Enable verbose output.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
 		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
-		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
-		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
-		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
-		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
+		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (625 line modes only)\n"
+		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (625 line modes only)\n"
+		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (625 line modes only)\n"
+		"      --syster                   Enable Nagravision Syster scambling. (625 line modes only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
@@ -178,6 +178,8 @@ static void print_usage(void)
 		"  dmac          = D-MAC, 25 fps, 625 lines, unmodulated (real)\n"
 		"  e             = No colour, 25 fps, 819 lines, AM (complex)\n"
 		"  819           = No colour, 25 fps, 819 lines, unmodulated (real)\n"
+		"  625           = No colour, 25 fps, 625 lines, unmodulated (real)\n"
+		"  525           = No colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
 		"  a             = No colour, 25 fps, 405 lines, AM (complex)\n"
 		"  405           = No colour, 25 fps, 405 lines, unmodulated (real)\n"
 		"  240-am        = No colour, 25 fps, 240 lines, AM (complex)\n"
@@ -215,7 +217,7 @@ static void print_usage(void)
 		"\n"
 		"Lines 7-22 and 320-335 are used, 16 lines per field.\n"
 		"\n"
-		"Teletext support in hacktv is only compatible with 625 line PAL modes.\n"
+		"Teletext support in hacktv is only compatible with 625 line modes.\n"
 		"NTSC and SECAM variations exist and may be supported in the future.\n"
 		"\n"
 		"WSS (Widescreen Signaling)\n"
@@ -243,7 +245,7 @@ static void print_usage(void)
 		"  free        = Free-access, no subscription card is required to decode.\n"
 		"  conditional = A valid Sky card is required to decode. Sample data from MTV.\n"
 		"\n"
-		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
+		"Videocrypt is only compatiable with 625 line modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
 		"\n"
 		"Videocrypt II\n"
@@ -274,7 +276,7 @@ static void print_usage(void)
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
 		"are vertically shuffled within a field.\n"
 		"\n"
-		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
+		"Syster is only compatible with 625 line modes and does not currently work\n"
 		"with most hardware.\n"
 		"\n"
 		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
@@ -642,9 +644,9 @@ int main(int argc, char *argv[])
 	
 	if(s.videocrypt)
 	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		if(vid_conf.lines != 625)
 		{
-			fprintf(stderr, "Videocrypt I is only compatible with 625 line PAL modes.\n");
+			fprintf(stderr, "Videocrypt I is only compatible with 625 line modes.\n");
 			return(-1);
 		}
 		
@@ -653,9 +655,9 @@ int main(int argc, char *argv[])
 	
 	if(s.videocrypt2)
 	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		if(vid_conf.lines != 625)
 		{
-			fprintf(stderr, "Videocrypt II is only compatible with 625 line PAL modes.\n");
+			fprintf(stderr, "Videocrypt II is only compatible with 625 line modes.\n");
 			return(-1);
 		}
 		
@@ -671,9 +673,9 @@ int main(int argc, char *argv[])
 	
 	if(s.videocrypts)
 	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		if(vid_conf.lines != 625)
 		{
-			fprintf(stderr, "Videocrypt S is only compatible with 625 line PAL modes.\n");
+			fprintf(stderr, "Videocrypt S is only compatible with 625 line modes.\n");
 			return(-1);
 		}
 		
@@ -688,9 +690,9 @@ int main(int argc, char *argv[])
 	
 	if(s.syster)
 	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		if(vid_conf.lines != 625)
 		{
-			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
+			fprintf(stderr, "Nagravision Syster is only compatible with 625 line modes.\n");
 			return(-1);
 		}
 		

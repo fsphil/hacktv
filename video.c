@@ -1034,6 +1034,66 @@ const vid_config_t vid_config_819 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_625 = {
+	
+	/* 625 line monochrome */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_RASTER_625_BW,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.active_lines   = 576,
+	.active_width   = 0.00005195, /* 51.95µs */
+	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.00,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
+const vid_config_t vid_config_525 = {
+	
+	/* 525 line monochrome */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_RASTER_525_BW,
+	.frame_rate_num = 30000,
+	.frame_rate_den = 1001,
+	.lines          = 525,
+	.active_lines   = 480,
+	.active_width   = 0.00005290, /* 52.90µs */
+	.active_left    = 0.00000920, /* |-->| 9.20µs */
+	
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.0525,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+};
+
 const vid_config_t vid_config_405_a = {
 	
 	/* System A (405 line monochrome) */
@@ -1412,6 +1472,8 @@ const vid_configs_t vid_configs[] = {
 	{ "dmac",          &vid_config_dmac             },
 	{ "e",             &vid_config_819_e            },
 	{ "819",           &vid_config_819              },
+	{ "625",           &vid_config_625              },
+	{ "525",           &vid_config_525              },
 	{ "a",             &vid_config_405_a            },
 	{ "405",           &vid_config_405              },
 	{ "240-am",        &vid_config_baird_240_am     },
@@ -2292,6 +2354,72 @@ static void _vid_next_line_raster(vid_t *s)
 		/* Calculate the active line number */
 		vy = (s->line < 313 ? (s->line - 23) * 2 : (s->line - 336) * 2 + 1);
 	}
+	else if(s->conf.type == VID_RASTER_625_BW)
+	{
+		switch(s->line)
+		{
+		case 1:   seq = "V__V"; break;
+		case 2:   seq = "V__V"; break;
+		case 3:   seq = "V__v"; break;
+		case 4:   seq = "v__v"; break;
+		case 5:   seq = "v__v"; break;
+		case 6:   seq = "h___"; break;
+		case 7:   seq = "h___"; break;
+		case 8:   seq = "h___"; break;
+		case 9:   seq = "h___"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		case 16:  seq = "h___"; break;
+		case 17:  seq = "h___"; break;
+		case 18:  seq = "h___"; break;
+		case 19:  seq = "h___"; break;
+		case 20:  seq = "h___"; break;
+		case 21:  seq = "h___"; break;
+		case 22:  seq = "h___"; break;
+		case 23:  seq = "h__a"; break;
+		
+		case 310: seq = "h_aa"; break;
+		case 311: seq = "v__v"; break;
+		case 312: seq = "v__v"; break;
+		case 313: seq = "v__V"; break;
+		case 314: seq = "V__V"; break;
+		case 315: seq = "V__V"; break;
+		case 316: seq = "v__v"; break;
+		case 317: seq = "v__v"; break;
+		case 318: seq = "v___"; break;
+		case 319: seq = "h___"; break;
+		case 320: seq = "h___"; break;
+		case 321: seq = "h___"; break;
+		case 322: seq = "h___"; break;
+		case 323: seq = "h___"; break;
+		case 324: seq = "h___"; break;
+		case 325: seq = "h___"; break;
+		case 326: seq = "h___"; break;
+		case 327: seq = "h___"; break;
+		case 328: seq = "h___"; break;
+		case 329: seq = "h___"; break;
+		case 330: seq = "h___"; break;
+		case 331: seq = "h___"; break;
+		case 332: seq = "h___"; break;
+		case 333: seq = "h___"; break;
+		case 334: seq = "h___"; break;
+		case 335: seq = "h___"; break;
+		
+		case 622: seq = "h_aa"; break;
+		case 623: seq = "h_av"; break;
+		case 624: seq = "v__v"; break;
+		case 625: seq = "v__v"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (s->line < 313 ? (s->line - 23) * 2 : (s->line - 336) * 2 + 1);
+	}
 	else if(s->conf.type == VID_RASTER_525)
 	{
 		switch(s->line)
@@ -2349,6 +2477,60 @@ static void _vid_next_line_raster(vid_t *s)
 		 * we use the line numbers suggested by SMPTE Recommended
 		 * Practice RP-202. Lines 23-262 from the first field and
 		 * 286-525 from the second. */
+		
+		vy = (s->line < 265 ? (s->line - 23) * 2 : (s->line - 286) * 2 + 1);
+	}
+	else if(s->conf.type == VID_RASTER_525_BW)
+	{
+		switch(s->line)
+		{
+		case 1:   seq = "v__v"; break;
+		case 2:   seq = "v__v"; break;
+		case 3:   seq = "v__v"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
+		case 6:   seq = "V__V"; break;
+		case 7:   seq = "v__v"; break;
+		case 8:   seq = "v__v"; break;
+		case 9:   seq = "v__v"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		case 16:  seq = "h___"; break;
+		case 17:  seq = "h___"; break;
+		case 18:  seq = "h___"; break;
+		case 19:  seq = "h___"; break;
+		case 20:  seq = "h___"; break;
+		
+		case 263: seq = "h_av"; break;
+		case 264: seq = "v__v"; break;
+		case 265: seq = "v__v"; break;
+		case 266: seq = "v__V"; break;
+		case 267: seq = "V__V"; break;
+		case 268: seq = "V__V"; break;
+		case 269: seq = "V__v"; break;
+		case 270: seq = "v__v"; break;
+		case 271: seq = "v__v"; break;
+		case 272: seq = "v___"; break;
+		case 273: seq = "h___"; break;
+		case 274: seq = "h___"; break;
+		case 275: seq = "h___"; break;
+		case 276: seq = "h___"; break;
+		case 277: seq = "h___"; break;
+		case 278: seq = "h___"; break;
+		case 279: seq = "h___"; break;
+		case 280: seq = "h___"; break;
+		case 281: seq = "h___"; break;
+		case 282: seq = "h___"; break;
+		case 283: seq = "h__a"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
 		
 		vy = (s->line < 265 ? (s->line - 23) * 2 : (s->line - 286) * 2 + 1);
 	}
