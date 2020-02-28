@@ -1360,7 +1360,7 @@ const vid_configs_t vid_configs[] = {
 	{ "m",             &vid_config_ntsc_m           },
 	{ "ntsc-fm",       &vid_config_ntsc_fm          },
 	{ "ntsc",          &vid_config_ntsc             },
-	{ "ntsc-j",          &vid_config_ntsc             },
+	{ "ntsc-j",        &vid_config_ntsc             },
 	{ "d2mac-am",      &vid_config_d2mac_am         },
 	{ "d2mac-fm",      &vid_config_d2mac_fm         },
 	{ "d2mac",         &vid_config_d2mac            },
