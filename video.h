@@ -39,15 +39,13 @@ typedef struct vid_t vid_t;
 
 /* Frame type */
 #define VID_RASTER_625    0
-#define VID_RASTER_625_BW 1
-#define VID_RASTER_525    2
-#define VID_RASTER_525_BW 3
-#define VID_RASTER_405    4
-#define VID_RASTER_819    5
-#define VID_BAIRD_240     6
-#define VID_BAIRD_30      7
-#define VID_APOLLO_320    8
-#define VID_MAC           9
+#define VID_RASTER_525    1
+#define VID_RASTER_405    2
+#define VID_RASTER_819    3
+#define VID_BAIRD_240     4
+#define VID_BAIRD_30      5
+#define VID_APOLLO_320    6
+#define VID_MAC           7
 
 /* Output modulation types */
 #define VID_NONE 0
