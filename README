@@ -8,9 +8,18 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author.**
 
+2020-04-17:
+Added ability to display subtitles - either those within a container or external srt.
+  - Active with --subtitle <subtitle index> parameter (optional argument)
+Added Eurocrypt M scrambling for MAC modes.
+  - Activate with --eurocrypt <mode>. See help for options.
+
 2020-02-07:
 Added ability to enable or disable Sky 07 and 09 cards.
   - Activate with --enableemm/--disableemm <card_serial> (first 8 digits)
+Added --showecm option for conditional access debugging.
+Added ability to use Videocrypt I and II together in most modes.
+Some updates to Syster code.
 
 2020-01-09:
 Removed 'pirate' option from Syster. Use 'premiere-fa' mode and the updated hex file. 
@@ -112,6 +121,7 @@ It also supports:
 + Videocrypt I/II/S hardware support
 + Partial Nagravision Syster hardware support
 + Analogue Copy Protection system, similar to Macrovision
++ Eurocrypt hardware support
 
 * SECAM support is very basic and won't produce a good image
 

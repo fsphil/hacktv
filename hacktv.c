@@ -100,6 +100,7 @@ static void print_usage(void)
 		"      --disableemm <serial>      Disable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
+		"      --eurocrypt <mode>         Enable Eurocrypt M scrambling. (D/D2MAC only)\n"
 		"      --syster <mode>            Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11 <mode>               Enable Discret 11 scambling. (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster or D11 scrambling.\n"
@@ -107,6 +108,7 @@ static void print_usage(void)
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
+		"      --subtitles <stream idx>   Enable subtitles. Takes an optional argument.\n"
 		"      --showecm                  Show input and output control wordsfor scrambled modes.\n"
 		"\n"
 		"Input options\n"
@@ -299,11 +301,12 @@ static void print_usage(void)
 		"\n"
 		"hacktv supports the following modes:\n"
 		"\n"
-		"  premiere        = A valid Premiere 'key' is required to decode - free access.\n"
-		"  pirate          = A programmed PIC card with supplied hex is required to decode. Random control words.\n"
+		"  premiere-fa     = A valid Premiere 'key' is required to decode - free access.\n"
+		"  premiere-ca     = A valid Premiere 'key' is required to decode - subscription level access.\n"
 		"  cfrfa           = A valid Canal+ France 'key' is required to decode - free access. \n"
 		"  cfrca           = A valid Canal+ France 'key' is required to decode - subscription level access.\n"
 		"  cplfa           = A valid Canal+ Poland 'key' is required to decode - free access.\n"
+		"  cesfa           = A valid Canal+ Spain 'key' is required to decode - free access.\n"
 		"\n"
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
 		"with most hardware.\n"
@@ -319,6 +322,21 @@ static void print_usage(void)
 		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
 		"to use the --systeraudio option.\n"
 		"\n"
+		"Eurocrypt (M)\n"
+		"\n"
+		"Cut and rotate video scrambling used by D/D2MAC services. Currently only single-cut\n"
+		"Eurocrypt M is supported.\n"
+		"\n"
+		"hacktv supports the following modes:\n"
+		"\n"
+		"  free        = Free-access, no subscription card is required to decode.\n"
+		"  filmnet     = A valid FilmNet card is required to decode.\n"
+		"  tv1000      = A valid Viasat card is required to decode.\n"
+		"  ctv         = A valid CTV card is required to decode.\n"
+		"  tvplus      = A valid TV Plus (Holland) card is required to decode.\n"
+		"\n"
+		"MultiMac style cards can also be used.\n"
+		"\n"
 	);
 }
 
@@ -333,12 +351,14 @@ static void print_usage(void)
 #define _OPT_FILTER      1008
 #define _OPT_NOAUDIO     1009
 #define _OPT_NONICAM     1010
+#define _OPT_SUBTITLES   1011
 #define _OPT_LOGO        2000
 #define _OPT_TIMECODE    2001
 #define _OPT_DISCRET     2002
 #define _OPT_ENABLE_EMM  2003
 #define _OPT_DISABLE_EMM 2004
 #define _OPT_SHOW_ECM    2005
+#define _OPT_EUROCRYPT    2006
 
 int main(int argc, char *argv[])
 {
@@ -358,12 +378,14 @@ int main(int argc, char *argv[])
 		{ "videocrypt",  required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
-		{ "key", 		 required_argument, 0, 'k'},
+		{ "eurocrypt",   required_argument, 0, _OPT_EUROCRYPT },
+		{ "key",         required_argument, 0, 'k'},
 		{ "syster",      required_argument, 0, _OPT_SYSTER },
 		{ "d11",         required_argument, 0, _OPT_DISCRET },
 		{ "systeraudio", no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",         no_argument,       0, _OPT_ACP },
 		{ "filter",      no_argument,       0, _OPT_FILTER },
+		{ "subtitles",   optional_argument, 0, _OPT_SUBTITLES },
 		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
 		{ "nonicam",     no_argument,       0, _OPT_NONICAM },
 		{ "frequency",   required_argument, 0, 'f' },
@@ -405,11 +427,13 @@ int main(int argc, char *argv[])
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
+	s.eurocrypt = NULL;
 	s.syster = NULL;
 	s.d11 = NULL;
 	s.systeraudio = 0;
 	s.acp = 0;
 	s.filter = 0;
+	s.subtitles = 0;
 	s.noaudio = 0;
 	s.nonicam = 0;
 	s.frequency = 0;
@@ -534,6 +558,11 @@ int main(int argc, char *argv[])
 			s.videocrypts = strdup(optarg);
 			break;
 		
+		case _OPT_EUROCRYPT: /* --eurocrypt */
+			free(s.eurocrypt);
+			s.eurocrypt = strdup(optarg);
+			break;
+		
 		case _OPT_ENABLE_EMM: /* --enable-emm <card_serial> */
 			s.enableemm = (uint32_t) strtod(optarg, NULL);
 			break;
@@ -566,6 +595,14 @@ int main(int argc, char *argv[])
 	
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
+			break;
+			
+		case _OPT_SUBTITLES: /* --subtitles */
+			s.subtitles = 1;
+			if(!optarg && NULL != argv[optind] && '-' != argv[optind][0])
+			{
+				s.subtitles = atof(argv[optind++]);
+			}
 			break;
 			
 		case _OPT_LOGO: /* --logo <path> */
@@ -775,7 +812,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		if(s.videocrypt && !(strcmp(s.videocrypt, "conditional") == 0 && strcmp(s.videocrypt2, "free") == 0))
+		if(s.videocrypt && (strcmp(s.videocrypt, "conditional") == 0 && strcmp(s.videocrypt2, "free") == 0))
 		{
 			fprintf(stderr, "Videocrypt II in free mode only work with Videocrypt I in free mode.\n");
 			return(-1);
@@ -783,7 +820,7 @@ int main(int argc, char *argv[])
 		
 		vid_conf.videocrypt2 = s.videocrypt2;
 	}
-
+	
 	if(s.videocrypts)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -800,7 +837,17 @@ int main(int argc, char *argv[])
 		
 		vid_conf.videocrypts = s.videocrypts;
 	}
-
+	
+	if(s.eurocrypt)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_MAC)
+		{
+			fprintf(stderr, "Eurocrypt is only compatible with MAC modes.\n");
+			return(-1);
+		}
+		vid_conf.eurocrypt = s.eurocrypt;
+	}
+	
 	if(s.enableemm)
 	{
 		if(s.videocrypt && !(strcmp(s.videocrypt, "sky07") == 0 || strcmp(s.videocrypt, "sky09") == 0))
@@ -879,6 +926,11 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.acp = 1;
+	}
+	
+	if(s.subtitles)
+	{
+		vid_conf.subtitles = s.subtitles;
 	}
 	
 	/* Setup video encoder */

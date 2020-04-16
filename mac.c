@@ -23,6 +23,7 @@
 #include "video.h"
 #include "nicam728.h"
 #include "mac.h"
+#include "eurocrypt.h"
 
 /* MAC sync codes */
 #define MAC_CLAMP 0xEAF3927FUL
@@ -39,11 +40,11 @@ static const uint8_t _hamming[0x10] = {
 };
 
 /* Network origin and name */
-static const char *_nwo    = "hacktv";
-static const char *_nwname = "hacktv";
+static const char *_nwo    = "HackTV";
+static const char *_nwname = "HackTV";
 
 /* Service Reference */
-static const char *_sname = "hacktv"; /* Service Name (max 32 characters) */
+static const char *_sname = "HackTV"; /* Service Name (max 32 characters) */
 
 /* RDF sequence */
 typedef struct {
@@ -375,6 +376,36 @@ static void _bch_encode(uint8_t *data, int n, int k)
 	_bits(data, k, code, n - k);
 }
 
+/* Golay(24,12) protection */
+static void _golay_encode(uint8_t *data, int blocks)
+{
+	uint8_t p[MAC_PAYLOAD_BYTES];
+	uint8_t *dst = p, *src = data;
+	int i;
+	
+	memset(p, 0, MAC_PAYLOAD_BYTES);
+	
+	for(i = 0; i < blocks; i += 2)
+	{
+		dst[0] = src[0];
+		dst[1] = src[1] & 0x0F;
+		dst[2]  = 0x00;
+		_bch_encode(dst, 23, 12);
+		dst[2] |= (_parity(dst[0] | (dst[1] << 8) | (dst[2] << 16)) ^ 1) << 7;
+		dst += 3;
+		
+		dst[0]  = (src[2] << 4) | (src[1] >> 4);
+		dst[1]  = src[2] >> 4;
+		dst[2]  = 0x00;
+		_bch_encode(dst, 23, 12);
+		dst[2] |= (_parity(dst[0] | (dst[1] << 8) | (dst[2] << 16)) ^ 1) << 7;
+		dst += 3;
+		src += 3;
+	}
+	
+	memcpy(data, p, blocks * 3);
+}
+	
 static void _update_udt(uint8_t udt[25], time_t timestamp)
 {
 	struct tm tm;
@@ -474,6 +505,42 @@ static void _read_packet(mac_t *s, uint8_t *pkt, int subframe)
 	memcpy(pkt, &sf->queue.pkts[x * MAC_PACKET_BYTES], MAC_PACKET_BYTES);
 	
 	sf->queue.len--;
+}
+
+static void _create_ecm_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES], int toggle)
+{
+	int x, b;
+	x = 0;
+	
+	memset(pkt, 0, MAC_PACKET_BYTES);
+	
+	/* PT - always 0x00 for ECM */
+	pkt[x++] = 0x00;
+	
+	/* Command Identifier, CI */
+	b = 0x20 << 2;           /* Crypto-algo type - always 0x20 for Eurocrypt PC2 implementation */
+	b |= 1 << 1;             /* Format bit - always 1 */
+	b |= toggle << 0; /* Toggle bit */
+	pkt[x++] = b; 
+	
+	pkt[x++] = 0x02; /* Command Length Indicator, CLI */
+	
+	memcpy(pkt + x, s->ec->data, 42);
+	x += 41;
+	
+	/* Update the CI command length */
+ 	pkt[2] = x - pkt[2];
+	
+	/* Test if the data is too large for a single packet */
+	if(x > 45)
+	{
+		fprintf(stderr, "Warning: ECM packet too large (%d)\n", x);
+	}
+	
+	/* TODO: add continuity for larger packets */
+	
+	_golay_encode(pkt + 1, 30);
+	
 }
 
 static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
@@ -583,6 +650,17 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	pkt[x++] = 1;			/* Index value 1 */
 	strcpy((char *) &pkt[x], _sname);
 	x += strlen(_sname);
+	
+	/* Parameter ACCM */
+	pkt[x++] = 0x88;
+	pkt[x++] = 0x03;	/* Packet length = 3 */
+	b  = 1 << 15;		/* 0: Absence of ECM, 1: Presence of ECM */
+	b |= 0 << 14;		/* 0: CW derived from ECM packet, 1: CW derived from CAFCNT */
+	b |= 1 << 10;		/* Subframe related location - TDMCID 01 */
+	b |= s->ecm_addr;	/* Address 346 */
+	pkt[x++] = (b & 0x00FF) >> 0;
+	pkt[x++] = (b & 0xFF00) >> 8;
+	pkt[x++] = 0x40;	/* Eurocrypt */
 	
 	/* Parameter VCONF */
 	pkt[x++] = 0x90;	/* PI Analogue TV picture (VCONF) */
@@ -721,8 +799,6 @@ int mac_init(vid_t *s)
 	
 	memset(mac, 0, sizeof(mac_t));
 	
-	mac->vsam = MAC_VSAM_FREE_ACCESS_SINGLE_CUT; /* <-- check the mac.h file for the options here */
-	
 	if(s->conf.mac_mode == MAC_MODE_D)
 	{
 		/* BSB receivers are ignoring the SI packets,
@@ -775,8 +851,35 @@ int mac_init(vid_t *s)
 	mac->black_ref_left    = round(s->sample_rate * (533.0 / MAC_CLOCK_RATE));
 	mac->black_ref_right   = round(s->sample_rate * (695.0 / MAC_CLOCK_RATE));
 	
-	/* Setup PRBS */
-	mac->cw = MAC_PRBS2_CW_FA;
+	if(s->conf.eurocrypt == NULL)
+	{
+		mac->vsam = MAC_VSAM_FREE_ACCESS_UNSCRAMBLED; /* <-- check the mac.h file for the options here */
+	}
+	else if(
+		strcmp(s->conf.eurocrypt, "filmnet") == 0 
+		|| strcmp(s->conf.eurocrypt, "tv1000") == 0 
+		|| strcmp(s->conf.eurocrypt, "tvplus") == 0
+		|| strcmp(s->conf.eurocrypt, "ctv") == 0)
+	{
+		mac->vsam = MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT;
+		
+		eurocrypt_init(mac, s->conf.eurocrypt);
+		
+		/* ECM/EMM address */
+		mac->ecm_addr = 346;
+	}
+	else if(strcmp(s->conf.eurocrypt, "free") == 0)
+	{
+		mac->vsam = MAC_VSAM_FREE_ACCESS_SINGLE_CUT;
+		
+		/* Setup PRBS */
+		mac->cw = MAC_PRBS2_CW_FA;
+	}
+	else
+	{
+		fprintf(stderr, "Unrecognised Eurocrypt mode '%s'.\n", s->conf.eurocrypt);
+		return(VID_ERROR);
+	}
 	
 	/* Quick and dirty sample rate conversion array */
 	for(x = 0; x < MAC_WIDTH; x++)
@@ -791,7 +894,7 @@ void mac_free(vid_t *s)
 {
 	mac_t *mac = &s->mac;
 	
-        free(mac->lut);
+	free(mac->lut);
 }
 
 int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const uint8_t *data)
@@ -964,7 +1067,7 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	
 	/* RDF */
 	rdf = (s->conf.mac_mode == MAC_MODE_D2 ? _rdf_d2 : _rdf_d);
-	dx = _bits(df,  0, s->frame & 0xFF, 8);			/* FCNT (8 bits) */
+	dx = _bits(df,  0, s->frame % 256, 8);			/* FCNT (8 bits) */
 	dx = _bits(df, dx, 0, 1);				/* UDF (1 bit) */
 	dx = _bits(df, dx, rdf[s->mac.rdf].tdmcid, 8);		/* TDMCID (8 bits) */
 	dx = _bits(df, dx, rdf[s->mac.rdf].fln1, 10);		/* FLN1 (10 bits) */
@@ -1133,6 +1236,17 @@ void mac_next_line(vid_t *s)
 		{
 			_update_udt(s->mac.udt, time(NULL));
 		}
+		
+		/* Send packet every 12 frames - ~0.5s */
+		if(s->mac.vsam & 4)
+		{
+			if(s->frame % 12 == 0)
+			{
+				_create_ecm_packet(&s->mac, pkt, s->mac.ecm_toggle);
+				
+				mac_write_packet(s, 0, s->mac.ecm_addr, 0, pkt);
+			}
+		}
 	}
 	
 	/* Clear the data buffer. This is where the duobinary data is packed */
@@ -1224,7 +1338,6 @@ void mac_next_line(vid_t *s)
 	{
 		uint32_t *px = (s->framebuffer != NULL ? &s->framebuffer[y * s->active_width] : NULL);
 		
-		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
 			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
 			s->output[x * 2] = s->y_level_lookup[rgb];
@@ -1254,7 +1367,46 @@ void mac_next_line(vid_t *s)
 		/* Reset CA PRBS2 at the beginning of each frame */
 		if(s->line == 1)
 		{
-			/* TODO: Update the CW for Controlled Access here */
+			if(s->mac.vsam & 4)
+			{
+				if((s->frame & 0xFF) == 1)
+				{
+					uint64_t cw;
+					int i;
+					cw = 0;
+					s->mac.cw = 0;
+					for(i = 7; i >= 0; i--)
+					{
+						/* Select even or odd CW depending on CAFCNT LSB */
+						cw = ((s->frame) >> 8) & 1 ? s->mac.ec->decoddcw[7 - i] : s->mac.ec->decevencw[7 - i];
+						s->mac.cw |= cw << (i * 8);
+					}
+					
+					/* Generate new ECM */
+					generate_ecm(s->mac.ec, (s->frame >> 8) & 1);
+					
+					/* ECM toggle bit - signals presence for new ECM packet in MPX */
+					s->mac.ecm_toggle ^= 1;		
+					
+					/* Print ECM */
+					if(s->conf.showecm)
+					{
+						fprintf(stderr, "\nEurocrypt ECM In:\t");
+						for(i = 0; i < 16; i++) 
+						{
+							fprintf(stderr, "%02X ", s->mac.ec->data[i + 16]);
+							if(i == 7) fprintf(stderr, "| ");
+						}
+						fprintf(stderr,"\nEurocrypt ECM Out:\t");
+						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", s->mac.ec->decevencw[7 - i]);
+						fprintf(stderr, "| ");
+						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", s->mac.ec->decoddcw[7 - i]);
+						fprintf(stderr,"\nUsing CW (%s):  \t%s", (s->frame >> 8) & 1 ? "odd" : "even", (s->frame >> 8) & 1 ? "                          " : "");
+						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) (s->mac.cw >> (8 * i) & 0xFF));
+						fprintf(stderr,"\n");
+					}
+				}
+			}
 			
 			_prbs2_reset(&s->mac, s->frame - 1);
 		}

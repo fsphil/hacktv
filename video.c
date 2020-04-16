@@ -21,6 +21,7 @@
 #include "video.h"
 #include "nicam728.h"
 #include "hacktv.h"
+#include <sys/time.h>
 
 /* 
  * Video generation
@@ -485,9 +486,13 @@ const vid_config_t vid_config_ntsc_m = {
 	.qu_co          =  0.626,
 	.qv_co          = -0.082,
 	
-	.fm_mono_carrier    = 4500000, /* Hz */
-	.fm_audio_preemph   = 0.000075, /* Seconds */
-	.fm_audio_deviation = 25000, /* +/- Hz */
+	// .fm_mono_carrier    = 4500000, /* Hz */
+	// .fm_audio_preemph   = 0.000075, /* Seconds */
+	// .fm_audio_deviation = 25000, /* +/- Hz */
+	
+	.fm_mono_carrier    = 6000000 - 400, /* Hz */
+	.fm_audio_preemph   = 0.000050, /* Seconds */
+	.fm_audio_deviation = 50000, /* +/- Hz */
 };
 
 const vid_config_t vid_config_ntsc_fm = {
@@ -677,8 +682,8 @@ const vid_config_t vid_config_d2mac = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
-	.white_level    =  0.70,
-	.black_level    = -0.70,
+	.white_level    =  1.00,
+	.black_level    = -1.00,
 	.blanking_level =  0.00,
 	.sync_level     =  0.00,
 	
@@ -1512,7 +1517,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	memset(s, 0, sizeof(vid_t));
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
-		
+	
 	/* Calculate the number of samples per line */
 	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
@@ -1665,7 +1670,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* Initalise D/D2-MAC state */
 	if(s->conf.type == VID_MAC)
 	{
-		mac_init(s);
+		r = mac_init(s);
+		
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
 	}
 	
 	/* FM audio */
@@ -2657,6 +2668,61 @@ static void _process_audio(vid_t *s)
 	}
 }
 
+/* A small 2-bit hacktv logo */
+// #define CHAR_WIDTH  8
+// #define CHAR_HEIGHT 9
+// #define CHARS 40
+// #define LOGO_SCALE  1
+
+// #define FONT_WIDTH 72
+// #define FONT_HEIGHT 68
+// #define FONT_CHARS 37
+// static char _logo_text[] = "HACK TV";
+// #include "evolventa.h"
+
+// static uint32_t *_overlay_logo(vid_t *s, char *logotext, int pos)
+// {	
+// 	int x, y, z, charindex = 0;
+// 	int logotextlength = strlen(logotext);
+// 	uint32_t c;
+// 	int w,i;
+// 	uint32_t *logo;
+// 	int l;
+// 	int width, height;
+	
+// 	width = s->active_width;
+// 	height = s->conf.active_lines;
+	
+// 	for(i = w = 0; i < logotextlength; i++) w +=evolventa72_Widths[logotext[z]-32];
+	
+	
+	
+// 	for (z= l =0 ; z < logotextlength; z++ )
+// 	{
+// 		// fprintf(stderr,"text width %i, vid width %i\n", w, av->width);
+// 		/* Find char index within ASCII table */
+// 		//for(l=0;l<FONT_CHARS;l++)  if(toupper(logotext[z]) == fontchars[l]) charindex = l;
+// 		l+=evolventa72_Widths[charindex];
+		
+// 		charindex = logotext[z]-32;
+		
+// 		for (x=0; x < evolventa72_Widths[charindex] * LOGO_SCALE; x++) 
+// 		{
+// 			for(y=0; y < FONT_HEIGHT * LOGO_SCALE; y++)
+// 			{
+// 			// 	c = (ascii[(y / LOGO_SCALE * CHAR_WIDTH + x / LOGO_SCALE) + (CHAR_WIDTH * CHAR_HEIGHT * charindex)  ] ==  ' ' ? 0x000000 : 0xFFFFFF ) ;
+// 			// 	av->video[(av->height / pos + y) * av->width + ((av->width - CHAR_WIDTH * (logotextlength - z * 2) * LOGO_SCALE) / 2 ) + x] = c;
+				
+// 				// c = (evolventa72_Bitmaps[(x/(8 * LOGO_SCALE)) + (((y/LOGO_SCALE )* 2)) + (charindex * ((FONT_WIDTH * 2) + FONT_HEIGHT))] & 1 << ((8-((x/LOGO_SCALE)+1)) % 8)? 0xFFFFFF : 0x000000 ) ;
+// 				c = (evolventa72_Bitmaps[(x/8) + (y * FONT_WIDTH/8) + (612*charindex)] & 1 << (8-x-1) % 8 ? 0xFFFFFF : 0x5A5A5A) ;
+// 				s->framebuffer[((height / pos + y) * width)  +(width - w)/2 + l + x] = c;
+// 			}
+// 		}
+		
+// 	}
+// 	return(s->framebuffer);
+// }
+
 static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 {
 	int x;
@@ -2676,7 +2742,6 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		{
 			return(NULL);
 		}
-		
 		s->framebuffer = _av_read_video(s, &s->ratio);
 	}
 	

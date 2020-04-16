@@ -31,6 +31,8 @@ typedef struct vid_t vid_t;
 #include "videocrypts.h"
 #include "syster.h"
 #include "acp.h"
+#include "font.h"
+#include "subtitles.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -146,6 +148,7 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
+	char *eurocrypt;
 	uint32_t enableemm;
 	uint32_t disableemm;
 	int showecm;
@@ -153,6 +156,7 @@ typedef struct {
 	char *syster;
 	int systeraudio;
 	int acp;
+	int subtitles;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;
@@ -202,6 +206,8 @@ struct vid_t {
 	
 	/* Source interface */
 	void *av_private;
+	void *av_font;
+	void *av_sub;
 	vid_read_video_t av_read_video;
 	vid_read_audio_t av_read_audio;
 	vid_eof_t av_eof;
@@ -253,7 +259,7 @@ struct vid_t {
 	int bline;
 	
 	/* The frame and line number returned by vid_next_line() */
-	int frame;
+	uint32_t frame;
 	int line;
 	
 	/* Current frame's aspect ratio */

@@ -22,12 +22,13 @@
 #include <ctype.h>
 #include "hacktv.h"
 #include  "ascii.h"
+#include "bitmap.h"
 
 /* A small 2-bit hacktv logo */
 #define CHAR_WIDTH  8
 #define CHAR_HEIGHT 9
 #define CHARS 40
-#define LOGO_SCALE  5
+#define LOGO_SCALE  4
 
 /* AV test pattern source */
 typedef struct {
@@ -42,7 +43,7 @@ typedef struct {
 	uint32_t *logo;
 } av_test_t;
 
-static char _logo_text[] = "HACKTV";
+static char _logo_text[] = "HACK TV";
 
 static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
 {
@@ -63,7 +64,7 @@ static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
 			{
 				c = (ascii[(y / LOGO_SCALE * CHAR_WIDTH + x / LOGO_SCALE) + (CHAR_WIDTH * CHAR_HEIGHT * charindex)  ] ==  ' ' ? 0x000000 : 0xFFFFFF ) ;
 				av->video[(av->height / pos + y) * av->width + ((av->width - CHAR_WIDTH * (logotextlength - z * 2) * LOGO_SCALE) / 2 ) + x] = c;
-			}
+			}			
 		}
 	}
 	return(av->video);
@@ -72,31 +73,40 @@ static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
 void _read_bmp(void *private)
 {
 	av_test_t *av = private;
-	
+	int width, height;
 	int row_padded, i, k;
 	unsigned char *data;
 	unsigned char info[54];
+	uint32_t *logo;
 	
 	FILE* f = fopen("hacktv.bmp", "rb");	
 	if(f != NULL) 
 	{
 		fread(info, sizeof(unsigned char), 54, f); 
-		av->lwidth = *(int*)&info[18];
-		av->lheight = *(int*)&info[22];	
+		width = *(int*)&info[18];
+		height = *(int*)&info[22];	
 		
-		row_padded = (av->lwidth * 3 + 3) & (~3);
-		data = malloc(row_padded * sizeof(int));
+		/* Hack to deal with sampling rate issues */
+		av->lwidth = (width * 1.15) / (832.00 / (float) av->width);
+		av->lheight = height;
+		
+		row_padded = (width * 3 + 3) & (~3);
+		data = malloc(row_padded * sizeof(uint8_t));
+		logo = malloc(width * height * sizeof(uint32_t));
 		av->logo = malloc(av->lwidth * av->lheight * sizeof(uint32_t));	
-		
-		for(i = k = 0; i < av->lheight; i++)
+					
+		for(i = k = 0; i < height; i++)
 		{
-			fread(data, sizeof(unsigned char), row_padded, f);
-			for(int j = 0; j < av->lwidth * 3; j += 3, k++)
+			fread(data, sizeof(uint8_t), row_padded, f);
+						
+			for(int j = 0; j < width * 3; j += 3, k++)
 			{
-				av->logo[k] = data[j + 2] << 16 | data[j + 1] << 8 | data[j] << 0;
+				logo[k] = data[j + 2] << 16 | data[j + 1] << 8 | data[j] << 0;
 			}
 		}
-	
+		
+		resize_bitmap(logo, av->logo, width, height, av->lwidth, av->lheight);
+		
 		fclose(f);
 	}
 	else
@@ -109,7 +119,7 @@ void _read_bmp(void *private)
 static uint32_t *_overlay_bitmap(void *private, int pos)
 {
 	av_test_t *av = private;
-	int x, y;
+	int x, y, vi;
 	uint32_t c;
 	
 	_read_bmp(av);
@@ -119,7 +129,8 @@ static uint32_t *_overlay_bitmap(void *private, int pos)
 		for(y=0; y < av->lheight; y++)
 		{
 			c = av->logo[x + ((av->lheight - y - 1) * av->lwidth)];
-			av->video[(av->height / pos + y) * av->width + ((av->width - av->lwidth) / 2) + x] = c;
+			vi = (av->height / pos + y) * av->width + ((av->width - av->lwidth) / 2) + x;			
+			av->video[vi] = c;
 		}
 	}
 	return(av->video);

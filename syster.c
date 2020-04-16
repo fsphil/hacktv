@@ -299,7 +299,7 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 				fprintf(stderr, "\n\nECM In:  ");
 				for(i = 0; i < 16; i++) fprintf(stderr, "%02X ", ecm->ecm[i]);
 				fprintf(stderr,"\nECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02lX ", ecm->cw >> (8 * i) & 0xFF);
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) (ecm->cw >> (8 * i) & 0xFF));
 			}
 	}
 }

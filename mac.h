@@ -95,6 +95,13 @@ typedef struct {
 } mac_subframe_t;
 
 typedef struct {
+	unsigned char key[7];			/* Decryption key */
+	unsigned char data[42];			/* General ECM data */
+	unsigned char decevencw[8];		/* Decrypted even control word */
+	unsigned char decoddcw[8];		/* Decrypted odd control word */
+} ec_t ;
+
+typedef struct {
 	
 	uint8_t vsam; /* VSAM Vision scrambling and access mode */
 	uint8_t ratio; /* 0: 4:3, 1: 16:9 */
@@ -135,6 +142,11 @@ typedef struct {
 	uint64_t sr1;
 	uint64_t sr2;
 	int video_scale[MAC_WIDTH];
+	
+	/* CA stuff */
+	int ecm_addr;
+	int ecm_toggle;
+	ec_t *ec;
 	
 } mac_t;
 
