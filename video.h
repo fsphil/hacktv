@@ -170,6 +170,7 @@ typedef struct {
 	double burst_width;
 	double burst_left;
 	double burst_level;
+	double burst_rise;
 	
 	double fsc_flag_width;
 	double fsc_flag_left;
@@ -242,7 +243,7 @@ struct vid_t {
 	
 	int burst_left;
 	int burst_width;
-	int16_t burst_level;
+	int16_t *burst_win;
 	
 	_mod_fm_t fm_secam_cr;
 	_mod_fm_t fm_secam_cb;

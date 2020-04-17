@@ -915,6 +915,13 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 			/* Shift into result register */
 			s->c = (s->c >> 1) | (((_rev(s->sr1, 31) >> a) & 1) << 15);
 		}
+		
+		/* Line 336 is scrambled into line 335, a VBI line. Mark it
+		 * as allocated to prevent teletext data appearing there */
+		if(s->vid->line == 336)
+		{
+			s->vid->vbialloclist[s->vid->odelay - 1] = 1;
+		}
 	}
 	
 	/* Hack to preserve WSS signal data */
