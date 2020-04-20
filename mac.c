@@ -1061,19 +1061,15 @@ static void _rotate(vid_t *s, int x1, int x2, int xc)
 {
 	int x;
 	
-	xc -= 4;
+	xc = s->mac.video_scale[xc - 2];
 	
-	x1 = s->mac.video_scale[x1];
-	x2 = s->mac.video_scale[x2];
-	xc = s->mac.video_scale[xc];
-	
-	for(x = x1 - 4; x <= x2 + 4; x++)
+	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
 		s->output[x * 2 + 1] = s->output[xc++ * 2];
-		 if(xc > x2) xc = x1;
+		if(xc > s->mac.video_scale[x2]) xc = s->mac.video_scale[x1];
 	}
 	
-	for(x = x1; x <= x2; x++)
+	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
 		s->output[x * 2] = s->output[x * 2 + 1];
 	}
@@ -1265,13 +1261,13 @@ void mac_next_line(vid_t *s)
 			if((s->mac.vsam & 2) == 0)
 			{
 				/* Double Cut rotation */
-				_rotate(s, 230 + 2 - 4,  587 - 3 - 4, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
-				_rotate(s, 585 + 2 - 2, 1289 - 3 - 2, 682 + ((prbs & 0x00FF) << 1)); /* Luminance */
+				_rotate(s, 229,  580, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
+				_rotate(s, 586, 1285, 682 + ((prbs & 0x00FF) << 1)); /* Luminance */
 			}
 			else
 			{
 				/* Single Cut rotation */
-				_rotate(s, 230 + 2 - 3, 1289 - 3 - 2, 282 + ((prbs & 0xFF00) >> 8));
+				_rotate(s, 230, 1285, 282 + ((prbs & 0xFF00) >> 8));
 			}
 		}
 	}
