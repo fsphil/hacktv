@@ -1165,15 +1165,15 @@ static int _vbi_teletext(vid_t *s, uint8_t *data)
 static void _rotate(vid_t *s, int x1, int x2, int xc)
 {
 	int x;
-
- 	xc = s->mac.video_scale[xc - 2];
-
+	
+	xc = s->mac.video_scale[xc - 2];
+	
 	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
 		s->output[x * 2 + 1] = s->output[xc++ * 2];
 		if(xc > s->mac.video_scale[x2]) xc = s->mac.video_scale[x1];
 	}
-
+	
 	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
 		s->output[x * 2] = s->output[x * 2 + 1];
@@ -1425,7 +1425,7 @@ void mac_next_line(vid_t *s)
 			else
 			{
 				/* Single Cut rotation */
-				_rotate(s, 229, 1284, 282 + ((prbs & 0xFF00) >> 8));
+				_rotate(s, 230, 1285, 282 + ((prbs & 0xFF00) >> 8));
 			}
 		}
 	}
