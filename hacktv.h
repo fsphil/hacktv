@@ -70,6 +70,7 @@ typedef struct {
 	char *videocrypt2;
 	char *videocrypts;
 	char *eurocrypt;
+	char *eurocryptdc;
 	char *syster;
 	int systeraudio;
 	int acp;
