@@ -846,7 +846,7 @@ int mac_init(vid_t *s)
 	/* Set the video properties */
 	s->active_width &= ~1;	/* Ensure the active width is an even number */
 	mac->chrominance_width = s->active_width / 2;
-	mac->chrominance_left  = round(s->sample_rate * (232.0 / MAC_CLOCK_RATE));
+	mac->chrominance_left  = round(s->sample_rate * (233.5 / MAC_CLOCK_RATE));
 	mac->white_ref_left    = round(s->sample_rate * (371.0 / MAC_CLOCK_RATE));
 	mac->black_ref_left    = round(s->sample_rate * (533.0 / MAC_CLOCK_RATE));
 	mac->black_ref_right   = round(s->sample_rate * (695.0 / MAC_CLOCK_RATE));
@@ -861,7 +861,7 @@ int mac_init(vid_t *s)
 		|| strcmp(s->conf.eurocrypt, "tvplus") == 0
 		|| strcmp(s->conf.eurocrypt, "ctv") == 0)
 	{
-		mac->vsam = MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT;
+		mac->vsam = s->conf.eurocryptdc ? MAC_VSAM_CONTROLLED_ACCESS_DOUBLE_CUT : MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT;
 		
 		eurocrypt_init(mac, s->conf.eurocrypt);
 		
@@ -870,7 +870,7 @@ int mac_init(vid_t *s)
 	}
 	else if(strcmp(s->conf.eurocrypt, "free") == 0)
 	{
-		mac->vsam = MAC_VSAM_FREE_ACCESS_SINGLE_CUT;
+		mac->vsam = s->conf.eurocryptdc ? MAC_VSAM_FREE_ACCESS_DOUBLE_CUT : MAC_VSAM_FREE_ACCESS_SINGLE_CUT;
 		
 		/* Setup PRBS */
 		mac->cw = MAC_PRBS2_CW_FA;
@@ -1060,7 +1060,7 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	dx = _bits(df, dx, 1, 1);                          /* Rp Repacement */
 	dx = _bits(df, dx, 1, 1);                          /* Fp Fingerprint */
 	dx = _bits(df, dx, 3, 2);                          /* Unallocated, both bits set to 1 */
-	dx = _bits(df, dx, 0, 1);                          /* SIFT Service identification channel format */
+	dx = _bits(df, dx, 1, 1);                          /* SIFT Service identification channel format */
 	_bch_encode(df, 71, 57);
 	
 	ix = _bits_buf(il, ix, df, 71);
@@ -1165,20 +1165,16 @@ static int _vbi_teletext(vid_t *s, uint8_t *data)
 static void _rotate(vid_t *s, int x1, int x2, int xc)
 {
 	int x;
-	
-	xc -= 4;
-	
-	x1 = s->mac.video_scale[x1];
-	x2 = s->mac.video_scale[x2];
-	xc = s->mac.video_scale[xc];
-	
-	for(x = x1 - 4; x <= x2 + 4; x++)
+
+ 	xc = s->mac.video_scale[xc - 2];
+
+	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
 		s->output[x * 2 + 1] = s->output[xc++ * 2];
-		 if(xc > x2) xc = x1;
+		if(xc > s->mac.video_scale[x2]) xc = s->mac.video_scale[x1];
 	}
-	
-	for(x = x1; x <= x2; x++)
+
+	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
 		s->output[x * 2] = s->output[x * 2 + 1];
 	}
@@ -1338,6 +1334,7 @@ void mac_next_line(vid_t *s)
 	{
 		uint32_t *px = (s->framebuffer != NULL ? &s->framebuffer[y * s->active_width] : NULL);
 		
+		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
 			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
 			s->output[x * 2] = s->y_level_lookup[rgb];
@@ -1358,6 +1355,9 @@ void mac_next_line(vid_t *s)
 			if(px != NULL) px++;
 		}
 	}
+	
+	// fprintf(stderr,"Chr start: %i, chr width: %i, chr end: %i\n", s->mac.chrominance_left, s->mac.chrominance_width, s->mac.chrominance_left + s->mac.chrominance_width);
+	// fprintf(stderr,"act start: %i, act width: %i, act end: %i\n", s->active_left, s->active_width, s->active_left + s->active_width);
 	
 	/* Scramble the line if enabled */
 	if((s->mac.vsam & 1) == 0)
@@ -1419,13 +1419,13 @@ void mac_next_line(vid_t *s)
 			if((s->mac.vsam & 2) == 0)
 			{
 				/* Double Cut rotation */
-				_rotate(s, 230 + 2 - 3,  587 - 3 - 4, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
-				_rotate(s, 585 + 2 - 2, 1289 - 3 - 2, 682 + ((prbs & 0x00FF) << 1)); /* Luminance */
+				_rotate(s, 229,  580, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
+				_rotate(s, 586, 1285, 682 + ((prbs & 0x00FF) << 1)); /* Luminance */
 			}
 			else
 			{
 				/* Single Cut rotation */
-				_rotate(s, 230 + 2 - 3, 1289 - 3 - 2, 282 + ((prbs & 0xFF00) >> 8));
+				_rotate(s, 229, 1284, 282 + ((prbs & 0xFF00) >> 8));
 			}
 		}
 	}

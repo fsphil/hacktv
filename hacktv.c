@@ -100,7 +100,8 @@ static void print_usage(void)
 		"      --disableemm <serial>      Disable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
-		"      --eurocrypt <mode>         Enable Eurocrypt M scrambling. (D/D2MAC only)\n"
+		"      --eurocrypt <mode>         Enable Eurocrypt M scrambling (single-cut). (D/D2MAC only)\n"
+		"      --eurocrypt-dc <mode>      Enable Eurocrypt M scrambling (double-cut). (D/D2MAC only)\n"
 		"      --syster <mode>            Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --d11 <mode>               Enable Discret 11 scambling. (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster or D11 scrambling.\n"
@@ -360,7 +361,8 @@ static void print_usage(void)
 #define _OPT_ENABLE_EMM  2003
 #define _OPT_DISABLE_EMM 2004
 #define _OPT_SHOW_ECM    2005
-#define _OPT_EUROCRYPT    2006
+#define _OPT_EUROCRYPT   2006
+#define _OPT_EUROCRYPTDC 2007
 
 int main(int argc, char *argv[])
 {
@@ -381,6 +383,7 @@ int main(int argc, char *argv[])
 		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
 		{ "eurocrypt",   required_argument, 0, _OPT_EUROCRYPT },
+		{ "eurocrypt-dc",required_argument, 0, _OPT_EUROCRYPTDC },
 		{ "key",         required_argument, 0, 'k'},
 		{ "syster",      required_argument, 0, _OPT_SYSTER },
 		{ "d11",         required_argument, 0, _OPT_DISCRET },
@@ -430,6 +433,7 @@ int main(int argc, char *argv[])
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
 	s.eurocrypt = NULL;
+	s.eurocryptdc = NULL;
 	s.syster = NULL;
 	s.d11 = NULL;
 	s.systeraudio = 0;
@@ -565,6 +569,11 @@ int main(int argc, char *argv[])
 			s.eurocrypt = strdup(optarg);
 			break;
 		
+		case _OPT_EUROCRYPTDC: /* --eurocrypt-dc */
+			free(s.eurocryptdc);
+			s.eurocrypt = s.eurocryptdc = strdup(optarg);
+			break;
+			
 		case _OPT_ENABLE_EMM: /* --enable-emm <card_serial> */
 			s.enableemm = (uint32_t) strtod(optarg, NULL);
 			break;
@@ -840,7 +849,7 @@ int main(int argc, char *argv[])
 		vid_conf.videocrypts = s.videocrypts;
 	}
 	
-	if(s.eurocrypt)
+	if(s.eurocrypt || s.eurocryptdc)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_MAC)
 		{
@@ -848,6 +857,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		vid_conf.eurocrypt = s.eurocrypt;
+		if(s.eurocryptdc) vid_conf.eurocryptdc = s.eurocryptdc;
 	}
 	
 	if(s.enableemm)
