@@ -17,6 +17,7 @@
 
 #include "bitmap.h"
 #include <stdio.h>
+#include <stdint.h>
 
 /* Inspiration from http://tech-algorithm.com/articles/bilinear-image-scaling/ */
 

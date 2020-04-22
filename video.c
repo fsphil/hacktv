@@ -682,7 +682,9 @@ const vid_config_t vid_config_d2mac_am = {
 	/* D2-MAC AM */
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
-	.modulation     = VID_AM,
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 8400000, /* Hz */
+	.vsb_lower_bw   = 0, /* Hz */
 	
 	.type           = VID_MAC,
 	.frame_rate_num = 25,
@@ -2055,7 +2057,8 @@ int vid_init_filter(vid_t *s)
 	
 	if(s->conf.modulation == VID_VSB)
 	{
-		taps = 51;
+		/* My workstation can handle 30 taps at 20.25MHz sampling rate (MAC) */
+		taps = s->conf.type == VID_MAC ? 25 : 51 ;
 		
 		s->video_filter_taps = calloc(taps, sizeof(int16_t) * 2);
 		if(!s->video_filter_taps)

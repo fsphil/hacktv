@@ -18,6 +18,7 @@
 #ifndef BITMAP_H_
 #define BITMAP_H_
 
+#include <stdint.h>
 #include <stdlib.h>
 
 extern void resize_bitmap(uint32_t *input, uint32_t *output, int old_width, int old_height, int new_width, int new_height);

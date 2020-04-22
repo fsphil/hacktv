@@ -15,6 +15,7 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -114,6 +115,7 @@ char *parse_time(char *fmt, int ti)
 	l = strlen(fmt);
 	static char time_txt[] = "00:00:00.000";
 			
+	t = 0;
 	for(i = 0; i < l; i++)
 	{
 		if(fmt[i] == ',')

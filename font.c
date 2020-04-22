@@ -267,7 +267,7 @@ int32_t get_line_width(av_font_t *av, char *fmt)
 	FT_F26Dot6 pen_x;
 	FT_Bool use_kerning;
 	FT_UInt previous;
-	int i, l;
+	int i;
 	int32_t x = 0;
 	char *s;
 	uint32_t u;
@@ -277,8 +277,6 @@ int32_t get_line_width(av_font_t *av, char *fmt)
 		fprintf(stderr, "Freetype library not initialised or no font set.\n");
 		return(HACKTV_ERROR);
 	}
-		
-	l = strlen(fmt);
 	
 	slot = av->fontface->glyph;
 	pen_x = x << 6;
