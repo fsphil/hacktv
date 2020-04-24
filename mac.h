@@ -95,6 +95,7 @@ typedef struct {
 } mac_subframe_t;
 
 typedef struct {
+	int emode;						/* Eurocrypt M or S2 mode */
 	unsigned char key[7];			/* Decryption key */
 	unsigned char data[42];			/* General ECM data */
 	unsigned char decevencw[8];		/* Decrypted even control word */

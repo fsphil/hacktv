@@ -23,6 +23,11 @@
 #define ECM 0
 #define HASH 1
 
+#define EC_M 0
+#define EC_S 3
+
+#define IP_DIM 64
+#define IPP_DIM 64
 #define E_DIM 48
 #define S_BOXES 8
 #define S_DIM 64

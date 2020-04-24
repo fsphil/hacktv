@@ -859,7 +859,10 @@ int mac_init(vid_t *s)
 		strcmp(s->conf.eurocrypt, "filmnet") == 0 
 		|| strcmp(s->conf.eurocrypt, "tv1000") == 0 
 		|| strcmp(s->conf.eurocrypt, "tvplus") == 0
-		|| strcmp(s->conf.eurocrypt, "ctv") == 0)
+		|| strcmp(s->conf.eurocrypt, "ctv") == 0
+		|| strcmp(s->conf.eurocrypt, "tvs") == 0
+		|| strcmp(s->conf.eurocrypt, "rdv") == 0
+		|| strcmp(s->conf.eurocrypt, "ctvs") == 0)
 	{
 		mac->vsam = s->conf.eurocryptdc ? MAC_VSAM_CONTROLLED_ACCESS_DOUBLE_CUT : MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT;
 		
@@ -1398,11 +1401,13 @@ void mac_next_line(vid_t *s)
 							if(i == 7) fprintf(stderr, "| ");
 						}
 						fprintf(stderr,"\nEurocrypt ECM Out:\t");
-						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", s->mac.ec->decevencw[7 - i]);
+						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", s->mac.ec->decevencw[i]);
 						fprintf(stderr, "| ");
-						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", s->mac.ec->decoddcw[7 - i]);
+						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", s->mac.ec->decoddcw[i]);
 						fprintf(stderr,"\nUsing CW (%s):  \t%s", (s->frame >> 8) & 1 ? "odd" : "even", (s->frame >> 8) & 1 ? "                          " : "");
-						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) (s->mac.cw >> (8 * i) & 0xFF));
+						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) (s->mac.cw >> (8 * (7 - i)) & 0xFF));
+						fprintf(stderr,"\nHash:\t\t\t");
+						for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", s->mac.ec->data[34 + i]);
 						fprintf(stderr,"\n");
 					}
 				}

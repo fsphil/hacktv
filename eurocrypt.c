@@ -20,8 +20,119 @@
 #include <string.h>
 #include "eurocrypt.h"
 
+/* Data for EC controlled-access decoding (RDV) */
+static ec_t ec_rdv = { 
+	
+	/* Eurocrypt S */
+	EC_S,
+	
+	/* Key 0x03 */
+	{ 0xFE, 0x6D, 0x9A, 0xBB, 0xEB,0x97, 0xFB },
+	
+	/* General ECM data */
+	{ 	/*           |-Channel ID-|| Key index */      
+		0x90, 0x03, 0x00, 0x2D, 0x93,
+		
+		 /* Control */
+ 		0xE0, 0x01, 0x00,
+		
+		/* Date, theme and level */
+		0xE1, 0x04, 0x22, 0x70, 0xFF, 0x00,
+		
+		/* Even CW header */
+		0xEA, 0x10,
+		
+		/* Encrypted even CW (random) */
+		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		
+		/* Encrypted odd CW (random) */
+		0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x01,
+		
+		/* Hash header */
+		0xF0, 0x08,
+		
+		/* Hash data */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+};
+
+/* Data for EC controlled-access decoding (TVS) */
+static ec_t ec_tvs = { 
+	
+	/* Eurocrypt S */
+	EC_S,
+	
+	/* Key 0x00 */
+	{ 0x5C, 0x8B, 0x11, 0x2F, 0x99, 0xA8, 0x2C },
+	
+	/* General ECM data */
+	{ 	/*           |-Channel ID-|| Key index */      
+		0x90, 0x03, 0x00, 0x2B, 0x50,
+		
+		 /* Control */
+ 		0xE0, 0x01, 0x00,
+		
+		/* Date, theme and level */
+		0xE1, 0x04, 0x7A, 0x14, 0x00, 0x01,
+		
+		/* Even CW header */
+		0xEA, 0x10,
+		
+		/* Encrypted even CW (random) */
+		0x09, 0x3B, 0x3E, 0x9F, 0xD0, 0xBB, 0x11, 0x81,
+		
+		/* Encrypted odd CW (random) */
+		0x8C, 0x39, 0x3E, 0xE8, 0x3F, 0xFB, 0xD6, 0xBA,
+		
+		/* Hash header */
+		0xF0, 0x08,
+		
+		/* Hash data */
+		0x95, 0x9F, 0xE8, 0x70, 0x9F, 0xF9, 0xB8, 0x8E
+	}
+};
+
+/* Data for EC controlled-access decoding (TVS) */
+static ec_t ec_ctvs = { 
+	
+	/* Eurocrypt S */
+	EC_S,
+	
+	/* Key 0x00 */
+	{ 0x22, 0xDE, 0x81, 0xF5, 0xCA, 0x4D, 0x4A },
+	
+	/* General ECM data */
+	{ 	/*           |-Channel ID-|| Key index */      
+		0x90, 0x03, 0x00, 0x2B, 0x20,
+
+		/* Control */
+ 		0xE0, 0x01, 0x00,
+		
+		/* Date, theme and level */
+		0xE1, 0x04, 0x7A, 0x14, 0x00, 0x01,
+		
+		/* Even CW header */
+		0xEA, 0x10,
+		
+		/* Encrypted even CW (random) */
+		0x09, 0x3B, 0x3E, 0x9F, 0xD0, 0xBB, 0x11, 0x81,
+		
+		/* Encrypted odd CW (random) */
+		0x8C, 0x39, 0x3E, 0xE8, 0x3F, 0xFB, 0xD6, 0xBA,
+		
+		/* Hash header */
+		0xF0, 0x08,
+		
+		/* Hash data */
+		0x95, 0x9F, 0xE8, 0x70, 0x9F, 0xF9, 0xB8, 0x8E
+	}
+};
+
 /* Data for EC controlled-access decoding (CTV) */
 static ec_t ec_ctv = { 
+	
+	/* Eurocrypt M */
+	EC_M,
 	
 	/* Key 0x08 */
 	{ 0x84, 0x66, 0x30, 0xE4, 0xDA, 0xFA, 0x23 },
@@ -56,6 +167,9 @@ static ec_t ec_ctv = {
 /* Data for EC controlled-access decoding (TV Plus Holland) */
 static ec_t ec_tvplus = { 
 	
+	/* Eurocrypt M */
+	EC_M,
+	
 	/* Key 0x08 */
 	{ 0x12, 0x06, 0x28, 0x3A, 0x4B, 0x1D, 0xE2 },
 	
@@ -89,6 +203,9 @@ static ec_t ec_tvplus = {
 /* Data for EC controlled-access decoding (TV1000) */
 static ec_t ec_tv1000 = { 
 	
+	/* Eurocrypt M */
+	EC_M,
+	
 	/* Key 0x0F */
 	{ 0x36, 0xFA, 0xCD, 0x50, 0x85, 0x54, 0xDF },
 	
@@ -106,10 +223,10 @@ static ec_t ec_tv1000 = {
 		0xEA, 0x10,
 		
 		/* Encrypted even CW (random) */
-		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		0x4D, 0xCD, 0x69, 0x60, 0x4C, 0x3A, 0x64, 0x10,
 		
 		/* Encrypted odd CW (random) */
-		0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x01,
+		0x16, 0xF7, 0x93, 0x2A, 0xAB, 0x90, 0xAD, 0xDC,
 		
 		/* Hash header */
 		0xF0, 0x08,
@@ -121,6 +238,9 @@ static ec_t ec_tv1000 = {
 
 /* Data for EC controlled-access decoding (FilmNet) */
 static ec_t ec_filmnet = { 
+	
+	/* Eurocrypt M */
+	EC_M,
 	
 	/* Key 0x08 */
 	{ 0x21, 0x12, 0x31, 0x35, 0x8A, 0xC3, 0x4F },
@@ -150,6 +270,28 @@ static ec_t ec_filmnet = {
 		/* Hash data */
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}
+};
+
+unsigned char IP[IP_DIM] = {
+  58, 50, 42, 34, 26, 18, 10, 2,
+  60, 52, 44, 36, 28, 20, 12, 4,
+  62, 54, 46, 38, 30, 22, 14, 6,
+  64, 56, 48, 40, 32, 24, 16, 8,
+  57, 49, 41, 33, 25, 17,  9, 1,
+  59, 51, 43, 35, 27, 19, 11, 3,
+  61, 53, 45, 37, 29, 21, 13, 5,
+  63, 55, 47, 39, 31, 23, 15, 7
+};
+
+unsigned char IPP[IPP_DIM] = {
+  40, 8, 48, 16, 56, 24, 64, 32,
+  39, 7, 47, 15, 55, 23, 63, 31,
+  38, 6, 46, 14, 54, 22, 62, 30,
+  37, 5, 45, 13, 53, 21, 61, 29,
+  36, 4, 44, 12, 52, 20, 60, 28,
+  35, 3, 43, 11, 51, 19, 59, 27,
+  34, 2, 42, 10, 50, 18, 58, 26,
+  33, 1, 41,  9, 49, 17, 57, 25
 };
 
 unsigned char EXP[E_DIM] = {
@@ -262,10 +404,28 @@ unsigned char	PC2[PC2_DIM] = {
 
 unsigned char LSHIFT[LS_DIM] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 
-unsigned long _permute_f(unsigned long R, unsigned char *K)
+void _permute_ec(unsigned char *data, const unsigned char *Pr, int n)  
+{
+	unsigned char pin[8];
+	int i, j, k, t;
+	for (i=0, k=0; k<n; i++)
+	{
+		int p = 0;
+		for(j = 7; j >= 0; j--, k++)
+		{
+			t = Pr[k] - 1;
+			p = (p << 1) + ((data[t >> 3]) >> (7 - (t & 7)) & 1);
+		}
+		pin[i] = p;
+	}
+	
+	memcpy(data,pin,8);
+}
+
+uint64_t _ec_des_f(uint64_t R, unsigned char *K)
 {
 	int i, k;
-	unsigned long s = 0, result = 0;
+	uint64_t s = 0, result = 0;
 
 	for(i = 0, k = 0; i < 8; i++)
 	{
@@ -282,7 +442,7 @@ unsigned long _permute_f(unsigned long R, unsigned char *K)
 		v ^= K[i];
 		
 		/* The S-boxes */
-		s |= (unsigned long)SB[i][v] << (28 - 4 * i);
+		s |= (uint64_t)SB[i][v] << (28 - 4 * i);
 	}
 	
 	/* The permutation P (R3) */
@@ -294,47 +454,56 @@ unsigned long _permute_f(unsigned long R, unsigned char *K)
 	return result;
 }
 
-void eurocrypt_m(unsigned char *in, unsigned char *out, const unsigned char *key, int hash)
+void eurocrypt(unsigned char *in, unsigned char *out, const unsigned char *key, int hash, int emode)
 {
 	int i;
-	unsigned long R, L, C, D, S;
+	uint64_t R, L, C, D, S;
 	
 	memcpy(out, in, 8);
 	
-	/* Key preparation. Split key into two halves. */
-	C = (unsigned long)key[0] << 20
-		^ (unsigned long)key[1] << 12
-		^ (unsigned long)key[2] <<	4
-		^ (unsigned long)(key[3] >> 4);
+	/* Initial permutation for Eurocrypt S2 */
+	if(emode)
+	{
+		_permute_ec(out, IP, 64);
+	}
 
-	D = (unsigned long)(key[3] & 0x0f) << 24
-		^ (unsigned long)key[4] << 16
-		^ (unsigned long)key[5] << 8
-		^ (unsigned long)key[6];
+	/* Key preparation. Split key into two halves. */
+	C =   (uint64_t) key[0] << 20
+		^ (uint64_t) key[1] << 12
+		^ (uint64_t) key[2] <<	4
+		^ (uint64_t) key[3] >> 4;
+
+	D =   (uint64_t)(key[3] & 0x0f) << 24
+		^ (uint64_t) key[4] << 16
+		^ (uint64_t) key[5] << 8
+		^ (uint64_t) key[6];
 
 	/* Control word preparation. Split CW into two halves. */
-	L = (unsigned long)in[0] << 24
-		^ (unsigned long)in[1] << 16
-		^ (unsigned long)in[2] << 8
-		^ (unsigned long)in[3];
+	L =   (uint64_t) out[0] << 24
+		^ (uint64_t) out[1] << 16
+		^ (uint64_t) out[2] << 8
+		^ (uint64_t) out[3];
 
-	R = (unsigned long)in[4] << 24
-		^ (unsigned long)in[5] << 16
-		^ (unsigned long)in[6] << 8
-		^ (unsigned long)in[7];
+	R =   (uint64_t) out[4] << 24
+		^ (uint64_t) out[5] << 16
+		^ (uint64_t) out[6] << 8
+		^ (uint64_t) out[7];
 		
 	/* 16 iterations */
 	for(i = 0; i < 16; i++)
 	{
-		unsigned long R3;
+		uint64_t R3;
 		unsigned char K[8];
 		int j, k;
 		
 		/* Key shift rotation */
-		for(j = 0; j < LSHIFT[i]; j++ )
+		if(!emode || (emode && hash))
 		{
-			C = (C << 1 ^ C >> 27) & 0xfffffffL;
-			D = (D << 1 ^ D >> 27) & 0xfffffffL;
+			for(j = 0; j < LSHIFT[i]; j++ )
+			{
+				C = (C << 1 ^ C >> 27) & 0xfffffffL;
+				D = (D << 1 ^ D >> 27) & 0xfffffffL;
+			}
 		}
 		
 		/* Key expansion */
@@ -357,10 +526,19 @@ void eurocrypt_m(unsigned char *in, unsigned char *out, const unsigned char *key
 		}
 		
 		/* One decryption round */
-		S	= _permute_f(R, K);
+		S	= _ec_des_f(R, K);
+		
+		if(emode && !hash)
+		{
+			for(j = 0; j < LSHIFT[15 - i]; j++ )
+			{
+				C = (C >> 1 ^ C << 27) & 0xfffffffL;
+				D = (D >> 1 ^ D << 27) & 0xfffffffL;
+			}
+		}
 		
 		/* Swap first two bytes if it's a hash routine */
-		if(hash)
+		if(hash && !emode)
 		{
 			S = (S >> 8 & 0xFF0000L) | (S << 8 & 0xFF000000L) | (S & 0x0000FFFFL);
 		}
@@ -380,6 +558,11 @@ void eurocrypt_m(unsigned char *in, unsigned char *out, const unsigned char *key
 	out[5] = L >> 16;
 	out[6] = L >> 8;
 	out[7] = L;
+	
+	if(emode)
+	{
+		_permute_ec(out, IPP, 64);
+	}
 
 }
 
@@ -387,7 +570,8 @@ void generate_ecm(ec_t *e, int cafcnt)
 {
 	int j;
 	unsigned char hash[8];
-	
+	unsigned char hash_data[32];
+		
 	/* Generate new encrypted CW - either even or odd at one time */
 	if(cafcnt) 
 	{
@@ -399,27 +583,47 @@ void generate_ecm(ec_t *e, int cafcnt)
 	}
 	
 	/* Decrypt even control word */
-	eurocrypt_m(e->data + 16, e->decevencw, e->key, ECM);
+	eurocrypt(e->data + 16, e->decevencw, e->key, ECM, e->emode);
 	
 	/* Decrypt odd control word */
-	eurocrypt_m(e->data + 24, e->decoddcw, e->key, ECM);
+	eurocrypt(e->data + 24, e->decoddcw, e->key, ECM, e->emode);
 	
 	/* Zeroise hash */
 	for(j = 0; j < 8; j++) hash[j] = 0;
 	
-	/* Iterate through data */
-	for(j = 0; j < 27; j++)
+	if(e->emode)
 	{
-		hash[(j % 8)] ^= e->data[j + 5];
+		/* EC S2 */
+		
+		/* Copy PPID */
+		memcpy(hash_data, e->data + 2, 3);
+		
+		/* Copy other data */
+		memcpy(hash_data + 3, e->data + 10, 5);
+		
+		/* Copy CWs */
+		memcpy(hash_data + 8, e->data + 16, 16);
+
+	}
+	else
+	{
+		/* EC M */
+		memcpy(hash_data, e->data + 5, 27);
+	}
+	
+	/* Iterate through data */
+	for(j = 0; j < (e->emode ? 24 : 27); j++)
+	{
+		hash[(j % 8)] ^= hash_data[j];
 		
 		if(j % 8 == 7)
 		{
-			eurocrypt_m(hash, hash, e->key, HASH);
+			eurocrypt(hash, hash, e->key, HASH, e->emode);
 		}
 	}
 	
-	/* Final interation */
-	eurocrypt_m(hash, hash, e->key, HASH);
+	/* Final interation - EC M only*/
+	if(!e->emode) eurocrypt(hash, hash, e->key, HASH, e->emode);
 	
 	/* Copy hash to main data area */
 	memcpy(e->data + 34, hash, 8);
@@ -448,7 +652,18 @@ void eurocrypt_init(mac_t *mac, char *mode)
 	{
 		mac->ec = &ec_ctv;
 	}
-	
+	else if(strcmp(mode, "tvs") == 0)
+	{
+		mac->ec = &ec_tvs;
+	}
+	else if(strcmp(mode, "rdv") == 0)
+	{
+		mac->ec = &ec_rdv;
+	}
+	else if(strcmp(mode, "ctvs") == 0)
+	{
+		mac->ec = &ec_ctvs;
+	}
 	/* Generate initial even and odd ECMs */
 	generate_ecm(mac->ec, 0);
 	generate_ecm(mac->ec, 1);

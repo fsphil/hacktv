@@ -8,6 +8,9 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author.**
 
+2020-04-24:
+Added Eurocrypt S2 mode with additional cards/modes (experimental).
+
 2020-04-21:
 Added Eurocrypt double-cut scrambling for MAC modes.
   - Activate with --eurocrypt-dc <mode>. See help for options.
