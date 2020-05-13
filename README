@@ -8,6 +8,10 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author.**
 
+2020-05-13:
+Added ability to enable and disable Multichoice Videocrypt2 cards (experimental - at your own risk!).
+Small tidy-ups.
+
 2020-04-24:
 Added Eurocrypt S2 mode with additional cards/modes (experimental).
 

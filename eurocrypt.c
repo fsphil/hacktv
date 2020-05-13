@@ -272,6 +272,42 @@ static ec_t ec_filmnet = {
 	}
 };
 
+/* Data for EC controlled-access decoding (Visiopass) */
+static ec_t ec_visiopass = { 
+	
+	/* Eurocrypt M */
+	EC_M,
+	
+	/* Key 0x08 */
+	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	
+	/* General ECM data */
+	{ 	/*           |-Channel ID-|| Key index */      
+		0x90, 0x03, 0x00, 0x01, 0x00,
+		
+		 /* Control */
+ 		0xE0, 0x01, 0x00,
+		
+		/* Date, theme and level */
+		0xE1, 0x04, 0x21, 0x15, 0x05, 0x00,
+		
+		/* Even CW header */
+		0xEA, 0x10,
+		
+		/* Encrypted even CW (random) */
+		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		
+		/* Encrypted odd CW (random) */
+		0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x01,
+		
+		/* Hash header */
+		0xF0, 0x08,
+		
+		/* Hash data */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+};
+
 unsigned char IP[IP_DIM] = {
   58, 50, 42, 34, 26, 18, 10, 2,
   60, 52, 44, 36, 28, 20, 12, 4,
@@ -664,6 +700,11 @@ void eurocrypt_init(mac_t *mac, char *mode)
 	{
 		mac->ec = &ec_ctvs;
 	}
+	else if(strcmp(mode, "visiopass") == 0)
+	{
+		mac->ec = &ec_visiopass;
+	}
+	
 	/* Generate initial even and odd ECMs */
 	generate_ecm(mac->ec, 0);
 	generate_ecm(mac->ec, 1);

@@ -851,6 +851,9 @@ int mac_init(vid_t *s)
 	mac->black_ref_left    = round(s->sample_rate * (533.0 / MAC_CLOCK_RATE));
 	mac->black_ref_right   = round(s->sample_rate * (695.0 / MAC_CLOCK_RATE));
 	
+	/* Setup PRBS */
+	mac->cw = MAC_PRBS2_CW_FA;
+
 	if(s->conf.eurocrypt == NULL)
 	{
 		mac->vsam = MAC_VSAM_FREE_ACCESS_UNSCRAMBLED; /* <-- check the mac.h file for the options here */
@@ -862,6 +865,7 @@ int mac_init(vid_t *s)
 		|| strcmp(s->conf.eurocrypt, "ctv") == 0
 		|| strcmp(s->conf.eurocrypt, "tvs") == 0
 		|| strcmp(s->conf.eurocrypt, "rdv") == 0
+		|| strcmp(s->conf.eurocrypt, "visiopass") == 0
 		|| strcmp(s->conf.eurocrypt, "ctvs") == 0)
 	{
 		mac->vsam = s->conf.eurocryptdc ? MAC_VSAM_CONTROLLED_ACCESS_DOUBLE_CUT : MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT;
