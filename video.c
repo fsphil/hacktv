@@ -381,10 +381,10 @@ const vid_config_t vid_config_secam_l = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 	
 	.am_mono_carrier = 6500000, /* Hz */
 	
@@ -429,10 +429,10 @@ const vid_config_t vid_config_secam_dk = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
@@ -476,10 +476,10 @@ const vid_config_t vid_config_secam_fm = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	//.fm_left_carrier    = 7200000, /* Hz */
@@ -519,10 +519,10 @@ const vid_config_t vid_config_secam = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 };
 
 const vid_config_t vid_config_ntsc_m = {
@@ -2612,7 +2612,7 @@ static void _vid_next_line_raster(vid_t *s)
 		if(seq[2] != 'a') x = s->half_width;
 		if(seq[3] != 'a') w = s->half_width;
 		
-		x -= s->burst_left;
+		x -= s->active_left - s->burst_left;
 		
 		for(; x < w; x++)
 		{
@@ -2625,11 +2625,11 @@ static void _vid_next_line_raster(vid_t *s)
 			
 			if(((s->frame * s->conf.lines) + s->line) & 1)
 			{
-				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
 			}
 			else
 			{
-				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
 			}
 		}
 	}
