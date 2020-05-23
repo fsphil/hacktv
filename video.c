@@ -376,6 +376,7 @@ const vid_config_t vid_config_secam_l = {
 	.sync_level     = 0.00,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
@@ -424,6 +425,7 @@ const vid_config_t vid_config_secam_dk = {
 	.sync_level     = 1.00,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
@@ -471,6 +473,7 @@ const vid_config_t vid_config_secam_fm = {
 	.sync_level     = -0.50,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
@@ -514,6 +517,7 @@ const vid_config_t vid_config_secam = {
 	.sync_level     = -0.30,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
@@ -1761,7 +1765,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	if(s->conf.colour_mode == VID_SECAM)
 	{
-		double secam_level = 0.23 * (s->conf.white_level - s->conf.blanking_level) * level;
+		double secam_level = s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) * level;
 		
 		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
 		if(r != VID_OK)
