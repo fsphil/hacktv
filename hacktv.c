@@ -340,6 +340,7 @@ static void print_usage(void)
 		"  tvplus      = (M) A valid TV Plus (Holland) card is required to decode.\n"
 		"  tvs         = (S) A valid TVS (Denmark) card is required to decode.\n"
 		"  rdv         = (S) A valid RDV card is required to decode.\n"
+		"  nrk         = (S) A valid NRK card is required to decode.\n"
 		"\n"
 		"MultiMac style cards can also be used.\n"
 		"\n"

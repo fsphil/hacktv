@@ -865,6 +865,7 @@ int mac_init(vid_t *s)
 		|| strcmp(s->conf.eurocrypt, "ctv") == 0
 		|| strcmp(s->conf.eurocrypt, "tvs") == 0
 		|| strcmp(s->conf.eurocrypt, "rdv") == 0
+		|| strcmp(s->conf.eurocrypt, "nrk") == 0
 		|| strcmp(s->conf.eurocrypt, "ctvs") == 0)
 	{
 		mac->vsam = s->conf.eurocryptdc ? MAC_VSAM_CONTROLLED_ACCESS_DOUBLE_CUT : MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT;
