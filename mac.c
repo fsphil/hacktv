@@ -865,7 +865,6 @@ int mac_init(vid_t *s)
 		|| strcmp(s->conf.eurocrypt, "ctv") == 0
 		|| strcmp(s->conf.eurocrypt, "tvs") == 0
 		|| strcmp(s->conf.eurocrypt, "rdv") == 0
-		|| strcmp(s->conf.eurocrypt, "visiopass") == 0
 		|| strcmp(s->conf.eurocrypt, "ctvs") == 0)
 	{
 		mac->vsam = s->conf.eurocryptdc ? MAC_VSAM_CONTROLLED_ACCESS_DOUBLE_CUT : MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT;
@@ -1362,9 +1361,6 @@ void mac_next_line(vid_t *s)
 			if(px != NULL) px++;
 		}
 	}
-	
-	// fprintf(stderr,"Chr start: %i, chr width: %i, chr end: %i\n", s->mac.chrominance_left, s->mac.chrominance_width, s->mac.chrominance_left + s->mac.chrominance_width);
-	// fprintf(stderr,"act start: %i, act width: %i, act end: %i\n", s->active_left, s->active_width, s->active_left + s->active_width);
 	
 	/* Scramble the line if enabled */
 	if((s->mac.vsam & 1) == 0)
