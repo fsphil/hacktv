@@ -74,6 +74,8 @@ typedef struct {
 	int filter;
 	int noaudio;
 	int nonicam;
+	int scramble_video;
+	int scramble_audio;
 	uint64_t frequency;
 	int amp;
 	int gain;

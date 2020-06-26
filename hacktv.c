@@ -94,6 +94,9 @@ static void print_usage(void)
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
+		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
+		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
+		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -281,48 +284,54 @@ static void print_usage(void)
 	);
 }
 
-#define _OPT_TELETEXT    1000
-#define _OPT_WSS         1001
-#define _OPT_VIDEOCRYPT  1002
-#define _OPT_VIDEOCRYPT2 1003
-#define _OPT_VIDEOCRYPTS 1004
-#define _OPT_SYSTER      1005
-#define _OPT_SYSTERAUDIO 1006
-#define _OPT_ACP         1007
-#define _OPT_FILTER      1008
-#define _OPT_NOAUDIO     1009
-#define _OPT_NONICAM     1010
+#define _OPT_TELETEXT       1000
+#define _OPT_WSS            1001
+#define _OPT_VIDEOCRYPT     1002
+#define _OPT_VIDEOCRYPT2    1003
+#define _OPT_VIDEOCRYPTS    1004
+#define _OPT_SYSTER         1005
+#define _OPT_SYSTERAUDIO    1006
+#define _OPT_ACP            1007
+#define _OPT_FILTER         1008
+#define _OPT_NOAUDIO        1009
+#define _OPT_NONICAM        1010
+#define _OPT_SINGLE_CUT     1011
+#define _OPT_DOUBLE_CUT     1012
+#define _OPT_SCRAMBLE_AUDIO 1013
 
 int main(int argc, char *argv[])
 {
 	int c;
 	int option_index;
 	static struct option long_options[] = {
-		{ "output",      required_argument, 0, '0' },
-		{ "mode",        required_argument, 0, 'm' },
-		{ "samplerate",  required_argument, 0, 's' },
-		{ "level",       required_argument, 0, 'l' },
-		{ "deviation",   required_argument, 0, 'D' },
-		{ "gamma",       required_argument, 0, 'G' },
-		{ "repeat",      no_argument,       0, 'r' },
-		{ "verbose",     no_argument,       0, 'v' },
-		{ "teletext",    required_argument, 0, _OPT_TELETEXT },
-		{ "wss",         required_argument, 0, _OPT_WSS },
-		{ "videocrypt",  required_argument, 0, _OPT_VIDEOCRYPT },
-		{ "videocrypt2", required_argument, 0, _OPT_VIDEOCRYPT2 },
-		{ "videocrypts", required_argument, 0, _OPT_VIDEOCRYPTS },
-		{ "syster",      no_argument,       0, _OPT_SYSTER },
-		{ "systeraudio", no_argument,       0, _OPT_SYSTERAUDIO },
-		{ "acp",         no_argument,       0, _OPT_ACP },
-		{ "filter",      no_argument,       0, _OPT_FILTER },
-		{ "noaudio",     no_argument,       0, _OPT_NOAUDIO },
-		{ "nonicam",     no_argument,       0, _OPT_NONICAM },
-		{ "frequency",   required_argument, 0, 'f' },
-		{ "amp",         no_argument,       0, 'a' },
-		{ "gain",        required_argument, 0, 'x' },
-		{ "antenna",     required_argument, 0, 'A' },
-		{ "type",        required_argument, 0, 't' },
-		{ 0,             0,                 0,  0  }
+		{ "output",         required_argument, 0, '0' },
+		{ "mode",           required_argument, 0, 'm' },
+		{ "samplerate",     required_argument, 0, 's' },
+		{ "level",          required_argument, 0, 'l' },
+		{ "deviation",      required_argument, 0, 'D' },
+		{ "gamma",          required_argument, 0, 'G' },
+		{ "repeat",         no_argument,       0, 'r' },
+		{ "verbose",        no_argument,       0, 'v' },
+		{ "teletext",       required_argument, 0, _OPT_TELETEXT },
+		{ "wss",            required_argument, 0, _OPT_WSS },
+		{ "videocrypt",     required_argument, 0, _OPT_VIDEOCRYPT },
+		{ "videocrypt2",    required_argument, 0, _OPT_VIDEOCRYPT2 },
+		{ "videocrypts",    required_argument, 0, _OPT_VIDEOCRYPTS },
+		{ "syster",         no_argument,       0, _OPT_SYSTER },
+		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
+		{ "acp",            no_argument,       0, _OPT_ACP },
+		{ "filter",         no_argument,       0, _OPT_FILTER },
+		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
+		{ "nonicam",        no_argument,       0, _OPT_NONICAM },
+		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
+		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
+		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
+		{ "frequency",      required_argument, 0, 'f' },
+		{ "amp",            no_argument,       0, 'a' },
+		{ "gain",           required_argument, 0, 'x' },
+		{ "antenna",        required_argument, 0, 'A' },
+		{ "type",           required_argument, 0, 't' },
+		{ 0,                0,                 0,  0  }
 	};
 	static hacktv_t s;
 	const vid_configs_t *vid_confs;
@@ -355,6 +364,8 @@ int main(int argc, char *argv[])
 	s.filter = 0;
 	s.noaudio = 0;
 	s.nonicam = 0;
+	s.scramble_video = 0;
+	s.scramble_audio = 0;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -497,6 +508,18 @@ int main(int argc, char *argv[])
 			s.nonicam = 1;
 			break;
 		
+		case _OPT_SINGLE_CUT: /* --single-cut */
+			s.scramble_video = 1;
+			break;
+		
+		case _OPT_DOUBLE_CUT: /* --double-cut */
+			s.scramble_video = 2;
+			break;
+	
+		case _OPT_SCRAMBLE_AUDIO: /* --scramble-audio */
+			s.scramble_audio = 1;
+			break;
+		
 		case 'f': /* -f, --frequency <value> */
 			s.frequency = (uint64_t) strtod(optarg, NULL);
 			break;
@@ -613,6 +636,9 @@ int main(int argc, char *argv[])
 		vid_conf.nicam_level = 0;
 		vid_conf.nicam_carrier = 0;
 	}
+	
+	vid_conf.scramble_video = s.scramble_video;
+	vid_conf.scramble_audio = s.scramble_audio;
 	
 	vid_conf.level *= s.level;
 	
