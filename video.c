@@ -1794,7 +1794,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* Initalise D/D2-MAC state */
 	if(s->conf.type == VID_MAC)
 	{
-		mac_init(s);
+		r = mac_init(s);
+		
+		if(r != VID_OK)
+		{
+			return(r);
+		}
 	}
 	
 	/* FM audio */

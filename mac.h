@@ -82,6 +82,8 @@
 #define MAC_PRBS_SR4_MASK (((uint32_t) 1 << 29) - 1)
 #define MAC_PRBS_SR5_MASK (((uint32_t) 1 << 61) - 1)
 
+#include "eurocrypt.h"
+
 typedef struct {
 	uint8_t pkt[MAC_PAYLOAD_BYTES];
 	int address;
@@ -156,7 +158,13 @@ typedef struct {
 	uint64_t sr4;
 	int video_scale[MAC_WIDTH];
 	
+	/* Eurocrypt state */
+	int eurocrypt;
+	eurocrypt_t ec;
+	
 } mac_t;
+
+extern void mac_golay_encode(uint8_t *data, int blocks);
 
 extern int mac_init(vid_t *s);
 extern void mac_free(vid_t *s);

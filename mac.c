@@ -413,6 +413,36 @@ static void _bch_encode(uint8_t *data, int n, int k)
 	_bits(data, k, code, n - k);
 }
 
+/* Golay(24,12) protection */
+void mac_golay_encode(uint8_t *data, int blocks)
+{
+	uint8_t p[MAC_PAYLOAD_BYTES];
+	uint8_t *dst = p, *src = data;
+	int i;
+	
+	memset(p, 0, MAC_PAYLOAD_BYTES);
+	
+	for(i = 0; i < blocks; i += 2)
+	{
+		dst[0] = src[0];
+		dst[1] = src[1] & 0x0F;
+		dst[2]  = 0x00;
+		_bch_encode(dst, 23, 12);
+		dst[2] |= (_parity(dst[0] | (dst[1] << 8) | (dst[2] << 16)) ^ 1) << 7;
+		dst += 3;
+		
+		dst[0]  = (src[2] << 4) | (src[1] >> 4);
+		dst[1]  = src[2] >> 4;
+		dst[2]  = 0x00;
+		_bch_encode(dst, 23, 12);
+		dst[2] |= (_parity(dst[0] | (dst[1] << 8) | (dst[2] << 16)) ^ 1) << 7;
+		dst += 3;
+		src += 3;
+	}
+	
+	memcpy(data, p, blocks * 3);
+}
+
 static void _update_udt(uint8_t udt[25], time_t timestamp)
 {
 	struct tm tm;
@@ -658,6 +688,20 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	strcpy((char *) &pkt[x], _sname);
 	x += strlen(_sname);
 	
+	if(s->eurocrypt)
+	{
+		/* Parameter ACCM */
+		pkt[x++] = 0x88;
+		pkt[x++] = 0x03;        /* Packet length = 3 */
+		b  = 1 << 15;           /* 0: Absence of ECM, 1: Presence of ECM */
+		b |= 0 << 14;           /* 0: CW derived 'by other means', 1: CW derived from CAFCNT */
+		b |= 1 << 10;           /* Subframe related location - TDMCID 01 */
+		b |= s->ec.ecm_addr;    /* Address 346 */
+		pkt[x++] = (b & 0x00FF) >> 0;
+		pkt[x++] = (b & 0xFF00) >> 8;
+		pkt[x++] = 0x40;        /* Eurocrypt */
+	}
+	
 	/* Parameter VCONF */
 	pkt[x++] = 0x90;	/* PI Analogue TV picture (VCONF) */
 	pkt[x++] = 1;		/* LI Length (1 byte) */
@@ -745,7 +789,7 @@ static void _create_audio_si_packet(mac_t *s, uint8_t *pkt)
 	
 	b |= 0 <<  7; /* Level of error protection (0: first level, 1: second level) */
 	b |= 1 <<  6; /* Coding law (0: linear, 1: companded) */
-	b |= 0 <<  5; /* Controlled access (0: no, 1: yes) */
+	b |= ((s->vsam & MAC_VSAM_CONTROLLED_ACCESS ? 1 : 0) & s->scramble_audio) << 5; /* Controlled access (0: no, 1: yes) */
 	b |= s->scramble_audio << 4; /* Scrambling (0: no, 1: yes) */
 	b |= 0 <<  3; /* Automatic mixing (0: mixing not intended, 1: mixing intended) */
 	b |= 4 <<  0; /* Audio config (0: 15 kHz mono, 2: 7 kHz mono, 4: 15 kHz stereo) */
@@ -797,6 +841,20 @@ int mac_init(vid_t *s)
 	
 	mac->vsam = MAC_VSAM_FREE_ACCESS;
 	
+	/* Initalise Eurocrypt, if required */
+	if(s->conf.eurocrypt)
+	{
+		mac->vsam = MAC_VSAM_CONTROLLED_ACCESS;
+		mac->eurocrypt = 1;
+		i = eurocrypt_init(s, s->conf.eurocrypt);
+		
+		if(i != VID_OK)
+		{
+			return(i);
+		}
+	}
+	
+	/* Configure scrambling */
 	switch(s->conf.scramble_video)
 	{
 	default: mac->vsam |= MAC_VSAM_UNSCRAMBLED; break;
@@ -867,7 +925,7 @@ int mac_init(vid_t *s)
 		mac->video_scale[x] = round((double) x * s->width / MAC_WIDTH);
 	}
 	
-	return(0);
+	return(VID_OK);
 }
 
 void mac_free(vid_t *s)
@@ -1194,6 +1252,11 @@ void mac_next_line(vid_t *s)
 	/* Move to the 0 line */
 	vid_adj_delay(s, 1);
 	
+	if(s->line == 1 && s->mac.eurocrypt)
+	{
+		eurocrypt_next_frame(s);
+	}
+	
 	if(s->line == 1)
 	{
 		uint8_t pkt[MAC_PACKET_BYTES];
@@ -1356,7 +1419,6 @@ void mac_next_line(vid_t *s)
 		/* Reset CA PRBS2 at the beginning of each frame */
 		if(s->line == 1)
 		{
-			/* TODO: Update the CW for Controlled Access here */
 			_prbs2_reset(&s->mac, s->frame - 1);
 		}
 		

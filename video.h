@@ -144,6 +144,7 @@ typedef struct {
 	int syster;
 	int systeraudio;
 	int acp;
+	char *eurocrypt;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;

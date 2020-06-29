@@ -96,6 +96,7 @@ static void print_usage(void)
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
+		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
 		"\n"
 		"Input options\n"
@@ -281,6 +282,24 @@ static void print_usage(void)
 		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
 		"to use the --systeraudio option.\n"
 		"\n"
+		"Eurocrypt\n"
+		"\n"
+		"Conditional access (CA) system used by D/D2MAC services, M and S2 versions are\n"
+		"supported.\n"
+		"\n"
+		"hacktv supports the following modes:\n"
+		"\n"
+		"  filmnet     = (M) A valid FilmNet card is required to decode.\n"
+		"  tv1000      = (M) A valid Viasat card is required to decode.\n"
+		"  ctv         = (M) A valid CTV card is required to decode.\n"
+		"  ctvs        = (S) A valid CTV card is required to decode.\n"
+		"  tvplus      = (M) A valid TV Plus (Netherlands) card is required to decode.\n"
+		"  tvs         = (S) A valid TVS (Denmark) card is required to decode.\n"
+		"  rdv         = (S) A valid RDV card is required to decode.\n"
+		"  nrk         = (S) A valid NRK card is required to decode.\n"
+		"\n"
+		"MultiMac style cards can also be used.\n"
+		"\n"
 	);
 }
 
@@ -291,13 +310,14 @@ static void print_usage(void)
 #define _OPT_VIDEOCRYPTS    1004
 #define _OPT_SYSTER         1005
 #define _OPT_SYSTERAUDIO    1006
-#define _OPT_ACP            1007
-#define _OPT_FILTER         1008
-#define _OPT_NOAUDIO        1009
-#define _OPT_NONICAM        1010
-#define _OPT_SINGLE_CUT     1011
-#define _OPT_DOUBLE_CUT     1012
-#define _OPT_SCRAMBLE_AUDIO 1013
+#define _OPT_EUROCRYPT      1007
+#define _OPT_ACP            1008
+#define _OPT_FILTER         1009
+#define _OPT_NOAUDIO        1010
+#define _OPT_NONICAM        1011
+#define _OPT_SINGLE_CUT     1012
+#define _OPT_DOUBLE_CUT     1013
+#define _OPT_SCRAMBLE_AUDIO 1014
 
 int main(int argc, char *argv[])
 {
@@ -325,6 +345,7 @@ int main(int argc, char *argv[])
 		{ "nonicam",        no_argument,       0, _OPT_NONICAM },
 		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
 		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
+		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
 		{ "frequency",      required_argument, 0, 'f' },
 		{ "amp",            no_argument,       0, 'a' },
@@ -515,7 +536,12 @@ int main(int argc, char *argv[])
 		case _OPT_DOUBLE_CUT: /* --double-cut */
 			s.scramble_video = 2;
 			break;
-	
+		
+		case _OPT_EUROCRYPT: /* --eurocrypt */
+			free(s.eurocrypt);
+			s.eurocrypt = strdup(optarg);
+			break;
+		
 		case _OPT_SCRAMBLE_AUDIO: /* --scramble-audio */
 			s.scramble_audio = 1;
 			break;
@@ -726,6 +752,23 @@ int main(int argc, char *argv[])
 		
 		vid_conf.syster = 1;
 		vid_conf.systeraudio = s.systeraudio;
+	}
+	
+	if(s.eurocrypt)
+	{
+		if(vid_conf.type != VID_MAC)
+		{
+			fprintf(stderr, "Eurocrypt is only compatible with D/D2-MAC modes.\n");
+			return(-1);
+		}
+		
+		if(vid_conf.scramble_video == 0)
+		{
+			/* Default to single-cut scrambling if none was specified */
+			vid_conf.scramble_video = 1;
+		}
+		
+		vid_conf.eurocrypt = s.eurocrypt;
 	}
 	
 	if(s.acp)
