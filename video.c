@@ -1620,6 +1620,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	double glut[0x100];
 	double level, slevel;
 	
+	/* Seed the system's PRNG, used by some of the video scramblers */
+	srand(time(NULL));
+	
 	memset(s, 0, sizeof(vid_t));
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
 	
