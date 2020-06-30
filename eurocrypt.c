@@ -165,7 +165,7 @@ static const uint8_t _perm[P_DIM] = {
 	 2,  8, 24, 14,
 	32, 27,  3,  9,
 	19, 13, 30,  6,
-	22, 11,  4, 25,
+	22, 11,  4, 25
 };
 
 static const uint8_t _pc2[PC2_DIM] = {
@@ -176,7 +176,7 @@ static const uint8_t _pc2[PC2_DIM] = {
 	41, 52, 31, 37, 47, 55,
 	30, 40, 51, 45, 33, 48,
 	44, 49, 39, 56, 34, 53,
-	46, 42, 50, 36, 29, 32,
+	46, 42, 50, 36, 29, 32
 };
 
 static const uint8_t _lshift[LS_DIM] = {
@@ -188,7 +188,7 @@ static void _permute_ec(uint8_t *data, const uint8_t *pr, int n)
 	uint8_t pin[8];
 	int i, j, k, t;
 	
-	for(i=0, k=0; k < n; i++)
+	for(i = 0, k = 0; k < n; i++)
 	{
 		int p = 0;
 		
@@ -281,7 +281,7 @@ static void _eurocrypt(const uint8_t *in, uint8_t *out, const uint8_t *key, int 
 		/* Key shift rotation */
 		if(!emode || (emode && hash))
 		{
-			for(j = 0; j < _lshift[i]; j++ )
+			for(j = 0; j < _lshift[i]; j++)
 			{
 				c = ((c << 1) ^ (c >> 27)) & 0xFFFFFFFL;
 				d = ((d << 1) ^ (d >> 27)) & 0xFFFFFFFL;
@@ -289,7 +289,7 @@ static void _eurocrypt(const uint8_t *in, uint8_t *out, const uint8_t *key, int 
 		}
 		
 		/* Key expansion */
-		for(j = 0, k = 0; j < 8; j++ )
+		for(j = 0, k = 0; j < 8; j++)
 		{
 			int t;
 			
@@ -445,10 +445,7 @@ static void _update_ecm_packet(eurocrypt_t *e, int t)
 	/* HASH */
 	pkt[x++] = 0xF0; /* PI */
 	pkt[x++] = 0x08; /* LI */
-	
-	/* Generate the hash */
-	_ecm_hash(&pkt[x], &pkt[3], e->mode);
-	x += 8;
+	_ecm_hash(&pkt[x], &pkt[3], e->mode); x += 8;
 	
 	/* Update the CI command length */
 	pkt[2] = x - 3;
@@ -468,13 +465,13 @@ static uint64_t _update_cw(eurocrypt_t *e, int t)
 	uint64_t cw;
 	int i;
 	
-	/* Fetch the next CW */
+	/* Fetch the next active CW */
 	for(cw = i = 0; i < 8; i++)
 	{
 		cw = (cw << 8) | e->cw[t][i];
 	}
 	
-	/* Generate next CW */
+	/* Generate a new CW */
 	t ^= 1;
 	
 	for(i = 0; i < 8; i++)
@@ -527,8 +524,6 @@ int eurocrypt_init(vid_t *vid, const char *mode)
 		fprintf(stderr, "Unrecognised Eurocrypt mode.\n");
 		return(VID_ERROR);
 	}
-	
-	fprintf(stderr, "Using Eurocrypt mode %s\n", e->mode->id);
 	
 	/* ECM/EMM address */
 	e->ecm_addr = 346;
