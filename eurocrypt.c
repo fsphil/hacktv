@@ -451,7 +451,7 @@ static void _update_ecm_packet(eurocrypt_t *e, int t)
 	x += 8;
 	
 	/* Update the CI command length */
-	pkt[2] = x - 2;
+	pkt[2] = x - 3;
 	
 	/* Test if the data is too large for a single packet */
 	if(x > 45)
