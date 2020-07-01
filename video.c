@@ -376,15 +376,16 @@ const vid_config_t vid_config_secam_l = {
 	.sync_level     = 0.00,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 	
 	.am_mono_carrier = 6500000, /* Hz */
 	
@@ -424,15 +425,16 @@ const vid_config_t vid_config_secam_dk = {
 	.sync_level     = 1.00,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
@@ -471,15 +473,16 @@ const vid_config_t vid_config_secam_fm = {
 	.sync_level     = -0.50,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	//.fm_left_carrier    = 7200000, /* Hz */
@@ -514,15 +517,16 @@ const vid_config_t vid_config_secam = {
 	.sync_level     = -0.30,
 	
 	.colour_mode    = VID_SECAM,
+	.burst_level    = 0.23,
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 1.000,
+	.iu_co          = -2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = -1.000,
+	.qv_co          = 2.000,
 };
 
 const vid_config_t vid_config_ntsc_m = {
@@ -1622,6 +1626,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	double glut[0x100];
 	double level, slevel;
 	
+	/* Seed the system's PRNG, used by some of the video scramblers */
+	srand(time(NULL));
+	
 	memset(s, 0, sizeof(vid_t));
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
 	
@@ -1767,7 +1774,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	if(s->conf.colour_mode == VID_SECAM)
 	{
-		double secam_level = 0.23 * (s->conf.white_level - s->conf.blanking_level) * level;
+		double secam_level = s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) * level;
 		
 		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
 		if(r != VID_OK)
@@ -1800,7 +1807,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		
 		if(r != VID_OK)
 		{
-			vid_free(s);
 			return(r);
 		}
 	}
@@ -2632,7 +2638,7 @@ static void _vid_next_line_raster(vid_t *s)
 		if(seq[2] != 'a') x = s->half_width;
 		if(seq[3] != 'a') w = s->half_width;
 		
-		x -= s->burst_left;
+		x -= s->active_left - s->burst_left;
 		
 		for(; x < w; x++)
 		{
@@ -2645,11 +2651,11 @@ static void _vid_next_line_raster(vid_t *s)
 			
 			if(((s->frame * s->conf.lines) + s->line) & 1)
 			{
-				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
 			}
 			else
 			{
-				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
 			}
 		}
 	}

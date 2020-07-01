@@ -29,6 +29,13 @@
 #define MAC_MODE_D2 1
 
 /* MAC VSAM modes */
+#define MAC_VSAM_DOUBLE_CUT        (0 << 0)
+#define MAC_VSAM_UNSCRAMBLED       (1 << 0)
+#define MAC_VSAM_SINGLE_CUT        (2 << 0)
+
+#define MAC_VSAM_FREE_ACCESS       (0 << 2)
+#define MAC_VSAM_CONTROLLED_ACCESS (1 << 2)
+
 #define MAC_VSAM_FREE_ACCESS_DOUBLE_CUT       0 /* 000: free access, double-cut component rotation scrambling */
 #define MAC_VSAM_FREE_ACCESS_UNSCRAMBLED      1 /* 001: free access, unscrambled */
 #define MAC_VSAM_FREE_ACCESS_SINGLE_CUT       2 /* 010: free access, single-cut line rotation scrambling */
@@ -66,16 +73,28 @@
 #define MAC_FIRST_LEVEL_PROTECTION  0
 #define MAC_SECOND_LEVEL_PROTECTION 1
 
-/* CA PRBS2 defines */
-#define MAC_PRBS2_CW_FA (((uint64_t) 1 << 60) - 1)
-#define MAC_PRBS2_CW_MASK  (((uint64_t) 1 << 60) - 1)
-#define MAC_PRBS2_SR1_MASK (((uint32_t) 1 << 31) - 1)
-#define MAC_PRBS2_SR2_MASK (((uint32_t) 1 << 29) - 1)
+/* CA PRBS defines */
+#define MAC_PRBS_CW_FA    (((uint64_t) 1 << 60) - 1)
+#define MAC_PRBS_CW_MASK  (((uint64_t) 1 << 60) - 1)
+#define MAC_PRBS_SR1_MASK (((uint32_t) 1 << 31) - 1)
+#define MAC_PRBS_SR2_MASK (((uint32_t) 1 << 29) - 1)
+#define MAC_PRBS_SR3_MASK (((uint32_t) 1 << 31) - 1)
+#define MAC_PRBS_SR4_MASK (((uint32_t) 1 << 29) - 1)
+#define MAC_PRBS_SR5_MASK (((uint32_t) 1 << 61) - 1)
+
+#include "eurocrypt.h"
+
+typedef struct {
+	uint8_t pkt[MAC_PAYLOAD_BYTES];
+	int address;
+	int continuity;
+	int scramble; /* 0 = Don't scramble, 1 = Scramble */
+} _mac_packet_queue_item_t;
 
 typedef struct {
 	
 	/* The packet queue */
-	uint8_t pkts[MAC_QUEUE_LEN * MAC_PACKET_BYTES];	/* Copy of the packets */
+	_mac_packet_queue_item_t pkts[MAC_QUEUE_LEN];	/* Copy of the packets */
 	int len;					/* Number of packets in the queue */
 	int p;						/* Index of the next free slot */
 	
@@ -107,6 +126,7 @@ typedef struct {
 	uint8_t vsam; /* VSAM Vision scrambling and access mode */
 	uint8_t ratio; /* 0: 4:3, 1: 16:9 */
 	uint16_t audio_channel;
+	int scramble_audio;
 	
 	/* 1 = Teletext enabled */
 	int teletext;
@@ -138,23 +158,26 @@ typedef struct {
 	int black_ref_left;
 	int black_ref_right;
 	
-	/* PRBS generator */
+	/* PRBS generators */
 	uint64_t cw;
 	uint64_t sr1;
 	uint64_t sr2;
+	uint64_t sr3;
+	uint64_t sr4;
 	int video_scale[MAC_WIDTH];
 	
-	/* CA stuff */
-	int ecm_addr;
-	int ecm_toggle;
-	ec_t *ec;
+	/* Eurocrypt state */
+	int eurocrypt;
+	eurocrypt_t ec;
 	
 } mac_t;
+
+extern void mac_golay_encode(uint8_t *data, int blocks);
 
 extern int mac_init(vid_t *s);
 extern void mac_free(vid_t *s);
 
-extern int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const uint8_t *data);
+extern int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const uint8_t *data, int scramble);
 extern int mac_write_audio(vid_t *s, const int16_t *audio);
 
 extern void mac_next_line(vid_t *s);

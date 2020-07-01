@@ -1,5 +1,6 @@
 /* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
+/* Copyright 2020 Alex L. James                                          */
 /* Copyright 2020 Philip Heron <phil@sanslogic.co.uk>                    */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
@@ -15,27 +16,35 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef EUROCRYPT_H_
-#define EUROCRYPT_H_
+#ifndef _EUROCRYPT_H
+#define _EUROCRYPT_H
 
-#include "video.h"
+typedef struct {
+	const char *id;		/* Mode id */
+	int emode;		/* Eurocrypt M or S2 mode */
+	uint8_t key[7];		/* Decryption key */
+	uint8_t ppid[3];	/* Programme provider identifier */
+	uint8_t cdate[4];	/* CDATE + THEME/LEVEL */
+} ec_mode_t;
 
-#define ECM 0
-#define HASH 1
+typedef struct {
+	
+	const ec_mode_t *mode;
+	
+	/* Encrypted even and odd control words */
+	uint8_t ecw[2][8];
+	
+	/* Decrypted even and odd control words */
+	uint8_t cw[2][8];
+	
+	/* ECM packet */
+	int ecm_addr;
+	uint8_t ecm_pkt[MAC_PAYLOAD_BYTES];
+	
+} eurocrypt_t;
 
-#define EC_M 0
-#define EC_S 3
-
-#define IP_DIM 64
-#define IPP_DIM 64
-#define E_DIM 48
-#define S_BOXES 8
-#define S_DIM 64
-#define P_DIM 32
-#define PC2_DIM 48
-#define LS_DIM 16
-
-extern void eurocrypt_init(mac_t *mac, char *mode);
-extern void generate_ecm(ec_t *e, int cafcnt);
+extern int eurocrypt_init(vid_t *s, const char *mode);
+extern void eurocrypt_next_frame(vid_t *s);
 
 #endif
+
