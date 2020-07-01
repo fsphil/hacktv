@@ -46,9 +46,6 @@
 #include <math.h>
 #include "video.h"
 
-/* Experimental - Sky 06/07 mode channel ID */
-#define SKY07_CHID 0x00	
-
 /* Packet header sequences */
 static const uint8_t _sequence[8] = {
 	0x87,0x96,0xA5,0xB4,0xC3,0xD2,0xE1,0x87,
@@ -75,7 +72,7 @@ static _vc_block_t _sky07_blocks[] = {
 		{
  			{ 0x20 },
  			{ }, { }, { }, { },	{ },
- 			{ 0xE8,0x29,0x3E,0xED,0xF0,0x1C,0x01,0x6F,0xE9,0x06,0xD6 }
+ 			{ 0xE8,0x29,0x3E,0xED,0xF0,0x1C,0x00,0x6F,0xE9,0x06,0xD6 }
 		},
 	},
 	{
@@ -83,7 +80,7 @@ static _vc_block_t _sky07_blocks[] = {
 		{
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x30,0x37,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { },	{ },
- 			{ 0xE8,0x29,0x3E,0xED,0xF0,0x1C,0x01,0x6F,0xE9,0x06,0xD6 }
+ 			{ 0xE8,0x29,0x3E,0xED,0xF0,0x1C,0x00,0x6F,0xE9,0x06,0xD6 }
 		},
 	},
 };
@@ -273,7 +270,7 @@ static _vc2_block_t _vc2_blocks[] = {
 	{
 		0xA0, 0,
 		{
-			{ 0x21,0x02,0x6B,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x56,0x43,0x32 },
+			{ 0x21,0x02,0x6B,0x4D,0x55,0x4C,0x54,0x49,0x43,0x48,0x4F,0x49,0x43,0x45},
 			{ 0xE1 },
 			{ 0xE1 },
 			{ 0xE1 },
@@ -364,7 +361,7 @@ const unsigned char sky09_key[216] = {
 	0x17, 0xb3, 0x2c, 0x69, 0x41, 0xe8, 0xe7, 0x0e
 };
 
-/* Key used by Multichoice Central Europe broadcase in Videocrypt 2 */
+/* Key used by Multichoice Central Europe in Videocrypt 2 */
 const unsigned char vc2_key[] = {
     0x58,0x6B,0x4D,0x05,0xB0,0x69,0x83,0x16,
     0xA6,0x48,0xDE,0x5E,0x0B,0xAA,0x49,0xA9,
@@ -602,6 +599,28 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		s->block_len = 2;
 		_vc_seed_sky07(&s->blocks[0], VC_TAC2);
 		_vc_seed_sky07(&s->blocks[1], VC_TAC2);
+		
+		// /* Experimental EMMs for TAC cards */
+		// if(s->vid->conf.enableemm)
+		// {
+		// 	/*  
+		// 	 * 0x08: Unblock channel
+		// 	 * 0x09: Enable card
+		// 	 * 0x81: Set EXP date
+		// 	 */
+		// 	_vc_emm07(&s->blocks[0],0x08,s->vid->conf.enableemm);
+		// 	_vc_emm07(&s->blocks[1],0x09,s->vid->conf.enableemm);
+		// }
+		
+		// if(s->vid->conf.disableemm)
+		// {
+		// 	/*  
+		// 	 * 0x28: Block channel
+		// 	 * 0x29: Disable card
+		// 	 */
+		// 	_vc_emm07(&s->blocks[0],0x28,s->vid->conf.disableemm);
+		// 	_vc_emm07(&s->blocks[1],0x29,s->vid->conf.disableemm);
+		// }
 	}
 	else if (strcmp(mode, "xtea") == 0)
 	{
@@ -983,6 +1002,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 	
 	vid_adj_delay(s->vid, 1);
 }
+
 void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial)
 {
 	int i;
@@ -1048,15 +1068,12 @@ void _vc_seed_sky07(_vc_block_t *s, int ca)
 	if(ca == VC_TAC2)
 	/* TAC key offsets */
 	{
-		if (s->messages[6][1] > 0x33) offset = 0x08;
-		if (s->messages[6][1] > 0x3a) offset = 0x32;
-		if (s->messages[6][1] > 0x43) offset = 0x40;
-		if (s->messages[6][1] > 0x4a) offset = 0x48;
+		if (s->messages[6][1] > 0x3a) offset = 0x20;
+		if (s->messages[6][1] > 0x48) offset = 0x40;
 	}
 	else if (ca == VC_SKY7)
 	/* Sky 07 key offsets */
 	{
-		s->messages[6][6] = SKY07_CHID;
 		if (s->messages[6][1] > 0x32) offset = 0x08;
 		if (s->messages[6][1] > 0x3a) offset = 0x18;
 	}
@@ -1088,7 +1105,7 @@ void _vc_seed_sky07(_vc_block_t *s, int ca)
 	   Odd bug(?) in newer TAC card where checksum is always 0x0d */
 	for (i = 0; i < 64; i++)
 	{
-		_vc_kernel07(answ, &oi, (ca == VC_TAC2 && s->messages[6][1] > 0x30) ? 0x0d : s->messages[6][31], offset, ca);
+		_vc_kernel07(answ, &oi, (ca == VC_TAC2) ? 0x0d : s->messages[6][31], offset, ca);
 	}
 	
 	/* Mask high nibble of last byte as it's not used */

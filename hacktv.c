@@ -866,8 +866,11 @@ int main(int argc, char *argv[])
 	
 	if(s.enableemm)
 	{
-		if((s.videocrypt && !(strcmp(s.videocrypt, "sky07") == 0 || strcmp(s.videocrypt, "sky09") == 0)) ||
-		   (s.videocrypt2 && !(strcmp(s.videocrypt2, "conditional") == 0)))
+		if((s.videocrypt && 
+		!(strcmp(s.videocrypt, "sky07") == 0 ||
+		  strcmp(s.videocrypt, "sky09") == 0)
+		) ||
+		(s.videocrypt2 && !(strcmp(s.videocrypt2, "conditional") == 0)))
 		{
 			fprintf(stderr, "EMMs are currently only supported in sky07, sky09 and Videocrypt 2 mode.\n");
 			return(-1);
@@ -878,8 +881,11 @@ int main(int argc, char *argv[])
 	
 	if(s.disableemm)
 	{
-		if((s.videocrypt && !(strcmp(s.videocrypt, "sky07") == 0 || strcmp(s.videocrypt, "sky09") == 0)) ||
-		   (s.videocrypt2 && !(strcmp(s.videocrypt2, "conditional") == 0)))
+		if((s.videocrypt && 
+		!(strcmp(s.videocrypt, "sky07") == 0 ||
+		  strcmp(s.videocrypt, "sky09") == 0)
+		) ||
+		(s.videocrypt2 && !(strcmp(s.videocrypt2, "conditional") == 0)))
 		{
 			fprintf(stderr, "EMMs are currently only supported in sky07, sky09 and Videocrypt 2 mode.\n");
 			return(-1);
