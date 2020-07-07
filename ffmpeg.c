@@ -1297,7 +1297,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		if(s->conf.logo)
 		{
 			asprintf(&_vid_logo_filter,"movie=%s,scale=iw/(%i/%i)/%f:iw/(iw/ih)/(%i/%i)/(4/3)[tvlogo];",s->conf.logo,video_width,source_width,(source_ratio >= (float) 14/9 ? (float) 4/3 : 1),video_height,source_height);
-			asprintf(&_vid_output_filter,"[tvlogo]overlay=W*(20/25):H*(1/15)");
+			asprintf(&_vid_output_filter,"[tvlogo]overlay=W*(20/25):H*(2/25)");
 		}
 		else
 		{
@@ -1309,7 +1309,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		if(s->conf.timestamp)
 		{
 			asprintf(&_vid_timecode_filter,
-				"drawtext=resources%cfonts%cStencil.ttf:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/20: y=h*16/18:shadowx=1:shadowy=1",
+				"drawtext=resources%cfonts%cStencil.ttf:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/10: y=h*16/18:shadowx=1:shadowy=1",
 				OS_SEP, OS_SEP, s->conf.position,fps);
 		}
 		else

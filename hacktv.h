@@ -69,15 +69,16 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	char *eurocrypt;
-	char *eurocryptdc;
 	char *syster;
 	int systeraudio;
+	char *eurocrypt;
 	int acp;
 	int filter;
 	int subtitles;
 	int noaudio;
 	int nonicam;
+	int scramble_video;
+	int scramble_audio;
 	uint64_t frequency;
 	int amp;
 	int gain;

@@ -115,7 +115,6 @@ typedef struct {
 	
 	/* Video */
 	int type;
-	int mac_mode;
 	
 	int frame_rate_num;
 	int frame_rate_den;
@@ -148,8 +147,6 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	char *eurocrypt;
-	char *eurocryptdc;
 	uint32_t enableemm;
 	uint32_t disableemm;
 	int showecm;
@@ -158,6 +155,7 @@ typedef struct {
 	int systeraudio;
 	int acp;
 	int subtitles;
+	char *eurocrypt;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;
@@ -196,6 +194,11 @@ typedef struct {
 	/* AM audio */
 	double am_mono_carrier;
 	double am_mono_bandwidth;
+	
+	/* D/D2-MAC options */
+	int mac_mode;
+	int scramble_video;
+	int scramble_audio;
 	
 } vid_config_t;
 

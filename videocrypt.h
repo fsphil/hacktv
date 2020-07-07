@@ -35,7 +35,7 @@
 
 #define VC_LEFT                120
 #define VC_RIGHT               (VC_LEFT + 710)
-#define VC_OVERLAP             15
+#define VC_OVERLAP             17
 #define VC_FIELD_1_START       24
 #define VC_FIELD_2_START       336
 #define VC_LINES_PER_FIELD     287
