@@ -442,7 +442,6 @@ int main(int argc, char *argv[])
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
 	s.eurocrypt = NULL;
-	s.eurocryptdc = NULL;
 	s.syster = NULL;
 	s.d11 = NULL;
 	s.systeraudio = 0;
@@ -575,16 +574,6 @@ int main(int argc, char *argv[])
 			s.videocrypts = strdup(optarg);
 			break;
 		
-		case _OPT_EUROCRYPT: /* --eurocrypt */
-			free(s.eurocrypt);
-			s.eurocrypt = strdup(optarg);
-			break;
-		
-		case _OPT_EUROCRYPTDC: /* --eurocrypt-dc */
-			free(s.eurocryptdc);
-			s.eurocrypt = s.eurocryptdc = strdup(optarg);
-			break;
-			
 		case _OPT_ENABLE_EMM: /* --enable-emm <card_serial> */
 			s.enableemm = (uint32_t) strtod(optarg, NULL);
 			break;
@@ -880,7 +869,7 @@ int main(int argc, char *argv[])
 		vid_conf.videocrypts = s.videocrypts;
 	}
 	
-	if(s.eurocrypt || s.eurocryptdc)
+	if(s.eurocrypt)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_MAC)
 		{
@@ -888,7 +877,6 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		vid_conf.eurocrypt = s.eurocrypt;
-		if(s.eurocryptdc) vid_conf.eurocryptdc = s.eurocryptdc;
 	}
 	
 	if(s.enableemm)

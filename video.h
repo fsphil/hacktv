@@ -147,8 +147,6 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	char *eurocrypt;
-	char *eurocryptdc;
 	uint32_t enableemm;
 	uint32_t disableemm;
 	int showecm;

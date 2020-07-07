@@ -498,6 +498,30 @@ void eurocrypt_next_frame(vid_t *vid)
 		
 		/* Update the ECM packet */
 		_update_ecm_packet(e, t);
+		
+		/* Print ECM */
+		if(vid->conf.showecm)
+		{
+			int i;
+			fprintf(stderr, "\nEurocrypt ECM In:\t");
+			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->ecw[0][i]);
+			fprintf(stderr, "| ");
+			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->ecw[1][i]);
+			fprintf(stderr,"\nEurocrypt ECM Out:\t");
+			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->cw[0][i]);
+			fprintf(stderr, "| ");
+			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->cw[1][i]);
+			fprintf(stderr,"\nUsing CW (%s):  \t%s", t ? "odd" : "even", t ? "                          " : "");
+			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) e->cw[t][i]);
+			fprintf(stderr,"\nHash:\t\t\t");
+			for(i = 73; i < 91; i+=6) 
+			{
+				/* Remove Golay bits before printing */
+				fprintf(stderr, "%02X %02X ", e->ecm_pkt[i], (e->ecm_pkt[i + 1] & 0x0F) | ((e->ecm_pkt[i + 3] & 0x0F) << 4));
+				if(i != 85) fprintf(stderr, "%02X ", ((e->ecm_pkt[i + 4] << 4) & 0xF0) | (e->ecm_pkt[i + 3] >> 4));
+			}
+			fprintf(stderr,"\n");
+		}
 	}
 	
 	/* Send an ECM packet every 12 frames - ~0.5s */

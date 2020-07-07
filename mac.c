@@ -23,7 +23,6 @@
 #include "video.h"
 #include "nicam728.h"
 #include "mac.h"
-#include "eurocrypt.h"
 
 /* MAC sync codes */
 #define MAC_CLAMP 0xEAF3927FUL
@@ -40,11 +39,11 @@ static const uint8_t _hamming[0x10] = {
 };
 
 /* Network origin and name */
-static const char *_nwo    = "HackTV";
-static const char *_nwname = "HackTV";
+static const char *_nwo    = "hacktv";
+static const char *_nwname = "hacktv";
 
 /* Service Reference */
-static const char *_sname = "HackTV"; /* Service Name (max 32 characters) */
+static const char *_sname = "hacktv"; /* Service Name (max 32 characters) */
 
 /* RDF sequence */
 typedef struct {
@@ -449,7 +448,6 @@ static void _update_udt(uint8_t udt[25], time_t timestamp)
 	struct tm tm;
 	int i, mjd;
 	
-	#ifndef WIN32
 	/* Get the timezone offset */
 	localtime_r(&timestamp, &tm);
 	i = tm.tm_gmtoff / 1800;
@@ -460,7 +458,7 @@ static void _update_udt(uint8_t udt[25], time_t timestamp)
 	mjd = 367.0 * (1900 + tm.tm_year)
 	    - (int) (7.0 * (1900 + tm.tm_year + (int) ((1 + tm.tm_mon + 9.0) / 12.0)) / 4.0)
 	    + (int) (275.0 * (1 + tm.tm_mon) / 9.0) + tm.tm_mday - 678987.0;
-		
+	
 	/* Set the Unified Date and Time sequence */
 	memset(udt, 0, 25);
 	udt[ 0] = mjd / 10000 % 10;     /* MJD digit weight 10^4 */
@@ -476,7 +474,6 @@ static void _update_udt(uint8_t udt[25], time_t timestamp)
 	udt[10] = tm.tm_sec / 1 % 10;   /* UTC seconds (units)   */
 	udt[15] = (i >> 4) & 15;        /* Local Offset */
 	udt[16] = i & 15;               /* Local Offset */
-	#endif
 	
 	/* Apply the chain code sequence */
 	/* 0000101011101100011111001 */
@@ -581,42 +578,6 @@ static void _read_packet(mac_t *s, _mac_packet_queue_item_t *pkt, int subframe)
 	memcpy(pkt, &sf->queue.pkts[x], sizeof(_mac_packet_queue_item_t));
 	
 	sf->queue.len--;
-}
-
-static void _create_ecm_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES], int toggle)
-{
-	int x, b;
-	x = 0;
-	
-	memset(pkt, 0, MAC_PACKET_BYTES);
-	
-	/* PT - always 0x00 for ECM */
-	pkt[x++] = 0x00;
-	
-	/* Command Identifier, CI */
-	b = 0x20 << 2;           /* Crypto-algo type - always 0x20 for Eurocrypt PC2 implementation */
-	b |= 1 << 1;             /* Format bit - always 1 */
-	b |= toggle << 0; /* Toggle bit */
-	pkt[x++] = b; 
-	
-	pkt[x++] = 0x02; /* Command Length Indicator, CLI */
-	
-	memcpy(pkt + x, s->ec->data, 42);
-	x += 41;
-	
-	/* Update the CI command length */
- 	pkt[2] = x - pkt[2];
-	
-	/* Test if the data is too large for a single packet */
-	if(x > 45)
-	{
-		fprintf(stderr, "Warning: ECM packet too large (%d)\n", x);
-	}
-	
-	/* TODO: add continuity for larger packets */
-	
-	_golay_encode(pkt + 1, 30);
-	
 }
 
 static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
@@ -949,11 +910,13 @@ int mac_init(vid_t *s)
 	
 	/* Set the video properties */
 	s->active_width &= ~1;	/* Ensure the active width is an even number */
-	mac->chrominance_width = s->active_width / 2;
+	mac->chrominance_width = s->active_width / 2;	
 	mac->chrominance_left  = round(s->sample_rate * (233.5 / MAC_CLOCK_RATE));
 	mac->white_ref_left    = round(s->sample_rate * (371.0 / MAC_CLOCK_RATE));
 	mac->black_ref_left    = round(s->sample_rate * (533.0 / MAC_CLOCK_RATE));
 	mac->black_ref_right   = round(s->sample_rate * (695.0 / MAC_CLOCK_RATE));
+	
+	fprintf(stderr,"chroma start %d, chroma width %d, active start %d, active width %d", mac->chrominance_left, mac->chrominance_width, s->active_left, s->active_width );
 	
 	/* Setup PRBS */
 	mac->cw = MAC_PRBS_CW_FA;
@@ -971,7 +934,7 @@ void mac_free(vid_t *s)
 {
 	mac_t *mac = &s->mac;
 	
-	free(mac->lut);
+        free(mac->lut);
 }
 
 int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const uint8_t *data, int scramble)
@@ -1164,7 +1127,7 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	
 	/* RDF */
 	rdf = (s->conf.mac_mode == MAC_MODE_D2 ? _rdf_d2 : _rdf_d);
-	dx = _bits(df,  0, s->frame % 256, 8);			/* FCNT (8 bits) */
+	dx = _bits(df,  0, s->frame & 0xFF, 8);			/* FCNT (8 bits) */
 	dx = _bits(df, dx, 0, 1);				/* UDF (1 bit) */
 	dx = _bits(df, dx, rdf[s->mac.rdf].tdmcid, 8);		/* TDMCID (8 bits) */
 	dx = _bits(df, dx, rdf[s->mac.rdf].fln1, 10);		/* FLN1 (10 bits) */
@@ -1336,17 +1299,6 @@ void mac_next_line(vid_t *s)
 		if(s->frame % 25 == 0)
 		{
 			_update_udt(s->mac.udt, time(NULL));
-		}
-		
-		/* Send packet every 12 frames - ~0.5s */
-		if(s->mac.vsam & 4)
-		{
-			if(s->frame % 12 == 0)
-			{
-				_create_ecm_packet(&s->mac, pkt, s->mac.ecm_toggle);
-				
-				mac_write_packet(s, 0, s->mac.ecm_addr, 0, pkt);
-			}
 		}
 	}
 	
