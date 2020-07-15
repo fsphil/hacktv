@@ -252,7 +252,7 @@ void dance_encode_frame_a(
 		}
 		
 		/* Write additional data (packets, etc. Not used yet) */
-		x = _rbits(&f1[4], x, 0, 15);
+		x = _rbits(&f2[4], x, 0, 15);
 		
 		/* Apply error correction codes */
 		_bch_encode(&f1[4], i * 63);
@@ -322,7 +322,7 @@ void dance_encode_frame_b(
 		}
 		
 		/* Write additional data (packets, etc. Not used yet) */
-		x = _rbits(&f1[4], x, 0, 7);
+		x = _rbits(&f2[4], x, 0, 7);
 		
 		/* Apply error correction codes */
 		_bch_encode(&f1[4], i * 63);
@@ -338,9 +338,6 @@ void dance_encode_frame_b(
 	}
 	
 	/* Increment the frame counter */
-	s->frame++;
-
-	
 	s->frame++;
 }
 
