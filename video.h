@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include "nicam728.h"
+#include "dance.h"
 #include "fir.h"
 
 typedef struct vid_t vid_t;
@@ -110,6 +111,7 @@ typedef struct {
 	double fm_audio_level;
 	double am_audio_level;
 	double nicam_level;
+	double dance_level;
 	
 	/* Video */
 	int type;
@@ -179,6 +181,10 @@ typedef struct {
 	/* Stereo NICAM audio */
 	double nicam_carrier;
 	double nicam_beta;
+	
+	/* DANCE audio */
+	double dance_carrier;
+	double dance_beta;
 	
 	/* AM audio */
 	double am_mono_carrier;
@@ -291,6 +297,11 @@ struct vid_t {
 	nicam_mod_t nicam;
 	int16_t nicam_buf[NICAM_AUDIO_LEN * 2];
 	size_t nicam_buf_len;
+	
+	/* DANCE audio state */
+	dance_mod_t dance;
+	int16_t dance_buf[DANCE_AUDIO_LEN * 2];
+	size_t dance_buf_len;
 	
 	/* AM Mono audio state */
 	_mod_am_t am_mono;

@@ -165,6 +165,7 @@ static void print_usage(void)
 		"  525pal        = PAL colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
 		"  m             = NTSC colour, 30/1.001 fps, 525 lines, AM (complex), 4.5 MHz FM audio\n"
 		"  ntsc-fm       = NTSC colour, 30/1.001 fps, 525 lines, FM (complex), 6.5 MHz FM audio\n"
+		"  ntsc-bs       = NTSC colour, 30/1.001 fps, 525 lines, FM (complex), BS digital audio\n"
 		"  ntsc          = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
 		"  l             = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz AM\n"
 		"                  audio\n"
@@ -649,10 +650,12 @@ int main(int argc, char *argv[])
 		vid_conf.fm_audio_level = 0;
 		vid_conf.am_audio_level = 0;
 		vid_conf.nicam_level = 0;
+		vid_conf.dance_level = 0;
 		vid_conf.fm_mono_carrier = 0;
 		vid_conf.fm_left_carrier = 0;
 		vid_conf.fm_right_carrier = 0;
 		vid_conf.nicam_carrier = 0;
+		vid_conf.dance_carrier = 0;
 		vid_conf.am_mono_carrier = 0;
 	}
 	
