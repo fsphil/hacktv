@@ -15,8 +15,8 @@
 /*                                                                       */
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-#ifndef _SYSTER_DES_H
-#define _SYSTER_DES_H
+#ifndef _SYSTER_CA_H
+#define _SYSTER_CA_H
 
 extern uint64_t _get_syster_cw(unsigned char *ecm, unsigned char k64[8], int m);
 

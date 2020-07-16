@@ -68,22 +68,21 @@
 #include <inttypes.h>
 #include "video.h"
 #include "vbidata.h"
-#include "systerdes.h"
-
-/* 
-  * 64-bit decryption key.
-  * 
-  * This key is used for supplied PIC hex file.
-  * This can be edited at internal EEPROM address 0x08 to 0x0F
-  * in the hex file and programmed back to PIC.
-  *
-  * If you know the key for your official card, put it here.
- *
-*/
+#include "systerca.h"
 
 /* 0 - 12.8 kHz complex FIR filter taps, sample rate 32 kHz */
 
 #define NTAPS 771
+
+static ng_mode_t _ng_modes[] = {
+	{ "premiere-fa", { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x88, 0x15, 0x00, 0x00 }, "01/01/1997",  0 },
+	{ "premiere-ca", { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34 }, { 0x7F, 0x01, 0x00, 0x00, 0xFF, 0xFF, 0xA9, 0x91 }, "01/01/2053",  0 }, /* Hack for dates */
+	{ "cplfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x05, 0x11, 0x00, 0x88, 0x15, 0x00, 0x00 }, "01/01/1997", -4 },
+	{ "cfrca",       { 0x00, 0xAE, 0x52, 0x90, 0x49, 0xF1, 0xF1, 0xBB }, { 0xFF, 0x01, 0x01, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
+	{ "cfrfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
+	{ "cesfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -4 },
+	{ "ntv",         { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/2053",  1 }, /* HTB+ Russia - not tested */
+};
 
 static const int16_t _firi[NTAPS] = {
 	0,-2,-1,-1,-2,0,-2,-1,-1,-2,0,-2,-1,-1,-2,0,-2,-1,-1,-2,0,-2,-1,-1,-2,0,-2,-1,-1,-2,0,-3,-1,-1,-3,0,-3,-1,-1,-3,0,-3,-1,-1,-3,0,-3,-1,-1,-3,0,-3,-1,-1,-4,0,-4,-1,-1,-4,0,-4,-2,-2,-4,0,-4,-2,-2,-5,0,-5,-2,-2,-5,0,-5,-2,-2,-5,0,-5,-2,-2,-6,0,-6,-2,-2,-6,0,-6,-3,-3,-7,0,-7,-3,-3,-7,0,-8,-3,-3,-8,0,-8,-3,-3,-9,0,-9,-3,-3,-9,0,-10,-4,-4,-10,0,-10,-4,-4,-11,0,-11,-4,-4,-12,0,-12,-5,-5,-12,0,-13,-5,-5,-13,0,-14,-5,-5,-14,0,-15,-6,-6,-15,0,-16,-6,-6,-16,0,-17,-6,-7,-17,0,-18,-7,-7,-19,0,-19,-7,-7,-20,0,-20,-8,-8,-21,0,-22,-8,-8,-22,0,-23,-9,-9,-24,0,-24,-9,-10,-25,0,-26,-10,-10,-27,0,-28,-11,-11,-29,0,-29,-11,-11,-30,0,-31,-12,-12,-32,0,-33,-13,-13,-34,0,-35,-14,-14,-36,0,-37,-14,-14,-39,0,-39,-15,-15,-41,0,-42,-16,-16,-43,0,-44,-17,-17,-46,0,-47,-18,-18,-49,0,-50,-19,-19,-52,0,-53,-21,-21,-55,0,-56,-22,-22,-58,0,-60,-23,-23,-62,0,-63,-25,-25,-66,0,-67,-26,-26,-70,0,-72,-28,-28,-75,0,-77,-30,-30,-80,0,-82,-32,-32,-85,0,-87,-34,-34,-91,0,-94,-36,-37,-98,0,-101,-39,-39,-105,0,-108,-42,-43,-114,0,-117,-46,-46,-123,0,-127,-50,-50,-134,0,-138,-54,-55,-146,0,-151,-59,-60,-161,0,-167,-65,-66,-178,0,-185,-73,-74,-199,0,-208,-82,-83,-224,0,-236,-93,-95,-257,0,-272,-108,-110,-300,0,-321,-128,-132,-359,0,-389,-156,-162,-447,0,-493,-200,-210,-588,0,-671,-277,-299,-857,0,-1046,-452,-513,-1573,0,-2356,-1205,-1795,-9443,-34,9427,1808,1197,2360,0,1570,516,448,1048,0,855,301,276,672,0,587,212,199,494,0,446,163,155,390,0,359,132,127,321,0,300,111,107,273,0,257,96,92,237,0,224,84,81,208,0,198,74,72,186,0,178,67,65,167,0,160,60,59,152,0,146,55,54,138,0,134,50,49,127,0,123,46,45,117,0,113,43,42,108,0,105,40,39,101,0,98,37,36,94,0,91,34,34,88,0,85,32,32,82,0,80,30,30,77,0,75,28,28,72,0,70,27,26,67,0,66,25,24,63,0,62,23,23,60,0,58,22,22,56,0,55,21,20,53,0,52,20,19,50,0,49,18,18,47,0,46,17,17,44,0,43,16,16,42,0,41,15,15,39,0,38,15,14,37,0,36,14,13,35,0,34,13,13,33,0,32,12,12,31,0,30,12,11,29,0,29,11,11,28,0,27,10,10,26,0,25,10,9,24,0,24,9,9,23,0,22,8,8,22,0,21,8,8,20,0,20,7,7,19,0,19,7,7,18,0,17,7,6,17,0,16,6,6,16,0,15,6,6,15,0,14,5,5,14,0,13,5,5,13,0,12,5,5,12,0,11,4,4,11,0,11,4,4,10,0,10,4,4,10,0,9,3,3,9,0,9,3,3,8,0,8,3,3,8,0,7,3,3,7,0,7,3,2,6,0,6,2,2,6,0,6,2,2,5,0,5,2,2,5,0,5,2,2,5,0,5,2,2,4,0,4,2,2,4,0,4,1,1,4,0,4,1,1,3,0,3,1,1,3,0,3,1,1,3,0,3,1,1,3,0,3,1,1,3,0,2,1,1,2,0,2,1,1,2,0,2,1,1,2,0,2,1,1,2,0,2,1,1,2,0,2,1,1,2,0,
@@ -124,7 +123,7 @@ static const uint8_t _key_table1[0x100] = {
 };
 
 /* Canal+ FR (Oct 1997) */
-/*static const uint8_t _key_table2[0x100] = {
+/* static const uint8_t _key_table2[0x100] = {
 	 0,  1,  2,  3,  4,  5,  6,  7,  2,  5,  4,  7,  8,  9, 10, 11,
 	14, 17, 16, 19, 22, 25, 24, 27, 28, 31, 30,  1, 24, 27, 26, 29,
 	 8, 11, 10, 13, 20, 23, 22, 25, 20, 21, 22, 23, 30, 31,  0,  1,
@@ -341,38 +340,38 @@ static void _update_field_order(ng_t *s)
 
 void _create_d11_delay_table(ng_t *s)
 {
- /* Magic starting seed = 1337d shifted 177 times */
- int nCode = 0x672;
- int b10,b8, d11_delay_index;
- int d11_field = -1;
+	/* Magic starting seed = 1337d shifted 177 times */
+	int seed = 0x672;
+	int b10, b8, d11_delay_index;
+	int d11_field = -1;
 
- for(int line = 0; line < D11_LINES_PER_FIELD * D11_FIELDS ; line++)
- {
-	 if(line % D11_LINES_PER_FIELD == 0) d11_field++;
+	for(int line = 0; line < D11_LINES_PER_FIELD * D11_FIELDS ; line++)
+	{
+		if(line % D11_LINES_PER_FIELD == 0) d11_field++;
 
-	 /* Get bit 10 */
-	 b10 = ((nCode & 0x400) >> 10) & 0x01;
+		/* Get bit 10 */
+		b10 = ((seed & 0x400) >> 10) & 0x01;
 
-	 /* Get bit 8 */
-	 b8  = ((nCode & 0x100) >> 8) & 0x01;
+		/* Get bit 8 */
+		b8  = ((seed & 0x100) >> 8) & 0x01;
 
-	 /* Get z bit */
-	 d11_delay_index  = ((d11_field / 3) & 0x1) << 2;
+		/* Get z bit */
+		d11_delay_index  = ((d11_field / 3) & 0x1) << 2;
 
-	 /* Bit y b0 poly */
-	 d11_delay_index |= (nCode & 0x01) << 1;
+		/* Bit y b0 poly */
+		d11_delay_index |= (seed & 0x01) << 1;
 
-	 /* Bit x b10 poly */
-	 d11_delay_index |= b10 ;
+		/* Bit x b10 poly */
+		d11_delay_index |= b10 ;
 
-	 /* Build delay array */
-	 s->d11_line_delay[line] = d11_lookup_table[d11_delay_index];
+		/* Build delay array */
+		s->d11_line_delay[line] = d11_lookup_table[d11_delay_index];
 
-	 /* Shift along */
-	 nCode = (nCode << 1);
-	 nCode |= b10 ^ b8;
-	 nCode &= 0x7FF;
- }
+		/* Shift along */
+		seed <<= 1;
+		seed |= b10 ^ b8;
+		seed &= 0x7FF;
+	}
 }
 
 int _ng_vbi_init(ng_t *s, vid_t *vid)
@@ -402,17 +401,17 @@ int _ng_vbi_init(ng_t *s, vid_t *vid)
 void _render_ng_vbi(ng_t *s, int line, int mode)
 {
 	int x;
-
-	/* Render the VBI data
-	 * These lines were used by Premiere */
-
-	/* French C+ key lines: 13, 14, 326, 327 (ATR 18381200FF148083) (offset 1) */
-    /* Premiere  key lines: 14, 15, 327, 328 (ATR 1C381405FF14E1E5) (offset 0) */
-    /* Polish C+ key lines: 10, 11, 323, 324 (ATR 1CE00C01FF14E1E5) (offset 4) */
 	
-	if(line == 14 + s->vbioffset|| line == 15 + s->vbioffset|| line == 327 + s->vbioffset || line == 328 + s->vbioffset)
+	ng_mode_t n = _ng_modes[s->id];
+	
+	/* Render the VBI data */
+	/* French C+ key lines: 13, 14, 326, 327 (ATR 18381200FF148083) (offset 1) */
+	/* Premiere  key lines: 14, 15, 327, 328 (ATR 1C381405FF14E1E5) (offset 0) */
+	/* Polish C+ key lines: 10, 11, 323, 324 (ATR 1CE00C01FF14E1E5) (offset 4) */
+	
+	if(line == 14 + n.vbioffset|| line == 15 + n.vbioffset|| line == 327 + n.vbioffset || line == 328 + n.vbioffset)
 	{
-
+		
 		if(s->vbi_seq == 0)
 		{
 			const uint8_t *emm1 = _dummy_emm;
@@ -428,10 +427,10 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 			}
 			
 			/* Build part 1 of the VBI block */
-			msg1[ 0] = mode | ((s->audience >> 5) & 1);	/* Decoder parameters + audience */
+			msg1[ 0] = mode | ((n.data[2] >> 5) & 1);    /* Decoder parameters + audience */
 			_ecm_part(s, &msg1[1]);
-			msg1[ 1] |= s->audience << 3; /* Audience uses 5 top bits of msg1[1] */
-			msg1[11] = 0xFF;	/* Simple checksum -- the Premiere VBI sample only has 0x00/0xFF here */
+			msg1[ 1] |= n.data[2] << 3;                  /* Audience uses 5 top bits of msg1[1] */
+			msg1[11] = 0xFF;                             /* Simple checksum -- the Premiere VBI sample only has 0x00/0xFF here */
 			for(x = 0; x < 11; x++)
 			{
 				msg1[11] ^= msg1[x];
@@ -439,12 +438,12 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 			memcpy(&msg1[12], emm1, 72);
 			
 			/* Build part 2 of the VBI block */
-			msg2[ 0] = 0xFE;	/* ??? Premiere DE: 0xFE, Canal+ PL: 0x00 */
-			msg2[ 1] = 0x28;	/* ??? Premiere DE: 0x28, Canal+ PL: 0x2A, cut and rotate: 0x29 */
-			msg2[ 2] = 0xB1;	/* ??? Premiere DE: 0xB1, Canal+ PL: 0xE4 */
-			msg2[ 3] = emm1 == _ppua_emm ? 0x01 : 0x00;	/* 0x00, or 0x01 when a broadcast EMM is present */
+			msg2[ 0] = 0xFE;                             /* ??? Premiere DE: 0xFE, Canal+ PL: 0x00 */
+			msg2[ 1] = 0x28 | ((mode >> 2) & 1);         /* ??? Premiere DE: 0x28, Canal+ PL: 0x2A, cut and rotate: 0x29 */
+			msg2[ 2] = 0xB1;                             /* ??? Premiere DE: 0xB1, Canal+ PL: 0xE4 */
+			msg2[ 3] = emm1 == _ppua_emm ? 0x01 : 0x00;  /* 0x00, or 0x01 when a broadcast EMM is present */
 			msg2[ 4] = emm2 == _ppua_emm ? 0x01 : 0x00;
-			msg2[ 5] = 0x00;	/* The following bytes are always 0x00 */
+			msg2[ 5] = 0x00;                             /* The following bytes are always 0x00 */
 			msg2[ 6] = 0x00;
 			msg2[ 7] = 0x00;
 			msg2[ 8] = 0x00;
@@ -489,7 +488,7 @@ int _ng_audio_init(ng_t *s)
 	return(VID_OK);
 }
 
-void _rand_seed(ng_t *s, unsigned char data[8], unsigned char k64[8])
+void _rand_seed(ng_t *s, unsigned char data[8], unsigned char key[8])
 {
 	int i, j;
 	
@@ -502,7 +501,7 @@ void _rand_seed(ng_t *s, unsigned char data[8], unsigned char k64[8])
 		}
 		
 		/* Encrypt plain control word to send to card */
-		s->blocks[j].cw = _get_syster_cw(s->blocks[j].ecm, k64, NG_ENCRYPT);
+		s->blocks[j].cw = _get_syster_cw(s->blocks[j].ecm, key, NG_ENCRYPT);
 	}
 }
 
@@ -515,155 +514,34 @@ uint16_t _get_date(char *dtm)
 
 int _init_common(ng_t *s, char *mode)
 {
-	/*
-		data[0] = window (operator?)
-		data[1] = channel
-		data[2] = audience (0x11 = free access)
-		data[3] = ??
-		data[4] = date
-		data[5] = date
-		data[6] = ??
-		data[7] = ??
-	*/
-	if(strcmp(mode, "premiere-fa") == 0)
+	ng_mode_t *n = s->mode;
+	s->id = 0;
+	
+	/* Find the mode */
+	for(n = _ng_modes; n->id != NULL; n++, s->id++)
 	{
-		s->vbioffset = 0;
-		/* Free access key */
-		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-		
-		unsigned char data[8] = { 0xFF,0x01,0x11,0x00,0x88,0x15,0x00,0x00 };
-		
-		/* Date of broadcast */
-		uint16_t d = _get_date("01/01/1997");
-		
-		data[4] = d & 0xFF;
-		data[5] = d >> 8;
-		
-		/* 
-		   VBI offset:  0 = works with most keys
-		   VBI offset: -2 = required for some keys
-		*/
-		s->vbioffset = 0;
-		s->audience = data[2];
-		s->blocks = _ecm_table_rand;
-		
-		/* Grab random seed */
-		_rand_seed(s, data, k64);
+		if(strcmp(mode, n->id) == 0) break;
 	}
-	else if(strcmp(mode, "premiere-ca") == 0)
+	
+	if(n->id == NULL)
 	{
-		s->vbioffset = 0;
-		
-		/* Conditional access key - because Nagra engineers were trolls */
-		unsigned char k64[8] = { 0x00,0x00,0x00,0x00,0x00,0x00,0x12,0x34 };
-
-		unsigned char data[8] = { 0x7F,0x01,0x00,0x00,0xFF,0xFF,0xA9,0x91 };
-		
-		/* 
-		   VBI offset:  0 = works with most keys
-		   VBI offset: -2 = required for some keys
-		*/
-		s->vbioffset = 0;
-		s->audience = data[2];
-		s->blocks = _ecm_table_rand;
-		
-		/* Grab random seed */
-		_rand_seed(s, data, k64);
-	}
-	else if(strcmp(mode, "cplfa") == 0)
-	{		
-		/* Free access key */
-		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-
-		unsigned char data[8] = { 0xFF,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
-
-		/* Date of broadcast */
-		uint16_t d = _get_date("01/01/1997");
-		
-		data[4] = d & 0xFF;
-		data[5] = d >> 8;
-		
-		s->vbioffset = -4;
-		s->audience = data[2];
-		s->blocks = _ecm_table_rand;
-		
-		/* Grab random seed */
-		_rand_seed(s, data, k64);
-	}
-	else if(strcmp(mode, "cfrfa") == 0)
-	{
-		/* Free access key */
-		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-
-		unsigned char data[8] = { 0x80,0x05,0x11,0x00,0x88,0x15,0x00,0x00 };
-		
-		/* Date of broadcast */
-		uint16_t d = _get_date("01/01/2000");
-		
-		data[4] = d & 0xFF;
-		data[5] = d >> 8;
-		
-		/* 
-		   VBI offset: -1 = old Canal+ France keys (white)
-		   VBI offset: -3 = new Canal+ France keys (grey)
-		*/
-		s->vbioffset = -1;
-		s->audience = data[2];
-		s->blocks = _ecm_table_rand;
-		
-		/* Grab random seed */
-		_rand_seed(s, data, k64);
-	}
-	else if(strcmp(mode, "cfrca") == 0)
-	{
-		/* Key 0 for operator 1 */
-		unsigned char k64[8]  = { 0x00,0xAE,0x52,0x90,0x49,0xF1,0xF1,0xBB };
-		
-		unsigned char data[8] = { 0xFF,0x01,0x01,0x00,0x7B,0x0A,0x00,0x00 };
-
-		/* Date of broadcast */
-		uint16_t d = _get_date("01/01/1997");
-		
-		data[4] = d & 0xFF;
-		data[5] = d >> 8;
-		
-		/* 
-		   VBI offset: -1 = old Canal+ France keys (white)
-		   VBI offset: -3 = new Canal+ France keys (grey)
-		*/
-		s->vbioffset = -1;
-		s->audience = data[2];
-		s->blocks = _ecm_table_rand;
-
-		/* Grab random seed */
-		_rand_seed(s, data, k64);
-	}
-	else if(strcmp(mode, "cesfa") == 0)
-	{
-		/* Free access key */
-		unsigned char k64[8] = { 0xC4,0xA5,0xA8,0x18,0x74,0x93,0xC7,0x65 };
-
-		unsigned char data[8] = { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 };
-		
-		/* Date of broadcast */
-		uint16_t d = _get_date("01/01/1997");
-		
-		data[4] = d & 0xFF;
-		data[5] = d >> 8;
-		
-		s->vbioffset = -4;
-		s->audience = data[2];
-		s->blocks = _ecm_table_rand;
-		
-		/* Grab random seed */
-		_rand_seed(s, data, k64);
-	}
-	else
-	{
-		fprintf(stderr, "Unrecognised mode '%s'.\n", mode);
+		fprintf(stderr, "Unrecognised Syster mode.\n");
 		return(VID_ERROR);
 	}
+	
+	/* Date of broadcast */
+	uint16_t d = _get_date(n->date);
+	
+	n->data[4] = d & 0xFF;
+	n->data[5] = d >> 8;
 
+	// s->vbioffset = n->vbioffset;
+	//s->audience = n->data[2];
+	s->blocks = _ecm_table_rand;
+	
+	/* Generate random seeds */
+	_rand_seed(s, n->data, n->key);
+	
 	return(VID_OK);
 }
 
@@ -678,6 +556,14 @@ int d11_init(ng_t *s, vid_t *vid, char *mode)
 
 	s->vid = vid;
 	
+	s->flags |= 0 << 6; /* ?? Unused */
+	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
+	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	s->flags |= 0 << 3; /* 0: full frame scrambling, 1: half-frame scrambling */
+	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
+	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
+	s->flags |= 0 << 0; /* 6th high bit of audience level */
+	
 	/* Initialise VBI sequences - this is still necessary for D11 */
 	_ng_vbi_init(s,vid);
 	_ng_audio_init(s);
@@ -689,11 +575,37 @@ int d11_init(ng_t *s, vid_t *vid, char *mode)
 	return(VID_OK);
 }
 
+int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
+{
+	memset(s, 0, sizeof(ng_t));
+	
+	if(_init_common(s, mode) == VID_ERROR)
+	{
+		return VID_ERROR;
+	};
+	
+	s->flags  = 0 << 7;	/* ?? Unused */
+	s->flags |= 0 << 6; 	/* ?? Unused */
+	s->flags |= 1 << 5;	/* 0: clear, 1: scrambled */
+	s->flags |= 1 << 4;	/* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	s->flags |= 0 << 3;    /* 0: full frame scrambling, 1: half-frame scrambling */
+	s->flags |= 1 << 2;	/* Seems to enable cut-and-rotate on some decoders */
+	s->flags |= 0 << 1;	/* Scrambling type: 0: Discret 11, 1: Syster */
+	s->flags |= 0 << 0;	/* 6th high bit of audience level */
+
+	s->vid = vid;
+	
+	/* Initialise VBI sequences - this is still necessary for Smartcrypt */
+	_ng_vbi_init(s,vid);
+	_ng_audio_init(s);
+	
+	return(VID_OK);
+}
+
 void d11_render_line(ng_t *s)
 {
 	int x, f, i, d11_field, index, line, delay;
-	uint8_t b;
-	
+
 	/* Calculate the field and field line */
 	line = s->vid->line;
 	f = (line < D11_FIELD_2_START ? 0 : 1);
@@ -708,16 +620,10 @@ void d11_render_line(ng_t *s)
 		/* Calculate delay for this line */
 		delay = s->d11_line_delay[index] * s->d11_delay;
 	  
-		/* Black level on delayed samples */
-		for(x = s->vid->active_left; x < s->vid->active_left + delay; x++)
+		/* Delay line */		
+		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
 		{
-				s->vid->output[x * 2 + 1] = s->vid->black_level;
-		}
-		
-		/* Delay */
-		for(; x < s->vid->active_left + s->vid->active_width; x++)
-		{
-			 s->vid->output[x * 2 + 1] = s->vid->output[(x - delay) * 2];
+			s->vid->output[x * 2 + 1] = x < s->vid->active_left + delay ? s->vid->black_level : s->vid->output[(x - delay) * 2];
 		}
 		
 		/* Copy delayed line to output buffer */
@@ -745,16 +651,7 @@ void d11_render_line(ng_t *s)
 			}
 	}
 	
-	b  = 0 << 7;	/* ?? Unused */
-	b |= 0 << 6; 	/* ?? Unused */
-	b |= 1 << 5;	/* 0: clear, 1: scrambled */
-	b |= 1 << 4;	/* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	b |= 0 << 3;    /* 0: full frame scrambling, 1: half-frame scrambling */
-	b |= 0 << 2;	/* Seems to enable cut-and-rotate on some decoders */
-	b |= 0 << 1;	/* Scrambling type: 0: Discret 11, 1: Syster */
-	b |= 0 << 0;	/* 6th high bit of audience level */
-	
-	_render_ng_vbi(s,line, b);
+	_render_ng_vbi(s, line, s->flags);
 }
 
 int ng_init(ng_t *s, vid_t *vid, char *mode)
@@ -765,8 +662,15 @@ int ng_init(ng_t *s, vid_t *vid, char *mode)
 	memset(s, 0, sizeof(ng_t));
 	
 	s->vid = vid;
-	s->vbioffset = 0;
-	s->audience = 0x00;
+	s->id = 0;
+	
+	s->flags |= 0 << 6; /* ?? Unused */
+	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
+	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	s->flags |= 0 << 3; /* 0: full frame scrambling, 1: half-frame scrambling */
+	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
+	s->flags |= 1 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
+	s->flags |= 0 << 0; /* 6th high bit of audience level */
 
 	_ng_vbi_init(s,vid);
 	_ng_audio_init(s);
@@ -875,7 +779,6 @@ void ng_render_line(ng_t *s)
 	int j = 0;
 	int x, f, i;
 	int line;
-	uint8_t b;
 	
 	/* Calculate which line is about to be transmitted due to the delay */
 	line = s->vid->line - NG_DELAY_LINES;
@@ -946,14 +849,26 @@ void ng_render_line(ng_t *s)
 		}
 	}
 	
-	b  = 0 << 7;	/* ?? Unused */
-	b |= 0 << 6;	/* ?? Unused */
-	b |= 1 << 5;	/* 0: clear, 1: scrambled */
-	b |= 1 << 4;	/* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	b |= 0 << 3;	/* 0: full frame scrambling, 1: half-frame scrambling */
-	b |= 0 << 2;	/* Seems to enable cut-and-rotate on some decoders */
-	b |= 1 << 1;	/* Scrambling type: 0: Discret 11, 1: Syster */
-	b |= 0 << 0;	/* 6th high bit of audience level */
+	_render_ng_vbi(s, line, s->flags);
+}
+
+void smartcrypt_render_line(ng_t *s)
+{
+	/* TODO: many things */
 	
-	_render_ng_vbi(s, line, b);
+	int x, line;
+	
+	/* Calculate the field and field line */
+	line = s->vid->line;
+	
+	/* Blank lines 310 and 622 */
+	if(line == 310 || line == 622)
+	{
+			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
+			{
+				s->vid->output[x * 2] = s->vid->black_level;
+			}
+	}
+	
+	_render_ng_vbi(s,line, s->flags);
 }

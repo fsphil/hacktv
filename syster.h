@@ -52,15 +52,37 @@ typedef struct {
 } ng_ecm_t;
 
 typedef struct {
+	char *id;			/* Provider string */
+	uint8_t key[8];		/* DES decryption key */
+	uint8_t data[8];	/* Programme provider data */
+	
+	/*
+	data[0] = window (operator?)
+	data[1] = channel
+	data[2] = audience (0x11 = free access)
+	data[3] = ??
+	data[4] = date
+	data[5] = date
+	data[6] = ??
+	data[7] = ??
+	*/
+	
+	char *date;			/* Broadcast date */
+	int vbioffset;		/* VBI offset */
+} ng_mode_t;
+
+typedef struct {
 
 	vid_t *vid;
+	
+	uint8_t flags;
 
 	/* ECM */
 	ng_ecm_t *blocks;
-	unsigned char audience;
+	ng_mode_t *mode;
+	int id;
 
 	/* VBI */
-	int vbioffset;
 	int16_t *lut;
 	uint8_t vbi[10][NG_VBI_BYTES];
 	int vbi_seq;
@@ -103,5 +125,7 @@ extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
 extern void ng_render_line(ng_t *s);
 extern int d11_init(ng_t *s, vid_t *vid, char *mode);
 extern void d11_render_line(ng_t *s);
+extern int smartcrypt_init(ng_t *s, vid_t *vid, char *mode);
+extern void smartcrypt_render_line(ng_t *s);
 
 #endif

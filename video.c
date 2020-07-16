@@ -1916,11 +1916,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* Initalise D11 encoder */
- 	if(s->conf.d11 && (r = d11_init(&s->ng, s, s->conf.d11)) != VID_OK)
- 	{
+	if(s->conf.d11 && (r = d11_init(&s->ng, s, s->conf.d11)) != VID_OK)
+	{
 		vid_free(s);
 		return(r);
- 	}
+	}
+	
+	/* Initalise Smartcrypt encoder */
+	if(s->conf.smartcrypt && (r = smartcrypt_init(&s->ng, s, s->conf.smartcrypt)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
  
 	/* Initalise ACP renderer */
 	if(s->conf.acp && (r = acp_init(&s->acp, s)) != VID_OK)
@@ -1987,7 +1994,7 @@ void vid_free(vid_t *s)
 		acp_free(&s->acp);
 	}
 	
-	if(s->conf.syster || s->conf.d11)
+	if(s->conf.syster || s->conf.d11 || s->conf.smartcrypt)
 	{
 		ng_free(&s->ng);
 	}
@@ -2064,7 +2071,7 @@ int vid_init_filter(vid_t *s)
 	if(s->conf.modulation == VID_VSB)
 	{
 		/* My workstation can handle 30 taps at 20.25MHz sampling rate (MAC) */
-		taps = s->conf.type == VID_MAC ? 25 : 51 ;
+		taps = s->conf.type == VID_MAC ? 25 : 15 ;
 		
 		s->video_filter_taps = calloc(taps, sizeof(int16_t) * 2);
 		if(!s->video_filter_taps)
@@ -2688,6 +2695,12 @@ static void _vid_next_line_raster(vid_t *s)
 	if(s->conf.d11)
 	{
 		d11_render_line(&s->ng);
+	}
+	
+	/* Smartcrypt scrambling, if enabled */
+	if(s->conf.smartcrypt)
+	{
+		smartcrypt_render_line(&s->ng);
 	}
 	
 	if(s->conf.acp == 1)

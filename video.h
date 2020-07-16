@@ -151,6 +151,7 @@ typedef struct {
 	uint32_t disableemm;
 	int showecm;
 	char *d11;
+	char *smartcrypt;
 	char *syster;
 	int systeraudio;
 	int acp;

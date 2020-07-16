@@ -100,9 +100,10 @@ static void print_usage(void)
 		"      --disableemm <serial>      Disable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
-		"      --syster <mode>            Enable Nagravision Syster scambling. (PAL only)\n"
-		"      --d11 <mode>               Enable Discret 11 scambling. (PAL only)\n"
-		"      --systeraudio              Invert the audio spectrum when using Syster or D11 scrambling.\n"
+		"      --syster <mode>            Enable Nagravision Syster scrambling. (PAL only)\n"
+		"      --d11 <mode>               Enable Discret 11 scrambling. (PAL only)\n"
+		"      --smartcrypt <mode>        Enable Smartcrypt scrambling (***INCOMPLETE***). (PAL only)\n"
+		"      --systeraudio              Invert the audio spectrum when using Syster, Smartcrypt or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
@@ -370,6 +371,7 @@ static void print_usage(void)
 #define _OPT_DISABLE_EMM    2004
 #define _OPT_SHOW_ECM       2005
 #define _OPT_SUBTITLES      2006
+#define _OPT_SMARTCRYPT     2007
 
 int main(int argc, char *argv[])
 {
@@ -396,6 +398,7 @@ int main(int argc, char *argv[])
 		{ "key",            required_argument, 0, 'k'},
 		{ "syster",         required_argument, 0, _OPT_SYSTER },
 		{ "d11",            required_argument, 0, _OPT_DISCRET },
+		{ "smartcrypt",     required_argument, 0, _OPT_SMARTCRYPT },
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
@@ -444,6 +447,7 @@ int main(int argc, char *argv[])
 	s.eurocrypt = NULL;
 	s.syster = NULL;
 	s.d11 = NULL;
+	s.smartcrypt = NULL;
 	s.systeraudio = 0;
 	s.acp = 0;
 	s.filter = 0;
@@ -594,8 +598,13 @@ int main(int argc, char *argv[])
 		case _OPT_DISCRET: /* --d11 */
 			free(s.d11);
 			s.d11 = strdup(optarg);
-			break;		
-				
+			break;
+		
+		case _OPT_SMARTCRYPT: /* --smartcrypt */
+			free(s.smartcrypt);
+			s.smartcrypt = strdup(optarg);
+			break;
+			
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
 			s.systeraudio = 1;
 			break;
@@ -947,6 +956,24 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.syster = s.syster;
+		vid_conf.systeraudio = s.systeraudio;
+	}
+
+	if(s.smartcrypt)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Smartcrypt is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		if(vid_conf.videocrypt || vid_conf.videocrypt2 || vid_conf.videocrypts || vid_conf.d11)
+		{
+			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
+			return(-1);
+		}
+		
+		vid_conf.smartcrypt = s.smartcrypt;
 		vid_conf.systeraudio = s.systeraudio;
 	}
 	
