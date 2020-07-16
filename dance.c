@@ -281,7 +281,7 @@ void dance_encode_frame_b(
 	int step[2] = { a1step, a2step };
 	int i, x, c, sa;
 	const _comp_range_t *r[4];
-	int16_t audio[4][DANCE_A_AUDIO_LEN];
+	int16_t audio[2][DANCE_B_AUDIO_LEN];
 	uint8_t *f1, *f2;
 	
 	/* Get a pointer to the current and next frames */

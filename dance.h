@@ -46,7 +46,7 @@
 
 /* Length of a DANCE frame in audio samples */
 #define DANCE_A_AUDIO_LEN (DANCE_A_AUDIO_RATE / 1000)
-#define DANCE_B_AUDIO_LEN (DANCE_A_AUDIO_RATE / 1000)
+#define DANCE_B_AUDIO_LEN (DANCE_B_AUDIO_RATE / 1000)
 #define DANCE_AUDIO_LEN   DANCE_B_AUDIO_LEN
 
 #define DANCE_A_50_10_US_NTAPS 77
