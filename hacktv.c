@@ -94,7 +94,9 @@ static void print_usage(void)
 		"      --logo <path>              Overlay picture logo over video.\n"
 		"      --timestamp                Overlay video timestamp over video.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
-		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only)\n"
+		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only).\n"
+		"      --letterbox                Letterboxes widescreen content on 4:3 screen.\n"
+		"      --pillarbox                Zooms widescreen content to fill 4:3 screen.\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --enableemm <serial>       Enable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
 		"      --disableemm <serial>      Disable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
@@ -372,6 +374,8 @@ static void print_usage(void)
 #define _OPT_SHOW_ECM       2005
 #define _OPT_SUBTITLES      2006
 #define _OPT_SMARTCRYPT     2007
+#define _OPT_LETTERBOX      2008
+#define _OPT_PILLARBOX      2009
 
 int main(int argc, char *argv[])
 {
@@ -388,6 +392,8 @@ int main(int argc, char *argv[])
 		{ "verbose",        no_argument,       0, 'v' },
 		{ "teletext",       required_argument, 0, _OPT_TELETEXT },
 		{ "wss",            required_argument, 0, _OPT_WSS },
+		{ "letterbox",      no_argument,       0, _OPT_LETTERBOX },
+		{ "pillarbox",      no_argument,       0, _OPT_PILLARBOX },
 		{ "videocrypt",     required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "videocrypt2",    required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts",    required_argument, 0, _OPT_VIDEOCRYPTS },
@@ -441,6 +447,8 @@ int main(int argc, char *argv[])
 	s.teletext = NULL;
 	s.position = 0;
 	s.wss = NULL;
+	s.letterbox = 0;
+	s.pillarbox = 0;
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
@@ -562,6 +570,14 @@ int main(int argc, char *argv[])
 		case _OPT_WSS: /* --wss <mode> */
 			s.wss = strdup(optarg);
 			break;
+			
+		case _OPT_LETTERBOX: /* --letterbox */
+			s.letterbox = 1;
+			break;
+			
+		case _OPT_PILLARBOX: /* --pillarbox */
+			s.pillarbox = 1;
+			break;
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
 			free(s.videocrypt);
@@ -639,7 +655,7 @@ int main(int argc, char *argv[])
 			break;
 			
 		case 'k': /* -k, --key */
-			fprintf(stderr,"\nERROR: key option has been deprecated. Please see help text for details.\n\n");
+			fprintf(stderr, "\nERROR: key option has been deprecated. Please see help text for details.\n\n");
 			return(0);
 			break;
 		
@@ -834,6 +850,22 @@ int main(int argc, char *argv[])
 		vid_conf.wss = s.wss;
 	}
 	
+	if(s.letterbox)
+	{
+		vid_conf.letterbox = s.letterbox;
+	}
+	
+	if(s.pillarbox)
+	{
+		if(s.letterbox)
+		{
+			fprintf(stderr, "Pillarbox mode cannot be used together with letterbox mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.pillarbox = s.pillarbox;
+	}
+	
 	if(s.videocrypt)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -841,6 +873,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Videocrypt I is only compatible with 625 line PAL modes.\n");
 			return(-1);
 		}
+		
 		vid_conf.videocrypt = s.videocrypt;
 	}
 	

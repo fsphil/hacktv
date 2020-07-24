@@ -1278,14 +1278,14 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		vinputs->next       = NULL;
 		
 		/* Calculate letterbox padding for widescreen videos, if necessary */ 
-		int video_width = s->conf.active_lines * (float) 16/9; 
-		int video_height = s->conf.active_lines;
+		int video_width_ws = s->conf.active_lines * (16.0 / 9.0); 
 		int source_width = av->video_codec_ctx->width;
 		int source_height = av->video_codec_ctx->height;
 		
-		float target_ratio = (float) 16/9;
+		int video_width = s->conf.active_lines * (4.0 / 3.0); 
+		
 		float source_ratio = (float) source_width / (float) source_height;
-		int ws =  source_ratio >= target_ratio ? 1 : 0;
+		int ws =  source_ratio >= (16.0 / 9.0) ? 1 : 0;
 		float fps = av->video_stream->r_frame_rate.num / (float) av->video_stream->r_frame_rate.den;	
 
 		char *_vid_filter;
@@ -1296,8 +1296,10 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		/* Filter definition for overlaying logo */
 		if(s->conf.logo)
 		{
-			asprintf(&_vid_logo_filter,"movie=%s,scale=iw/(%i/%i)/%f:iw/(iw/ih)/(%i/%i)/(4/3)[tvlogo];",s->conf.logo,video_width,source_width,(source_ratio >= (float) 14/9 ? (float) 4/3 : 1),video_height,source_height);
-			asprintf(&_vid_output_filter,"[tvlogo]overlay=W*(20/25):H*(2/25)");
+			asprintf(&_vid_logo_filter,"movie = %s, scale = iw / (%i / %i) / %f : iw / (iw / ih) / (%i / %i) / (4.0 / 3.0)[logo];",
+			         s->conf.logo, video_width_ws, source_width, s->conf.pillarbox || s->conf.letterbox || source_ratio < 14.0 / 9.0 ? 1 : 4.0 / 3.0, s->conf.active_lines, source_height);
+			
+			asprintf(&_vid_output_filter,"[logo]overlay = W * (20 / 25) : H * (2 / 25)");
 		}
 		else
 		{
@@ -1309,8 +1311,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		if(s->conf.timestamp)
 		{
 			asprintf(&_vid_timecode_filter,
-				"drawtext=resources%cfonts%cStencil.ttf:timecode='00\\:%i\\:00\\:00':r=%f: fontcolor=white: fontsize=w/40: x=w/10: y=h*16/18:shadowx=1:shadowy=1",
-				OS_SEP, OS_SEP, s->conf.position,fps);
+				"drawtext = resources%cfonts%cStencil.ttf:timecode = '00\\:%i\\:00\\:00' : r = %f : fontcolor = white : fontsize = w / 40 : x = w / 10: y = h * 16 / 18 : shadowx = 1 : shadowy = 1",
+				OS_SEP, OS_SEP, s->conf.position, fps);
 		}
 		else
 		{
@@ -1319,7 +1321,18 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		
 		if(ws)
 		{
-			asprintf(&_vid_filter,"pad='iw:iw/(%i/%i):0:(oh-ih)/2',scale=%i:%i",video_width,video_height,source_width,source_height);
+			if(s->conf.letterbox)
+			{
+				asprintf(&_vid_filter,"pad = 'iw : iw / (%i/%i) : 0 : (oh-ih) / 2', scale = %i:%i", video_width, s->conf.active_lines, source_width, source_height);
+			}
+			else if(s->conf.pillarbox)
+			{
+				asprintf(&_vid_filter,"crop = out_w = in_h * (4.0 / 3.0) : out_h = in_h, scale = %i:%i", source_width, source_height);
+			}
+			else
+			{
+				asprintf(&_vid_filter,"pad = 'iw:iw / (%i/%i) : 0 : (oh-ih) / 2', scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
+			}
 		}
 		else
 		{
@@ -1340,13 +1353,13 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 
 		if (avfilter_graph_parse_ptr(vfilter_graph, vfilter_descr, &vinputs, &voutputs, NULL) < 0)
 		{
-			fprintf(stderr,"Cannot parse filter graph\n");
+			fprintf(stderr, "Cannot parse filter graph\n");
 			return(HACKTV_ERROR);
 		}
 		
 	 if (avfilter_graph_config(vfilter_graph, NULL) < 0) 
 		{
-			fprintf(stderr,"Cannot configure filter graph\n");
+			fprintf(stderr, "Cannot configure filter graph\n");
 			return(HACKTV_ERROR);
 		}
 		
@@ -1502,17 +1515,17 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		fprintf(stderr, "No subtitle streams found.\n");
 		
 		/* Initialise subtitles - here because it's already supplied with the filename for video */
-		/* Should really be moved to hacktv.c */
+		/* Should really be moved somewhere else */
 		if(s->conf.subtitles)
 		{
 			char *subtitle_path;
 			subtitle_path = malloc(strlen(input_url) + 1);
 			strcpy(subtitle_path, input_url);
 			get_subtitle_path(subtitle_path);
-			strncat(subtitle_path,".srt",4);
+			strncat(subtitle_path, ".srt", 4);
 			if(access(subtitle_path, 0) != -1)
 			{
-				fprintf(stderr,"Loading subtitles from '%s'\n",subtitle_path);
+				fprintf(stderr, "Loading subtitles from '%s'\n", subtitle_path);
 				if(subs_init_file(subtitle_path,s) < 0)
 				{
 					return(HACKTV_ERROR);
@@ -1520,7 +1533,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			}
 			else
 			{
-				fprintf(stderr,"Warning: subtitle path '%s' does not exist!\n",subtitle_path);
+				fprintf(stderr, "Warning: subtitle path '%s' does not exist!\n", subtitle_path);
 				s->conf.subtitles = 0;
 			}
 		}

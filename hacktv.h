@@ -67,6 +67,8 @@ typedef struct {
 	char *teletext;
 	char *logo;
 	char *wss;
+	int letterbox;
+	int pillarbox;
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;

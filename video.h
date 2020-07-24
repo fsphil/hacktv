@@ -143,6 +143,8 @@ typedef struct {
 	char *mode;
 	
 	char *wss;
+	int letterbox;
+	int pillarbox;
 	
 	char *videocrypt;
 	char *videocrypt2;

@@ -81,7 +81,7 @@ static ng_mode_t _ng_modes[] = {
 	{ "cfrca",       { 0x00, 0xAE, 0x52, 0x90, 0x49, 0xF1, 0xF1, 0xBB }, { 0xFF, 0x01, 0x01, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
 	{ "cfrfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
 	{ "cesfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -4 },
-	{ "ntv",         { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/2053",  1 }, /* HTB+ Russia - not tested */
+	{ "ntv",         { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997",  1 }, /* HTB+ Russia - not tested */
 };
 
 static const int16_t _firi[NTAPS] = {
@@ -297,7 +297,7 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 			{
 				fprintf(stderr, "\n\nECM In:  ");
 				for(i = 0; i < 16; i++) fprintf(stderr, "%02X ", ecm->ecm[i]);
-				fprintf(stderr,"\nECM Out: ");
+				fprintf(stderr, "\nECM Out: ");
 				for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) (ecm->cw >> (8 * i) & 0xFF));
 			}
 	}
@@ -584,14 +584,14 @@ int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
 		return VID_ERROR;
 	};
 	
-	s->flags  = 0 << 7;	/* ?? Unused */
-	s->flags |= 0 << 6; 	/* ?? Unused */
-	s->flags |= 1 << 5;	/* 0: clear, 1: scrambled */
-	s->flags |= 1 << 4;	/* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	s->flags |= 0 << 3;    /* 0: full frame scrambling, 1: half-frame scrambling */
-	s->flags |= 1 << 2;	/* Seems to enable cut-and-rotate on some decoders */
-	s->flags |= 0 << 1;	/* Scrambling type: 0: Discret 11, 1: Syster */
-	s->flags |= 0 << 0;	/* 6th high bit of audience level */
+	s->flags  = 0 << 7; /* ?? Unused */
+	s->flags |= 0 << 6; /* ?? Unused */
+	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
+	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	s->flags |= 0 << 3; /* 0: full frame scrambling, 1: half-frame scrambling */
+	s->flags |= 1 << 2; /* Seems to enable cut-and-rotate on some decoders */
+	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
+	s->flags |= 0 << 0; /* 6th high bit of audience level */
 
 	s->vid = vid;
 	
@@ -856,19 +856,16 @@ void smartcrypt_render_line(ng_t *s)
 {
 	/* TODO: many things */
 	
-	int x, line;
-	
-	/* Calculate the field and field line */
-	line = s->vid->line;
+	int x;
 	
 	/* Blank lines 310 and 622 */
-	if(line == 310 || line == 622)
+	if(s->vid->line == 310 || s->vid->line == 622)
 	{
-			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
-			{
-				s->vid->output[x * 2] = s->vid->black_level;
-			}
+		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
+		{
+			s->vid->output[x * 2] = s->vid->black_level;
+		}
 	}
 	
-	_render_ng_vbi(s,line, s->flags);
+	_render_ng_vbi(s, s->vid->line, s->flags);
 }

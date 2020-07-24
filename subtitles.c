@@ -199,9 +199,9 @@ int subs_init_ffmpeg(vid_t *s)
 	subs[0].pos = 0;
 	subs[0].number_of_subs = 0;
 	
-	/* Initialise fonts here   */
-	/*         size,    ratio  */
-	if(font_init(s, 38, 16.0 / 9.0) !=0)
+	/* Initialise fonts here    */
+	/*             size, ratio  */
+	if(font_init(s, 38, s->conf.pillarbox || s->conf.letterbox ? 4.0 / 3.0 : 16.0 / 9.0) !=0)
 	{
 		return(HACKTV_ERROR);
 	};
@@ -231,9 +231,9 @@ int subs_init_file(char *filename, vid_t *s)
 	
 	memset(subs, 0, sizeof(av_subs_t));
 	
-	/* Initialise fonts here */
-	/*         size, ratio */
-	if(font_init(s, 38, 16.0 / 9.0) < 0)
+	/* Initialise fonts here   */
+	/*             size, ratio */
+	if(font_init(s, 38, s->conf.pillarbox || s->conf.letterbox ? 4.0 / 3.0 : 16.0 / 9.0) < 0)
 	{
 		return(HACKTV_ERROR);
 	};
