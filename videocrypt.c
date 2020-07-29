@@ -873,7 +873,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 			if(s->vid->conf.showecm && mode)
 			{
 				fprintf(stderr, "\n\nVC1 ECM In:  ");
-				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[0][i]);
+				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[strcmp(mode,"ppv") == 0 ? 0 : 6][i]);
 				fprintf(stderr,"\nVC1 ECM Out: ");
 				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->cw >> (8 * i) & 0xFF);
 				
