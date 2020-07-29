@@ -573,7 +573,7 @@ const vid_config_t vid_config_ntsc_m = {
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
 	.iu_co          =  0.000,
-	.iv_co          =  0.886,
+	.iv_co          =  0.877,
 	.qu_co          =  0.493,
 	.qv_co          =  0.000,
 	
@@ -625,7 +625,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
 	.iu_co          =  0.000,
-	.iv_co          =  0.886,
+	.iv_co          =  0.877,
 	.qu_co          =  0.493,
 	.qv_co          =  0.000,
 	
@@ -679,7 +679,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
 	.iu_co          =  0.000,
-	.iv_co          =  0.886,
+	.iv_co          =  0.877,
 	.qu_co          =  0.493,
 	.qv_co          =  0.000,
 	
@@ -724,7 +724,7 @@ const vid_config_t vid_config_ntsc = {
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
 	.iu_co          =  0.000,
-	.iv_co          =  0.886,
+	.iv_co          =  0.877,
 	.qu_co          =  0.493,
 	.qv_co          =  0.000,
 };
