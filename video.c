@@ -1665,6 +1665,32 @@ int vid_av_close(vid_t *s)
 	return(r);
 }
 
+void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
+{
+	int x, m, r;
+	
+	/* Test if the chosen sample rate results in an integer even
+	 * number of samples per line. If not, display a warning and show
+	 * the previous and next valid sample rates. */
+	
+	x = gcd(conf->lines * conf->frame_rate_num, conf->frame_rate_den);
+	m = (conf->frame_rate_den / x) & 1 ? 2 : 1;
+	
+	if(sample_rate % (conf->frame_rate_num * conf->lines * m / x) == 0)
+	{
+		/* Sample rate is good */
+		return;
+	}
+	
+	r = sample_rate / (conf->frame_rate_num * conf->lines * m / x);
+	
+	fprintf(stderr, "Warning: Sample rate %u may not work well with this mode.\n", sample_rate);
+	fprintf(stderr, "Next valid sample rates: %u, %u\n",
+		conf->frame_rate_num * conf->lines * m / x * r,
+		conf->frame_rate_num * conf->lines * m / x * (r + 1)
+	);
+}
+
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
 {
 	int r, x;
@@ -1680,6 +1706,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
 	
 	/* Calculate the number of samples per line */
+	_test_sample_rate(&s->conf, sample_rate);
+	
 	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
 	
