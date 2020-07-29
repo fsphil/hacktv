@@ -291,6 +291,43 @@ static _vc2_block_t _vc2_blocks[] = {
 	},
 };
 
+/* Blocks used in PPV/memory card mode */
+static _vc_block_t _ppv_blocks[] = {
+	{
+		0x07, 0,
+		{
+			{
+				0xA8,					
+				0x08,					/* FCM - free view + force pay */
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x63, 0x00,				/* Program number */
+				0x00,
+				0x01,					/* PPV program rate */
+				0x00,					/* PPV minute rate */
+		 	},
+			{ }, { }, { }, { }, { }, { }
+		},
+	},
+	{
+		0x07, 0,
+		{
+			{
+				0xA8,
+				0x08,					/* FCM - free view + force pay */
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x63, 0x00,				/* Program number */
+				0x00,
+				0x01,					/* PPV program rate */
+				0x00,					/* PPV minute rate */
+		 	},
+			{ 0x20,0x00,0x76,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x20,0x50,0x50,0x56,0x20,0x4D,0x4F,0x44,0x45 },
+			{ }, { }, { }, { }, { }
+		},
+	}
+};
+
 /* Blocks for VC2 free-access decoding */
 static _vc2_block_t _fa2_blocks[] = { { 0x9C, VC_PRBS_CW_FA } };
 
@@ -385,6 +422,12 @@ static uint8_t _crc(uint8_t *data)
 	}
 		
 	return (~crc + 1);
+}
+
+
+static uint8_t _rotate_left(x)
+{
+	return (((x) << 1) | ((x) >> 7)) & 0xFF;
 }
 
 /* Reverse bits in an 8-bit value */
@@ -629,6 +672,13 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		_vc_seed_xtea(&s->blocks[0]);
 		_vc_seed_xtea(&s->blocks[1]);
 	}
+	else if (strcmp(mode, "ppv") == 0)
+	{
+		s->blocks    = _ppv_blocks;
+		s->block_len = 2;
+		_vc_seed_ppv(&s->blocks[0]);
+		_vc_seed_ppv(&s->blocks[1]);
+	}
 	else
 	{
 		fprintf(stderr, "Unrecognised Videocrypt I mode '%s'.\n", mode);
@@ -816,13 +866,14 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 				if(strcmp(mode,"sky07") == 0) _vc_seed_sky07(&s->blocks[s->block], VC_SKY7);
 				if(strcmp(mode,"sky09") == 0) _vc_seed_sky09(&s->blocks[s->block]);
 				if(strcmp(mode,"xtea") == 0)  _vc_seed_xtea(&s->blocks[s->block]);
+				if(strcmp(mode,"ppv") == 0)   _vc_seed_ppv(&s->blocks[s->block]);
 			}
 			
 			/* Print ECM */
 			if(s->vid->conf.showecm && mode)
 			{
 				fprintf(stderr, "\n\nVC1 ECM In:  ");
-				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[6][i]);
+				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", s->blocks[s->block].messages[0][i]);
 				fprintf(stderr,"\nVC1 ECM Out: ");
 				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", s->cw >> (8 * i) & 0xFF);
 				
@@ -1026,7 +1077,7 @@ void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial)
 	
 	for (i=0; i < 4;i++)
 	{
-		b = (b << 1) | (b >> 7);
+		b = _rotate_left(b);
 		b += a;
 		xor[i] = b;
 	}
@@ -1055,8 +1106,8 @@ void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial)
 
 	/* Generate checksum */
 	s->messages[1][31] = _crc(s->messages[1]);
-	
 }
+
 void _vc_seed_sky07(_vc_block_t *s, int ca)
 {
 	int i;
@@ -1133,7 +1184,7 @@ void _vc2_emm(_vc2_block_t *s, int cmd, uint32_t cardserial)
 
 	for (i = 0; i < 4;i++)
 	{
-		b = (b << 1) | (b >> 7);
+		b = _rotate_left(b);
 		b += a;
 		xor[i] = b;
 	}
@@ -1230,9 +1281,8 @@ void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, in
 	b = key[(out[*oi] >> 4)];
 	c = key[(out[*oi] & 0x0F) + 16];
 	c = ~(c + b);
-	c = (c << 1) | (c >> 7);
-	c += in;
-	c = (c << 1) | (c >> 7);
+	c = _rotate_left(c) + in;
+	c = _rotate_left(c);
 	c = _rnibble(c);
 	*oi = (*oi + 1) & 7;
 	out[*oi] ^= c;
@@ -1254,7 +1304,7 @@ void _vc_emm09(_vc_block_t *s, int cmd, uint32_t cardserial)
 
 	for (i=0; i < 4;i++)
 	{
-		b = (b << 1) | (b >> 7);
+		b = _rotate_left(b);
 		b += a;
 		xor[i] = b;
 	}
@@ -1340,8 +1390,7 @@ void _vc_kernel09(const unsigned char in, unsigned char *answ)
 		m = d * c;
 		answ[i + 2] ^= (m & 0xFF);
 		answ[i + 3] += m >> 8;
-		a = (a << 1) | (a >> 7);
-		a += 0x49;
+		a = _rotate_left(a) + 0x49;
 	}
 
 	m = answ[6] * answ[7];
@@ -1381,5 +1430,82 @@ void _vc_seed_xtea(_vc_block_t *s)
 	}
 	
 	/* Reverse calculated control word */
-	s->codeword = ((uint64_t) v0 << 32 | v1) & 0x0fffffffffffffffUL;
+	s->codeword = ((uint64_t) v0 << 32 | v1) & 0x0FFFFFFFFFFFFFFFUL;
+}
+
+/* Code below is to support seed generation for "dumb"/memory card */
+/* Thanks to Phil Pemberton for providing the required information */
+/* https://github.com/philpem/hacktv */
+
+/* Code table at address 0x1421 from verifier */
+const uint8_t tab_1421[8] = {
+  0x59, 0x2B, 0x71, 0x22, 0xCF, 0xB7, 0x33, 0x4F	
+};
+
+/* The four moduli and also a 256-byte data table */
+const uint8_t moduli[256] = {
+	0xB1, 0xFD, 0x91, 0x2C, 0x6D, 0xB8, 0xB6, 0xBE,
+	0x15, 0x08, 0x0D, 0xE2, 0x83, 0xB1, 0xE8, 0x0B,
+	0x36, 0xB0, 0x47, 0xEA, 0xA1, 0x10, 0xA7, 0x8E,
+	0xAA, 0x2E, 0x94, 0xC8, 0x47, 0x41, 0xFE, 0x87,
+	0x7E, 0xEC, 0x67, 0x45, 0xAB, 0x89, 0x84, 0xA5,
+	0xEF, 0xCD, 0x23, 0x01, 0x67, 0x45, 0x2D, 0x46,
+	0xAB, 0xA9, 0xEF, 0xCD, 0x24, 0x93, 0x02, 0x67,
+	0x1B, 0x4F, 0x81, 0x95, 0xA7, 0x01, 0x00, 0x01,
+	
+	0x29, 0x9F, 0xC9, 0x85, 0x19, 0xB9, 0x53, 0x53,
+	0x92, 0x52, 0x90, 0x5A, 0x44, 0x2D, 0xCA, 0xD4,
+	0x90, 0x8D, 0x3A, 0xAD, 0xFB, 0x2B, 0x00, 0x9D,
+	0xE4, 0x0C, 0xB8, 0x81, 0x28, 0xBF, 0xE9, 0x0B,
+	0x85, 0x7C, 0xAD, 0x90, 0x41, 0xE7, 0x7A, 0xBA,
+	0x9D, 0xEF, 0x7E, 0x83, 0x82, 0x0D, 0x0A, 0xCE,
+	0x64, 0x77, 0x83, 0x1E, 0x1D, 0x80, 0x26, 0xF5,
+	0x48, 0xA4, 0x39, 0x6E, 0xC3, 0x01, 0x00, 0x01,
+	
+	0x0D, 0x2D, 0xC9, 0x25, 0x51, 0x4A, 0xA3, 0x85,
+	0x8B, 0xDC, 0xC7, 0x25, 0x40, 0x0C, 0xB8, 0x61,
+	0x0C, 0xF9, 0xC1, 0x21, 0xBD, 0x3D, 0x57, 0x6D,
+	0x6C, 0x71, 0x2F, 0xA4, 0xCC, 0x93, 0x40, 0x37,
+	0xDE, 0x32, 0x39, 0x65, 0xC1, 0x8D, 0x63, 0x6A,
+	0x49, 0xB6, 0xE1, 0xD0, 0x73, 0x5E, 0xDE, 0x9C,
+	0x12, 0xA7, 0xC3, 0x34, 0x5E, 0x38, 0x8C, 0x73,
+	0x05, 0x4E, 0x63, 0x41, 0x0A, 0x01, 0x00, 0x01,
+	
+	0xE5, 0x20, 0x5B, 0xD5, 0x56, 0xD1, 0x9B, 0xA9,
+	0xA5, 0x54, 0xB7, 0x83, 0x16, 0xDE, 0x36, 0x0B,
+	0xD6, 0x03, 0x58, 0x1B, 0xE0, 0x0D, 0x36, 0x72,
+	0xAD, 0x6B, 0x69, 0xDA, 0xD9, 0x99, 0x16, 0xBC,
+	0xCB, 0x24, 0xF6, 0x65, 0xB4, 0x45, 0xA6, 0xBB,
+	0xED, 0x53, 0x3E, 0xB0, 0xF7, 0xB8, 0xF5, 0xEA,
+	0xA6, 0xB7, 0xAF, 0x64, 0xED, 0xA2, 0xE7, 0xFE,
+	0xC2, 0x57, 0xC4, 0xD1, 0x0B, 0x01, 0x00, 0x01
+};
+
+void _vc_seed_ppv(_vc_block_t *s)
+{
+	int i, j, m;
+	uint64_t answ[8];
+	
+	/* Reset answers */
+	for (i = 0; i < 8; i++)  answ[i] = 0;
+	
+	/* Random seed for bytes 27 and 28 */
+	answ[0] = s->messages[0][27] = rand() + 0xFF;
+	answ[1] = s->messages[0][28] = rand() + 0xFF;
+	
+	/* Generate seed */	
+	for (i = 0; i < 8; i++) 
+	{
+		for (j = 1; j != 8; j++) 
+		{
+			m = tab_1421[i] + answ[j - 1] & 0xFF;
+			answ[j] = _rotate_left(answ[j] ^ moduli[m]);
+		}
+		answ[0] ^= answ[7];
+	}
+	/* Mask high nibble of last byte as it's not used */
+	answ[7] &= 0x0F;
+	
+	/* Reverse calculated control word */
+	for(i = 0, s->codeword = 0; i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
 }

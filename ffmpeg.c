@@ -1284,9 +1284,9 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		
 		int video_width = s->conf.active_lines * (4.0 / 3.0); 
 		
-		float source_ratio = (float) source_width / (float) source_height;
-		int ws =  source_ratio >= (16.0 / 9.0) ? 1 : 0;
-		float fps = av->video_stream->r_frame_rate.num / (float) av->video_stream->r_frame_rate.den;	
+		double source_ratio = (double) source_width / (double) source_height;
+		int ws = source_ratio >= (14.0 / 9.0) ? 1 : 0;
+		double fps = av->video_stream->r_frame_rate.num / (double) av->video_stream->r_frame_rate.den;	
 
 		char *_vid_filter;
 		char *_vid_logo_filter;
@@ -1296,8 +1296,10 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		/* Filter definition for overlaying logo */
 		if(s->conf.logo)
 		{
-			asprintf(&_vid_logo_filter,"movie = %s, scale = iw / (%i / %i) / %f : iw / (iw / ih) / (%i / %i) / (4.0 / 3.0)[logo];",
-			         s->conf.logo, video_width_ws, source_width, s->conf.pillarbox || s->conf.letterbox || source_ratio < 14.0 / 9.0 ? 1 : 4.0 / 3.0, s->conf.active_lines, source_height);
+			asprintf(&_vid_logo_filter,"movie = %s,"
+			                           "scale = iw / (%i / %i) / %f : iw / (iw / ih) / (%i / %i) / (4.0 / 3.0)[logo];",
+			                            s->conf.logo,
+			                            video_width_ws, source_width, s->conf.pillarbox || s->conf.letterbox || !ws ? 1 : 4.0 / 3.0, s->conf.active_lines, source_height);
 			
 			asprintf(&_vid_output_filter,"[logo]overlay = W * (20 / 25) : H * (2 / 25)");
 		}
@@ -1545,10 +1547,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	}
 	
 	/* Seek stuff here */
-	AVRational stream_time_base = av->format_ctx->streams[av->video_stream->index]->time_base;
-
-	float request_time = 60.0 * s->conf.position; // in seconds. 
-	int64_t request_timestamp = request_time / av_q2d(stream_time_base) + start_time;
+	int64_t request_timestamp = (60.0 * s->conf.position) / av_q2d(time_base) + start_time;
 	
 	/* Calculate the start time for each stream */
 	if(av->video_stream != NULL)
@@ -1566,15 +1565,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	
 	if(av->audio_stream != NULL)
 	{
-		if (s->conf.position > 0) 
-		{
-			av_seek_frame(av->format_ctx, av->video_stream->index, request_timestamp, 0);
-			av->audio_start_time = av_rescale_q(request_timestamp, time_base, av->audio_time_base);
-		}
-		else
-		{
-			av->audio_start_time = av_rescale_q(start_time, time_base, av->audio_time_base);
-		}
+		av->audio_start_time = av_rescale_q(s->conf.position ? request_timestamp : start_time, time_base, av->audio_time_base);
 	}
 	
 	/* Register the callback functions */

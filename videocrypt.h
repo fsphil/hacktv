@@ -114,5 +114,6 @@ void _vc_seed_vc2(_vc2_block_t *s);
 void _vc2_emm(_vc2_block_t *s, int cmd, uint32_t cardserial);
 void _vc_seed_sky09(_vc_block_t *s);
 void _vc_seed_xtea(_vc_block_t *s);
+void _vc_seed_ppv(_vc_block_t *s);
 #endif
 
