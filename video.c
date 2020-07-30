@@ -20,6 +20,7 @@
 #include <math.h>
 #include "video.h"
 #include "nicam728.h"
+#include "dance.h"
 #include "hacktv.h"
 #include <sys/time.h>
 
@@ -571,10 +572,10 @@ const vid_config_t vid_config_ntsc_m = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          = -0.177,
-	.iv_co          =  0.768,
-	.qu_co          =  0.626,
-	.qv_co          = -0.082,
+	.iu_co          =  0.000,
+	.iv_co          =  0.877,
+	.qu_co          =  0.493,
+	.qv_co          =  0.000,
 	
 	// .fm_mono_carrier    = 4500000, /* Hz */
 	// .fm_audio_preemph   = 0.000075, /* Seconds */
@@ -627,16 +628,67 @@ const vid_config_t vid_config_ntsc_fm = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          = -0.177,
-	.iv_co          =  0.768,
-	.qu_co          =  0.626,
-	.qv_co          = -0.082,
+	.iu_co          =  0.000,
+	.iv_co          =  0.877,
+	.qu_co          =  0.493,
+	.qv_co          =  0.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	//.fm_left_carrier    = 7200000, /* Hz */
 	//.fm_right_carrier   = 7020000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
 	.fm_audio_deviation = 85000, /* +/- Hz */
+};
+
+const vid_config_t vid_config_ntsc_bs_fm = {
+	
+	/* Digital Subcarrier/NTSC FM (satellite) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_FM,
+	.fm_level       = 1.0,
+	.fm_deviation   = 10e6, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.75, /* Power level of video */
+	.dance_level    = 0.25, /* DANCE audio carrier power level */
+	
+	.type           = VID_RASTER_525,
+	.frame_rate_num = 30000,
+	.frame_rate_den = 1001,
+	.lines          = 525,
+	.active_lines   = 480,
+	.active_width   = 0.00005290, /* 52.90µs */
+	.active_left    = 0.00000920, /* |-->| 9.20µs */
+	
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	
+	.white_level    =  0.50,
+	.black_level    = -0.20,
+	.blanking_level = -0.20,
+	.sync_level     = -0.50,
+	
+	.colour_mode    = VID_NTSC,
+	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
+	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
+	.colour_carrier = 5000000.0 * 63 / 88,
+	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	.iu_co          =  0.000,
+	.iv_co          =  0.877,
+	.qu_co          =  0.493,
+	.qv_co          =  0.000,
+	
+	.dance_carrier  = 5000000.0 * 63 / 88 * 8 / 5, /* Hz */
+	.dance_beta     = 1.0,
 };
 
 const vid_config_t vid_config_ntsc = {
@@ -675,10 +727,10 @@ const vid_config_t vid_config_ntsc = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          = -0.177,
-	.iv_co          =  0.768,
-	.qu_co          =  0.626,
-	.qv_co          = -0.082,
+	.iu_co          =  0.000,
+	.iv_co          =  0.877,
+	.qu_co          =  0.493,
+	.qv_co          =  0.000,
 };
 
 const vid_config_t vid_config_d2mac_am = {
@@ -1327,6 +1379,7 @@ const vid_configs_t vid_configs[] = {
 	{ "secam",         &vid_config_secam            },
 	{ "m",             &vid_config_ntsc_m           },
 	{ "ntsc-fm",       &vid_config_ntsc_fm          },
+	{ "ntsc-bs",       &vid_config_ntsc_bs_fm       },
 	{ "ntsc",          &vid_config_ntsc             },
 	{ "d2mac-am",      &vid_config_d2mac_am         },
 	{ "d2mac-fm",      &vid_config_d2mac_fm         },
@@ -1618,6 +1671,32 @@ int vid_av_close(vid_t *s)
 	return(r);
 }
 
+void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
+{
+	int x, m, r;
+	
+	/* Test if the chosen sample rate results in an integer even
+	 * number of samples per line. If not, display a warning and show
+	 * the previous and next valid sample rates. */
+	
+	x = gcd(conf->lines * conf->frame_rate_num, conf->frame_rate_den);
+	m = (conf->frame_rate_den / x) & 1 ? 2 : 1;
+	
+	if(sample_rate % (conf->frame_rate_num * conf->lines * m / x) == 0)
+	{
+		/* Sample rate is good */
+		return;
+	}
+	
+	r = sample_rate / (conf->frame_rate_num * conf->lines * m / x);
+	
+	fprintf(stderr, "Warning: Sample rate %u may not work well with this mode.\n", sample_rate);
+	fprintf(stderr, "Next valid sample rates: %u, %u\n",
+		conf->frame_rate_num * conf->lines * m / x * r,
+		conf->frame_rate_num * conf->lines * m / x * (r + 1)
+	);
+}
+
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
 {
 	int r, x;
@@ -1633,6 +1712,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
 	
 	/* Calculate the number of samples per line */
+	_test_sample_rate(&s->conf, sample_rate);
+	
 	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
 	
@@ -1860,6 +1941,22 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 		
 		s->nicam_buf_len = 0;
+		s->audio = 1;
+	}
+	
+	/* DANCE audio */
+	if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
+	{
+		r = dance_mod_init(&s->dance, DANCE_MODE_A, s->sample_rate, s->conf.dance_carrier, s->conf.dance_beta, s->conf.dance_level * slevel);
+		
+		if(r != 0)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		s->dance_buf_len = 0;
+		s->audio = 1;
 	}
 	
 	/* AM audio */
@@ -2036,6 +2133,7 @@ void vid_free(vid_t *s)
 	_free_fm_modulator(&s->fm_mono);
 	_free_fm_modulator(&s->fm_left);
 	_free_fm_modulator(&s->fm_right);
+	dance_mod_free(&s->dance);
 	nicam_mod_free(&s->nicam);
 	_free_am_modulator(&s->am_mono);
 	
@@ -2783,6 +2881,18 @@ static void _process_audio(vid_t *s)
 					s->nicam_buf_len = 0;
 				}
 			}
+			
+			if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
+			{
+				s->dance_buf[s->dance_buf_len++] = audio[0];
+				s->dance_buf[s->dance_buf_len++] = audio[1];
+				
+				if(s->dance_buf_len == DANCE_A_AUDIO_LEN * 2)
+				{
+					dance_mod_input(&s->dance, s->dance_buf);
+					s->dance_buf_len = 0;
+				}
+			}
 		}
 		
 		if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
@@ -2812,6 +2922,11 @@ static void _process_audio(vid_t *s)
 	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
 	{
 		nicam_mod_output(&s->nicam, s->output, s->width);
+	}
+	
+	if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
+	{
+		dance_mod_output(&s->dance, s->output, s->width);
 	}
 }
 
