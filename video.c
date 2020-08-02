@@ -2157,7 +2157,7 @@ int vid_init_filter(vid_t *s)
 		}
 		
 		fir_int16_complex_band_pass(s->video_filter_taps, taps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_complex_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
+		fir_int16_complex_init(&s->video_filter, s->video_filter_taps, taps);
 	}
 	else if(s->conf.modulation == VID_FM)
 	{
@@ -2170,7 +2170,7 @@ int vid_init_filter(vid_t *s)
 		}
 		
 		memcpy(s->video_filter_taps, s->conf.type == VID_MAC ? fm_mac_taps : fm_taps, taps * sizeof(int16_t));
-		fir_int16_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
+		fir_int16_init(&s->video_filter, s->video_filter_taps, taps);
 		
 		if(s->conf.type == VID_MAC && s->sample_rate != 20250000)
 		{
@@ -2941,13 +2941,11 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	{
 		if(s->conf.modulation == VID_VSB)
 		{
-			//fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
-			fir_int16_complex_process_simple(&s->video_filter, s->output, s->width);
+			fir_int16_complex_process(&s->video_filter, s->output, s->width);
 		}
 		else if(s->conf.modulation == VID_FM)
 		{
-			//fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
-			fir_int16_process_simple(&s->video_filter, s->output, s->width);
+			fir_int16_process(&s->video_filter, s->output, s->width);
 		}
 	}
 	
