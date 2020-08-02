@@ -556,10 +556,10 @@ const vid_config_t vid_config_ntsc_m = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    = 0.2000,
-	.black_level    = 0.7280,
-	.blanking_level = 0.7712,
-	.sync_level     = 1.0000,
+	.white_level    = 0.125000,
+	.black_level    = 0.703125,
+	.blanking_level = 0.750000,
+	.sync_level     = 1.000000,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
@@ -608,10 +608,10 @@ const vid_config_t vid_config_ntsc_fm = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.20,
-	.blanking_level = -0.20,
-	.sync_level     = -0.50,
+	.white_level    =  0.5000,
+	.black_level    = -0.1607,
+	.blanking_level = -0.2143,
+	.sync_level     = -0.5000,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
@@ -662,10 +662,10 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.20,
-	.blanking_level = -0.20,
-	.sync_level     = -0.50,
+	.white_level    =  0.5000,
+	.black_level    = -0.2143,
+	.blanking_level = -0.2143,
+	.sync_level     = -0.5000,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
@@ -707,10 +707,10 @@ const vid_config_t vid_config_ntsc = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    =  0.70,
-	.black_level    =  0.0525,
-	.blanking_level =  0.00,
-	.sync_level     = -0.30,
+	.white_level    =  100.0 / 140,
+	.black_level    =    7.5 / 140,
+	.blanking_level =    0.0 / 140,
+	.sync_level     =  -40.0 / 140,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
