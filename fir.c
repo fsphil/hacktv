@@ -210,7 +210,9 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *signal, size_t samples)
 
 void fir_int16_free(fir_int16_t *s)
 {
-	if(s->win) free(s->win);
+	free(s->win);
+	free(s->itaps);
+	free(s->qtaps);
 }
 
 
@@ -289,12 +291,5 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *signal, size_t samples
 	}
 	
 	return(samples);
-}
-
-void fir_int16_complex_free(fir_int16_t *s)
-{
-	free(s->win);
-	free(s->itaps);
-	free(s->qtaps);
 }
 
