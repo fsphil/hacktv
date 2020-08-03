@@ -1358,6 +1358,40 @@ const vid_config_t vid_config_apollo_mono = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_cbs405 = {
+	
+	/* CBS 405-line Colour */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_CBS_405,
+	.frame_rate_num = 72,
+	.frame_rate_den = 1,
+	.lines          = 405,
+	.active_lines   = 376, /* Estimate */
+	.active_width   = 0.00002812, /* 28.12µs */
+	.active_left    = 0.00000480, /* |-->| 4.80µs */
+	
+	.hsync_width       = 0.000002743, /*  2.743µs */
+	.vsync_short_width = 0.000001372, /*  1.372µs */
+	.vsync_long_width  = 0.000014746, /* 14.746µs */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.00,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.colour_mode    = VID_CBS_FSC,
+	.fsc_flag_left  = 0.000008573, /* |-->| 8.573µs */
+	
+	.gamma          =  1.0,
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+};
+
 const vid_configs_t vid_configs[] = {
 	{ "i",             &vid_config_pal_i            },
 	{ "b",             &vid_config_pal_bg           },
@@ -1393,6 +1427,7 @@ const vid_configs_t vid_configs[] = {
 	{ "apollo-fsc",    &vid_config_apollo_colour    },
 	{ "apollo-fm",     &vid_config_apollo_mono_fm   },
 	{ "apollo",        &vid_config_apollo_mono      },
+	{ "cbs405",        &vid_config_cbs405           },
 	{ NULL,            NULL },
 };
 
@@ -2514,6 +2549,47 @@ static void _vid_next_line_raster(vid_t *s)
 		/* Calculate the active line number */
 		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
 	}
+	else if(s->conf.type == VID_CBS_405)
+	{
+		switch(s->line)
+		{
+		case 1:   seq = "v__v"; break;
+		case 2:   seq = "v__v"; break;
+		case 3:   seq = "v__v"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
+		case 6:   seq = "V__V"; break;
+		case 7:   seq = "v__v"; break;
+		case 8:   seq = "v__v"; break;
+		case 9:   seq = "v__v"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		
+		case 203: seq = "h_av"; break;
+		case 204: seq = "v__v"; break;
+		case 205: seq = "v__v"; break;
+		case 206: seq = "v__V"; break;
+		case 207: seq = "V__V"; break;
+		case 208: seq = "V__V"; break;
+		case 209: seq = "V__v"; break;
+		case 210: seq = "v__v"; break;
+		case 211: seq = "v__v"; break;
+		case 212: seq = "v___"; break;
+		case 213: seq = "h___"; break;
+		case 214: seq = "h___"; break;
+		case 215: seq = "h___"; break;
+		case 216: seq = "h___"; break;
+		case 217: seq = "h__a"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
+	}
 	else if(s->conf.type == VID_APOLLO_320)
 	{
 		if(s->line <= 8) seq = "V__v";
@@ -2594,6 +2670,15 @@ static void _vid_next_line_raster(vid_t *s)
 		lut_q = NULL;
 		pal = 0;
 	}
+	else if(s->conf.colour_mode == VID_CBS_FSC)
+	{
+		/* CBS Field Sequential Colour */
+		fsc = (s->frame * 2 + (s->line < 202 ? 0 : 1)) % 3;
+		lut_b = NULL;
+		lut_i = NULL;
+		lut_q = NULL;
+		pal = 0;
+	}
 	else
 	{
 		/* No colour */
@@ -2626,7 +2711,8 @@ static void _vid_next_line_raster(vid_t *s)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
 			
-			if(s->conf.colour_mode == VID_APOLLO_FSC)
+			if(s->conf.colour_mode == VID_APOLLO_FSC ||
+			   s->conf.colour_mode == VID_CBS_FSC)
 			{
 				rgb  = (rgb >> (8 * fsc)) & 0xFF;
 				rgb |= (rgb << 8) | (rgb << 16);
@@ -2655,7 +2741,8 @@ static void _vid_next_line_raster(vid_t *s)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
 			
-			if(s->conf.colour_mode == VID_APOLLO_FSC)
+			if(s->conf.colour_mode == VID_APOLLO_FSC ||
+			   s->conf.colour_mode == VID_CBS_FSC)
 			{
 				rgb  = (rgb >> (8 * fsc)) & 0xFF;
 				rgb |= (rgb << 8) | (rgb << 16);
@@ -2709,6 +2796,17 @@ static void _vid_next_line_raster(vid_t *s)
 		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
 		{
 			s->output[x * 2] = s->fsc_flag_level;
+		}
+	}
+	
+	/* Render the CBS FSC flag */
+	if(s->conf.colour_mode == VID_CBS_FSC && fsc == 2 &&
+	  (s->line == 1 || s->line == 203))
+	{
+		w = (s->line == 1 ? s->fsc_flag_left : s->half_width + s->fsc_flag_left);
+		for(x = 0; x < s->vsync_short_width; x++)
+		{
+			s->output[(w + x) * 2] = s->sync_level;
 		}
 	}
 	

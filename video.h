@@ -47,6 +47,7 @@ typedef struct vid_t vid_t;
 #define VID_BAIRD_30   5
 #define VID_APOLLO_320 6
 #define VID_MAC        7
+#define VID_CBS_405    8
 
 /* Output modulation types */
 #define VID_NONE 0
@@ -60,6 +61,7 @@ typedef struct vid_t vid_t;
 #define VID_NTSC       2
 #define VID_SECAM      3
 #define VID_APOLLO_FSC 4
+#define VID_CBS_FSC    5
 
 /* AV source function prototypes */
 typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
