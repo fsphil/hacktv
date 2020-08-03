@@ -1702,28 +1702,24 @@ int vid_av_close(vid_t *s)
 
 void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 {
-	int x, m, r;
+	int m, r;
 	
-	/* Test if the chosen sample rate results in an integer even
-	 * number of samples per line. If not, display a warning and show
-	 * the previous and next valid sample rates. */
+	/* Test if the chosen sample rate results in an even number of
+	 * samples per line. If not, display a warning and show the
+	 * previous and next valid sample rates. */
 	
-	x = gcd(conf->lines * conf->frame_rate_num, conf->frame_rate_den);
-	m = (conf->frame_rate_den / x) & 1 ? 2 : 1;
+	/* Calculate lowest valid sample rate */
+	m = conf->lines * conf->frame_rate_num;
+	m /= r = gcd(m, conf->frame_rate_den);
+	if(conf->frame_rate_den / r & 1) m *= 2;
 	
-	if(sample_rate % (conf->frame_rate_num * conf->lines * m / x) == 0)
-	{
-		/* Sample rate is good */
-		return;
-	}
+	/* Is the chosen sample rate good? */
+	if(sample_rate % m == 0) return;
 	
-	r = sample_rate / (conf->frame_rate_num * conf->lines * m / x);
-	
+	/* Not really. Suggest some good sample rates */
+	r = sample_rate / m;
 	fprintf(stderr, "Warning: Sample rate %u may not work well with this mode.\n", sample_rate);
-	fprintf(stderr, "Next valid sample rates: %u, %u\n",
-		conf->frame_rate_num * conf->lines * m / x * r,
-		conf->frame_rate_num * conf->lines * m / x * (r + 1)
-	);
+	fprintf(stderr, "Next valid sample rates: %u, %u\n", m * r, m * (r + 1));
 }
 
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
@@ -2170,7 +2166,8 @@ void vid_free(vid_t *s)
 void vid_info(vid_t *s)
 {
 	fprintf(stderr, "Video: %dx%d %.2f fps (full frame %dx%d)\n",
-		s->active_width, s->conf.active_lines, (double) s->conf.frame_rate_num / s->conf.frame_rate_den,
+		s->active_width, s->conf.active_lines,
+		(double) s->conf.frame_rate_num / s->conf.frame_rate_den,
 		s->width, s->conf.lines
 	);
 	
