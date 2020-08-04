@@ -81,6 +81,7 @@ static void print_usage(void)
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
 		"  -D, --deviation <value>        Override the mode's FM deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
+		"  -i, --interlace                Update image each field instead of each frame.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
@@ -332,6 +333,7 @@ int main(int argc, char *argv[])
 		{ "level",          required_argument, 0, 'l' },
 		{ "deviation",      required_argument, 0, 'D' },
 		{ "gamma",          required_argument, 0, 'G' },
+		{ "interlace",      no_argument,       0, 'i' },
 		{ "repeat",         no_argument,       0, 'r' },
 		{ "verbose",        no_argument,       0, 'v' },
 		{ "teletext",       required_argument, 0, _OPT_TELETEXT },
@@ -374,6 +376,7 @@ int main(int argc, char *argv[])
 	s.level = 1.0;
 	s.deviation = -1;
 	s.gamma = -1;
+	s.interlace = 0;
 	s.repeat = 0;
 	s.verbose = 0;
 	s.teletext = NULL;
@@ -396,7 +399,7 @@ int main(int argc, char *argv[])
 	s.file_type = HACKTV_INT16;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:D:G:rvf:al:g:A:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -472,6 +475,10 @@ int main(int argc, char *argv[])
 		
 		case 'G': /* -G, --gamma <value> */
 			s.gamma = atof(optarg);
+			break;
+		
+		case 'i': /* -i, --interlace */
+			s.interlace = 1;
 			break;
 		
 		case 'r': /* -r, --repeat */
@@ -643,6 +650,11 @@ int main(int argc, char *argv[])
 	{
 		/* Override the gamma value */
 		vid_conf.gamma = s.gamma;
+	}
+	
+	if(s.interlace)
+	{
+		vid_conf.interlace = 1;
 	}
 	
 	if(s.noaudio > 0)

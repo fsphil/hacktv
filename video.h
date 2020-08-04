@@ -122,7 +122,9 @@ typedef struct {
 	int frame_rate_den;
 	
 	int lines;
+	int hline;
 	int active_lines;
+	int interlace;
 	
 	double hsync_width;
 	double vsync_short_width;
@@ -246,7 +248,7 @@ struct vid_t {
 	
 	_mod_fm_t fm_secam_cr;
 	_mod_fm_t fm_secam_cb;
-
+	
 	int fsc_flag_left;
 	int fsc_flag_width;
 	int16_t fsc_flag_level;
