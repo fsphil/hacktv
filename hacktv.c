@@ -116,7 +116,6 @@ static void print_usage(void)
 		"\n"
 		"  Only modes with a complex output are supported by the HackRF.\n"
 		"\n"
-#ifdef HAVE_SOAPYSDR
 		"SoapySDR output options\n"
 		"\n"
 		"  -o, --output soapysdr[:<opts>] Open a SoapySDR device for output.\n"
@@ -124,8 +123,6 @@ static void print_usage(void)
 		"  -g, --gain <value>             Set the TX level. Default: 0dB\n"
 		"  -A, --antenna <name>           Set the antenna.\n"
 		"\n"
-#endif
-#ifdef HAVE_FL2K
 		"fl2k output options\n"
 		"\n"
 		"  -o, --output fl2k[:<dev>]      Open an fl2k device for output.\n"
@@ -136,7 +133,6 @@ static void print_usage(void)
 		"  The 0.7v p-p voltage level of the FL2K is too low to create a correct\n"
 		"  composite video signal, it will appear too dark without amplification.\n"
 		"\n"
-#endif
 		"File output options\n"
 		"\n"
 		"  -o, --output file:<filename>   Open a file for output. Use - for stdout.\n"
@@ -427,20 +423,26 @@ int main(int argc, char *argv[])
 				s.output_type = "hackrf";
 				s.output = sub;
 			}
-#ifdef HAVE_SOAPYSDR
 			else if(strcmp(pre, "soapysdr") == 0)
 			{
+#ifdef HAVE_SOAPYSDR
 				s.output_type = "soapysdr";
 				s.output = sub;
-			}
+#else
+				fprintf(stderr, "SoapySDR support is not available in this build of hacktv.\n");
+				return(-1);
 #endif
-#ifdef HAVE_FL2K
+			}
 			else if(strcmp(pre, "fl2k") == 0)
 			{
+#ifdef HAVE_FL2K
 				s.output_type = "fl2k";
 				s.output = sub;
-			}
+#else
+				fprintf(stderr, "FL2K support is not available in this build of hacktv.\n");
+				return(-1);
 #endif
+			}
 			else
 			{
 				/* Unrecognised output type, default to file */
