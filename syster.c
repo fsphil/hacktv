@@ -81,7 +81,7 @@ static ng_mode_t _ng_modes[] = {
 	{ "cfrca",       { 0x00, 0xAE, 0x52, 0x90, 0x49, 0xF1, 0xF1, 0xBB }, { 0xFF, 0x01, 0x01, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
 	{ "cfrfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
 	{ "cesfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -4 },
-	{ "ntv",         { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997",  1 }, /* HTB+ Russia - not tested */
+	{ "ntvfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x08, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00 }, "01/01/1997",  1 }, /* HTB+ Russia */
 };
 
 static const int16_t _firi[NTAPS] = {
@@ -438,9 +438,9 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 			memcpy(&msg1[12], emm1, 72);
 			
 			/* Build part 2 of the VBI block */
-			msg2[ 0] = 0xFE;                             /* ??? Premiere DE: 0xFE, Canal+ PL: 0x00 */
-			msg2[ 1] = 0x28 | ((mode >> 2) & 1);         /* ??? Premiere DE: 0x28, Canal+ PL: 0x2A, cut and rotate: 0x29 */
-			msg2[ 2] = 0xB1;                             /* ??? Premiere DE: 0xB1, Canal+ PL: 0xE4 */
+			msg2[ 0] = 0xFE;                             /* ??? Premiere DE: 0xFE, Canal+ PL: 0x00, HTB+: 0x01 */
+			msg2[ 1] = 0x28 | ((mode >> 2) & 1);         /* ??? Premiere DE: 0x28 (cut and rotate: 0x29), Canal+ PL: 0x2A, HTB+: 0x3A */
+			msg2[ 2] = 0xB1;                             /* ??? Premiere DE: 0xB1, Canal+ PL: 0xE4, HTB+: 0x16 */
 			msg2[ 3] = emm1 == _ppua_emm ? 0x01 : 0x00;  /* 0x00, or 0x01 when a broadcast EMM is present */
 			msg2[ 4] = emm2 == _ppua_emm ? 0x01 : 0x00;
 			msg2[ 5] = 0x00;                             /* The following bytes are always 0x00 */
@@ -535,8 +535,6 @@ int _init_common(ng_t *s, char *mode)
 	n->data[4] = d & 0xFF;
 	n->data[5] = d >> 8;
 
-	// s->vbioffset = n->vbioffset;
-	//s->audience = n->data[2];
 	s->blocks = _ecm_table_rand;
 	
 	/* Generate random seeds */
