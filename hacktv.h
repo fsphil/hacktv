@@ -72,6 +72,8 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
+	int findkey;
+	int showserial;
 	char *syster;
 	int systeraudio;
 	char *eurocrypt;

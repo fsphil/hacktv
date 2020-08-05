@@ -46,6 +46,11 @@
 #include <math.h>
 #include "video.h"
 
+/* PPV card data */
+
+/*                                    |--------CARD SERIAL-------|    Ka    Kb */
+static uint64_t _ppv_card_data[7] = { 0x6D, 0xC1, 0x08, 0x44, 0x02, 0x28, 0x3D};
+
 /* Packet header sequences */
 static const uint8_t _sequence[8] = {
 	0x87,0x96,0xA5,0xB4,0xC3,0xD2,0xE1,0x87,
@@ -72,7 +77,7 @@ static _vc_block_t _sky07_blocks[] = {
 		{
  			{ 0x20 },
  			{ }, { }, { }, { },	{ },
- 			{ 0xE8,0x29,0x3E,0xED,0xF0,0x1C,0x00,0x6F,0xE9,0x06,0xD6 }
+ 			{ 0xE8,0x10,0x3E,0xED,0xF0,0x1C,0x00,0x6F,0xE9,0x06,0xD6 }
 		},
 	},
 	{
@@ -80,7 +85,7 @@ static _vc_block_t _sky07_blocks[] = {
 		{
  			{ 0x20,0x00,0x77,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x53,0x4b,0x59,0x30,0x37,0x20,0x4d,0x4f,0x44,0x45 },
  			{ }, { }, { }, { },	{ },
- 			{ 0xE8,0x29,0x3E,0xED,0xF0,0x1C,0x00,0x6F,0xE9,0x06,0xD6 }
+ 			{ 0xE8,0x10,0x3E,0xED,0xF0,0x1C,0x00,0x6F,0xE9,0x06,0xD6 }
 		},
 	},
 };
@@ -297,15 +302,13 @@ static _vc_block_t _ppv_blocks[] = {
 		0x07, 0,
 		{
 			{
-				0xA8,					
-				0x08,					/* FCM - free view + force pay */
-				0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00,
-				0x63, 0x00,				/* Program number */
-				0x00,
-				0x01,					/* PPV program rate */
-				0x00,					/* PPV minute rate */
-		 	},
+				0xA8,
+				0x04,      /* Pay-view                 */
+				0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+				0x11,0x00, /* Program number (12 bits) */
+				0x00,      /* PPV program rate         */
+				0x00,      /* PPV min rate             */
+			},
 			{ }, { }, { }, { }, { }, { }
 		},
 	},
@@ -314,17 +317,15 @@ static _vc_block_t _ppv_blocks[] = {
 		{
 			{
 				0xA8,
-				0x08,					/* FCM - free view + force pay */
-				0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00,
-				0x63, 0x00,				/* Program number */
-				0x00,
-				0x01,					/* PPV program rate */
-				0x00,					/* PPV minute rate */
-		 	},
-			{ 0x20,0x00,0x76,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x20,0x50,0x50,0x56,0x20,0x4D,0x4F,0x44,0x45 },
+				0x04,      /* Pay-view                 */
+				0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+				0x11,0x00, /* Program number (12 bits) */
+				0x00,      /* PPV program rate         */
+				0x00,      /* PPV min rate             */
+			},
+			{ 0x20,0x00,0x76,0x20,0x20,0x20,0x48,0x41,0x43,0x4b,0x54,0x56,0x20,0x20,0x20,0x20,0x20,0x50,0x50,0x56,0x20,0x4d,0x4f,0x44,0x45 },
 			{ }, { }, { }, { }, { }
-		},
+		}
 	}
 };
 
@@ -368,7 +369,7 @@ const unsigned char sky07_key[] = {
 };
 
 /* Videocrypt key used for Sky 09 series cards */
-const unsigned char sky09_key[216] = {
+const unsigned char sky09_key[] = {
 	0x91, 0x61, 0x9d, 0x53, 0xb3, 0x27, 0xd5, 0xd9,
 	0x0F, 0x59, 0xa6, 0x6f, 0x73, 0xfb, 0x99, 0x4c,
 	0xfb, 0x45, 0x54, 0x8e, 0x20, 0x5f, 0xb3, 0xb1,
@@ -400,10 +401,10 @@ const unsigned char sky09_key[216] = {
 
 /* Key used by Multichoice Central Europe in Videocrypt 2 */
 const unsigned char vc2_key[] = {
-    0x58,0x6B,0x4D,0x05,0xB0,0x69,0x83,0x16,
-    0xA6,0x48,0xDE,0x5E,0x0B,0xAA,0x49,0xA9,
-    0xC6,0xE5,0x93,0x1A,0xBE,0x56,0x73,0x20,
-    0xFB,0xF8,0xCA,0x08,0x34,0x29,0x8A,0x9B
+    0x58, 0x6B, 0x4D, 0x05, 0xB0, 0x69, 0x83, 0x16,
+    0xA6, 0x48, 0xDE, 0x5E, 0x0B, 0xAA, 0x49, 0xA9,
+    0xC6, 0xE5, 0x93, 0x1A, 0xBE, 0x56, 0x73, 0x20,
+    0xFB, 0xF8, 0xCA, 0x08, 0x34, 0x29, 0x8A, 0x9B
 };
 
 static const uint32_t xtea_key[4]= {
@@ -676,6 +677,14 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 	{
 		s->blocks    = _ppv_blocks;
 		s->block_len = 2;
+		
+		if(s->vid->conf.findkey)
+		{
+			/* Starting keys */
+			_ppv_card_data[5] = 0x00; /* Key a */
+			_ppv_card_data[6] = 0x00; /* Key b */
+		}
+		
 		_vc_seed_ppv(&s->blocks[0]);
 		_vc_seed_ppv(&s->blocks[1]);
 	}
@@ -866,7 +875,30 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2)
 				if(strcmp(mode,"sky07") == 0) _vc_seed_sky07(&s->blocks[s->block], VC_SKY7);
 				if(strcmp(mode,"sky09") == 0) _vc_seed_sky09(&s->blocks[s->block]);
 				if(strcmp(mode,"xtea") == 0)  _vc_seed_xtea(&s->blocks[s->block]);
-				if(strcmp(mode,"ppv") == 0)   _vc_seed_ppv(&s->blocks[s->block]);
+				
+				if(strcmp(mode,"ppv") == 0)
+				{
+					if(s->vid->conf.findkey)
+					{
+						if(_ppv_card_data[5] == 0xFF) _ppv_card_data[6] = _ppv_card_data[6] == 0xFF ? 0 : ++_ppv_card_data[6];
+						_ppv_card_data[5] = _ppv_card_data[5] == 0xFF ? 0 : ++_ppv_card_data[5];
+						
+						fprintf(stderr, "\n\nTesting keys 0x%02X and 0x%02X...", (uint8_t) _ppv_card_data[5], (uint8_t) _ppv_card_data[6]);
+						
+						char fmt[24];
+						sprintf(fmt,"KA - 0X%02X   KB - 0X%02X", (uint8_t) _ppv_card_data[5], (uint8_t) _ppv_card_data[6]);
+						s->blocks[s->block].messages[strcmp(mode,"ppv") == 0 ? 1 : 0][0] = 0x20;
+						s->blocks[s->block].messages[strcmp(mode,"ppv") == 0 ? 1 : 0][1] = 0x00;
+						s->blocks[s->block].messages[strcmp(mode,"ppv") == 0 ? 1 : 0][2] = 0xF5;
+						for(i = 0; i < 22; i++) s->blocks[s->block].messages[strcmp(mode,"ppv") == 0 ? 1 : 0][i + 3] = fmt[i];
+						
+					}
+					
+					_vc_seed_ppv(&s->blocks[s->block]);
+				}
+				
+				if(s->vid->conf.showserial) s->blocks[s->block].messages[strcmp(mode,"ppv") == 0 ? 1 : 0][0] = 0x24;
+				
 			}
 			
 			/* Print ECM */
@@ -1439,7 +1471,7 @@ void _vc_seed_xtea(_vc_block_t *s)
 
 /* Code table at address 0x1421 from verifier */
 const uint8_t tab_1421[8] = {
-  0x59, 0x2B, 0x71, 0x22, 0xCF, 0xB7, 0x33, 0x4F	
+	0x59, 0x2B, 0x71, 0x22, 0xCF, 0xB7, 0x33, 0x4F	
 };
 
 /* The four moduli and also a 256-byte data table */
@@ -1481,31 +1513,47 @@ const uint8_t moduli[256] = {
 	0xC2, 0x57, 0xC4, 0xD1, 0x0B, 0x01, 0x00, 0x01
 };
 
-void _vc_seed_ppv(_vc_block_t *s)
+void _hash_ppv(uint64_t *answ, size_t len)
 {
 	int i, j, m;
-	uint64_t answ[8];
-	
-	/* Reset answers */
-	for (i = 0; i < 8; i++)  answ[i] = 0;
-	
-	/* Random seed for bytes 27 and 28 */
-	answ[0] = s->messages[0][27] = rand() + 0xFF;
-	answ[1] = s->messages[0][28] = rand() + 0xFF;
-	
 	/* Generate seed */	
 	for (i = 0; i < 8; i++) 
 	{
-		for (j = 1; j != 8; j++) 
+		for (j = 1; j != len; j++) 
 		{
 			m = tab_1421[i] + answ[j - 1] & 0xFF;
 			answ[j] = _rotate_left(answ[j] ^ moduli[m]);
 		}
-		answ[0] ^= answ[7];
+		answ[0] ^= answ[len-1];
 	}
+}
+
+void _vc_seed_ppv(_vc_block_t *s)
+{
+	int i;
+	
+	/* Temporary buffers */
+	uint64_t   msg[32];
+	uint64_t serial[5];
+	
+	/* Random bytes */
+	s->messages[0][21] = rand() + 0xFF;
+	s->messages[0][22] = rand() + 0xFF;
+	
+	/* Copy data into buffers */
+	for(i = 0; i < 31; i++)   msg[i] = s->messages[0][i];
+	for(i = 0; i < 5; i++) serial[i] = _ppv_card_data[i];
+	
+	_hash_ppv(serial, 5);
+	
+	msg[1] ^= serial[0] ^ _ppv_card_data[5];
+	msg[2] ^= serial[1] ^ _ppv_card_data[6];
+	
+	_hash_ppv(&msg[1], 22);
+	
 	/* Mask high nibble of last byte as it's not used */
-	answ[7] &= 0x0F;
+	msg[8] &= 0x0F;
 	
 	/* Reverse calculated control word */
-	for(i = 0, s->codeword = 0; i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
+	for(i = 0, s->codeword = 0; i < 8; i++)	s->codeword = msg[i + 1] << (i * 8) | s->codeword;
 }

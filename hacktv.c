@@ -94,7 +94,7 @@ static void print_usage(void)
 		"      --logo <path>              Overlay picture logo over video.\n"
 		"      --timestamp                Overlay video timestamp over video.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
-		"      --wss <mode>               Set WSS output. Defaults to auto (625 line modes only).\n"
+		"      --wss <mode>               Set WSS output. Defaults to auto. (625 line modes only)\n"
 		"      --letterbox                Letterboxes widescreen content on 4:3 screen.\n"
 		"      --pillarbox                Zooms widescreen content to fill 4:3 screen.\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
@@ -102,6 +102,8 @@ static void print_usage(void)
 		"      --disableemm <serial>      Disable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
+		"      --showserial               Displays serial number of the Videocrypt card.\n"
+		"      --findkey                  Attempt to find keys of PPV Videocrypt card.\n"
 		"      --syster <mode>            Enable Nagravision Syster scrambling. (PAL only)\n"
 		"      --d11 <mode>               Enable Discret 11 scrambling. (PAL only)\n"
 		"      --smartcrypt <mode>        Enable Smartcrypt scrambling (***INCOMPLETE***). (PAL only)\n"
@@ -319,6 +321,7 @@ static void print_usage(void)
 		"  cfrca           = A valid Canal+ France 'key' is required to decode - subscription level access.\n"
 		"  cplfa           = A valid Canal+ Poland 'key' is required to decode - free access.\n"
 		"  cesfa           = A valid Canal+ Spain 'key' is required to decode - free access.\n"
+		"  ntvfa           = A valid HTB+ Russia 'key' is required to decode - free access.\n"
 		"\n"
 		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
 		"with most hardware.\n"
@@ -380,6 +383,8 @@ static void print_usage(void)
 #define _OPT_SMARTCRYPT     2007
 #define _OPT_LETTERBOX      2008
 #define _OPT_PILLARBOX      2009
+#define _OPT_SHOWSERIAL     2010
+#define _OPT_FINDKEY        2011
 
 int main(int argc, char *argv[])
 {
@@ -401,6 +406,8 @@ int main(int argc, char *argv[])
 		{ "videocrypt",     required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "videocrypt2",    required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts",    required_argument, 0, _OPT_VIDEOCRYPTS },
+		{ "showserial",     no_argument,       0, _OPT_SHOWSERIAL },
+		{ "findkey",        no_argument,       0, _OPT_FINDKEY },
 		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
 		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
@@ -456,6 +463,8 @@ int main(int argc, char *argv[])
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
+	s.showserial = 0;
+	s.findkey = 0;
 	s.eurocrypt = NULL;
 	s.syster = NULL;
 	s.d11 = NULL;
@@ -606,6 +615,14 @@ int main(int argc, char *argv[])
 			s.disableemm = (uint32_t) strtod(optarg, NULL);
 			break;
 		
+		case _OPT_FINDKEY: /* --findkey */
+			s.findkey = 1;
+			break;
+			
+		case _OPT_SHOWSERIAL: /* --showserial */
+			s.showserial = 1;
+			break;
+			
 		case _OPT_SHOW_ECM: /* --showecm */
 			s.showecm = 1;
 			break;
@@ -915,6 +932,28 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.videocrypts = s.videocrypts;
+	}
+	
+	if(s.showserial)
+	{
+		if(!s.videocrypt)
+		{
+			fprintf(stderr, "'--showserial' is only supported in Videocrypt or Videocrypt II modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.showserial = s.showserial;
+	}
+	
+	if(s.findkey)
+	{
+		if(!s.videocrypt || (s.videocrypt && !(strcmp(s.videocrypt, "ppv") == 0)))
+		{
+			fprintf(stderr, "'--findkey' is only supported in Videocrypt PPV mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.findkey = s.findkey;
 	}
 	
 	if(s.eurocrypt)

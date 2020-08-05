@@ -8,6 +8,24 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author.**
 
+2020-08-05:
+Added HTB+ Russia for Syster
+Added Videocrypt PPV mode for use with old phone cards
+  - Requires either dumping of phone card or brute forcing key
+    Card serial are bits 0 to 39 (each of the five bytes bit-reversed)
+    Card key are bits 40 to 49 (each byte is bit reversed)
+    Put this data in _ppv_card_data[] in videocrypt.c
+  
+  Alternatively:
+  - Use --showserial parameter to display card's serial on screen
+  - Use --findkey to brute force the two random bytes. 
+    You need to watch the screen until it clears and it may take up to 45 hours!
+    If the process is interrupted, you can change starting values in videocrypt.c
+    
+    /* Starting keys */
+    _ppv_card_data[5] = 0x00; /* Key a */
+    _ppv_card_data[6] = 0x00; /* Key b */
+
 2020-07-24:
 Added sizing options for 4:3 screens (--letterbox and --pillarbox).
 

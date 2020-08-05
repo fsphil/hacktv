@@ -96,10 +96,6 @@ typedef struct {
 	uint16_t c;
 	
 	int video_scale[VC_WIDTH];
-	
-	/* Random bytes */
-	uint8_t b1, b2, b3;
-	
 } vc_t;
 
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);

@@ -154,6 +154,8 @@ typedef struct {
 	uint32_t enableemm;
 	uint32_t disableemm;
 	int showecm;
+	int showserial;
+	int findkey;
 	char *d11;
 	char *smartcrypt;
 	char *syster;
