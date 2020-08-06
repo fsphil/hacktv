@@ -1407,6 +1407,52 @@ const vid_config_t vid_config_apollo_mono = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_cbs405_m = {
+	
+	/* System M (CBS 405-line Colour) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 4200000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.83, /* Power level of video */
+	.fm_audio_level = 0.17, /* FM audio carrier power level */
+	
+	.type           = VID_CBS_405,
+	.frame_rate_num = 72,
+	.frame_rate_den = 1,
+	.lines          = 405,
+	.hline          = 203,
+	
+	.active_lines   = 376, /* Estimate */
+	.active_width   = 0.00002812, /* 28.12µs */
+	.active_left    = 0.00000480, /* |-->| 4.80µs */
+	
+	.hsync_width       = 0.000002743, /*  2.743µs */
+	.vsync_short_width = 0.000001372, /*  1.372µs */
+	.vsync_long_width  = 0.000014746, /* 14.746µs */
+	
+	.white_level    = 0.159, /* 15% +0/-15 */
+	.black_level    = 0.595, /* 75% +25/-25 */
+	.blanking_level = 0.595, /* 75% +25/-25 */
+	.sync_level     = 1.000, /* 100% */
+	
+	.colour_mode    = VID_CBS_FSC,
+	.fsc_flag_left  = 0.000008573, /* |-->| 8.573µs */
+	
+	.gamma          =  1.0,
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	
+	.fm_mono_carrier    = 4500000, /* Hz */
+	.fm_audio_preemph   = 0.000075, /* Seconds */
+	.fm_audio_deviation = 25000, /* +/- Hz */
+};
+
 const vid_config_t vid_config_cbs405 = {
 	
 	/* CBS 405-line Colour */
@@ -1478,6 +1524,7 @@ const vid_configs_t vid_configs[] = {
 	{ "apollo-fsc",    &vid_config_apollo_colour    },
 	{ "apollo-fm",     &vid_config_apollo_mono_fm   },
 	{ "apollo",        &vid_config_apollo_mono      },
+	{ "m-cbs405",      &vid_config_cbs405_m         },
 	{ "cbs405",        &vid_config_cbs405           },
 	{ NULL,            NULL },
 };

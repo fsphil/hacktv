@@ -190,6 +190,8 @@ static void print_usage(void)
 		"                  (real)\n"
 		"  apollo-fm     = No colour, 10 fps, 320 lines, FM (complex), 1.25 MHz FM audio\n"
 		"  apollo        = No colour, 10 fps, 320 lines, unmodulated (real)\n"
+		"  m-cbs405      = Field sequential colour, 72 fps, 405 lines, VSB (complex),\n"
+		"                  4.5MHz FM audio\n"
 		"  cbs405        = Field sequential colour, 72 fps, 405 lines, unmodulated (real)\n"
 		"\n"
 		"NOTE: The number of samples per line is rounded to the nearest integer,\n"
