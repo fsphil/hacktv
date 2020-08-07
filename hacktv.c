@@ -938,7 +938,7 @@ int main(int argc, char *argv[])
 	{
 		if(!s.videocrypt)
 		{
-			fprintf(stderr, "'--showserial' is only supported in Videocrypt or Videocrypt II modes.\n");
+			fprintf(stderr, "'--showserial' is only supported in Videocrypt mode.\n");
 			return(-1);
 		}
 		
