@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include "video.h"
+#include "videocrypt-ca.h"
 
 #define VC_SAMPLE_RATE         14000000
 #define VC_WIDTH               (VC_SAMPLE_RATE / 25 / 625)
@@ -49,25 +50,6 @@
 #define VC2_VBI_FIELD_1_START (VC_VBI_FIELD_1_START - 4)
 #define VC2_VBI_FIELD_2_START (VC_VBI_FIELD_2_START - 4)
 
-#define VC_TAC1 3001
-#define VC_TAC2 3002
-#define VC_SKY7 3003
-#define VC2_MC  3004
-
-typedef struct {
-	uint8_t mode;
-	uint64_t codeword;
-	uint8_t messages[7][32];
-} _vc_block_t;
-
-typedef struct {
-	uint8_t mode;
-	uint64_t codeword;
-	uint8_t messages[8][32];
-	/* Random bytes */
-	uint8_t b1, b2, b3;
-} _vc2_block_t;
-
 typedef struct {
 	
 	vid_t *vid;
@@ -96,20 +78,12 @@ typedef struct {
 	uint16_t c;
 	
 	int video_scale[VC_WIDTH];
+	
+	uint8_t _ppv_card_data[7];
 } vc_t;
 
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);
 extern void vc_free(vc_t *s);
 extern void vc_render_line(vc_t *s, const char *mode, const char *mode2);
-void _vc_kernel07(uint64_t *out, int *oi, const unsigned char in, int offset, int ca);
-void _vc_kernel09(const unsigned char in, unsigned char *answ);
-void _vc_seed_sky07(_vc_block_t *s, int ca);
-void _vc_emm07(_vc_block_t *s, int cmd, uint32_t cardserial);
-void _vc_emm09(_vc_block_t *s, int cmd, uint32_t cardserial);
-void _vc_seed_vc2(_vc2_block_t *s);
-void _vc2_emm(_vc2_block_t *s, int cmd, uint32_t cardserial);
-void _vc_seed_sky09(_vc_block_t *s);
-void _vc_seed_xtea(_vc_block_t *s);
-void _vc_seed_ppv(_vc_block_t *s);
 #endif
 

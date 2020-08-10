@@ -68,7 +68,7 @@
 #include <inttypes.h>
 #include "video.h"
 #include "vbidata.h"
-#include "systerca.h"
+#include "syster-ca.h"
 
 /* 0 - 12.8 kHz complex FIR filter taps, sample rate 32 kHz */
 
