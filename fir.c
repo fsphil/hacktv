@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "fir.h"
 
@@ -164,6 +165,7 @@ int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps)
 {
 	int i;
 	
+	s->type  = 1;
 	s->ntaps = ntaps;
 	s->itaps = malloc(s->ntaps * sizeof(int16_t));
 	s->qtaps = NULL;
@@ -184,6 +186,9 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *signal, size_t samples)
 	int x;
 	int y;
 	int p;
+	
+	if(s->type == 0) return(0);
+	else if(s->type == 2) return(fir_int16_complex_process(s, signal, samples));
 	
 	for(x = 0; x < samples; x++)
 	{
@@ -213,6 +218,7 @@ void fir_int16_free(fir_int16_t *s)
 	free(s->win);
 	free(s->itaps);
 	free(s->qtaps);
+	memset(s, 0, sizeof(fir_int16_t));
 }
 
 
@@ -244,6 +250,7 @@ int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int nta
 {
 	int i;
 	
+	s->type  = 2;
 	s->ntaps = ntaps;
 	s->itaps = malloc(s->ntaps * sizeof(int16_t) * 2);
 	s->qtaps = malloc(s->ntaps * sizeof(int16_t) * 2);

@@ -268,7 +268,6 @@ struct vid_t {
 	float ratio;
 	
 	/* Video filter */
-	int16_t *video_filter_taps;
 	fir_int16_t video_filter;
 	
 	/* Teletext state */

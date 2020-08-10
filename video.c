@@ -666,12 +666,12 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10e6, /* Hz */
+	.fm_deviation   = 13.5e6, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.75, /* Power level of video */
-	.dance_level    = 0.25, /* DANCE audio carrier power level */
+	.video_level    = 1.00, /* Power level of video */
+	.dance_level    = 0.19, /* DANCE audio carrier power level */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
@@ -1529,14 +1529,18 @@ const vid_configs_t vid_configs[] = {
 	{ NULL,            NULL },
 };
 
-/* Test taps for a CCIR-405 video pre-emphasis filter at 16 MHz */
-#define FM_TAPS 47
-const int16_t fm_taps[FM_TAPS] = {
-	-1,-1,-2,-2,-4,-5,-8,-12,-18,-26,-39,-56,-82,-117,-172,-247,-363,-526,-776,-1131,-1682,-2457,-3711,32767,-3711,-2457,-1682,-1131,-776,-526,-363,-247,-172,-117,-82,-56,-39,-26,-18,-12,-8,-5,-4,-2,-2,-1,-1
+/* Test taps for a CCIR-405 625 line video pre-emphasis filter at 20.25 MHz */
+const int16_t fm_625_taps[] = {
+	1,0,-1,0,1,0,-1,0,1,0,-1,0,1,0,0,0,0,0,1,0,-2,0,2,0,-2,0,3,0,-3,0,2,0,-2,0,1,0,1,0,-2,-1,3,1,-5,-2,5,2,-6,-3,6,3,-6,-3,4,2,-2,-1,-1,-2,4,4,-8,-9,11,11,-15,-16,15,17,-19,-21,14,16,-16,-17,4,0,-3,7,-20,-44,20,62,-58,-135,50,165,-113,-298,77,333,-191,-583,79,592,-320,-1113,-22,974,-625,-2330,-525,1600,-1710,-6746,-2922,9845,17217
+};
+
+/* Test taps for a CCIR-405 525 line video pre-emphasis filter at 18 MHz */
+const int16_t fm_525_taps[] = {
+	-1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,-1,0,1,0,-1,0,1,0,0,0,0,0,0,0,-1,0,1,0,-2,0,2,0,-2,0,1,0,-1,0,0,0,1,0,-2,0,2,0,-3,0,3,0,-3,0,2,0,-2,-1,-1,-1,1,-1,-5,-1,5,-1,-9,-1,7,-2,-10,-2,5,-2,-7,-3,-3,-4,1,-4,-17,-6,12,-7,-33,-9,20,-11,-44,-14,13,-18,-39,-23,-27,-31,-4,-40,-123,-54,78,-72,-312,-102,222,-140,-660,-205,444,-294,-1315,-447,778,-668,-2714,-1056,1509,-1637,-7031,-2711,11857,20328
 };
 
 /* Test taps for D/D2-MAC pre-emphasis at 20.25 MHz */
-const int16_t fm_mac_taps[FM_TAPS] = {
+const int16_t fm_mac_taps[] = {
 	-1,0,-1,0,-1,-1,-2,-2,-4,-5,-9,-13,-22,-33,-55,-86,-141,-222,-360,-567,-919,-1442,-2361,32767,-2361,-1442,-919,-567,-360,-222,-141,-86,-55,-33,-22,-13,-9,-5,-4,-2,-2,-1,-1,0,-1,0,-1
 };
 
@@ -2220,11 +2224,7 @@ void vid_free(vid_t *s)
 		wss_free(&s->wss);
 	}
 	
-	if(s->video_filter_taps)
-	{
-		fir_int16_free(&s->video_filter);
-		free(s->video_filter_taps);
-	}
+	fir_int16_free(&s->video_filter);
 	
 	if(s->conf.type == VID_MAC)
 	{
@@ -2274,42 +2274,60 @@ void vid_info(vid_t *s)
 
 int vid_init_filter(vid_t *s)
 {
-	int taps;
+	int ntaps;
 	
 	if(s->conf.modulation == VID_VSB)
 	{
-		taps = 51;
+		int16_t *taps;
 		
-		s->video_filter_taps = calloc(taps, sizeof(int16_t) * 2);
-		if(!s->video_filter_taps)
+		ntaps = 51;
+		
+		taps = calloc(ntaps, sizeof(int16_t) * 2);
+		if(!taps)
 		{
 			return(VID_OUT_OF_MEMORY);
 		}
 		
-		fir_int16_complex_band_pass(s->video_filter_taps, taps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_complex_init(&s->video_filter, s->video_filter_taps, taps);
+		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
+		fir_int16_complex_init(&s->video_filter, taps, ntaps);
+		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)
 	{
-		taps = FM_TAPS;
+		const int16_t *taps;
 		
-		s->video_filter_taps = calloc(taps, sizeof(int16_t));
-		if(!s->video_filter_taps)
+		if(s->conf.type == VID_MAC)
 		{
-			return(VID_OUT_OF_MEMORY);
+			if(s->sample_rate != 20250000)
+			{
+				fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz.\n");
+			}
+			
+			taps = fm_mac_taps;
+			ntaps = sizeof(fm_mac_taps) / sizeof(int16_t);
+		}
+		else if(s->conf.lines == 525)
+		{
+			if(s->sample_rate != 18000000)
+			{
+				fprintf(stderr, "Warning: The 525-line FM video pre-emphasis filter is designed to run at 18 MHz.\n");
+			}
+			
+			taps = fm_525_taps;
+			ntaps = sizeof(fm_525_taps) / sizeof(int16_t);
+		}
+		else
+		{
+			if(s->sample_rate != 20250000)
+			{
+				fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
+			}
+			
+			taps = fm_625_taps;
+			ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
 		}
 		
-		memcpy(s->video_filter_taps, s->conf.type == VID_MAC ? fm_mac_taps : fm_taps, taps * sizeof(int16_t));
-		fir_int16_init(&s->video_filter, s->video_filter_taps, taps);
-		
-		if(s->conf.type == VID_MAC && s->sample_rate != 20250000)
-		{
-			fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz only.\n");
-		}
-		else if(s->conf.type != VID_MAC && s->sample_rate != 16000000)
-		{
-			fprintf(stderr, "Warning: The FM video pre-emphasis filter is designed to run at 16 MHz only.\n");
-		}
+		fir_int16_init(&s->video_filter, taps, ntaps);
 	}
 	
 	return(VID_OK);
@@ -3130,16 +3148,9 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	}
 	
 	/* Apply video filter if enabled */
-	if(s->video_filter_taps)
+	if(s->video_filter.type)
 	{
-		if(s->conf.modulation == VID_VSB)
-		{
-			fir_int16_complex_process(&s->video_filter, s->output, s->width);
-		}
-		else if(s->conf.modulation == VID_FM)
-		{
-			fir_int16_process(&s->video_filter, s->output, s->width);
-		}
+		fir_int16_process(&s->video_filter, s->output, s->width);
 	}
 	
 	/* Process the audio */

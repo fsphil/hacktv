@@ -17,6 +17,8 @@
 
 typedef struct {
 	
+	int type;
+	
 	unsigned int ntaps;
 	int16_t *itaps;
 	int16_t *qtaps;
