@@ -88,6 +88,7 @@ static void print_usage(void)
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
 		"  -D, --deviation <value>        Override the mode's FM deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
+		"  -i, --interlace                Update image each field instead of each frame.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"  -p, --position <value>         Set start position of video in minutes.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
@@ -135,7 +136,6 @@ static void print_usage(void)
 		"\n"
 		"  Only modes with a complex output are supported by the HackRF.\n"
 		"\n"
-#ifdef HAVE_SOAPYSDR
 		"SoapySDR output options\n"
 		"\n"
 		"  -o, --output soapysdr[:<opts>] Open a SoapySDR device for output.\n"
@@ -143,8 +143,6 @@ static void print_usage(void)
 		"  -g, --gain <value>             Set the TX level. Default: 0dB\n"
 		"  -A, --antenna <name>           Set the antenna.\n"
 		"\n"
-#endif
-#ifdef HAVE_FL2K
 		"fl2k output options\n"
 		"\n"
 		"  -o, --output fl2k[:<dev>]      Open an fl2k device for output.\n"
@@ -155,7 +153,6 @@ static void print_usage(void)
 		"  The 0.7v p-p voltage level of the FL2K is too low to create a correct\n"
 		"  composite video signal, it will appear too dark without amplification.\n"
 		"\n"
-#endif
 		"File output options\n"
 		"\n"
 		"  -o, --output file:<filename>   Open a file for output. Use - for stdout.\n"
@@ -213,6 +210,9 @@ static void print_usage(void)
 		"                  (real)\n"
 		"  apollo-fm     = No colour, 10 fps, 320 lines, FM (complex), 1.25 MHz FM audio\n"
 		"  apollo        = No colour, 10 fps, 320 lines, unmodulated (real)\n"
+		"  m-cbs405      = Field sequential colour, 72 fps, 405 lines, VSB (complex),\n"
+		"                  4.5MHz FM audio\n"
+		"  cbs405        = Field sequential colour, 72 fps, 405 lines, unmodulated (real)\n"
 		"\n"
 		"NOTE: The number of samples per line is rounded to the nearest integer,\n"
 		"which may result in a slight frame rate error.\n"
@@ -397,6 +397,7 @@ int main(int argc, char *argv[])
 		{ "level",          required_argument, 0, 'l' },
 		{ "deviation",      required_argument, 0, 'D' },
 		{ "gamma",          required_argument, 0, 'G' },
+		{ "interlace",      no_argument,       0, 'i' },
 		{ "repeat",         no_argument,       0, 'r' },
 		{ "verbose",        no_argument,       0, 'v' },
 		{ "teletext",       required_argument, 0, _OPT_TELETEXT },
@@ -453,6 +454,7 @@ int main(int argc, char *argv[])
 	s.level = 1.0;
 	s.deviation = -1;
 	s.gamma = -1;
+	s.interlace = 0;
 	s.repeat = 0;
 	s.verbose = 0;
 	s.teletext = NULL;
@@ -489,7 +491,7 @@ int main(int argc, char *argv[])
 	s.showecm = 0;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:D:G:rvf:al:g:A:t:p:k:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:p:k:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -517,20 +519,26 @@ int main(int argc, char *argv[])
 				s.output_type = "hackrf";
 				s.output = sub;
 			}
-#ifdef HAVE_SOAPYSDR
 			else if(strcmp(pre, "soapysdr") == 0)
 			{
+#ifdef HAVE_SOAPYSDR
 				s.output_type = "soapysdr";
 				s.output = sub;
-			}
+#else
+				fprintf(stderr, "SoapySDR support is not available in this build of hacktv.\n");
+				return(-1);
 #endif
-#ifdef HAVE_FL2K
+			}
 			else if(strcmp(pre, "fl2k") == 0)
 			{
+#ifdef HAVE_FL2K
 				s.output_type = "fl2k";
 				s.output = sub;
-			}
+#else
+				fprintf(stderr, "FL2K support is not available in this build of hacktv.\n");
+				return(-1);
 #endif
+			}
 			else
 			{
 				/* Unrecognised output type, default to file */
@@ -566,7 +574,11 @@ int main(int argc, char *argv[])
 		case 'G': /* -G, --gamma <value> */
 			s.gamma = atof(optarg);
 			break;
-	
+		
+		case 'i': /* -i, --interlace */
+			s.interlace = 1;
+			break;
+		
 		case 'r': /* -r, --repeat */
 			s.repeat = 1;
 			break;
@@ -800,6 +812,11 @@ int main(int argc, char *argv[])
 	{
 		/* Override the gamma value */
 		vid_conf.gamma = s.gamma;
+	}
+	
+	if(s.interlace)
+	{
+		vid_conf.interlace = 1;
 	}
 	
 	if(s.noaudio > 0)

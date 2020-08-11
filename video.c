@@ -60,6 +60,8 @@ const vid_config_t vid_config_pal_i = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -116,6 +118,8 @@ const vid_config_t vid_config_pal_bg = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -171,6 +175,8 @@ const vid_config_t vid_config_pal_fm = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -219,6 +225,8 @@ const vid_config_t vid_config_pal = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -267,8 +275,9 @@ const vid_config_t vid_config_pal_m = {
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
-	.active_lines   = 480,
+	.hline          = 263,
 	
+	.active_lines   = 480,
 	.active_width   = 0.00005280, /* 52.80µs */
 	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
 	
@@ -314,6 +323,8 @@ const vid_config_t vid_config_525pal = {
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
+	.hline          = 263,
+	
 	.active_lines   = 480,
 	.active_width   = 0.00005280, /* 52.80µs */
 	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
@@ -363,6 +374,8 @@ const vid_config_t vid_config_secam_l = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -412,6 +425,8 @@ const vid_config_t vid_config_secam_dk = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -460,6 +475,8 @@ const vid_config_t vid_config_secam_fm = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -504,6 +521,8 @@ const vid_config_t vid_config_secam = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
+	.hline          = 313,
+	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
@@ -548,6 +567,8 @@ const vid_config_t vid_config_ntsc_m = {
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
+	.hline          = 263,
+	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
@@ -556,10 +577,10 @@ const vid_config_t vid_config_ntsc_m = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    = 0.2000,
-	.black_level    = 0.7280,
-	.blanking_level = 0.7712,
-	.sync_level     = 1.0000,
+	.white_level    = 0.125000,
+	.black_level    = 0.703125,
+	.blanking_level = 0.750000,
+	.sync_level     = 1.000000,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
@@ -604,6 +625,8 @@ const vid_config_t vid_config_ntsc_fm = {
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
+	.hline          = 263,
+	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
@@ -612,10 +635,10 @@ const vid_config_t vid_config_ntsc_fm = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.20,
-	.blanking_level = -0.20,
-	.sync_level     = -0.50,
+	.white_level    =  0.5000,
+	.black_level    = -0.1607,
+	.blanking_level = -0.2143,
+	.sync_level     = -0.5000,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
@@ -647,17 +670,19 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10e6, /* Hz */
+	.fm_deviation   = 13.5e6, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.75, /* Power level of video */
-	.dance_level    = 0.25, /* DANCE audio carrier power level */
+	.video_level    = 1.00, /* Power level of video */
+	.dance_level    = 0.19, /* DANCE audio carrier power level */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
+	.hline          = 263,
+	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
@@ -666,10 +691,10 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.20,
-	.blanking_level = -0.20,
-	.sync_level     = -0.50,
+	.white_level    =  0.5000,
+	.black_level    = -0.2143,
+	.blanking_level = -0.2143,
+	.sync_level     = -0.5000,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
@@ -703,6 +728,8 @@ const vid_config_t vid_config_ntsc = {
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
+	.hline          = 263,
+	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
@@ -711,10 +738,10 @@ const vid_config_t vid_config_ntsc = {
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
 	
-	.white_level    =  0.70,
-	.black_level    =  0.0525,
-	.blanking_level =  0.00,
-	.sync_level     = -0.30,
+	.white_level    =  100.0 / 140,
+	.black_level    =    7.5 / 140,
+	.blanking_level =    0.0 / 140,
+	.sync_level     =  -40.0 / 140,
 	
 	.colour_mode    = VID_NTSC,
 	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
@@ -746,8 +773,9 @@ const vid_config_t vid_config_d2mac_am = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
-	.active_lines   = 576,
+	.hline          = 313,
 	
+	.active_lines   = 576,
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
@@ -783,8 +811,9 @@ const vid_config_t vid_config_d2mac_fm = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
-	.active_lines   = 576,
+	.hline          = 313,
 	
+	.active_lines   = 576,
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
@@ -816,8 +845,9 @@ const vid_config_t vid_config_d2mac = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
-	.active_lines   = 576,
+	.hline          = 313,
 	
+	.active_lines   = 576,
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
@@ -851,8 +881,9 @@ const vid_config_t vid_config_dmac_am = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
-	.active_lines   = 576,
+	.hline          = 313,
 	
+	.active_lines   = 576,
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
@@ -888,8 +919,9 @@ const vid_config_t vid_config_dmac_fm = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
-	.active_lines   = 576,
+	.hline          = 313,
 	
+	.active_lines   = 576,
 	.active_left    = 584.0 / MAC_CLOCK_RATE, // 0.000028938,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
@@ -921,8 +953,9 @@ const vid_config_t vid_config_dmac = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
-	.active_lines   = 576,
+	.hline          = 313,
 	
+	.active_lines   = 576,
 	.active_left    = 0.000028938,
 	.active_width   = 0.000034667,
 	
@@ -962,6 +995,8 @@ const vid_config_t vid_config_819_e = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 819,
+	.hline          = 409,
+	
 	.active_lines   = 720, /* Normally 738 */
 	.active_width   = 0.00003944, /* 39.44µs */
 	.active_left    = 0.00000890, /* |-->| 8.9µs */
@@ -995,6 +1030,8 @@ const vid_config_t vid_config_819 = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 819,
+	.hline          = 409,
+	
 	.active_lines   = 720, /* Normally 738 */
 	.active_width   = 0.00003944, /* 39.44µs */
 	.active_left    = 0.00000890, /* |-->| 8.9µs */
@@ -1029,6 +1066,8 @@ const vid_config_t vid_config_405_a = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 405,
+	.hline          = 203,
+	
 	.active_lines   = 376,
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
@@ -1062,6 +1101,8 @@ const vid_config_t vid_config_405 = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 405,
+	.hline          = 203,
+	
 	.active_lines   = 376,
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
@@ -1093,6 +1134,7 @@ const vid_config_t vid_config_baird_240_am = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 240,
+	
 	.active_lines   = 220,
 	.active_width   = 0.00015,     /* 150µs */
 	.active_left    = 0.000016667, /* |-->| 16.667µs */
@@ -1122,6 +1164,7 @@ const vid_config_t vid_config_baird_240 = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 240,
+	
 	.active_lines   = 220,
 	.active_width   = 0.00015,     /* 150µs */
 	.active_left    = 0.000016667, /* |-->| 16.667µs */
@@ -1153,6 +1196,7 @@ const vid_config_t vid_config_baird_30_am = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 2,
 	.lines          = 30,
+	
 	.active_lines   = 30,
 	.active_width   = 0.002666667, /* 2.667ms */
 	.active_left    = 0,
@@ -1179,6 +1223,7 @@ const vid_config_t vid_config_baird_30 = {
 	.frame_rate_num = 25,
 	.frame_rate_den = 2,
 	.lines          = 30,
+	
 	.active_lines   = 30,
 	.active_width   = 0.002666667, /* 2.667ms */
 	.active_left    = 0,
@@ -1210,6 +1255,8 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
+	.hline          = 263,
+	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
@@ -1253,6 +1300,8 @@ const vid_config_t vid_config_apollo_colour = {
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
 	.lines          = 525,
+	.hline          = 263,
+	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
 	.active_left    = 0.00000920, /* |-->| 9.20µs */
@@ -1364,6 +1413,88 @@ const vid_config_t vid_config_apollo_mono = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_cbs405_m = {
+	
+	/* System M (CBS 405-line Colour) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 4200000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.83, /* Power level of video */
+	.fm_audio_level = 0.17, /* FM audio carrier power level */
+	
+	.type           = VID_CBS_405,
+	.frame_rate_num = 72,
+	.frame_rate_den = 1,
+	.lines          = 405,
+	.hline          = 203,
+	
+	.active_lines   = 376, /* Estimate */
+	.active_width   = 0.00002812, /* 28.12µs */
+	.active_left    = 0.00000480, /* |-->| 4.80µs */
+	
+	.hsync_width       = 0.000002743, /*  2.743µs */
+	.vsync_short_width = 0.000001372, /*  1.372µs */
+	.vsync_long_width  = 0.000014746, /* 14.746µs */
+	
+	.white_level    = 0.159, /* 15% +0/-15 */
+	.black_level    = 0.595, /* 75% +25/-25 */
+	.blanking_level = 0.595, /* 75% +25/-25 */
+	.sync_level     = 1.000, /* 100% */
+	
+	.colour_mode    = VID_CBS_FSC,
+	.fsc_flag_left  = 0.000008573, /* |-->| 8.573µs */
+	
+	.gamma          =  1.0,
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	
+	.fm_mono_carrier    = 4500000, /* Hz */
+	.fm_audio_preemph   = 0.000075, /* Seconds */
+	.fm_audio_deviation = 25000, /* +/- Hz */
+};
+
+const vid_config_t vid_config_cbs405 = {
+	
+	/* CBS 405-line Colour */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_CBS_405,
+	.frame_rate_num = 72,
+	.frame_rate_den = 1,
+	.lines          = 405,
+	.hline          = 203,
+	
+	.active_lines   = 376, /* Estimate */
+	.active_width   = 0.00002812, /* 28.12µs */
+	.active_left    = 0.00000480, /* |-->| 4.80µs */
+	
+	.hsync_width       = 0.000002743, /*  2.743µs */
+	.vsync_short_width = 0.000001372, /*  1.372µs */
+	.vsync_long_width  = 0.000014746, /* 14.746µs */
+	
+	.white_level    =  0.70,
+	.black_level    =  0.00,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.colour_mode    = VID_CBS_FSC,
+	.fsc_flag_left  = 0.000008573, /* |-->| 8.573µs */
+	
+	.gamma          =  1.0,
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+};
+
 const vid_configs_t vid_configs[] = {
 	{ "i",             &vid_config_pal_i            },
 	{ "b",             &vid_config_pal_bg           },
@@ -1399,17 +1530,23 @@ const vid_configs_t vid_configs[] = {
 	{ "apollo-fsc",    &vid_config_apollo_colour    },
 	{ "apollo-fm",     &vid_config_apollo_mono_fm   },
 	{ "apollo",        &vid_config_apollo_mono      },
+	{ "m-cbs405",      &vid_config_cbs405_m         },
+	{ "cbs405",        &vid_config_cbs405           },
 	{ NULL,            NULL },
 };
 
-/* Test taps for a CCIR-405 video pre-emphasis filter at 16 MHz */
-#define FM_TAPS 47
-const int16_t fm_taps[FM_TAPS] = {
-	-1,-1,-2,-2,-4,-5,-8,-12,-18,-26,-39,-56,-82,-117,-172,-247,-363,-526,-776,-1131,-1682,-2457,-3711,32767,-3711,-2457,-1682,-1131,-776,-526,-363,-247,-172,-117,-82,-56,-39,-26,-18,-12,-8,-5,-4,-2,-2,-1,-1
+/* Test taps for a CCIR-405 625 line video pre-emphasis filter at 20.25 MHz */
+const int16_t fm_625_taps[] = {
+	1,0,-1,0,1,0,-1,0,1,0,-1,0,1,0,0,0,0,0,1,0,-2,0,2,0,-2,0,3,0,-3,0,2,0,-2,0,1,0,1,0,-2,-1,3,1,-5,-2,5,2,-6,-3,6,3,-6,-3,4,2,-2,-1,-1,-2,4,4,-8,-9,11,11,-15,-16,15,17,-19,-21,14,16,-16,-17,4,0,-3,7,-20,-44,20,62,-58,-135,50,165,-113,-298,77,333,-191,-583,79,592,-320,-1113,-22,974,-625,-2330,-525,1600,-1710,-6746,-2922,9845,17217
+};
+
+/* Test taps for a CCIR-405 525 line video pre-emphasis filter at 18 MHz */
+const int16_t fm_525_taps[] = {
+	-1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,-1,0,1,0,-1,0,1,0,0,0,0,0,0,0,-1,0,1,0,-2,0,2,0,-2,0,1,0,-1,0,0,0,1,0,-2,0,2,0,-3,0,3,0,-3,0,2,0,-2,-1,-1,-1,1,-1,-5,-1,5,-1,-9,-1,7,-2,-10,-2,5,-2,-7,-3,-3,-4,1,-4,-17,-6,12,-7,-33,-9,20,-11,-44,-14,13,-18,-39,-23,-27,-31,-4,-40,-123,-54,78,-72,-312,-102,222,-140,-660,-205,444,-294,-1315,-447,778,-668,-2714,-1056,1509,-1637,-7031,-2711,11857,20328
 };
 
 /* Test taps for D/D2-MAC pre-emphasis at 20.25 MHz */
-const int16_t fm_mac_taps[FM_TAPS] = {
+const int16_t fm_mac_taps[] = {
 	-1,0,-1,0,-1,-1,-2,-2,-4,-5,-9,-13,-22,-33,-55,-86,-141,-222,-360,-567,-919,-1442,-2361,32767,-2361,-1442,-919,-567,-360,-222,-141,-86,-55,-33,-22,-13,-9,-5,-4,-2,-2,-1,-1,0,-1,0,-1
 };
 
@@ -1673,28 +1810,24 @@ int vid_av_close(vid_t *s)
 
 void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 {
-	int x, m, r;
+	int m, r;
 	
-	/* Test if the chosen sample rate results in an integer even
-	 * number of samples per line. If not, display a warning and show
-	 * the previous and next valid sample rates. */
+	/* Test if the chosen sample rate results in an even number of
+	 * samples per line. If not, display a warning and show the
+	 * previous and next valid sample rates. */
 	
-	x = gcd(conf->lines * conf->frame_rate_num, conf->frame_rate_den);
-	m = (conf->frame_rate_den / x) & 1 ? 2 : 1;
+	/* Calculate lowest valid sample rate */
+	m = conf->lines * conf->frame_rate_num;
+	m /= r = gcd(m, conf->frame_rate_den);
+	if(conf->frame_rate_den / r & 1) m *= 2;
 	
-	if(sample_rate % (conf->frame_rate_num * conf->lines * m / x) == 0)
-	{
-		/* Sample rate is good */
-		return;
-	}
+	/* Is the chosen sample rate good? */
+	if(sample_rate % m == 0) return;
 	
-	r = sample_rate / (conf->frame_rate_num * conf->lines * m / x);
-	
+	/* Not really. Suggest some good sample rates */
+	r = sample_rate / m;
 	fprintf(stderr, "Warning: Sample rate %u may not work well with this mode.\n", sample_rate);
-	fprintf(stderr, "Next valid sample rates: %u, %u\n",
-		conf->frame_rate_num * conf->lines * m / x * r,
-		conf->frame_rate_num * conf->lines * m / x * (r + 1)
-	);
+	fprintf(stderr, "Next valid sample rates: %u, %u\n", m * r, m * (r + 1));
 }
 
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
@@ -2111,11 +2244,7 @@ void vid_free(vid_t *s)
 		wss_free(&s->wss);
 	}
 	
-	if(s->video_filter_taps)
-	{
-		fir_int16_free(&s->video_filter);
-		free(s->video_filter_taps);
-	}
+	fir_int16_free(&s->video_filter);
 	
 	if(s->conf.type == VID_MAC)
 	{
@@ -2155,7 +2284,8 @@ void vid_free(vid_t *s)
 void vid_info(vid_t *s)
 {
 	fprintf(stderr, "Video: %dx%d %.2f fps (full frame %dx%d)\n",
-		s->active_width, s->conf.active_lines, (double) s->conf.frame_rate_num / s->conf.frame_rate_den,
+		s->active_width, s->conf.active_lines,
+		(double) s->conf.frame_rate_num / s->conf.frame_rate_den,
 		s->width, s->conf.lines
 	);
 	
@@ -2164,43 +2294,60 @@ void vid_info(vid_t *s)
 
 int vid_init_filter(vid_t *s)
 {
-	int taps;
+	int ntaps;
 	
 	if(s->conf.modulation == VID_VSB)
 	{
-		/* My workstation can handle 30 taps at 20.25MHz sampling rate (MAC) */
-		taps = s->conf.type == VID_MAC ? 25 : 15 ;
+		int16_t *taps;
 		
-		s->video_filter_taps = calloc(taps, sizeof(int16_t) * 2);
-		if(!s->video_filter_taps)
+		ntaps = 51;
+		
+		taps = calloc(ntaps, sizeof(int16_t) * 2);
+		if(!taps)
 		{
 			return(VID_OUT_OF_MEMORY);
 		}
 		
-		fir_int16_complex_band_pass(s->video_filter_taps, taps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_complex_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
+		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
+		fir_int16_complex_init(&s->video_filter, taps, ntaps);
+		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)
 	{
-		taps = FM_TAPS;
+		const int16_t *taps;
 		
-		s->video_filter_taps = calloc(taps, sizeof(int16_t));
-		if(!s->video_filter_taps)
+		if(s->conf.type == VID_MAC)
 		{
-			return(VID_OUT_OF_MEMORY);
+			if(s->sample_rate != 20250000)
+			{
+				fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz.\n");
+			}
+			
+			taps = fm_mac_taps;
+			ntaps = sizeof(fm_mac_taps) / sizeof(int16_t);
+		}
+		else if(s->conf.lines == 525)
+		{
+			if(s->sample_rate != 18000000)
+			{
+				fprintf(stderr, "Warning: The 525-line FM video pre-emphasis filter is designed to run at 18 MHz.\n");
+			}
+			
+			taps = fm_525_taps;
+			ntaps = sizeof(fm_525_taps) / sizeof(int16_t);
+		}
+		else
+		{
+			if(s->sample_rate != 20250000)
+			{
+				fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
+			}
+			
+			taps = fm_625_taps;
+			ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
 		}
 		
-		memcpy(s->video_filter_taps, s->conf.type == VID_MAC ? fm_mac_taps : fm_taps, taps * sizeof(int16_t));
-		fir_int16_init(&s->video_filter, s->video_filter_taps, taps, 1, 1);
-		
-		if(s->conf.type == VID_MAC && s->sample_rate != 20250000)
-		{
-			fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz only.\n");
-		}
-		else if(s->conf.type != VID_MAC && s->sample_rate != 16000000)
-		{
-			fprintf(stderr, "Warning: The FM video pre-emphasis filter is designed to run at 16 MHz only.\n");
-		}
+		fir_int16_init(&s->video_filter, taps, ntaps);
 	}
 	
 	return(VID_OK);
@@ -2535,6 +2682,47 @@ static void _vid_next_line_raster(vid_t *s)
 		/* Calculate the active line number */
 		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
 	}
+	else if(s->conf.type == VID_CBS_405)
+	{
+		switch(s->line)
+		{
+		case 1:   seq = "v__v"; break;
+		case 2:   seq = "v__v"; break;
+		case 3:   seq = "v__v"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
+		case 6:   seq = "V__V"; break;
+		case 7:   seq = "v__v"; break;
+		case 8:   seq = "v__v"; break;
+		case 9:   seq = "v__v"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		
+		case 203: seq = "h_av"; break;
+		case 204: seq = "v__v"; break;
+		case 205: seq = "v__v"; break;
+		case 206: seq = "v__V"; break;
+		case 207: seq = "V__V"; break;
+		case 208: seq = "V__V"; break;
+		case 209: seq = "V__v"; break;
+		case 210: seq = "v__v"; break;
+		case 211: seq = "v__v"; break;
+		case 212: seq = "v___"; break;
+		case 213: seq = "h___"; break;
+		case 214: seq = "h___"; break;
+		case 215: seq = "h___"; break;
+		case 216: seq = "h___"; break;
+		case 217: seq = "h__a"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
+	}
 	else if(s->conf.type == VID_APOLLO_320)
 	{
 		if(s->line <= 8) seq = "V__v";
@@ -2615,6 +2803,15 @@ static void _vid_next_line_raster(vid_t *s)
 		lut_q = NULL;
 		pal = 0;
 	}
+	else if(s->conf.colour_mode == VID_CBS_FSC)
+	{
+		/* CBS Field Sequential Colour */
+		fsc = (s->frame * 2 + (s->line < 202 ? 0 : 1)) % 3;
+		lut_b = NULL;
+		lut_i = NULL;
+		lut_q = NULL;
+		pal = 0;
+	}
 	else
 	{
 		/* No colour */
@@ -2647,7 +2844,8 @@ static void _vid_next_line_raster(vid_t *s)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
 			
-			if(s->conf.colour_mode == VID_APOLLO_FSC)
+			if(s->conf.colour_mode == VID_APOLLO_FSC ||
+			   s->conf.colour_mode == VID_CBS_FSC)
 			{
 				rgb  = (rgb >> (8 * fsc)) & 0xFF;
 				rgb |= (rgb << 8) | (rgb << 16);
@@ -2676,7 +2874,8 @@ static void _vid_next_line_raster(vid_t *s)
 		{
 			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
 			
-			if(s->conf.colour_mode == VID_APOLLO_FSC)
+			if(s->conf.colour_mode == VID_APOLLO_FSC ||
+			   s->conf.colour_mode == VID_CBS_FSC)
 			{
 				rgb  = (rgb >> (8 * fsc)) & 0xFF;
 				rgb |= (rgb << 8) | (rgb << 16);
@@ -2730,6 +2929,17 @@ static void _vid_next_line_raster(vid_t *s)
 		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
 		{
 			s->output[x * 2] = s->fsc_flag_level;
+		}
+	}
+	
+	/* Render the CBS FSC flag */
+	if(s->conf.colour_mode == VID_CBS_FSC && fsc == 2 &&
+	  (s->line == 1 || s->line == 203))
+	{
+		w = (s->line == 1 ? s->fsc_flag_left : s->half_width + s->fsc_flag_left);
+		for(x = 0; x < s->vsync_short_width; x++)
+		{
+			s->output[(w + x) * 2] = s->sync_level;
 		}
 	}
 	
@@ -2997,7 +3207,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	s->line = s->bline;
 	
 	/* Load the next frame */
-	if(s->line == 1)
+	if(s->line == 1 || (s->conf.interlace && s->line == s->conf.hline))
 	{
 		/* Have we reached the end of the video? */
 		if(_av_eof(s))
@@ -3023,18 +3233,9 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	}
 	
 	/* Apply video filter if enabled */
-	if(s->video_filter_taps)
+	if(s->video_filter.type)
 	{
-		if(s->conf.modulation == VID_VSB)
-		{
-			//fir_int16_complex_process(&s->video_filter, s->output, 1, s->output, s->width, 1);
-			fir_int16_complex_process_simple(&s->video_filter, s->output, s->width);
-		}
-		else if(s->conf.modulation == VID_FM)
-		{
-			//fir_int16_process(&s->video_filter, s->output, 2, s->output, s->width, 2);
-			fir_int16_process_simple(&s->video_filter, s->output, s->width);
-		}
+		fir_int16_process(&s->video_filter, s->output, s->width);
 	}
 	
 	/* Process the audio */

@@ -60,6 +60,7 @@ typedef struct {
 	float level;
 	float deviation;
 	float gamma;
+	int interlace;
 	int repeat;
 	int verbose;
 	char *d11;

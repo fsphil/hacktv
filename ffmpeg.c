@@ -1190,6 +1190,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		 * Numerator and denominator are swapped as ffmpeg uses seconds per frame. */
 		av->video_time_base.num = s->conf.frame_rate_den;
 		av->video_time_base.den = s->conf.frame_rate_num;
+		if(s->conf.interlace) av->video_time_base.den *= 2;
 		
 		/* Use the video's start time as the reference */
 		time_base = av->video_stream->time_base;

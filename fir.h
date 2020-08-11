@@ -17,15 +17,12 @@
 
 typedef struct {
 	
+	int type;
+	
 	unsigned int ntaps;
-	const int16_t *taps;
+	int16_t *itaps;
+	int16_t *qtaps;
 	
-	unsigned int interpolation;
-	
-	unsigned int decimation;
-	unsigned int ds;
-	
-	unsigned int lwin;
 	unsigned int owin;
 	int16_t *win;
 	
@@ -37,13 +34,10 @@ extern void fir_complex_band_pass(double *taps, size_t ntaps, double sample_rate
 extern void fir_int16_low_pass(int16_t *taps, size_t ntaps, double sample_rate, double cutoff, double width, double gain);
 extern void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
 
-extern int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, unsigned int interpolation, unsigned int decimation);
-extern size_t fir_int16_process(fir_int16_t *s, int16_t *output, size_t ostep, const int16_t *input, size_t samples, size_t istep);
-extern size_t fir_int16_process_simple(fir_int16_t *s, int16_t *signal, size_t samples);
+extern int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps);
+extern size_t fir_int16_process(fir_int16_t *s, int16_t *signal, size_t samples);
 extern void fir_int16_free(fir_int16_t *s);
 
-extern int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, unsigned int interpolation, unsigned int decimation);
-extern size_t fir_int16_complex_process(fir_int16_t *s, int16_t *output, size_t ostep, const int16_t *input, size_t samples, size_t istep);
-extern size_t fir_int16_complex_process_simple(fir_int16_t *s, int16_t *signal, size_t samples);
-extern void fir_int16_complex_free(fir_int16_t *s);
+extern int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps);
+extern size_t fir_int16_complex_process(fir_int16_t *s, int16_t *signal, size_t samples);
 
