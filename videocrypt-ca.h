@@ -40,6 +40,7 @@ typedef struct {
 } _vc2_block_t;
 
 /* Videocrypt 1 */
+extern void _vc_seed_p03(_vc_block_t *s);
 extern void _vc_seed_p07(_vc_block_t *s, int ca);
 extern void _vc_seed_p09(_vc_block_t *s);
 

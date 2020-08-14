@@ -126,9 +126,9 @@ static inline uint8_t _rnibble(uint8_t a)
 	return((a >> 4) | (a << 4));
 }
 
-void _rand_vc_seed(uint8_t *messages)
+void _rand_vc_seed(uint8_t *message)
 {
-	for(int i = 12; i < 27; i++) messages[i] = rand() + 0xFF;
+	for(int i = 12; i < 27; i++) message[i] = rand() + 0xFF;
 }
 
 /* Reverse calculated control word */
@@ -249,6 +249,12 @@ void _vc_process_p07_msg(uint8_t *message, uint64_t *cw, int ca)
 	/* Iterate through _vc_kernel07 64 more times (99 in total)
 	   Odd bug(?) in newer TAC card where checksum is always 0x0d */
 	for (i = 0; i < 64; i++) _vc_kernel07(cw, &oi, (ca == VC_TAC2) ? 0x0d : message[31], offset, ca);
+}
+
+void _vc_seed_p03(_vc_block_t *s)
+{
+	/* Generate checksum */
+	s->messages[5][31] = _crc(s->messages[5]);
 }
 
 void _vc_seed_p07(_vc_block_t *s, int ca)

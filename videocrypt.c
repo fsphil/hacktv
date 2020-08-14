@@ -191,6 +191,13 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		s->blocks    = _fa_blocks;
 		s->block_len = 1;
 	}
+	else if(strcmp(mode, "sky03") == 0)
+	{
+		s->blocks    = _sky03_blocks;
+		s->block_len = 2;
+		_vc_seed_p03(&s->blocks[0]);
+		_vc_seed_p03(&s->blocks[1]);
+	}
 	else if(strcmp(mode, "sky07") == 0)
 	{
 		s->blocks    = _sky07_blocks;

@@ -916,8 +916,6 @@ int mac_init(vid_t *s)
 	mac->black_ref_left    = round(s->sample_rate * (533.0 / MAC_CLOCK_RATE));
 	mac->black_ref_right   = round(s->sample_rate * (695.0 / MAC_CLOCK_RATE));
 	
-	fprintf(stderr,"chroma start %d, chroma width %d, active start %d, active width %d", mac->chrominance_left, mac->chrominance_width, s->active_left, s->active_width );
-	
 	/* Setup PRBS */
 	mac->cw = MAC_PRBS_CW_FA;
 	
