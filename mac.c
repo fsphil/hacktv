@@ -1392,7 +1392,7 @@ void mac_next_line(vid_t *s)
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
 			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
-			s->output[x * 2] = s->y_level_lookup[rgb];
+			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
 		}
 	}
 	
@@ -1406,7 +1406,7 @@ void mac_next_line(vid_t *s)
 		for(x = s->mac.chrominance_left; x < s->mac.chrominance_left + s->mac.chrominance_width; x++)
 		{
 			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
-			s->output[x * 2] += (s->line & 1 ? s->q_level_lookup[rgb] : s->i_level_lookup[rgb]);
+			s->output[x * 2] += (s->line & 1 ? s->yiq_level_lookup[rgb].q : s->yiq_level_lookup[rgb].i);
 			if(px != NULL) px++;
 		}
 	}

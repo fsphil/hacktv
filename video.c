@@ -1879,13 +1879,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->sync_level     = round(s->conf.sync_level     * level * INT16_MAX);
 	
 	/* Allocate memory for YUV lookup tables */
-	s->y_level_lookup = malloc(0x1000000 * sizeof(int16_t));
-	s->i_level_lookup = malloc(0x1000000 * sizeof(int16_t));
-	s->q_level_lookup = malloc(0x1000000 * sizeof(int16_t));
-	
-	if(s->y_level_lookup == NULL ||
-	   s->i_level_lookup == NULL ||
-	   s->q_level_lookup == NULL)
+	s->yiq_level_lookup = malloc(0x1000000 * sizeof(_yiq16_t));
+	if(s->yiq_level_lookup == NULL)
 	{
 		vid_free(s);
 		return(VID_OUT_OF_MEMORY);
@@ -1930,9 +1925,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		q *= s->conf.white_level - s->conf.black_level;
 		
 		/* Convert to INT16 range and store in tables */
-		s->y_level_lookup[c] = round(_dlimit(y * level, -1, 1) * INT16_MAX);
-		s->i_level_lookup[c] = round(_dlimit(i * level, -1, 1) * INT16_MAX);
-		s->q_level_lookup[c] = round(_dlimit(q * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].y = round(_dlimit(y * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].i = round(_dlimit(i * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].q = round(_dlimit(q * level, -1, 1) * INT16_MAX);
 	}
 	
 	if(s->conf.colour_lookup_lines > 0)
@@ -2232,10 +2227,8 @@ void vid_free(vid_t *s)
 	}
 	
 	/* Free allocated memory */
-	if(s->y_level_lookup != NULL) free(s->y_level_lookup);
-	if(s->i_level_lookup != NULL) free(s->i_level_lookup);
-	if(s->q_level_lookup != NULL) free(s->q_level_lookup);
-	if(s->colour_lookup != NULL) free(s->colour_lookup);
+	free(s->yiq_level_lookup);
+	free(s->colour_lookup);
 	_free_fm_modulator(&s->fm_secam_cr);
 	_free_fm_modulator(&s->fm_secam_cb);
 	_free_fm_modulator(&s->fm_video);
@@ -2831,12 +2824,12 @@ static void _vid_next_line_raster(vid_t *s)
 				rgb |= (rgb << 8) | (rgb << 16);
 			}
 			
-			s->output[x * 2] = s->y_level_lookup[rgb];
+			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
 			
 			if(pal)
 			{
-				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 15;
-				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
 			}
 		}
 	}
@@ -2861,12 +2854,12 @@ static void _vid_next_line_raster(vid_t *s)
 				rgb |= (rgb << 8) | (rgb << 16);
 			}
 			
-			s->output[x * 2] = s->y_level_lookup[rgb];
+			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
 			
 			if(pal)
 			{
-				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 15;
-				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
 			}
 		}
 	}
@@ -2946,11 +2939,11 @@ static void _vid_next_line_raster(vid_t *s)
 			
 			if(((s->frame * s->conf.lines) + s->line) & 1)
 			{
-				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->yiq_level_lookup[rgb].q);
 			}
 			else
 			{
-				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->yiq_level_lookup[rgb].i);
 			}
 		}
 	}
