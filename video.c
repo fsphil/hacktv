@@ -164,7 +164,7 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -207,8 +207,8 @@ const vid_config_t vid_config_pal_fm = {
 	.qv_co          = 0.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7200000, /* Hz */
-	//.fm_right_carrier   = 7020000, /* Hz */
+	//.fm_left_carrier    = 7020000, /* Hz */
+	//.fm_right_carrier   = 7200000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
 	.fm_audio_deviation = 85000, /* +/- Hz */
 };
@@ -464,7 +464,7 @@ const vid_config_t vid_config_secam_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -503,8 +503,8 @@ const vid_config_t vid_config_secam_fm = {
 	.qv_co          = 2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7200000, /* Hz */
-	//.fm_right_carrier   = 7020000, /* Hz */
+	//.fm_left_carrier    = 7020000, /* Hz */
+	//.fm_right_carrier   = 7200000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
 	.fm_audio_deviation = 85000, /* +/- Hz */
 };
@@ -610,7 +610,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -653,8 +653,8 @@ const vid_config_t vid_config_ntsc_fm = {
 	.qv_co          =  0.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7200000, /* Hz */
-	//.fm_right_carrier   = 7020000, /* Hz */
+	//.fm_left_carrier    = 7020000, /* Hz */
+	//.fm_right_carrier   = 7200000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
 	.fm_audio_deviation = 85000, /* +/- Hz */
 };
@@ -666,7 +666,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 13.5e6, /* Hz */
+	.fm_deviation   = 13.5e6 / 2, /* 13.5 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -799,7 +799,7 @@ const vid_config_t vid_config_d2mac_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.type           = VID_MAC,
 	.frame_rate_num = 25,
@@ -907,7 +907,7 @@ const vid_config_t vid_config_dmac_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.type           = VID_MAC,
 	.frame_rate_num = 25,
@@ -1243,7 +1243,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 1000000, /* Hz */
+	.fm_deviation   = 2e6 / 2, /* 2 MHz/V */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
@@ -1330,7 +1330,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 1000000, /* Hz */
+	.fm_deviation   = 2e6 / 2, /* 2 MHz/V */
 	
 	.type           = VID_APOLLO_320,
 	.frame_rate_num = 10,
@@ -1642,7 +1642,8 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 	return(&s->colour_lookup[p]);
 }
 
-/* FM modulator */
+/* FM modulator
+ * deviation = peak deviation in Hz (+/-) from frequency */
 static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, double deviation, double level)
 {
 	int r;
