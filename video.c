@@ -666,7 +666,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 13.5e6 / 2, /* 13.5 MHz/V */
+	.fm_deviation   = 17.0e6 / 2, /* 17.0 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -799,7 +799,7 @@ const vid_config_t vid_config_d2mac_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
+	.fm_deviation   = 13.5e6 / 2, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
 	.frame_rate_num = 25,
@@ -907,7 +907,7 @@ const vid_config_t vid_config_dmac_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
+	.fm_deviation   = 13.5e6 / 2, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
 	.frame_rate_num = 25,
