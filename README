@@ -185,6 +185,14 @@ apt-get install libhackrf-dev libavutil-dev libavdevice-dev libswresample-dev li
 apt-get install hacktv
 
 
+WARNING
+
+The hackrf is not designed to be connected directly to AV equipment and could
+be damaged by, or cause damage to, your receiver. Please ensure no DC voltages
+or control signals are sent back into the hackrf, and that the RF power levels
+out of the hackrf are not too high for your receiver.
+
+
 INSTALL
 
 make

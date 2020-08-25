@@ -222,6 +222,12 @@ typedef struct {
 	const vid_config_t *conf;
 } vid_configs_t;
 
+typedef struct {
+	int16_t y;
+	int16_t i;
+	int16_t q;
+} _yiq16_t;
+
 struct vid_t {
 	
 	/* Source interface */
@@ -253,9 +259,7 @@ struct vid_t {
 	int16_t blanking_level;
 	int16_t sync_level;
 	
-	int16_t *y_level_lookup;
-	int16_t *i_level_lookup;
-	int16_t *q_level_lookup;
+	_yiq16_t *yiq_level_lookup;
 	
 	int colour_lookup_width;
 	int16_t *colour_lookup;

@@ -164,7 +164,7 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.level          = 0.8, /* Overall signal level */
 	
@@ -207,8 +207,8 @@ const vid_config_t vid_config_pal_fm = {
 	.qv_co          = 0.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7200000, /* Hz */
-	//.fm_right_carrier   = 7020000, /* Hz */
+	//.fm_left_carrier    = 7020000, /* Hz */
+	//.fm_right_carrier   = 7200000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
 	.fm_audio_deviation = 85000, /* +/- Hz */
 };
@@ -464,7 +464,7 @@ const vid_config_t vid_config_secam_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -503,8 +503,8 @@ const vid_config_t vid_config_secam_fm = {
 	.qv_co          = 2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7200000, /* Hz */
-	//.fm_right_carrier   = 7020000, /* Hz */
+	//.fm_left_carrier    = 7020000, /* Hz */
+	//.fm_right_carrier   = 7200000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
 	.fm_audio_deviation = 85000, /* +/- Hz */
 };
@@ -614,7 +614,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 16e6 / 2, /* 16 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -657,8 +657,8 @@ const vid_config_t vid_config_ntsc_fm = {
 	.qv_co          =  0.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7200000, /* Hz */
-	//.fm_right_carrier   = 7020000, /* Hz */
+	//.fm_left_carrier    = 7020000, /* Hz */
+	//.fm_right_carrier   = 7200000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
 	.fm_audio_deviation = 85000, /* +/- Hz */
 };
@@ -670,7 +670,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 13.5e6, /* Hz */
+	.fm_deviation   = 17.0e6 / 2, /* 17.0 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -805,7 +805,7 @@ const vid_config_t vid_config_d2mac_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 13.5e6 / 2, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
 	.frame_rate_num = 25,
@@ -913,7 +913,7 @@ const vid_config_t vid_config_dmac_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 10000000, /* Hz */
+	.fm_deviation   = 13.5e6 / 2, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
 	.frame_rate_num = 25,
@@ -1249,7 +1249,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 1000000, /* Hz */
+	.fm_deviation   = 2e6 / 2, /* 2 MHz/V */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
@@ -1336,7 +1336,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
-	.fm_deviation   = 1000000, /* Hz */
+	.fm_deviation   = 2e6 / 2, /* 2 MHz/V */
 	
 	.type           = VID_APOLLO_320,
 	.frame_rate_num = 10,
@@ -1540,6 +1540,11 @@ const int16_t fm_625_taps[] = {
 	1,0,-1,0,1,0,-1,0,1,0,-1,0,1,0,0,0,0,0,1,0,-2,0,2,0,-2,0,3,0,-3,0,2,0,-2,0,1,0,1,0,-2,-1,3,1,-5,-2,5,2,-6,-3,6,3,-6,-3,4,2,-2,-1,-1,-2,4,4,-8,-9,11,11,-15,-16,15,17,-19,-21,14,16,-16,-17,4,0,-3,7,-20,-44,20,62,-58,-135,50,165,-113,-298,77,333,-191,-583,79,592,-320,-1113,-22,974,-625,-2330,-525,1600,-1710,-6746,-2922,9845,17217
 };
 
+/* Test taps for a CCIR-405 625 line video pre-emphasis filter at 14 MHz */
+const int16_t fm_625_14_taps[] = {
+	-1,0,0,-1,1,0,0,0,0,0,0,0,0,0,1,-1,0,1,-1,0,0,-1,0,0,0,-1,0,1,-2,1,0,-2,2,-1,-1,1,0,0,-1,1,-1,-1,3,-3,0,3,-4,2,1,-2,1,0,1,-3,2,3,-7,7,0,-8,9,-4,-4,6,-3,0,-4,8,-6,-9,23,-24,-2,27,-39,13,11,-30,8,-7,10,-59,24,43,-203,171,-30,-383,471,-369,-480,861,-1210,-331,1070,-3165,214,91,-9995,5473,24903
+};
+
 /* Test taps for a CCIR-405 525 line video pre-emphasis filter at 18 MHz */
 const int16_t fm_525_taps[] = {
 	-1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,-1,0,1,0,-1,0,1,0,0,0,0,0,0,0,-1,0,1,0,-2,0,2,0,-2,0,1,0,-1,0,0,0,1,0,-2,0,2,0,-3,0,3,0,-3,0,2,0,-2,-1,-1,-1,1,-1,-5,-1,5,-1,-9,-1,7,-2,-10,-2,5,-2,-7,-3,-3,-4,1,-4,-17,-6,12,-7,-33,-9,20,-11,-44,-14,13,-18,-39,-23,-27,-31,-4,-40,-123,-54,78,-72,-312,-102,222,-140,-660,-205,444,-294,-1315,-447,778,-668,-2714,-1056,1509,-1637,-7031,-2711,11857,20328
@@ -1648,7 +1653,8 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 	return(&s->colour_lookup[p]);
 }
 
-/* FM modulator */
+/* FM modulator
+ * deviation = peak deviation in Hz (+/-) from frequency */
 static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, double deviation, double level)
 {
 	int r;
@@ -1885,13 +1891,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->sync_level     = round(s->conf.sync_level     * level * INT16_MAX);
 	
 	/* Allocate memory for YUV lookup tables */
-	s->y_level_lookup = malloc(0x1000000 * sizeof(int16_t));
-	s->i_level_lookup = malloc(0x1000000 * sizeof(int16_t));
-	s->q_level_lookup = malloc(0x1000000 * sizeof(int16_t));
-	
-	if(s->y_level_lookup == NULL ||
-	   s->i_level_lookup == NULL ||
-	   s->q_level_lookup == NULL)
+	s->yiq_level_lookup = malloc(0x1000000 * sizeof(_yiq16_t));
+	if(s->yiq_level_lookup == NULL)
 	{
 		vid_free(s);
 		return(VID_OUT_OF_MEMORY);
@@ -1936,9 +1937,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		q *= s->conf.white_level - s->conf.black_level;
 		
 		/* Convert to INT16 range and store in tables */
-		s->y_level_lookup[c] = round(_dlimit(y * level, -1, 1) * INT16_MAX);
-		s->i_level_lookup[c] = round(_dlimit(i * level, -1, 1) * INT16_MAX);
-		s->q_level_lookup[c] = round(_dlimit(q * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].y = round(_dlimit(y * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].i = round(_dlimit(i * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].q = round(_dlimit(q * level, -1, 1) * INT16_MAX);
 	}
 	
 	if(s->conf.colour_lookup_lines > 0)
@@ -2252,10 +2253,8 @@ void vid_free(vid_t *s)
 	}
 	
 	/* Free allocated memory */
-	if(s->y_level_lookup != NULL) free(s->y_level_lookup);
-	if(s->i_level_lookup != NULL) free(s->i_level_lookup);
-	if(s->q_level_lookup != NULL) free(s->q_level_lookup);
-	if(s->colour_lookup != NULL) free(s->colour_lookup);
+	free(s->yiq_level_lookup);
+	free(s->colour_lookup);
 	_free_fm_modulator(&s->fm_secam_cr);
 	_free_fm_modulator(&s->fm_secam_cb);
 	_free_fm_modulator(&s->fm_video);
@@ -2338,13 +2337,21 @@ int vid_init_filter(vid_t *s)
 		}
 		else
 		{
-			if(s->sample_rate != 20250000)
+			if(s->sample_rate == 14000000)
 			{
-				fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
+				taps = fm_625_14_taps;
+				ntaps = sizeof(fm_625_14_taps) / sizeof(int16_t);
 			}
-			
-			taps = fm_625_taps;
-			ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
+			else
+			{
+				if(s->sample_rate != 20250000)
+				{
+					fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
+				}
+				
+				taps = fm_625_taps;
+				ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
+			}
 		}
 		
 		fir_int16_init(&s->video_filter, taps, ntaps);
@@ -2851,12 +2858,12 @@ static void _vid_next_line_raster(vid_t *s)
 				rgb |= (rgb << 8) | (rgb << 16);
 			}
 			
-			s->output[x * 2] = s->y_level_lookup[rgb];
+			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
 			
 			if(pal)
 			{
-				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 15;
-				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
 			}
 		}
 	}
@@ -2881,12 +2888,12 @@ static void _vid_next_line_raster(vid_t *s)
 				rgb |= (rgb << 8) | (rgb << 16);
 			}
 			
-			s->output[x * 2] = s->y_level_lookup[rgb];
+			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
 			
 			if(pal)
 			{
-				s->output[x * 2] += (s->i_level_lookup[rgb] * lut_i[x]) >> 15;
-				s->output[x * 2] += (s->q_level_lookup[rgb] * lut_q[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
+				s->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
 			}
 		}
 	}
@@ -2966,11 +2973,11 @@ static void _vid_next_line_raster(vid_t *s)
 			
 			if(((s->frame * s->conf.lines) + s->line) & 1)
 			{
-				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->q_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->yiq_level_lookup[rgb].q);
 			}
 			else
 			{
-				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->i_level_lookup[rgb]);
+				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->yiq_level_lookup[rgb].i);
 			}
 		}
 	}
