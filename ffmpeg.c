@@ -611,7 +611,7 @@ static void *_input_thread(void *arg)
 					
 					load_bitmap_subtitle(av->s->av_sub, max_bitmap_width, max_bitmap_height, pkt.pts + sub.start_display_time, sub.end_display_time, bitmap, av->s->active_width, av->s->conf.active_lines);
 					
-					free(&bitmap);
+					free(bitmap);
 				}
 				
 				avsubtitle_free(&sub);
