@@ -32,6 +32,7 @@ typedef struct vid_t vid_t;
 #include "videocrypts.h"
 #include "syster.h"
 #include "acp.h"
+#include "vits.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -150,6 +151,7 @@ typedef struct {
 	int syster;
 	int systeraudio;
 	int acp;
+	int vits;
 	char *eurocrypt;
 	
 	/* RGB weights, should add up to 1.0 */
@@ -289,6 +291,9 @@ struct vid_t {
 	
 	/* ACP state */
 	acp_t acp;
+	
+	/* VITS state */
+	vits_t vits;
 	
 	/* Audio state */
 	int audio;

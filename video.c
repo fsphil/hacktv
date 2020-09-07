@@ -2147,6 +2147,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Initalise VITS inserter */
+	if(s->conf.vits && vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level) != 0)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	/* Initalise the teletext system */
 	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
 	{
@@ -2198,6 +2205,11 @@ void vid_free(vid_t *s)
 	if(s->conf.teletext)
 	{
 		tt_free(&s->tt);
+	}
+	
+	if(s->conf.vits)
+	{
+		vits_free(&s->vits);
 	}
 	
 	if(s->conf.acp)
@@ -2990,6 +3002,16 @@ static void _vid_next_line_raster(vid_t *s)
 	if(s->conf.acp == 1)
 	{
 		acp_render_line(&s->acp);
+	}
+	
+	/* VITS renderer, if enabled */
+	if(s->conf.vits == 1)
+	{
+		if(vits_render(&s->vits, s->output, s->line, lut_i, lut_q))
+		{
+			/* Mark this line as allocated to VITS */
+			*s->vbialloc = 1;
+		}
 	}
 	
 	/* Teletext, if enabled */
