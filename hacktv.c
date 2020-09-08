@@ -92,7 +92,7 @@ static void print_usage(void)
 		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
-		"      --vits                     Enable VITS test signals. (625 line modes only)\n"
+		"      --vits                     Enable VITS test signals.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
@@ -818,9 +818,10 @@ int main(int argc, char *argv[])
 	
 	if(s.vits)
 	{
-		if(vid_conf.lines != 625)
+		if(vid_conf.type != VID_RASTER_625 &&
+		   vid_conf.type != VID_RASTER_525)
 		{
-			fprintf(stderr, "VITS is only currently supported for 625 line raster modes.\n");
+			fprintf(stderr, "VITS is only currently supported for 625 and 525 line raster modes.\n");
 			return(-1);
 		}
 		

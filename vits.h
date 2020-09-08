@@ -22,6 +22,7 @@
 
 typedef struct {
 	int width;
+	int lines;
 	int16_t *line[4];
 } vits_t;
 

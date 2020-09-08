@@ -36,13 +36,22 @@
 #include <math.h>
 #include "vits.h"
 
-static const double _bursts[6] = {
+static const double _bursts_625[6] = {
 	0.5e6,
 	1.0e6,
 	2.0e6,
 	4.0e6,
 	4.8e6,
 	5.8e6,
+};
+
+static const double _bursts_525[6] = {
+	0.50e6,
+	1.00e6,
+	2.00e6,
+	3.00e6,
+	3.58e6,
+	4.20e6,
 };
 
 static double _win(double t, double left, double width, double rise, double amplitude)
@@ -94,30 +103,24 @@ static double _pulse(double t, double position, double width, double amplitude)
 	return(pow(sin(a), 2) * amplitude);
 }
 
-int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int16_t level)
+static int _init_625(vits_t *s, unsigned int sample_rate, int width, int16_t level)
 {
 	int i, x, b;
 	double r, c, t;
 	double ts, h;
 	double bs[6];
 	
-	memset(s, 0, sizeof(vits_t));
-	
-	switch(lines)
-	{
-	case 625: ts = 1.0 / 25 / 625; break;
-	case 525: ts = 1001.0 / 30000 / 525; break;
-	default: return(-1);
-	}
-	
+	/* Setup timing */
+	ts = 1.0 / 25 / 625;
 	h = ts / 32;
 	ts = ts / width;
 	
 	for(b = 0; b < 6; b++)
 	{
-		bs[b] = 2.0 * M_PI * _bursts[b] / sample_rate;
+		bs[b] = 2.0 * M_PI * _bursts_625[b] / sample_rate;
 	}
 	
+	s->lines = 625;
 	s->width = width;
 	
 	for(i = 0; i < 4; i++)
@@ -189,6 +192,95 @@ int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int16_t
 	return(0);
 }
 
+static int _init_525(vits_t *s, unsigned int sample_rate, int width, int16_t level)
+{
+	int i, x, b;
+	double r, c, t;
+	double ts, h;
+	double bs[6];
+	
+	/* Setup timing */
+	ts = 1001.0 / 30000 / 525;
+	h = ts / 128;
+	ts = ts / width;
+	
+	for(b = 0; b < 6; b++)
+	{
+		bs[b] = 2.0 * M_PI * _bursts_525[b] / sample_rate;
+	}
+	
+	s->lines = 525;
+	s->width = width;
+	
+	for(i = 0; i < 2; i++)
+	{
+		s->line[i] = malloc(sizeof(int16_t) * 2 * width);
+		if(!s->line[i])
+		{
+			perror("malloc");
+			vits_free(s);
+			return(-1);
+		}
+		
+		for(x = 0; x < width; x++)
+		{
+			t = ts * x;
+			r = 0.0;
+			c = 0.0;
+			
+			switch(i)
+			{
+			case 0: /* Line 17 */
+				r += _win(t, 24 * h, 36 * h, 125e-9, 100);
+				r += _pulse(t, 68 * h, 250e-9, 100);
+				r += _pulse(t, 75 * h, 1570e-9, 100 / 2);
+				c += _pulse(t, 75 * h, 1570e-9, 100 / 2);
+				r += _win(t,  92 * h,  6 * h, 250e-9, 18);
+				r += _win(t,  98 * h,  6 * h, 250e-9, 36);
+				r += _win(t, 104 * h,  6 * h, 250e-9, 54);
+				r += _win(t, 110 * h,  6 * h, 250e-9, 72);
+				r += _win(t, 116 * h,  8 * h, 250e-9, 90);
+				c += _win(t,  84 * h, 38 * h, 400e-9, 40 / 2);
+				break;
+			
+			case 1: /* Line 280 */
+				r += _win(t, 24 * h, 8 * h, 125e-9, 100);
+				r += _win(t, 32 * h, 92 * h, 125e-9, 50);
+				
+				r += _win(t, 36 * h, 12 * h, 250e-9, 50 / 2)
+				   * sin(t - 36 * h + bs[0] * x);
+				
+				for(b = 1; b < 6; b++)
+				{
+					r += _win(t, (40 + (8 * b)) * h, 8 * h, 250e-9, 50 / 2)
+					   * sin(t - (40 + (8 * b)) * h + bs[b] * x);
+				}
+				
+				c += _win(t,  92 * h,  8 * h, 400e-9, 20 / 2);
+				c += _win(t, 100 * h,  8 * h, 400e-9, 40 / 2);
+				c += _win(t, 108 * h, 12 * h, 400e-9, 80 / 2);
+				
+				break;
+			}
+			
+			s->line[i][x * 2 + 0] = lround(r / 100 * level);
+			s->line[i][x * 2 + 1] = lround(c / 100 * level);
+		}
+	}
+	
+	return(0);
+}
+
+int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int16_t level)
+{
+	memset(s, 0, sizeof(vits_t));
+	
+	if(lines == 625) return(_init_625(s, sample_rate, width, level));
+	else if(lines == 525) return(_init_525(s, sample_rate, width, level));
+	
+	return(-1);
+}
+
 void vits_free(vits_t *s)
 {
 	int i;
@@ -203,20 +295,21 @@ void vits_free(vits_t *s)
 
 int vits_render(vits_t *s, int16_t *buffer, int line, const int16_t *lut_i, const int16_t *lut_q)
 {
-	int i, x;
+	int x, i = -1;
 	
-	if(line == 17 || line == 18)
+	if(s->lines == 625)
 	{
-		i = line - 17;
+		if(line == 17 || line == 18) i = line - 17;
+		else if(line == 330 || line == 331) i = line - 330 + 2;
 	}
-	else if(line == 330 || line == 331)
+	else if(s->lines == 525)
 	{
-		i = line - 330 + 2;
+		if(line == 17) i = line - 17;
+		else if(line == 280) i = line - 280 + 1;
 	}
-	else
-	{
-		return(0);
-	}
+	
+	if(i < 0) return(0);
+	if(!s->line[i]) return(0);
 	
 	for(x = 0; x < s->width; x++)
 	{
