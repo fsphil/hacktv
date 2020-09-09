@@ -367,19 +367,22 @@ static void _ecm_hash(uint8_t *hash, const uint8_t *src, const ec_mode_t *mode)
 		memcpy(msg, src + 2, 3);
 		msglen += 3;
 		
+		/* Third byte of PPUA contains key index, which needs to be masked for hashing */
+		msg[2] &= 0xF0;
+		
 		/* Copy other data */
-		memcpy(msg + msglen, src + 10, 5);
+		memcpy(msg + msglen, src + 9, 5);
 		msglen += 5;
 		
 		/* Copy CWs */
-		memcpy(msg + msglen, src + 16, 16);
+		memcpy(msg + msglen, src + 15, 16);
 		msglen += 16;
 	}
 	else
 	{
 		/* EC M */
-		memcpy(msg, src + 5, 27);
-		msglen += 27;
+		memcpy(msg, src + 5, 26);
+		msglen += 26;
 	}
 	
 	/* Iterate through data */
@@ -426,10 +429,9 @@ static void _update_ecm_packet(eurocrypt_t *e, int t)
 	pkt[x++] = 0x03; /* LI */
 	memcpy(&pkt[x], e->mode->ppid, 3); x += 3;
 	
-	/* CTRL */
-	pkt[x++] = 0xE0; /* PI */
-	pkt[x++] = 0x01; /* LI */
-	pkt[x++] = 0x00; /* This is the default, can this be removed? */
+	/* Undocumented meaning of this byte but appears in captured logs from live transmissions */
+	pkt[x++] = 0xDF; /* PI */
+	pkt[x++] = 0x00; /* LI */
 	
 	/* CDATE + THEME/LEVEL */
 	pkt[x++] = 0xE1; /* PI */
