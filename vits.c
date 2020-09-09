@@ -25,8 +25,6 @@
  * components of the luminance signal in the vicinity of the colour
  * sub-carrier". This code uses the same shape as the other parts:
  * "derived from the shaping network of the sine-squared pulse".
- *
- * 525 line modes are not supported yet, but should be simple.
 */
 
 #include <stdio.h>
@@ -117,7 +115,7 @@ static int _init_625(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 	
 	for(b = 0; b < 6; b++)
 	{
-		bs[b] = 2.0 * M_PI * _bursts_625[b] / sample_rate;
+		bs[b] = 2.0 * M_PI * _bursts_625[b];
 	}
 	
 	s->lines = 625;
@@ -161,7 +159,7 @@ static int _init_625(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 				for(b = 0; b < 6; b++)
 				{
 					r += _win(t, (12 + 3 * b) * h, 3 * h, 200e-9, 0.21)
-					   * sin((t - (12 + 3 * b) * h) + bs[b] * x);
+					   * sin((t - (12 + 3 * b) * h) * bs[b]);
 				}
 				
 				break;
@@ -206,7 +204,7 @@ static int _init_525(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 	
 	for(b = 0; b < 6; b++)
 	{
-		bs[b] = 2.0 * M_PI * _bursts_525[b] / sample_rate;
+		bs[b] = 2.0 * M_PI * _bursts_525[b];
 	}
 	
 	s->lines = 525;
@@ -248,12 +246,12 @@ static int _init_525(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 				r += _win(t, 32 * h, 92 * h, 125e-9, 50);
 				
 				r += _win(t, 36 * h, 12 * h, 250e-9, 50 / 2)
-				   * sin(t - 36 * h + bs[0] * x);
+				   * sin((t - 36 * h) * bs[0]);
 				
 				for(b = 1; b < 6; b++)
 				{
-					r += _win(t, (40 + (8 * b)) * h, 8 * h, 250e-9, 50 / 2)
-					   * sin(t - (40 + (8 * b)) * h + bs[b] * x);
+					r += _win(t, (40 + 8 * b) * h, 8 * h, 250e-9, 50 / 2)
+					   * sin((t - (40 + 8 * b) * h) * bs[b]);
 				}
 				
 				c += _win(t,  92 * h,  8 * h, 400e-9, 20 / 2);
