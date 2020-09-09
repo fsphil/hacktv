@@ -26,6 +26,10 @@
 
 #define EC_M 0
 #define EC_S 3
+#define EC_3DES 4
+
+#define ROTATE_LEFT 1
+#define ROTATE_RIGHT 2
 
 #define IP_DIM 64
 #define IPP_DIM 64
@@ -38,15 +42,17 @@
 
 /* Data for EC controlled-access decoding */
 const static ec_mode_t _ec_modes[] = {
-	{ "rdv",     EC_S, { 0xFE, 0x6D, 0x9A, 0xBB, 0xEB, 0x97, 0xFB }, { 0x00, 0x2D, 0x93 }, { 0x22, 0x70, 0xFF, 0x00 } },
-	{ "tvs",     EC_S, { 0x5C, 0x8B, 0x11, 0x2F, 0x99, 0xA8, 0x2C }, { 0x00, 0x2B, 0x50 }, { 0x7A, 0x14, 0x00, 0x01 } },
-	{ "ctvs",    EC_S, { 0x22, 0xDE, 0x81, 0xF5, 0xCA, 0x4D, 0x4A }, { 0x00, 0x2B, 0x20 }, { 0x7A, 0x14, 0x00, 0x01 } },
-	{ "ctv",     EC_M, { 0x84, 0x66, 0x30, 0xE4, 0xDA, 0xFA, 0x23 }, { 0x00, 0x04, 0x38 }, { 0x21, 0x65, 0xFF, 0x00 } },
-	{ "tvplus",  EC_M, { 0x12, 0x06, 0x28, 0x3A, 0x4B, 0x1D, 0xE2 }, { 0x00, 0x2C, 0x08 }, { 0x21, 0x65, 0x04, 0x00 } },
-	{ "tv1000",  EC_M, { 0x48, 0x63, 0xC5, 0xB3, 0xDA, 0xE3, 0x29 }, { 0x00, 0x04, 0x18 }, { 0x21, 0x65, 0x05, 0x04 } },
-	{ "filmnet", EC_M, { 0x21, 0x12, 0x31, 0x35, 0x8A, 0xC3, 0x4F }, { 0x00, 0x28, 0x08 }, { 0x21, 0x15, 0x05, 0x00 } },
-	{ "nrk",     EC_S, { 0xE7, 0x19, 0x5B, 0x7C, 0x47, 0xF4, 0x66 }, { 0x47, 0x52, 0x00 }, { 0x21, 0x15, 0x05, 0x00 } },
-	{ NULL }
+	{ "rdv",      EC_S, { 0xFE, 0x6D, 0x9A, 0xBB, 0xEB, 0x97, 0xFB }, { 0x00, 0x2D, 0x93 }, { 0x22, 0x70, 0xFF, 0x00 } },
+	{ "tvs",      EC_S, { 0x5C, 0x8B, 0x11, 0x2F, 0x99, 0xA8, 0x2C }, { 0x00, 0x2B, 0x50 }, { 0x7A, 0x14, 0x00, 0x01 } },
+	{ "ctvs",     EC_S, { 0x17, 0x38, 0xFA, 0x8A, 0x84, 0x5A, 0x5E }, { 0x00, 0x2B, 0x20 }, { 0x7A, 0x14, 0x00, 0x01 } },
+	{ "ctv",      EC_M, { 0x84, 0x66, 0x30, 0xE4, 0xDA, 0xFA, 0x23 }, { 0x00, 0x04, 0x38 }, { 0x21, 0x65, 0xFF, 0x00 } },
+	{ "tvplus",   EC_M, { 0x12, 0x06, 0x28, 0x3A, 0x4B, 0x1D, 0xE2 }, { 0x00, 0x2C, 0x08 }, { 0x21, 0x65, 0x04, 0x00 } },
+	{ "tv1000",   EC_M, { 0x48, 0x63, 0xC5, 0xB3, 0xDA, 0xE3, 0x29 }, { 0x00, 0x04, 0x18 }, { 0x21, 0x65, 0x05, 0x04 } },
+	{ "filmnet",  EC_M, { 0x21, 0x12, 0x31, 0x35, 0x8A, 0xC3, 0x4F }, { 0x00, 0x28, 0x08 }, { 0x21, 0x15, 0x05, 0x00 } },
+	{ "nrk",      EC_S, { 0xE7, 0x19, 0x5B, 0x7C, 0x47, 0xF4, 0x66 }, { 0x47, 0x52, 0x00 }, { 0x6C, 0x04, 0x00, 0x02 } },
+	{ "cplus", EC_3DES, { 0x34, 0x51, 0x85, 0xCE, 0x42, 0x07, 0x4B, 
+	                      0xB4, 0xA0, 0xD9, 0x3B, 0x94, 0x28, 0xC9 }, { 0x00, 0x2B, 0x1C }, { 0x7A, 0x14, 0x00, 0x01 } },
+	{ NULL } 
 };
 
 static const uint8_t _ip[IP_DIM] = {
@@ -236,18 +242,59 @@ static uint64_t _ec_des_f(uint64_t r, uint8_t *k2)
 	return(result);
 }
 
-static void _eurocrypt(const uint8_t *in, uint8_t *out, const uint8_t *key, int hash, int emode)
+static void _key_rotate_ec(uint64_t *c, uint64_t *d, int dir, int iter)
+{
+	int i;
+	
+	/* Rotate left (decryption) */
+	if(dir == ROTATE_LEFT)
+	{
+		for(i = 0; i < _lshift[iter]; i++)
+		{
+			*c = ((*c << 1) ^ (*c >> 27)) & 0xFFFFFFFL;
+			*d = ((*d << 1) ^ (*d >> 27)) & 0xFFFFFFFL;
+		}
+	}
+	/* Rotate right (encryption) */
+	else
+	{
+		for(i = 0; i < _lshift[15 - iter]; i++)
+		{
+			*c = ((*c >> 1) ^ (*c << 27)) & 0xFFFFFFFL;
+			*d = ((*d >> 1) ^ (*d << 27)) & 0xFFFFFFFL;
+		}
+	}
+}
+
+static void _key_exp(uint64_t *c, uint64_t *d, uint8_t *k2)
+{
+	int j, k;
+	
+	/* Key expansion */
+	for(j = 0, k = 0; j < 8; j++)
+	{
+		int t;
+		
+		k2[j] = 0;
+		
+		for(t = 0; t < 6; t++, k++)
+		{
+			if(_pc2[k] < 29)
+			{
+				k2[j] |= (*c >> (28 - _pc2[k]) & 1) << (5 - t);
+			}
+			else
+			{
+				k2[j] |= (*d >> (56 - _pc2[k]) & 1) << (5 - t);
+			}
+		}
+	}
+}
+
+static void _eurocrypt(uint8_t *data, const uint8_t *key, int hash, int emode, int rnd)
 {
 	int i;
 	uint64_t r, l, c, d, s;
-	
-	memcpy(out, in, 8);
-	
-	/* Initial permutation for Eurocrypt S2 */
-	if(emode)
-	{
-		_permute_ec(out, _ip, 64);
-	}
 	
 	/* Key preparation. Split key into two halves */
 	c = ((uint64_t) key[0] << 20)
@@ -260,70 +307,86 @@ static void _eurocrypt(const uint8_t *in, uint8_t *out, const uint8_t *key, int 
 	  ^ ((uint64_t) key[5] << 8)
 	  ^ ((uint64_t) key[6] << 0);
 	
-	/* Control word preparation. Split CW into two halves. */
-	l = ((uint64_t) out[0] << 24)
-	  ^ ((uint64_t) out[1] << 16)
-	  ^ ((uint64_t) out[2] << 8)
-	  ^ ((uint64_t) out[3] << 0);
+	/* Initial permutation for Eurocrypt S2/3DES  - always do this */
+	if(emode)
+	{
+		_permute_ec(data, _ip, 64);
+	}
 	
-	r = ((uint64_t) out[4] << 24)
-	  ^ ((uint64_t) out[5] << 16)
-	  ^ ((uint64_t) out[6] << 8)
-	  ^ ((uint64_t) out[7] << 0);
+	/* Control word preparation. Split CW into two halves. */
+	for(i = 3, l = 0, r = 0; i >= 0; i--)
+	{
+		l ^= (uint64_t) data[3 - i] << (8 * i);
+		r ^= (uint64_t) data[7 - i] << (8 * i);
+	}
 	
 	/* 16 iterations */
 	for(i = 0; i < 16; i++)
 	{
 		uint64_t r3;
 		uint8_t k2[8];
-		int j, k;
 		
-		/* Key shift rotation */
-		if(!emode || (emode && hash))
+		/* EC-M */
+		if(emode == EC_M)
 		{
-			for(j = 0; j < _lshift[i]; j++)
-			{
-				c = ((c << 1) ^ (c >> 27)) & 0xFFFFFFFL;
-				d = ((d << 1) ^ (d >> 27)) & 0xFFFFFFFL;
-			}
-		}
-		
-		/* Key expansion */
-		for(j = 0, k = 0; j < 8; j++)
-		{
-			int t;
+			_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
 			
-			k2[j] = 0;
+			/* Key expansion */
+			_key_exp(&c, &d, k2);
 			
-			for(t = 0; t < 6; t++, k++)
+			/* One DES round */
+			s = _ec_des_f(r, k2);
+			
+			/* Swap first two bytes if it's a hash routine */
+			if(hash)
 			{
-				if(_pc2[k] < 29)
-				{
-					k2[j] |= (c >> (28 - _pc2[k]) & 1) << (5 - t);
-				}
-				else
-				{
-					k2[j] |= (d >> (56 - _pc2[k]) & 1) << (5 - t);
-				}
+				s = ((s >> 8) & 0xFF0000L) | ((s << 8) & 0xFF000000L) | (s & 0x0000FFFFL);
 			}
 		}
 		
-		/* One decryption round */
-		s = _ec_des_f(r, k2);
-		
-		if(emode && !hash)
+		/* EC-S2 */
+		if(emode == EC_S)
 		{
-			for(j = 0; j < _lshift[15 - i]; j++)
+			/* Key rotation */
+			/* Hashing operation encrypts data (reverse DES) */
+			if(hash)
 			{
-				c = ((c >> 1) ^ (c << 27)) & 0xFFFFFFFL;
-				d = ((d >> 1) ^ (d << 27)) & 0xFFFFFFFL;
+				_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
 			}
+			
+			/* Key expansion */
+			_key_exp(&c, &d, k2);
+			
+			/* One DES round */
+			s = _ec_des_f(r, k2);
+			
+			/* Key rotation */
+			/* ECM operation decrypts data */
+			if(!hash)
+			{
+				_key_rotate_ec(&c, &d, ROTATE_RIGHT, i);
+			}
+			
 		}
-		
-		/* Swap first two bytes if it's a hash routine */
-		if(hash && !emode)
+		/* EC-3DES */
+		if(emode == EC_3DES)
 		{
-			s = ((s >> 8) & 0xFF0000L) | ((s << 8) & 0xFF000000L) | (s & 0x0000FFFFL);
+			/* Key rotation */
+			if((rnd == 2 && !hash) || (rnd != 2 && hash) )
+			{
+				_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
+			}
+			
+			/* Key expansion */
+			_key_exp(&c, &d, k2);
+			
+			/* One DES round */
+			s = _ec_des_f(r, k2);
+			
+			if((rnd != 2 && !hash) || (rnd == 2 && hash))
+			{
+				_key_rotate_ec(&c, &d, ROTATE_RIGHT, i);
+			}
 		}
 		
 		/* Rotate halves around */
@@ -333,25 +396,23 @@ static void _eurocrypt(const uint8_t *in, uint8_t *out, const uint8_t *key, int 
 	}
 	
 	/* Put everything together */
-	out[0] = r >> 24;
-	out[1] = r >> 16;
-	out[2] = r >> 8;
-	out[3] = r;
-	out[4] = l >> 24;
-	out[5] = l >> 16;
-	out[6] = l >> 8;
-	out[7] = l;
+	for(i = 3; i >= 0; i--)
+	{
+		data[3 - i] = r >> (8 * i);
+		data[7 - i] = l >> (8 * i);
+	}
 	
+	/* Final permutation for Eurocrypt S2/3DES */
 	if(emode)
 	{
-		_permute_ec(out, _ipp, 64);
+		_permute_ec(data, _ipp, 64);
 	}
 }
 
 static void _ecm_hash(uint8_t *hash, const uint8_t *src, const ec_mode_t *mode)
 {
 	uint8_t msg[32];
-	int msglen, i;
+	int msglen, i, r;
 	
 	/* Clear hash memory */
 	memset(hash, 0, 8);
@@ -359,27 +420,29 @@ static void _ecm_hash(uint8_t *hash, const uint8_t *src, const ec_mode_t *mode)
 	/* Build the hash message */
 	msglen = 0;
 	
-	if(mode->emode == EC_S)
+	/* EC-S2 and EC-3DES */
+	if(mode->emode)
 	{
-		/* EC S2 */
-		
 		/* Copy PPID */
 		memcpy(msg, src + 2, 3);
 		msglen += 3;
 		
+		/* Third byte of PPUA contains key index, which needs to be masked for hashing */
+		msg[2] &= 0xF0;
+		
 		/* Copy other data */
-		memcpy(msg + msglen, src + 10, 5);
+		memcpy(msg + msglen, src + 9, 5);
 		msglen += 5;
 		
 		/* Copy CWs */
-		memcpy(msg + msglen, src + 16, 16);
+		memcpy(msg + msglen, src + 15, 16);
 		msglen += 16;
 	}
 	else
 	{
-		/* EC M */
-		memcpy(msg, src + 5, 27);
-		msglen += 27;
+		/* EC-M */
+		memcpy(msg, src + 5, 26);
+		msglen += 26;
 	}
 	
 	/* Iterate through data */
@@ -389,14 +452,19 @@ static void _ecm_hash(uint8_t *hash, const uint8_t *src, const ec_mode_t *mode)
 		
 		if(i % 8 == 7)
 		{
-			_eurocrypt(hash, hash, mode->key, HASH, mode->emode);
+			/* Three rounds for 3DES mode, one round for others */
+			for(r = 0; r < (mode->emode != EC_3DES ? 1 : 3); r++) 
+			{
+				/* Use second key on second round in 3DES */
+				_eurocrypt(hash, mode->key + (r != 1 ? 0 : 7), HASH, mode->emode, r + 1);
+			}
 		}
 	}
 	
-	/* Final interation - EC M only */
+	/* Final interation - EC-M only */
 	if(mode->emode == EC_M)
 	{
-		_eurocrypt(hash, hash, mode->key, HASH, mode->emode);
+		_eurocrypt(hash, mode->key, HASH, mode->emode, 1);
 	}
 }
 
@@ -426,10 +494,9 @@ static void _update_ecm_packet(eurocrypt_t *e, int t)
 	pkt[x++] = 0x03; /* LI */
 	memcpy(&pkt[x], e->mode->ppid, 3); x += 3;
 	
-	/* CTRL */
-	pkt[x++] = 0xE0; /* PI */
-	pkt[x++] = 0x01; /* LI */
-	pkt[x++] = 0x00; /* This is the default, can this be removed? */
+	/* Undocumented meaning of this byte but appears in captured logs from live transmissions */
+	pkt[x++] = 0xDF; /* PI */
+	pkt[x++] = 0x00; /* LI */
 	
 	/* CDATE + THEME/LEVEL */
 	pkt[x++] = 0xE1; /* PI */
@@ -463,7 +530,7 @@ static void _update_ecm_packet(eurocrypt_t *e, int t)
 static uint64_t _update_cw(eurocrypt_t *e, int t)
 {
 	uint64_t cw;
-	int i;
+	int i, r;
 	
 	/* Fetch the next active CW */
 	for(cw = i = 0; i < 8; i++)
@@ -476,10 +543,15 @@ static uint64_t _update_cw(eurocrypt_t *e, int t)
 	
 	for(i = 0; i < 8; i++)
 	{
-		e->ecw[t][i] = rand() & 0xFF;
+		e->cw[t][i] = e->ecw[t][i] = rand() & 0xFF;
 	}
 	
-	_eurocrypt(e->ecw[t], e->cw[t], e->mode->key, ECM, e->mode->emode);
+	/* Three rounds for 3DES mode, one round for others */
+	for(r = 0; r < (e->mode->emode != EC_3DES ? 1 : 3); r++)
+	{
+		/* Use second key on second round in 3DES */
+		_eurocrypt(e->cw[t], e->mode->key + (r != 1 ? 0 : 7), ECM, e->mode->emode, r + 1);
+	}
 	
 	return(cw);
 }
@@ -514,11 +586,12 @@ void eurocrypt_next_frame(vid_t *vid)
 			fprintf(stderr,"\nUsing CW (%s):  \t%s", t ? "odd" : "even", t ? "                          " : "");
 			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) e->cw[t][i]);
 			fprintf(stderr,"\nHash:\t\t\t");
-			for(i = 73; i < 91; i+=6) 
+			for(i = 70; i < 83; i+=6) 
 			{
 				/* Remove Golay bits before printing */
-				fprintf(stderr, "%02X %02X ", e->ecm_pkt[i], (e->ecm_pkt[i + 1] & 0x0F) | ((e->ecm_pkt[i + 3] & 0x0F) << 4));
-				if(i != 85) fprintf(stderr, "%02X ", ((e->ecm_pkt[i + 4] << 4) & 0xF0) | (e->ecm_pkt[i + 3] >> 4));
+				fprintf(stderr, "%02X ", ((e->ecm_pkt[i + 1] << 4) & 0xF0) | (e->ecm_pkt[i] >> 4));
+				fprintf(stderr, "%02X ", e->ecm_pkt[i + 3]);
+				if(i != 82) fprintf(stderr, "%02X ", (e->ecm_pkt[i + 4] & 0x0F) | ((e->ecm_pkt[i + 6] & 0x0F) << 4));
 			}
 			fprintf(stderr,"\n");
 		}

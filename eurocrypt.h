@@ -20,11 +20,11 @@
 #define _EUROCRYPT_H
 
 typedef struct {
-	const char *id;		/* Mode id */
-	int emode;		/* Eurocrypt M or S2 mode */
-	uint8_t key[7];		/* Decryption key */
-	uint8_t ppid[3];	/* Programme provider identifier */
-	uint8_t cdate[4];	/* CDATE + THEME/LEVEL */
+	const char *id;   /* Mode id */
+	int emode;        /* Eurocrypt M or S2 mode */
+	uint8_t key[14];  /* Decryption keys */
+	uint8_t ppid[3];  /* Programme provider identifier */
+	uint8_t cdate[4]; /* CDATE + THEME/LEVEL */
 } ec_mode_t;
 
 typedef struct {
