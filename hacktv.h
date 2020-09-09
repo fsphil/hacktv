@@ -79,6 +79,7 @@ typedef struct {
 	int systeraudio;
 	char *eurocrypt;
 	int acp;
+	int vits;
 	int filter;
 	int subtitles;
 	int noaudio;

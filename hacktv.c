@@ -110,6 +110,7 @@ static void print_usage(void)
 		"      --smartcrypt <mode>        Enable Smartcrypt scrambling (***INCOMPLETE***). (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster, Smartcrypt or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
+		"      --vits                     Enable VITS test signals.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
@@ -367,12 +368,13 @@ static void print_usage(void)
 #define _OPT_SYSTERAUDIO    1006
 #define _OPT_EUROCRYPT      1007
 #define _OPT_ACP            1008
-#define _OPT_FILTER         1009
-#define _OPT_NOAUDIO        1010
-#define _OPT_NONICAM        1011
-#define _OPT_SINGLE_CUT     1012
-#define _OPT_DOUBLE_CUT     1013
-#define _OPT_SCRAMBLE_AUDIO 1014
+#define _OPT_VITS           1009
+#define _OPT_FILTER         1010
+#define _OPT_NOAUDIO        1011
+#define _OPT_NONICAM        1012
+#define _OPT_SINGLE_CUT     1013
+#define _OPT_DOUBLE_CUT     1014
+#define _OPT_SCRAMBLE_AUDIO 1015
 #define _OPT_LOGO           2000
 #define _OPT_TIMECODE       2001
 #define _OPT_DISCRET        2002
@@ -419,6 +421,7 @@ int main(int argc, char *argv[])
 		{ "smartcrypt",     required_argument, 0, _OPT_SMARTCRYPT },
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",            no_argument,       0, _OPT_ACP },
+		{ "vits",           no_argument,       0, _OPT_VITS },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
 		{ "subtitles",      optional_argument, 0, _OPT_SUBTITLES },
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
@@ -473,6 +476,7 @@ int main(int argc, char *argv[])
 	s.smartcrypt = NULL;
 	s.systeraudio = 0;
 	s.acp = 0;
+	s.vits = 0;
 	s.filter = 0;
 	s.subtitles = 0;
 	s.noaudio = 0;
@@ -661,7 +665,11 @@ int main(int argc, char *argv[])
 		case _OPT_ACP: /* --acp */
 			s.acp = 1;
 			break;
-	
+		
+		case _OPT_VITS: /* --vits */
+			s.vits = 1;
+			break;
+		
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
 			break;
@@ -1109,6 +1117,18 @@ int main(int argc, char *argv[])
 	if(s.subtitles)
 	{
 		vid_conf.subtitles = s.subtitles;
+	}
+	
+	if(s.vits)
+	{
+		if(vid_conf.type != VID_RASTER_625 &&
+		   vid_conf.type != VID_RASTER_525)
+		{
+			fprintf(stderr, "VITS is only currently supported for 625 and 525 line raster modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.vits = 1;
 	}
 	
 	/* Setup video encoder */

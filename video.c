@@ -1537,7 +1537,7 @@ const vid_configs_t vid_configs[] = {
 
 /* Test taps for a CCIR-405 625 line video pre-emphasis filter at 20.25 MHz */
 const int16_t fm_625_taps[] = {
-	1,0,-1,0,1,0,-1,0,1,0,-1,0,1,0,0,0,0,0,1,0,-2,0,2,0,-2,0,3,0,-3,0,2,0,-2,0,1,0,1,0,-2,-1,3,1,-5,-2,5,2,-6,-3,6,3,-6,-3,4,2,-2,-1,-1,-2,4,4,-8,-9,11,11,-15,-16,15,17,-19,-21,14,16,-16,-17,4,0,-3,7,-20,-44,20,62,-58,-135,50,165,-113,-298,77,333,-191,-583,79,592,-320,-1113,-22,974,-625,-2330,-525,1600,-1710,-6746,-2922,9845,17217
+	3,-2,-8,5,18,-9,-34,15,60,-21,-98,28,151,-37,-227,40,321,-52,-470,23,605,-80,-958,-132,999,-298,-2300,-1093,1094,-2095,-8682,-7571,4610,15257,12294,1168,-4093,-750,2342,559,-1544,-440,1077,352,-767,-281,547,222,-388,-171,270,129,-183,-94,121,66,-76,-44,45,27,-25,-15,13,8,-5,-3,2
 };
 
 /* Test taps for a CCIR-405 625 line video pre-emphasis filter at 14 MHz */
@@ -2167,6 +2167,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		return(r);
 	}
 	
+	/* Initalise VITS inserter */
+	if(s->conf.vits && vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level) != 0)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
 	/* Initalise the teletext system */
 	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
 	{
@@ -2218,6 +2225,11 @@ void vid_free(vid_t *s)
 	if(s->conf.teletext)
 	{
 		tt_free(&s->tt);
+	}
+	
+	if(s->conf.vits)
+	{
+		vits_free(&s->vits);
 	}
 	
 	if(s->conf.acp)
@@ -3021,6 +3033,16 @@ static void _vid_next_line_raster(vid_t *s)
 	if(s->conf.acp == 1)
 	{
 		acp_render_line(&s->acp);
+	}
+	
+	/* VITS renderer, if enabled */
+	if(s->conf.vits == 1)
+	{
+		if(vits_render(&s->vits, s->output, s->line, lut_i, lut_q))
+		{
+			/* Mark this line as allocated to VITS */
+			*s->vbialloc = 1;
+		}
 	}
 	
 	/* Teletext, if enabled */
