@@ -100,6 +100,7 @@ static void print_usage(void)
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
+		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -321,6 +322,7 @@ static void print_usage(void)
 #define _OPT_SINGLE_CUT     1013
 #define _OPT_DOUBLE_CUT     1014
 #define _OPT_SCRAMBLE_AUDIO 1015
+#define _OPT_CHID           1016
 
 int main(int argc, char *argv[])
 {
@@ -352,6 +354,7 @@ int main(int argc, char *argv[])
 		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
+		{ "chid",           required_argument, 0, _OPT_CHID },
 		{ "frequency",      required_argument, 0, 'f' },
 		{ "amp",            no_argument,       0, 'a' },
 		{ "gain",           required_argument, 0, 'x' },
@@ -394,6 +397,7 @@ int main(int argc, char *argv[])
 	s.nonicam = 0;
 	s.scramble_video = 0;
 	s.scramble_audio = 0;
+	s.chid = -1;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -565,6 +569,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_SCRAMBLE_AUDIO: /* --scramble-audio */
 			s.scramble_audio = 1;
+			break;
+		
+		case _OPT_CHID: /* --chid <id> */
+			s.chid = strtol(optarg, NULL, 0);
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -826,6 +834,11 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.vits = 1;
+	}
+	
+	if(vid_conf.type == VID_MAC && s.chid >= 0)
+	{
+		vid_conf.chid = (uint16_t) s.chid;
 	}
 	
 	/* Setup video encoder */

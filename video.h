@@ -198,6 +198,7 @@ typedef struct {
 	
 	/* D/D2-MAC options */
 	int mac_mode;
+	uint16_t chid;
 	int scramble_video;
 	int scramble_audio;
 	

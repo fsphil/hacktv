@@ -1097,7 +1097,7 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	ix = _rbits(il, 0, s->mac.udt[s->frame % 25], 5);
 	
 	/* SDF */
-	dx = _bits(df,  0, 0x00B5, 16);        /* CHID Satellite channel identification */
+	dx = _bits(df,  0, s->conf.chid, 16);  /* CHID Satellite channel identification */
 	dx = _bits(df, dx, 0x00, 8);           /* SDFSCR Services configuration reference */
 	
 	/* MVSCG Multiplex and video scrambling control group */

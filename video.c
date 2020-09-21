@@ -764,6 +764,7 @@ const vid_config_t vid_config_d2mac_am = {
 	.modulation     = VID_AM,
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -802,6 +803,7 @@ const vid_config_t vid_config_d2mac_fm = {
 	.fm_deviation   = 13.5e6, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -836,6 +838,7 @@ const vid_config_t vid_config_d2mac = {
 	.output_type    = HACKTV_INT16_REAL,
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -872,6 +875,7 @@ const vid_config_t vid_config_dmac_am = {
 	.modulation     = VID_AM,
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -910,6 +914,7 @@ const vid_config_t vid_config_dmac_fm = {
 	.fm_deviation   = 13.5e6, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
@@ -944,6 +949,7 @@ const vid_config_t vid_config_dmac = {
 	.output_type    = HACKTV_INT16_REAL,
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
