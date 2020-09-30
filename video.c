@@ -2306,7 +2306,7 @@ int vid_init_filter(vid_t *s)
 		}
 		
 		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_complex_init(&s->video_filter, taps, ntaps);
+		fir_int16_scomplex_init(&s->video_filter, taps, ntaps);
 		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)

@@ -189,6 +189,7 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t
 	
 	if(s->type == 0) return(0);
 	else if(s->type == 2) return(fir_int16_complex_process(s, out, in, samples));
+	else if(s->type == 3) return(fir_int16_scomplex_process(s, out, in, samples));
 	
 	for(x = 0; x < samples; x++)
 	{
@@ -288,6 +289,58 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in
 		ai = aq = 0;
 		
 		for(p = s->owin * 2, y = 0; y < s->ntaps * 2; y++, p++)
+		{
+			ai += s->win[p] * s->itaps[y];
+			aq += s->win[p] * s->qtaps[y];
+		}
+		
+		out[0] = aq >> 15;
+		out[1] = ai >> 15;
+		out += 2;
+		in += 2;
+	}
+	
+	return(samples);
+}
+
+int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps)
+{
+	int i;
+	
+	s->type  = 3;
+	s->ntaps = ntaps;
+	s->itaps = calloc(s->ntaps, sizeof(int16_t));
+	s->qtaps = calloc(s->ntaps, sizeof(int16_t));
+	
+	/* Copy the taps in the order and format they are to be used */
+	for(i = 0; i < ntaps; i++)
+	{
+		s->itaps[i] = taps[i * 2 + 0];
+		s->qtaps[i] = taps[i * 2 + 1];
+	}
+	
+	s->win = calloc(s->ntaps * 2, sizeof(int16_t));
+	
+	return(0);
+}
+
+size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples)
+{
+	int32_t ai, aq;
+	int x;
+	int y;
+	int p;
+	
+	for(x = 0; x < samples; x++)
+	{
+		/* Append the next input sample to the sliding window */
+		s->win[s->owin] = s->win[(s->owin + s->ntaps)] = in[0];
+		if(++s->owin == s->ntaps) s->owin = 0;
+		
+		/* Calculate the next output sample */
+		ai = aq = 0;
+		
+		for(p = s->owin, y = 0; y < s->ntaps; y++, p++)
 		{
 			ai += s->win[p] * s->itaps[y];
 			aq += s->win[p] * s->qtaps[y];

@@ -41,3 +41,6 @@ extern void fir_int16_free(fir_int16_t *s);
 extern int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps);
 extern size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
 
+extern int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps);
+extern size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
+
