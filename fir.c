@@ -180,7 +180,7 @@ int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps)
 	return(0);
 }
 
-size_t fir_int16_process(fir_int16_t *s, int16_t *signal, size_t samples)
+size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples)
 {
 	int a;
 	int x;
@@ -188,12 +188,12 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *signal, size_t samples)
 	int p;
 	
 	if(s->type == 0) return(0);
-	else if(s->type == 2) return(fir_int16_complex_process(s, signal, samples));
+	else if(s->type == 2) return(fir_int16_complex_process(s, out, in, samples));
 	
 	for(x = 0; x < samples; x++)
 	{
 		/* Append the next input sample to the round buffer */
-		s->win[s->owin] = s->win[s->owin + s->ntaps] = *signal;
+		s->win[s->owin] = s->win[s->owin + s->ntaps] = *in;
 		if(++s->owin == s->ntaps) s->owin = 0;
 		
 		/* Calculate the next output sample */
@@ -205,8 +205,9 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *signal, size_t samples)
 			a += s->win[p] * s->itaps[y];
 		}
 		
-		*signal = a >> 15;
-		signal += 2;
+		*out = a >> 15;
+		out += 2;
+		in += 2;
 	}
 	
 	return(samples);
@@ -269,7 +270,7 @@ int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int nta
 	return(0);
 }
 
-size_t fir_int16_complex_process(fir_int16_t *s, int16_t *signal, size_t samples)
+size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples)
 {
 	int32_t ai, aq;
 	int x;
@@ -279,8 +280,8 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *signal, size_t samples
 	for(x = 0; x < samples; x++)
 	{
 		/* Append the next input sample to the sliding window */
-		s->win[s->owin * 2 + 0] = s->win[(s->owin + s->ntaps) * 2 + 0] = signal[0];
-		s->win[s->owin * 2 + 1] = s->win[(s->owin + s->ntaps) * 2 + 1] = signal[1];
+		s->win[s->owin * 2 + 0] = s->win[(s->owin + s->ntaps) * 2 + 0] = in[0];
+		s->win[s->owin * 2 + 1] = s->win[(s->owin + s->ntaps) * 2 + 1] = in[1];
 		if(++s->owin == s->ntaps) s->owin = 0;
 		
 		/* Calculate the next output sample */
@@ -292,9 +293,10 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *signal, size_t samples
 			aq += s->win[p] * s->qtaps[y];
 		}
 		
-		signal[0] = aq >> 15;
-		signal[1] = ai >> 15;
-		signal += 2;
+		out[0] = aq >> 15;
+		out[1] = ai >> 15;
+		out += 2;
+		in += 2;
 	}
 	
 	return(samples);

@@ -3185,7 +3185,7 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 	/* Apply video filter if enabled */
 	if(s->video_filter.type)
 	{
-		fir_int16_process(&s->video_filter, s->output, s->width);
+		fir_int16_process(&s->video_filter, s->output, s->output, s->width);
 	}
 	
 	/* Process the audio */
