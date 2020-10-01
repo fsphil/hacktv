@@ -306,23 +306,25 @@ static void print_usage(void)
 	);
 }
 
-#define _OPT_TELETEXT       1000
-#define _OPT_WSS            1001
-#define _OPT_VIDEOCRYPT     1002
-#define _OPT_VIDEOCRYPT2    1003
-#define _OPT_VIDEOCRYPTS    1004
-#define _OPT_SYSTER         1005
-#define _OPT_SYSTERAUDIO    1006
-#define _OPT_EUROCRYPT      1007
-#define _OPT_ACP            1008
-#define _OPT_VITS           1009
-#define _OPT_FILTER         1010
-#define _OPT_NOAUDIO        1011
-#define _OPT_NONICAM        1012
-#define _OPT_SINGLE_CUT     1013
-#define _OPT_DOUBLE_CUT     1014
-#define _OPT_SCRAMBLE_AUDIO 1015
-#define _OPT_CHID           1016
+enum {
+	_OPT_TELETEXT = 1000,
+	_OPT_WSS,
+	_OPT_VIDEOCRYPT,
+	_OPT_VIDEOCRYPT2,
+	_OPT_VIDEOCRYPTS,
+	_OPT_SYSTER,
+	_OPT_SYSTERAUDIO,
+	_OPT_EUROCRYPT,
+	_OPT_ACP,
+	_OPT_VITS,
+	_OPT_FILTER,
+	_OPT_NOAUDIO,
+	_OPT_NONICAM,
+	_OPT_SINGLE_CUT,
+	_OPT_DOUBLE_CUT,
+	_OPT_SCRAMBLE_AUDIO,
+	_OPT_CHID,
+};
 
 int main(int argc, char *argv[])
 {
