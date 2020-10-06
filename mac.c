@@ -92,7 +92,7 @@ static int16_t *_duobinary_lut(int mode, int width, double level)
 	
 	bits = (mode == MAC_MODE_D2 ? 648 : 1296);
 	samples_per_symbol = (double) width / bits;
-	offset = width / 1296 * (mode == MAC_MODE_D2 ? -3 : -1);
+	offset = (double) width / 1296 * (mode == MAC_MODE_D2 ? -3 : -1);
 	ntaps = (int) (samples_per_symbol * 16) | 1;
 	htaps = ntaps / 2;
 	
