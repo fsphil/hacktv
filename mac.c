@@ -1385,6 +1385,7 @@ void mac_next_line(vid_t *s)
 		y = (s->line - 336) * 2 + 1;
 	}
 	
+	/* Render the luminance */
 	if(y >= 0)
 	{
 		uint32_t *px = (s->framebuffer != NULL ? &s->framebuffer[y * s->active_width] : NULL);
