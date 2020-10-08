@@ -45,7 +45,7 @@ static void _sigint_callback_handler(int signum)
 		exit(-1);
 	}
 	
-	_abort++;
+	_abort = 1;
 }
 
 /* RF sink callback handlers */
@@ -930,8 +930,8 @@ int main(int argc, char *argv[])
 			
 			if(r != HACKTV_OK)
 			{
-				vid_free(&s.vid);
-				return(-1);
+				/* Error opening this source. Move to the next */
+				continue;
 			}
 			
 			while(!_abort)
