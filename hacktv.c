@@ -94,6 +94,7 @@ static void print_usage(void)
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
+		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
@@ -318,6 +319,7 @@ enum {
 	_OPT_ACP,
 	_OPT_VITS,
 	_OPT_FILTER,
+	_OPT_NOCOLOUR,
 	_OPT_NOAUDIO,
 	_OPT_NONICAM,
 	_OPT_SINGLE_CUT,
@@ -350,6 +352,8 @@ int main(int argc, char *argv[])
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "vits",           no_argument,       0, _OPT_VITS },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
+		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
+		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
 		{ "nonicam",        no_argument,       0, _OPT_NONICAM },
 		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
@@ -395,6 +399,7 @@ int main(int argc, char *argv[])
 	s.acp = 0;
 	s.vits = 0;
 	s.filter = 0;
+	s.nocolour = 0;
 	s.noaudio = 0;
 	s.nonicam = 0;
 	s.scramble_video = 0;
@@ -548,6 +553,10 @@ int main(int argc, char *argv[])
 			s.filter = 1;
 			break;
 		
+		case _OPT_NOCOLOUR: /* --nocolour / --nocolor */
+			s.nocolour = 1;
+			break;
+		
 		case _OPT_NOAUDIO: /* --noaudio */
 			s.noaudio = 1;
 			break;
@@ -677,6 +686,16 @@ int main(int argc, char *argv[])
 	if(s.interlace)
 	{
 		vid_conf.interlace = 1;
+	}
+	
+	if(s.nocolour)
+	{
+		if(vid_conf.colour_mode == VID_PAL ||
+		   vid_conf.colour_mode == VID_SECAM ||
+		   vid_conf.colour_mode == VID_NTSC)
+		{
+			vid_conf.colour_mode = VID_NONE;
+		}
 	}
 	
 	if(s.noaudio > 0)

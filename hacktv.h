@@ -75,6 +75,7 @@ typedef struct {
 	int acp;
 	int vits;
 	int filter;
+	int nocolour;
 	int noaudio;
 	int nonicam;
 	int scramble_video;
