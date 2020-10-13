@@ -317,3 +317,4 @@ int vits_render(vits_t *s, int16_t *buffer, int line, const int16_t *lut_i, cons
 	
 	return(1);
 }
+
