@@ -176,6 +176,7 @@ int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps)
 	}
 	
 	s->win = calloc(s->ntaps * 2, sizeof(int16_t));
+	s->owin = 0;
 	
 	return(0);
 }
@@ -267,6 +268,7 @@ int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int nta
 	}
 	
 	s->win = calloc(s->ntaps * 2, sizeof(int16_t) * 2);
+	s->owin = 0;
 	
 	return(0);
 }
@@ -320,6 +322,7 @@ int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int nt
 	}
 	
 	s->win = calloc(s->ntaps * 2, sizeof(int16_t));
+	s->owin = 0;
 	
 	return(0);
 }
