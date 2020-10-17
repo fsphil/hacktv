@@ -2519,6 +2519,7 @@ static void _vid_filter_free(vid_t *s, void *arg)
 {
 	fir_int16_t *fir = arg;
 	fir_int16_free(fir);
+	free(fir);
 }
 
 static int _vid_audio_process(vid_t *s, void *arg)
