@@ -45,8 +45,6 @@ typedef struct {
 
 typedef struct {
 	
-	vid_t *vid;
-	
 	/* VBI */
 	int16_t *lut;
 	uint8_t vbi[10][NG_VBI_BYTES];
@@ -79,7 +77,7 @@ typedef struct {
 extern int ng_init(ng_t *s, vid_t *vs);
 extern void ng_free(ng_t *s);
 extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
-extern void ng_render_line(ng_t *s);
+extern int ng_render_line(vid_t *s, void *arg);
 
 #endif
 

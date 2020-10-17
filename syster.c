@@ -336,12 +336,10 @@ int ng_init(ng_t *s, vid_t *vid)
 	
 	memset(s, 0, sizeof(ng_t));
 	
-	s->vid = vid;
-	
 	/* Calculate the high level for the VBI data, 66% of the white level */
 	i = round((vid->white_level - vid->black_level) * 0.66);
 	s->lut = vbidata_init(
-		NG_VBI_WIDTH, s->vid->width,
+		NG_VBI_WIDTH, vid->width,
 		i,
 		VBIDATA_FILTER_RC, 0.7
 	);
@@ -360,7 +358,7 @@ int ng_init(ng_t *s, vid_t *vid)
 	_update_field_order(s);
 	
 	/* Allocate memory for the delay */
-	s->vid->olines += NG_DELAY_LINES;
+	vid->olines += NG_DELAY_LINES;
 	
 	/* Allocate memory for the audio inversion FIR filters */
 	s->firli = calloc(NTAPS * 2, sizeof(int16_t));
@@ -447,15 +445,16 @@ void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples)
 	}
 }
 
-void ng_render_line(ng_t *s)
+int ng_render_line(vid_t *s, void *arg)
 {
+	ng_t *n = arg;
 	int j = 0;
 	int x, f, i;
 	int line;
 	
 	/* Calculate which line is about to be transmitted due to the delay */
-	line = s->vid->line - NG_DELAY_LINES;
-	if(line < 0) line += s->vid->conf.lines;
+	line = s->line - NG_DELAY_LINES;
+	if(line < 0) line += s->conf.lines;
 	
 	/* Calculate the field and field line */
 	f = (line < NG_FIELD_2_START ? 1 : 2);
@@ -474,24 +473,24 @@ void ng_render_line(ng_t *s)
 		/* Reinitialise the seeds if this is a new field */
 		if(i == 0)
 		{
-			int sf = s->vid->frame % 50;
+			int sf = s->frame % 50;
 			
 			if((sf == 6 || sf == 31) && f == 2)
 			{
-				_prbs_reset(s, s->cw);
+				_prbs_reset(n, n->cw);
 			}
 			
-			x = _prbs_update(s);
+			x = _prbs_update(n);
 			
-			s->s = x & 0x7F;
-			s->r = x >> 7;
+			n->s = x & 0x7F;
+			n->r = x >> 7;
 			
-			_update_field_order(s);
+			_update_field_order(n);
 		}
 		
 		/* Calculate which line in the delay buffer to copy image data from */
-		j = (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START) + s->order[i];
-		if(j < line) j += s->vid->conf.lines;
+		j = (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START) + n->order[i];
+		if(j < line) j += s->conf.lines;
 		j -= line;
 		
 		if(j < 0 || j >= NG_DELAY_LINES)
@@ -502,23 +501,23 @@ void ng_render_line(ng_t *s)
 		}
 	}
 	
-	vid_adj_delay(s->vid, NG_DELAY_LINES);
+	vid_adj_delay(s, NG_DELAY_LINES);
 	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
 	if(j > 0)
 	{
-		int16_t *dline = s->vid->oline[s->vid->odelay + j];
+		int16_t *dline = s->oline[s->odelay + j];
 		
 		/* For PAL the colour burst is not moved, just the active
 		 * video. For SECAM the entire line is moved. */
-		x = s->vid->active_left * 2;
+		x = s->active_left * 2;
 		
-		if(s->vid->conf.colour_mode == VID_SECAM) x = 0;
+		if(s->conf.colour_mode == VID_SECAM) x = 0;
 		
-		for(; x < s->vid->width * 2; x += 2)
+		for(; x < s->width * 2; x += 2)
 		{
-			s->vid->output[x] = dline[x];
+			s->output[x] = dline[x];
 		}
 	}
 	
@@ -526,7 +525,7 @@ void ng_render_line(ng_t *s)
 	 * These lines where used by Premiere */
 	if(line == 14 || line == 15 || line == 327 || line == 328)
 	{
-		if(s->vbi_seq == 0)
+		if(n->vbi_seq == 0)
 		{
 			const uint8_t *emm1 = _dummy_emm;
 			const uint8_t *emm2 = _dummy_emm;
@@ -534,15 +533,15 @@ void ng_render_line(ng_t *s)
 			uint8_t msg2[NG_MSG_BYTES];
 			
 			/* Transmit the PPUA EMM every 1000 frames */
-			if(s->vid->frame > s->next_ppua)
+			if(s->frame > n->next_ppua)
 			{
 				emm1 = _ppua_emm;
-				s->next_ppua = s->vid->frame + 1000;
+				n->next_ppua = s->frame + 1000;
 			}
 			
 			/* Build part 1 of the VBI block */
 			msg1[ 0] = 0x72;	/* Mode? (0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or 0xFA) */
-			_ecm_part(s, &msg1[1]);
+			_ecm_part(n, &msg1[1]);
 			msg1[11] = 0xFF;	/* Simple checksum -- the Premiere VBI sample only has 0x00/0xFF here */
 			for(x = 0; x < 11; x++)
 			{
@@ -566,20 +565,22 @@ void ng_render_line(ng_t *s)
 			memcpy(&msg2[12], emm2, 72);
 			
 			/* Pack the messages into the next 10 VBI lines */
-			_pack_vbi_block(s->vbi, msg1, msg2);
+			_pack_vbi_block(n->vbi, msg1, msg2);
 			
 			/* Advance the block sequence counter */
-			s->block_seq++;
+			n->block_seq++;
 		}
 		
 		/* Render the line */
-		vbidata_render_nrz(s->lut, s->vbi[s->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->vid->output, 2);
-		*s->vid->vbialloc = 1;
+		vbidata_render_nrz(n->lut, n->vbi[n->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->output, 2);
+		*s->vbialloc = 1;
 		
-		if(s->vbi_seq == 10)
+		if(n->vbi_seq == 10)
 		{
-			s->vbi_seq = 0;
+			n->vbi_seq = 0;
 		}
 	}
+	
+	return(1);
 }
 
