@@ -1597,11 +1597,12 @@ static int16_t *_burstwin(unsigned int sample_rate, double width, double rise, d
 	return(win);
 }
 
-static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
+static int16_t *_colour_subcarrier_phase(vid_t *s, int frame, int line, int phase)
 {
-	int frame = (s->frame - 1) & 3;
-	int line = s->line - 1;
 	int p;
+	
+	frame = (frame - 1) & 3;
+	line = line - 1;
 	
 	/* Limit phase offset to 0 > 359 */
 	if((phase %= 360) < 0)
@@ -1651,6 +1652,31 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 	
 	/* Return a pointer to the line */
 	return(&s->colour_lookup[p]);
+}
+
+void vid_get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq)
+{
+	int16_t *b = NULL;
+	int16_t *i = NULL;
+	int16_t *q = NULL;
+	int odd = (frame + line + 1) & 1;
+	
+	if(s->conf.colour_mode == VID_PAL)
+	{
+		b = _colour_subcarrier_phase(s, frame, line, odd ? -135 : 135);
+		i = _colour_subcarrier_phase(s, frame, line, odd ? -90 : 90);
+		q = _colour_subcarrier_phase(s, frame, line, 0);
+	}
+	else if(s->conf.colour_mode == VID_NTSC)
+	{
+		b = _colour_subcarrier_phase(s, s->frame, s->line, 180);
+		i = _colour_subcarrier_phase(s, s->frame, s->line, 90);
+		q = _colour_subcarrier_phase(s, s->frame, s->line, 0);
+	}
+	
+	if(pb) *pb = b;
+	if(pi) *pi = i;
+	if(pq) *pq = q;
 }
 
 /* FM modulator
@@ -1859,12 +1885,11 @@ static int _vid_next_line_raster(vid_t *s, void *arg)
 	int vy;
 	int w;
 	uint32_t rgb;
-	int pal;
-	int odd;
+	int pal = 0;
 	int fsc = 0;
-	int16_t *lut_b;
-	int16_t *lut_i;
-	int16_t *lut_q;
+	int16_t *lut_b = NULL;
+	int16_t *lut_i = NULL;
+	int16_t *lut_q = NULL;
 	
 	/* Sequence codes: abcd
 	 * 
@@ -2249,53 +2274,27 @@ static int _vid_next_line_raster(vid_t *s, void *arg)
 	
 	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	
-	/* Does this line use colour? */
-	pal  = seq[1] == '0';
-	pal |= seq[1] == '1' && (s->frame & 1) == 1;
-	pal |= seq[1] == '2' && (s->frame & 1) == 0;
-	
-	/* odd == 1 if this is an odd line, otherwise odd == 0 */
-	odd = (s->frame + s->line + 1) & 1;
-	
-	/* Calculate colour sub-carrier lookup-positions for the start of this line */
-	if(s->conf.colour_mode == VID_PAL)
+	if(s->conf.colour_mode == VID_PAL ||
+	   s->conf.colour_mode == VID_NTSC)
 	{
-		/* PAL */
-		lut_b = _colour_subcarrier_phase(s, odd ? -135 : 135);
-		lut_i = _colour_subcarrier_phase(s, odd ? -90 : 90);
-		lut_q = _colour_subcarrier_phase(s, 0);
+		/* Does this line use colour? */
+		pal  = seq[1] == '0';
+		pal |= seq[1] == '1' && (s->frame & 1) == 1;
+		pal |= seq[1] == '2' && (s->frame & 1) == 0;
+		
+		/* Calculate colour sub-carrier lookup-positions for the start of this line */
+		vid_get_colour_subcarrier(s, s->frame, s->line, &lut_b, &lut_i, &lut_q);
 	}
-	else if(s->conf.colour_mode == VID_NTSC)
-	{
-		/* NTSC */
-		lut_b = _colour_subcarrier_phase(s, 180);
-		lut_i = _colour_subcarrier_phase(s, 90);
-		lut_q = _colour_subcarrier_phase(s, 0);
-	}
-	else if(s->conf.colour_mode == VID_APOLLO_FSC)
+	if(s->conf.colour_mode == VID_APOLLO_FSC)
 	{
 		/* Apollo Field Sequential Colour */
 		fsc = (s->frame * 2 + (s->line < 264 ? 0 : 1)) % 3;
-		lut_b = NULL;
-		lut_i = NULL;
-		lut_q = NULL;
 		pal = 0;
 	}
 	else if(s->conf.colour_mode == VID_CBS_FSC)
 	{
 		/* CBS Field Sequential Colour */
 		fsc = (s->frame * 2 + (s->line < 202 ? 0 : 1)) % 3;
-		lut_b = NULL;
-		lut_i = NULL;
-		lut_q = NULL;
-		pal = 0;
-	}
-	else
-	{
-		/* No colour */
-		lut_b = NULL;
-		lut_i = NULL;
-		lut_q = NULL;
 		pal = 0;
 	}
 	
@@ -2481,16 +2480,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg)
 	if(s->conf.acp == 1)
 	{
 		acp_render_line(&s->acp);
-	}
-	
-	/* VITS renderer, if enabled */
-	if(s->conf.vits == 1)
-	{
-		if(vits_render(&s->vits, s->output, s->line, lut_i, lut_q))
-		{
-			/* Mark this line as allocated to VITS */
-			*s->vbialloc = 1;
-		}
 	}
 	
 	/* Clear the Q channel */
@@ -2939,6 +2928,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_add_lineprocess(s, "raster", NULL, _vid_next_line_raster, NULL);
 	}
 	
+	/* Initalise VITS inserter */
+	if(s->conf.vits)
+	{
+		if((r = vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "vits", &s->vits, vits_render, NULL);
+	}
+	
 	/* Initalise the teletext system */
 	if(s->conf.teletext)
 	{
@@ -3086,13 +3087,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	/* Initalise ACP renderer */
 	if(s->conf.acp && (r = acp_init(&s->acp, s)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise VITS inserter */
-	if(s->conf.vits && vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level) != 0)
 	{
 		vid_free(s);
 		return(r);

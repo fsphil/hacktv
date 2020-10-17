@@ -362,6 +362,7 @@ extern const vid_configs_t vid_configs[];
 
 extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf);
 extern void vid_free(vid_t *s);
+extern void vid_get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq);
 extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);

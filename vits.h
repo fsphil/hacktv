@@ -19,6 +19,7 @@
 #define _VITS_H
 
 #include <stdint.h>
+#include "video.h"
 
 typedef struct {
 	int width;
@@ -29,7 +30,7 @@ typedef struct {
 extern int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int16_t level);
 extern void vits_free(vits_t *s);
 
-extern int vits_render(vits_t *s, int16_t *buffer, int line, const int16_t *lut_i, const int16_t *lut_q);
+extern int vits_render(vid_t *s, void *arg);
 
 #endif
 

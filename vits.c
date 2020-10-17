@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "vits.h"
+#include "video.h"
 
 static const double _bursts_625[6] = {
 	0.5e6,
@@ -291,29 +291,35 @@ void vits_free(vits_t *s)
 	memset(s, 0, sizeof(vits_t));
 }
 
-int vits_render(vits_t *s, int16_t *buffer, int line, const int16_t *lut_i, const int16_t *lut_q)
+int vits_render(vid_t *s, void *arg)
 {
+	vits_t *v = arg;
 	int x, i = -1;
+	int16_t *lut_i;
 	
-	if(s->lines == 625)
+	if(v->lines == 625)
 	{
-		if(line == 17 || line == 18) i = line - 17;
-		else if(line == 330 || line == 331) i = line - 330 + 2;
+		if(s->line == 17 || s->line == 18) i = s->line - 17;
+		else if(s->line == 330 || s->line == 331) i = s->line - 330 + 2;
 	}
-	else if(s->lines == 525)
+	else if(v->lines == 525)
 	{
-		if(line == 17) i = line - 17;
-		else if(line == 280) i = line - 280 + 1;
+		if(s->line == 17) i = s->line - 17;
+		else if(s->line == 280) i = s->line - 280 + 1;
 	}
 	
 	if(i < 0) return(0);
-	if(!s->line[i]) return(0);
+	if(!v->line[i]) return(0);
+	
+	vid_get_colour_subcarrier(s, s->frame, s->line, NULL, &lut_i, NULL);
 	
 	for(x = 0; x < s->width; x++)
 	{
-		buffer[x * 2] += s->line[i][x * 2 + 0];
-		buffer[x * 2] += (lut_i[x] * s->line[i][x * 2 + 1]) >> 15;
+		s->output[x * 2] += v->line[i][x * 2 + 0];
+		s->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
 	}
+	
+	*s->vbialloc = 1;
 	
 	return(1);
 }
