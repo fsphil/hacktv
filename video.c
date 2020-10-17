@@ -2652,8 +2652,6 @@ static int _add_lineprocess(vid_t *s, const char *name, void *arg, vid_lineproce
 {
 	_lineprocess_t *p;
 	
-	fprintf(stderr, "add process: %s\n", name);
-	
 	p = realloc(s->processes, sizeof(_lineprocess_t) * (s->nprocesses + 1));
 	if(!p)
 	{
