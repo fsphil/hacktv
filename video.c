@@ -2452,12 +2452,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg)
 		}
 	}
 	
-	/* ACP renderer, if enabled */
-	if(s->conf.acp == 1)
-	{
-		acp_render_line(&s->acp);
-	}
-	
 	/* Clear the Q channel */
 	for(x = 0; x < s->width; x++)
 	{
@@ -2964,6 +2958,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_add_lineprocess(s, "syster", &s->ng, ng_render_line, NULL);
 	}
 	
+	/* Initalise ACP renderer */
+	if(s->conf.acp)
+	{
+		if((r = acp_init(&s->acp, s)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "acp", &s->acp, acp_render_line, NULL);
+	}
+	
 	/* Initalise the teletext system */
 	if(s->conf.teletext)
 	{
@@ -3078,13 +3084,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 		
 		_add_lineprocess(s, "fmmod", NULL, _vid_fmmod_process, NULL);
-	}
-	
-	/* Initalise ACP renderer */
-	if(s->conf.acp && (r = acp_init(&s->acp, s)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
 	}
 	
 	/* Output line buffer(s) */
