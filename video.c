@@ -2493,12 +2493,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg)
 		}
 	}
 	
-	/* Teletext, if enabled */
-	if(s->conf.teletext)
-	{
-		tt_render_line(&s->tt);
-	}
-	
 	/* Clear the Q channel */
 	for(x = 0; x < s->width; x++)
 	{
@@ -2945,6 +2939,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_add_lineprocess(s, "raster", NULL, _vid_next_line_raster, NULL);
 	}
 	
+	/* Initalise the teletext system */
+	if(s->conf.teletext)
+	{
+		if((r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "teletext", &s->tt, tt_render_line, NULL);
+	}
+	
 	if(s->conf.vfilter)
 	{
 		_init_vfilter(s);
@@ -3087,13 +3093,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	/* Initalise VITS inserter */
 	if(s->conf.vits && vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level) != 0)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise the teletext system */
-	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
 	{
 		vid_free(s);
 		return(r);
