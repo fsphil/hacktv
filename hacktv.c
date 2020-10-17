@@ -862,6 +862,11 @@ int main(int argc, char *argv[])
 		vid_conf.chid = (uint16_t) s.chid;
 	}
 	
+	if(s.filter)
+	{
+		vid_conf.vfilter = 1;
+	}
+	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, &vid_conf);
 	if(r != VID_OK)
@@ -871,11 +876,6 @@ int main(int argc, char *argv[])
 	}
 	
 	vid_info(&s.vid);
-	
-	if(s.filter)
-	{
-		vid_init_filter(&s.vid);
-	}
 	
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{

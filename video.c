@@ -1836,533 +1836,6 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 	fprintf(stderr, "Next valid sample rates: %u, %u\n", m * r, m * (r + 1));
 }
 
-int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
-{
-	int r, x;
-	int64_t c;
-	double d;
-	double glut[0x100];
-	double level, slevel;
-	
-	/* Seed the system's PRNG, used by some of the video scramblers */
-	srand(time(NULL));
-	
-	memset(s, 0, sizeof(vid_t));
-	memcpy(&s->conf, conf, sizeof(vid_config_t));
-	
-	/* Calculate the number of samples per line */
-	_test_sample_rate(&s->conf, sample_rate);
-	
-	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
-	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
-	
-	/* Calculate the "actual" sample rate we use. This is calculated
-	 * to give us an exact number of samples per line */
-	//s->sample_rate = s->width * s->conf.lines * s->conf.frame_rate;
-	// This won't work with NTSC
-	
-	//if(s->sample_rate != sample_rate)
-	//{
-	//	fprintf(stderr, "Sample rate error %0.2f%%\n", (double) s->sample_rate / sample_rate * 100);
-	//}
-	
-	s->sample_rate = sample_rate;
-	
-	/* Calculate the active video width and offset */
-	s->active_left = round(s->sample_rate * s->conf.active_left);
-	s->active_width = ceil(s->sample_rate * s->conf.active_width);
-	if(s->active_width > s->width) s->active_width = s->width;
-	
-	s->hsync_width       = round(s->sample_rate * s->conf.hsync_width);
-	s->vsync_short_width = round(s->sample_rate * s->conf.vsync_short_width);
-	s->vsync_long_width  = round(s->sample_rate * s->conf.vsync_long_width);
-	
-	/* Calculate signal levels */
-	/* slevel is the the sub-carrier level. When FM modulating
-	 * this is always 1.0, otherwise it equals the overall level */
-	slevel = s->conf.modulation == VID_FM ? 1.0 : s->conf.level;
-	
-	level = s->conf.video_level * slevel;
-	
-	/* Calculate 16-bit blank and sync levels */
-	s->white_level    = round(s->conf.white_level    * level * INT16_MAX);
-	s->black_level    = round(s->conf.black_level    * level * INT16_MAX);
-	s->blanking_level = round(s->conf.blanking_level * level * INT16_MAX);
-	s->sync_level     = round(s->conf.sync_level     * level * INT16_MAX);
-	
-	/* Allocate memory for YUV lookup tables */
-	s->yiq_level_lookup = malloc(0x1000000 * sizeof(_yiq16_t));
-	if(s->yiq_level_lookup == NULL)
-	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
-	}
-	
-	/* Generate the gamma lookup table. LUTception */
-	if(s->conf.gamma <= 0)
-	{
-		s->conf.gamma = 1.0;
-	}
-	
-	for(c = 0; c < 0x100; c++)
-	{
-		glut[c] = pow((double) c / 255, 1 / s->conf.gamma);
-	}
-	
-	/* Generate the RGB > signal level lookup tables */
-	for(c = 0x000000; c <= 0xFFFFFF; c++)
-	{
-		double r, g, b;
-		double y, u, v;
-		double i, q;
-		
-		/* Calculate RGB 0..1 values */
-		r = glut[(c & 0xFF0000) >> 16];
-		g = glut[(c & 0x00FF00) >> 8];
-		b = glut[(c & 0x0000FF) >> 0];
-		
-		/* Calculate Y, Cb and Cr values */
-		y = r * s->conf.rw_co
-		  + g * s->conf.gw_co
-		  + b * s->conf.bw_co;
-		u = (b - y);
-		v = (r - y);
-		
-		i = s->conf.iv_co * v + s->conf.iu_co * u;
-		q = s->conf.qv_co * v + s->conf.qu_co * u;
-		
-		/* Adjust values to correct signal level */
-		y  = s->conf.black_level + (y * (s->conf.white_level - s->conf.black_level));
-		i *= s->conf.white_level - s->conf.black_level;
-		q *= s->conf.white_level - s->conf.black_level;
-		
-		/* Convert to INT16 range and store in tables */
-		s->yiq_level_lookup[c].y = round(_dlimit(y * level, -1, 1) * INT16_MAX);
-		s->yiq_level_lookup[c].i = round(_dlimit(i * level, -1, 1) * INT16_MAX);
-		s->yiq_level_lookup[c].q = round(_dlimit(q * level, -1, 1) * INT16_MAX);
-	}
-	
-	if(s->conf.colour_lookup_lines > 0)
-	{
-		/* Generate the colour subcarrier lookup table */
-		/* This carrier is in phase with the U (B-Y) component */
-		s->colour_lookup_width = s->width * s->conf.colour_lookup_lines;
-		d = 2.0 * M_PI * s->conf.colour_carrier / s->sample_rate;
-		
-		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(int16_t));
-		if(!s->colour_lookup)
-		{
-			vid_free(s);
-			return(VID_OUT_OF_MEMORY);
-		}
-		
-		for(c = 0; c < s->colour_lookup_width; c++)
-		{
-			s->colour_lookup[c] = round(-sin(d * c) * INT16_MAX);
-		}
-		
-		/* To make overflow easier to handle, we repeat the first line at the end */
-		memcpy(&s->colour_lookup[s->colour_lookup_width], s->colour_lookup, s->width * sizeof(int16_t));
-	}
-	
-	if(s->conf.burst_level > 0)
-	{
-		/* Generate the colour burst envelope */
-		s->burst_left  = round(s->sample_rate * (s->conf.burst_left - s->conf.burst_rise / 2));
-		s->burst_win   = _burstwin(
-			s->sample_rate,
-			s->conf.burst_width,
-			s->conf.burst_rise,
-			s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level,
-			&s->burst_width
-		);
-		if(!s->burst_win)
-		{
-			vid_free(s);
-			return(VID_OUT_OF_MEMORY);
-		}
-	}
-	
-	s->fsc_flag_left  = round(s->sample_rate * s->conf.fsc_flag_left);
-	s->fsc_flag_width = round(s->sample_rate * s->conf.fsc_flag_width);
-	s->fsc_flag_level = round(s->conf.fsc_flag_level * (s->conf.white_level - s->conf.blanking_level) * level * INT16_MAX);
-	
-	if(s->conf.colour_mode == VID_SECAM)
-	{
-		double secam_level = s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) * level;
-		
-		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-		
-		r = _init_fm_modulator(&s->fm_secam_cb, s->sample_rate, 4406260, 280000, secam_level);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-	}
-	
-	/* Set the next line/frame counter */
-	/* NOTE: TV line and frame numbers start at 1 rather than 0 */
-	s->bline  = s->line = 1;
-	s->bframe = s->frame = 1;
-	
-	s->framebuffer = NULL;
-	s->olines = 1;
-	s->audio = 0;
-	
-	/* Initalise D/D2-MAC state */
-	if(s->conf.type == VID_MAC)
-	{
-		r = mac_init(s);
-		
-		if(r != VID_OK)
-		{
-			return(r);
-		}
-	}
-	
-	/* FM audio */
-	if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
-	{
-		r = _init_fm_modulator(&s->fm_mono, s->sample_rate, s->conf.fm_mono_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-		
-		s->audio = 1;
-	}
-	
-	if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
-	{
-		r = _init_fm_modulator(&s->fm_left, s->sample_rate, s->conf.fm_left_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-		
-		s->audio = 1;
-	}
-	
-	if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
-	{
-		r = _init_fm_modulator(&s->fm_right, s->sample_rate, s->conf.fm_right_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-		
-		s->audio = 1;
-	}
-	
-	/* NICAM audio */
-	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
-	{
-		r = nicam_mod_init(&s->nicam, NICAM_MODE_STEREO, 0, s->sample_rate, s->conf.nicam_carrier, s->conf.nicam_beta, s->conf.nicam_level * slevel);
-		
-		if(r != 0)
-		{
-			vid_free(s);
-			return(VID_OUT_OF_MEMORY);
-		}
-		
-		s->nicam_buf_len = 0;
-		s->audio = 1;
-	}
-	
-	/* DANCE audio */
-	if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
-	{
-		r = dance_mod_init(&s->dance, DANCE_MODE_A, s->sample_rate, s->conf.dance_carrier, s->conf.dance_beta, s->conf.dance_level * slevel);
-		
-		if(r != 0)
-		{
-			vid_free(s);
-			return(VID_OUT_OF_MEMORY);
-		}
-		
-		s->dance_buf_len = 0;
-		s->audio = 1;
-	}
-	
-	/* AM audio */
-	if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
-	{
-		r = _init_am_modulator(&s->am_mono, s->sample_rate, s->conf.am_mono_carrier, s->conf.am_audio_level * slevel);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-		
-		s->audio = 1;
-	}
-	
-	/* FM video */
-	if(s->conf.modulation == VID_FM)
-	{
-		r = _init_fm_modulator(&s->fm_video, s->sample_rate, 0, s->conf.fm_deviation, s->conf.fm_level * s->conf.level);
-		if(r != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-	}
-	
-	/* Initalise the WSS system */
-	if(s->conf.wss && (r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initialise videocrypt I/II encoder */
-	if((s->conf.videocrypt || s->conf.videocrypt2) &&
-	   (r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initialise videocrypt S encoder */
-	if(s->conf.videocrypts && (r = vcs_init(&s->vcs, s, s->conf.videocrypts)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise syster encoder */
-	if(s->conf.syster && (r = ng_init(&s->ng, s)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise ACP renderer */
-	if(s->conf.acp && (r = acp_init(&s->acp, s)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise VITS inserter */
-	if(s->conf.vits && vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level) != 0)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise the teletext system */
-	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Output line buffer(s) */
-	s->oline = calloc(sizeof(int16_t *), s->olines);
-	if(!s->oline)
-	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
-	}
-	
-	s->vbialloclist = calloc(sizeof(int), s->olines);
-	if(!s->vbialloclist)
-	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
-	}
-	
-	for(r = 0; r < s->olines; r++)
-	{
-		s->oline[r] = malloc(sizeof(int16_t) * 2 * s->width);
-		if(!s->oline[r])
-		{
-			vid_free(s);
-			return(VID_OUT_OF_MEMORY);
-		}
-		
-		/* Blank the lines */
-		for(x = 0; x < s->width; x++)
-		{
-			s->oline[r][x * 2] = s->blanking_level;
-		}
-	}
-	
-	return(VID_OK);
-}
-
-void vid_free(vid_t *s)
-{
-	int i;
-	
-	/* Close the AV source */
-	vid_av_close(s);
-	
-	if(s->conf.teletext)
-	{
-		tt_free(&s->tt);
-	}
-	
-	if(s->conf.vits)
-	{
-		vits_free(&s->vits);
-	}
-	
-	if(s->conf.acp)
-	{
-		acp_free(&s->acp);
-	}
-	
-	if(s->conf.syster)
-	{
-		ng_free(&s->ng);
-	}
-	
-	if(s->conf.videocrypt || s->conf.videocrypt2)
-	{
-		vc_free(&s->vc);
-	}
-	
-	if(s->conf.videocrypts)
-	{
-		vcs_free(&s->vcs);
-	}
-	
-	if(s->conf.wss)
-	{
-		wss_free(&s->wss);
-	}
-	
-	fir_int16_free(&s->video_filter);
-	
-	if(s->conf.type == VID_MAC)
-	{
-		mac_free(s);
-	}
-	
-	/* Free allocated memory */
-	free(s->yiq_level_lookup);
-	free(s->colour_lookup);
-	_free_fm_modulator(&s->fm_secam_cr);
-	_free_fm_modulator(&s->fm_secam_cb);
-	_free_fm_modulator(&s->fm_video);
-	_free_fm_modulator(&s->fm_mono);
-	_free_fm_modulator(&s->fm_left);
-	_free_fm_modulator(&s->fm_right);
-	dance_mod_free(&s->dance);
-	nicam_mod_free(&s->nicam);
-	_free_am_modulator(&s->am_mono);
-	
-	if(s->oline)
-	{
-		for(i = 0; i < s->olines; i++)
-		{
-			free(s->oline[i]);
-		}
-		free(s->oline);
-	}
-	
-	free(s->vbialloclist);
-	free(s->burst_win);
-	
-	memset(s, 0, sizeof(vid_t));
-}
-
-void vid_info(vid_t *s)
-{
-	fprintf(stderr, "Video: %dx%d %.2f fps (full frame %dx%d)\n",
-		s->active_width, s->conf.active_lines,
-		(double) s->conf.frame_rate_num / s->conf.frame_rate_den,
-		s->width, s->conf.lines
-	);
-	
-	fprintf(stderr, "Sample rate: %d\n", s->sample_rate);
-}
-
-int vid_init_filter(vid_t *s)
-{
-	int ntaps;
-	
-	if(s->conf.modulation == VID_VSB)
-	{
-		int16_t *taps;
-		
-		ntaps = 51;
-		
-		taps = calloc(ntaps, sizeof(int16_t) * 2);
-		if(!taps)
-		{
-			return(VID_OUT_OF_MEMORY);
-		}
-		
-		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_scomplex_init(&s->video_filter, taps, ntaps);
-		free(taps);
-	}
-	else if(s->conf.modulation == VID_FM)
-	{
-		const int16_t *taps;
-		
-		if(s->conf.type == VID_MAC)
-		{
-			if(s->sample_rate != 20250000)
-			{
-				fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz.\n");
-			}
-			
-			taps = fm_mac_taps;
-			ntaps = sizeof(fm_mac_taps) / sizeof(int16_t);
-		}
-		else if(s->conf.lines == 525)
-		{
-			if(s->sample_rate != 18000000)
-			{
-				fprintf(stderr, "Warning: The 525-line FM video pre-emphasis filter is designed to run at 18 MHz.\n");
-			}
-			
-			taps = fm_525_taps;
-			ntaps = sizeof(fm_525_taps) / sizeof(int16_t);
-		}
-		else
-		{
-			if(s->sample_rate == 14000000)
-			{
-				taps = fm_625_14_taps;
-				ntaps = sizeof(fm_625_14_taps) / sizeof(int16_t);
-			}
-			else
-			{
-				if(s->sample_rate != 20250000)
-				{
-					fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
-				}
-				
-				taps = fm_625_taps;
-				ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
-			}
-		}
-		
-		fir_int16_init(&s->video_filter, taps, ntaps);
-	}
-	
-	return(VID_OK);
-}
-
-size_t vid_get_framebuffer_length(vid_t *s)
-{
-	return(sizeof(uint32_t) * s->active_width * s->conf.active_lines);
-}
-
 int16_t *vid_adj_delay(vid_t *s, int lines)
 {
 	s->odelay -= lines;
@@ -2379,7 +1852,7 @@ int16_t *vid_adj_delay(vid_t *s, int lines)
 	return(s->output);
 }
 
-static void _vid_next_line_raster(vid_t *s)
+static int _vid_next_line_raster(vid_t *s, void *arg)
 {
 	const char *seq;
 	int x;
@@ -3031,9 +2504,24 @@ static void _vid_next_line_raster(vid_t *s)
 	{
 		s->output[x * 2 + 1] = 0;
 	}
+	
+	return(1);
 }
 
-static void _process_audio(vid_t *s)
+static int _vid_filter_process(vid_t *s, void *arg)
+{
+	fir_int16_t *fir = arg;
+	fir_int16_process(fir, s->output, s->output, s->width);
+	return(1);
+}
+
+static void _vid_filter_free(vid_t *s, void *arg)
+{
+	fir_int16_t *fir = arg;
+	fir_int16_free(fir);
+}
+
+static int _vid_audio_process(vid_t *s, void *arg)
 {
 	static int16_t audio[2] = { 0, 0 };
 	static int interp = 0;
@@ -3142,11 +2630,613 @@ static void _process_audio(vid_t *s)
 	{
 		dance_mod_output(&s->dance, s->output, s->width);
 	}
+	
+	return(1);
+}
+
+static int _vid_fmmod_process(vid_t *s, void *arg)
+{
+	int x;
+	
+	/* FM modulate the video and audio if requested */
+	for(x = 0; x < s->width; x++)
+	{
+		_fm_modulator(&s->fm_video, &s->output[x * 2], s->output[x * 2]);
+	}
+	
+	return(1);
+}
+
+static int _add_lineprocess(vid_t *s, const char *name, void *arg, vid_lineprocess_process_t pprocess, vid_lineprocess_free_t pfree)
+{
+	_lineprocess_t *p;
+	
+	fprintf(stderr, "add process: %s\n", name);
+	
+	p = realloc(s->processes, sizeof(_lineprocess_t) * (s->nprocesses + 1));
+	if(!p)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	s->processes = p;
+	p = &s->processes[s->nprocesses++];
+	
+	strncpy(p->name, name, 15);
+	p->vid = s;
+	p->arg = arg;
+	p->process = pprocess;
+	p->free = pfree;
+	
+	return(VID_OK);
+}
+
+static int _init_vfilter(vid_t *s)
+{
+	fir_int16_t *fir;
+	int ntaps;
+	
+	fir = malloc(sizeof(fir_int16_t));
+	if(!fir)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	if(s->conf.modulation == VID_VSB)
+	{
+		int16_t *taps;
+		
+		ntaps = 51;
+		
+		taps = calloc(ntaps, sizeof(int16_t) * 2);
+		if(!taps)
+		{
+			free(fir);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
+		fir_int16_scomplex_init(fir, taps, ntaps);
+		free(taps);
+	}
+	else if(s->conf.modulation == VID_FM)
+	{
+		const int16_t *taps;
+		
+		if(s->conf.type == VID_MAC)
+		{
+			if(s->sample_rate != 20250000)
+			{
+				fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz.\n");
+			}
+			
+			taps = fm_mac_taps;
+			ntaps = sizeof(fm_mac_taps) / sizeof(int16_t);
+		}
+		else if(s->conf.lines == 525)
+		{
+			if(s->sample_rate != 18000000)
+			{
+				fprintf(stderr, "Warning: The 525-line FM video pre-emphasis filter is designed to run at 18 MHz.\n");
+			}
+			
+			taps = fm_525_taps;
+			ntaps = sizeof(fm_525_taps) / sizeof(int16_t);
+		}
+		else
+		{
+			if(s->sample_rate == 14000000)
+			{
+				taps = fm_625_14_taps;
+				ntaps = sizeof(fm_625_14_taps) / sizeof(int16_t);
+			}
+			else
+			{
+				if(s->sample_rate != 20250000)
+				{
+					fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
+				}
+				
+				taps = fm_625_taps;
+				ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
+			}
+		}
+		
+		fir_int16_init(fir, taps, ntaps);	
+	}
+	
+	_add_lineprocess(s, "vfilter", fir, _vid_filter_process, _vid_filter_free);
+	
+	return(VID_OK);
+}
+
+int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
+{
+	int r, x;
+	int64_t c;
+	double d;
+	double glut[0x100];
+	double level, slevel;
+	
+	/* Seed the system's PRNG, used by some of the video scramblers */
+	srand(time(NULL));
+	
+	memset(s, 0, sizeof(vid_t));
+	memcpy(&s->conf, conf, sizeof(vid_config_t));
+	
+	/* Calculate the number of samples per line */
+	_test_sample_rate(&s->conf, sample_rate);
+	
+	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
+	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
+	
+	/* Calculate the "actual" sample rate we use. This is calculated
+	 * to give us an exact number of samples per line */
+	//s->sample_rate = s->width * s->conf.lines * s->conf.frame_rate;
+	// This won't work with NTSC
+	
+	//if(s->sample_rate != sample_rate)
+	//{
+	//	fprintf(stderr, "Sample rate error %0.2f%%\n", (double) s->sample_rate / sample_rate * 100);
+	//}
+	
+	s->sample_rate = sample_rate;
+	
+	/* Calculate the active video width and offset */
+	s->active_left = round(s->sample_rate * s->conf.active_left);
+	s->active_width = ceil(s->sample_rate * s->conf.active_width);
+	if(s->active_width > s->width) s->active_width = s->width;
+	
+	s->hsync_width       = round(s->sample_rate * s->conf.hsync_width);
+	s->vsync_short_width = round(s->sample_rate * s->conf.vsync_short_width);
+	s->vsync_long_width  = round(s->sample_rate * s->conf.vsync_long_width);
+	
+	/* Calculate signal levels */
+	/* slevel is the the sub-carrier level. When FM modulating
+	 * this is always 1.0, otherwise it equals the overall level */
+	slevel = s->conf.modulation == VID_FM ? 1.0 : s->conf.level;
+	
+	level = s->conf.video_level * slevel;
+	
+	/* Calculate 16-bit blank and sync levels */
+	s->white_level    = round(s->conf.white_level    * level * INT16_MAX);
+	s->black_level    = round(s->conf.black_level    * level * INT16_MAX);
+	s->blanking_level = round(s->conf.blanking_level * level * INT16_MAX);
+	s->sync_level     = round(s->conf.sync_level     * level * INT16_MAX);
+	
+	/* Allocate memory for YUV lookup tables */
+	s->yiq_level_lookup = malloc(0x1000000 * sizeof(_yiq16_t));
+	if(s->yiq_level_lookup == NULL)
+	{
+		vid_free(s);
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	/* Generate the gamma lookup table. LUTception */
+	if(s->conf.gamma <= 0)
+	{
+		s->conf.gamma = 1.0;
+	}
+	
+	for(c = 0; c < 0x100; c++)
+	{
+		glut[c] = pow((double) c / 255, 1 / s->conf.gamma);
+	}
+	
+	/* Generate the RGB > signal level lookup tables */
+	for(c = 0x000000; c <= 0xFFFFFF; c++)
+	{
+		double r, g, b;
+		double y, u, v;
+		double i, q;
+		
+		/* Calculate RGB 0..1 values */
+		r = glut[(c & 0xFF0000) >> 16];
+		g = glut[(c & 0x00FF00) >> 8];
+		b = glut[(c & 0x0000FF) >> 0];
+		
+		/* Calculate Y, Cb and Cr values */
+		y = r * s->conf.rw_co
+		  + g * s->conf.gw_co
+		  + b * s->conf.bw_co;
+		u = (b - y);
+		v = (r - y);
+		
+		i = s->conf.iv_co * v + s->conf.iu_co * u;
+		q = s->conf.qv_co * v + s->conf.qu_co * u;
+		
+		/* Adjust values to correct signal level */
+		y  = s->conf.black_level + (y * (s->conf.white_level - s->conf.black_level));
+		i *= s->conf.white_level - s->conf.black_level;
+		q *= s->conf.white_level - s->conf.black_level;
+		
+		/* Convert to INT16 range and store in tables */
+		s->yiq_level_lookup[c].y = round(_dlimit(y * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].i = round(_dlimit(i * level, -1, 1) * INT16_MAX);
+		s->yiq_level_lookup[c].q = round(_dlimit(q * level, -1, 1) * INT16_MAX);
+	}
+	
+	if(s->conf.colour_lookup_lines > 0)
+	{
+		/* Generate the colour subcarrier lookup table */
+		/* This carrier is in phase with the U (B-Y) component */
+		s->colour_lookup_width = s->width * s->conf.colour_lookup_lines;
+		d = 2.0 * M_PI * s->conf.colour_carrier / s->sample_rate;
+		
+		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(int16_t));
+		if(!s->colour_lookup)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		for(c = 0; c < s->colour_lookup_width; c++)
+		{
+			s->colour_lookup[c] = round(-sin(d * c) * INT16_MAX);
+		}
+		
+		/* To make overflow easier to handle, we repeat the first line at the end */
+		memcpy(&s->colour_lookup[s->colour_lookup_width], s->colour_lookup, s->width * sizeof(int16_t));
+	}
+	
+	if(s->conf.burst_level > 0)
+	{
+		/* Generate the colour burst envelope */
+		s->burst_left  = round(s->sample_rate * (s->conf.burst_left - s->conf.burst_rise / 2));
+		s->burst_win   = _burstwin(
+			s->sample_rate,
+			s->conf.burst_width,
+			s->conf.burst_rise,
+			s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level,
+			&s->burst_width
+		);
+		if(!s->burst_win)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+	}
+	
+	s->fsc_flag_left  = round(s->sample_rate * s->conf.fsc_flag_left);
+	s->fsc_flag_width = round(s->sample_rate * s->conf.fsc_flag_width);
+	s->fsc_flag_level = round(s->conf.fsc_flag_level * (s->conf.white_level - s->conf.blanking_level) * level * INT16_MAX);
+	
+	if(s->conf.colour_mode == VID_SECAM)
+	{
+		double secam_level = s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) * level;
+		
+		r = _init_fm_modulator(&s->fm_secam_cr, s->sample_rate, 4250000, 230000, secam_level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		r = _init_fm_modulator(&s->fm_secam_cb, s->sample_rate, 4406260, 280000, secam_level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+	}
+	
+	/* Set the next line/frame counter */
+	/* NOTE: TV line and frame numbers start at 1 rather than 0 */
+	s->bline  = s->line = 1;
+	s->bframe = s->frame = 1;
+	
+	s->framebuffer = NULL;
+	s->olines = 1;
+	s->audio = 0;
+	
+	/* Initalise D/D2-MAC state */
+	if(s->conf.type == VID_MAC)
+	{
+		r = mac_init(s);
+		
+		if(r != VID_OK)
+		{
+			return(r);
+		}
+		
+		_add_lineprocess(s, "macraster", NULL, mac_next_line, NULL);
+	}
+	else
+	{
+		_add_lineprocess(s, "raster", NULL, _vid_next_line_raster, NULL);
+	}
+	
+	if(s->conf.vfilter)
+	{
+		_init_vfilter(s);
+	}
+	
+	/* FM audio */
+	if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
+	{
+		r = _init_fm_modulator(&s->fm_mono, s->sample_rate, s->conf.fm_mono_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		s->audio = 1;
+	}
+	
+	if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
+	{
+		r = _init_fm_modulator(&s->fm_left, s->sample_rate, s->conf.fm_left_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		s->audio = 1;
+	}
+	
+	if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
+	{
+		r = _init_fm_modulator(&s->fm_right, s->sample_rate, s->conf.fm_right_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		s->audio = 1;
+	}
+	
+	/* NICAM audio */
+	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+	{
+		r = nicam_mod_init(&s->nicam, NICAM_MODE_STEREO, 0, s->sample_rate, s->conf.nicam_carrier, s->conf.nicam_beta, s->conf.nicam_level * slevel);
+		
+		if(r != 0)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		s->nicam_buf_len = 0;
+		s->audio = 1;
+	}
+	
+	/* DANCE audio */
+	if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
+	{
+		r = dance_mod_init(&s->dance, DANCE_MODE_A, s->sample_rate, s->conf.dance_carrier, s->conf.dance_beta, s->conf.dance_level * slevel);
+		
+		if(r != 0)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		s->dance_buf_len = 0;
+		s->audio = 1;
+	}
+	
+	/* AM audio */
+	if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
+	{
+		r = _init_am_modulator(&s->am_mono, s->sample_rate, s->conf.am_mono_carrier, s->conf.am_audio_level * slevel);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		s->audio = 1;
+	}
+	
+	/* Add the audio process */
+	if(s->audio == 1)
+	{
+		_add_lineprocess(s, "audio", NULL, _vid_audio_process, NULL);
+	}
+	
+	/* FM video */
+	if(s->conf.modulation == VID_FM)
+	{
+		r = _init_fm_modulator(&s->fm_video, s->sample_rate, 0, s->conf.fm_deviation, s->conf.fm_level * s->conf.level);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "fmmod", NULL, _vid_fmmod_process, NULL);
+	}
+	
+	/* Initalise the WSS system */
+	if(s->conf.wss && (r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
+	/* Initialise videocrypt I/II encoder */
+	if((s->conf.videocrypt || s->conf.videocrypt2) &&
+	   (r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
+	/* Initialise videocrypt S encoder */
+	if(s->conf.videocrypts && (r = vcs_init(&s->vcs, s, s->conf.videocrypts)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
+	/* Initalise syster encoder */
+	if(s->conf.syster && (r = ng_init(&s->ng, s)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
+	/* Initalise ACP renderer */
+	if(s->conf.acp && (r = acp_init(&s->acp, s)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
+	/* Initalise VITS inserter */
+	if(s->conf.vits && vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level) != 0)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
+	/* Initalise the teletext system */
+	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+	{
+		vid_free(s);
+		return(r);
+	}
+	
+	/* Output line buffer(s) */
+	s->oline = calloc(sizeof(int16_t *), s->olines);
+	if(!s->oline)
+	{
+		vid_free(s);
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	s->vbialloclist = calloc(sizeof(int), s->olines);
+	if(!s->vbialloclist)
+	{
+		vid_free(s);
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	for(r = 0; r < s->olines; r++)
+	{
+		s->oline[r] = malloc(sizeof(int16_t) * 2 * s->width);
+		if(!s->oline[r])
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		/* Blank the lines */
+		for(x = 0; x < s->width; x++)
+		{
+			s->oline[r][x * 2] = s->blanking_level;
+		}
+	}
+	
+	return(VID_OK);
+}
+
+void vid_free(vid_t *s)
+{
+	int i;
+	
+	/* Close the AV source */
+	vid_av_close(s);
+	
+	for(i = 0; i < s->nprocesses; i++)
+	{
+		if(s->processes[i].free)
+		{
+			s->processes[i].free(s, s->processes[i].arg);
+		}
+	}
+	free(s->processes);
+	
+	if(s->conf.teletext)
+	{
+		tt_free(&s->tt);
+	}
+	
+	if(s->conf.vits)
+	{
+		vits_free(&s->vits);
+	}
+	
+	if(s->conf.acp)
+	{
+		acp_free(&s->acp);
+	}
+	
+	if(s->conf.syster)
+	{
+		ng_free(&s->ng);
+	}
+	
+	if(s->conf.videocrypt || s->conf.videocrypt2)
+	{
+		vc_free(&s->vc);
+	}
+	
+	if(s->conf.videocrypts)
+	{
+		vcs_free(&s->vcs);
+	}
+	
+	if(s->conf.wss)
+	{
+		wss_free(&s->wss);
+	}
+	
+	if(s->conf.type == VID_MAC)
+	{
+		mac_free(s);
+	}
+	
+	/* Free allocated memory */
+	free(s->yiq_level_lookup);
+	free(s->colour_lookup);
+	_free_fm_modulator(&s->fm_secam_cr);
+	_free_fm_modulator(&s->fm_secam_cb);
+	_free_fm_modulator(&s->fm_video);
+	_free_fm_modulator(&s->fm_mono);
+	_free_fm_modulator(&s->fm_left);
+	_free_fm_modulator(&s->fm_right);
+	dance_mod_free(&s->dance);
+	nicam_mod_free(&s->nicam);
+	_free_am_modulator(&s->am_mono);
+	
+	if(s->oline)
+	{
+		for(i = 0; i < s->olines; i++)
+		{
+			free(s->oline[i]);
+		}
+		free(s->oline);
+	}
+	
+	free(s->vbialloclist);
+	free(s->burst_win);
+	
+	memset(s, 0, sizeof(vid_t));
+}
+
+void vid_info(vid_t *s)
+{
+	fprintf(stderr, "Video: %dx%d %.2f fps (full frame %dx%d)\n",
+		s->active_width, s->conf.active_lines,
+		(double) s->conf.frame_rate_num / s->conf.frame_rate_den,
+		s->width, s->conf.lines
+	);
+	
+	fprintf(stderr, "Sample rate: %d\n", s->sample_rate);
+}
+
+size_t vid_get_framebuffer_length(vid_t *s)
+{
+	return(sizeof(uint32_t) * s->active_width * s->conf.active_lines);
 }
 
 static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 {
-	int x;
+	int i;
 	
 	s->odelay = s->olines - 1;
 	s->output = s->oline[s->odelay];
@@ -3167,39 +3257,13 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		s->framebuffer = _av_read_video(s, &s->ratio);
 	}
 	
-	if(s->conf.type == VID_MAC)
+	for(i = 0; i < s->nprocesses; i++)
 	{
-		mac_next_line(s);
-	}
-	else
-	{
-		_vid_next_line_raster(s);
-	}
-	
-	/* Ensure the Q part of the signal is zero */
-	for(x = 0; x < s->width; x++)
-	{
-		s->output[x * 2 + 1] = 0;
-	}
-	
-	/* Apply video filter if enabled */
-	if(s->video_filter.type)
-	{
-		fir_int16_process(&s->video_filter, s->output, s->output, s->width);
-	}
-	
-	/* Process the audio */
-	if(s->audio == 1)
-	{
-		_process_audio(s);
-	}
-	
-	/* FM modulate the video and audio if requested */
-	if(s->conf.modulation == VID_FM)
-	{
-		for(x = 0; x < s->width; x++)
+		_lineprocess_t *p = &s->processes[i];
+		
+		if(p->process)
 		{
-			_fm_modulator(&s->fm_video, &s->output[x * 2], s->output[x * 2]);
+			p->process(p->vid, p->arg);
 		}
 	}
 	
@@ -3210,18 +3274,21 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		s->bframe++;
 	}
 	
-	/* Return a pointer to the line buffer */
-	*samples = s->width;
-	
 	/* Rotate the output lines */
 	s->output = s->oline[0];
-	for(x = 1; x < s->olines; x++)
+	for(i = 1; i < s->olines; i++)
 	{
-		s->oline[x - 1] = s->oline[x];
-		s->vbialloclist[x - 1] = s->vbialloclist[x];
+		s->oline[i - 1] = s->oline[i];
+		s->vbialloclist[i - 1] = s->vbialloclist[i];
 	}
-	s->oline[x - 1] = s->output;
-	s->vbialloclist[x - 1] = 0;
+	s->oline[i - 1] = s->output;
+	s->vbialloclist[i - 1] = 0;
+	
+	/* Return a pointer to the output buffer */
+	if(samples)
+	{
+		*samples = s->width;
+	}
 	
 	return(s->output);
 }

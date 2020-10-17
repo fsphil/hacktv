@@ -202,6 +202,9 @@ typedef struct {
 	int scramble_video;
 	int scramble_audio;
 	
+	/* Video filter enable flag */
+	int vfilter;
+	
 } vid_config_t;
 
 typedef struct {
@@ -214,6 +217,24 @@ typedef struct {
 	int16_t i;
 	int16_t q;
 } _yiq16_t;
+
+typedef int (*vid_lineprocess_process_t)(vid_t *s, void *arg);
+typedef void (*vid_lineprocess_free_t)(vid_t *s, void *arg);
+typedef struct _lineprocess_t _lineprocess_t;
+
+struct _lineprocess_t {
+	
+	/* A simple identifier for this process */
+	char name[16];
+	
+	/* Process callbacks */
+	vid_lineprocess_process_t process;
+	vid_lineprocess_free_t free;
+	
+	/* Callback parameters */
+	vid_t *vid;
+	void *arg;
+};
 
 struct vid_t {
 	
@@ -274,9 +295,6 @@ struct vid_t {
 	/* Current frame's aspect ratio */
 	float ratio;
 	
-	/* Video filter */
-	fir_int16_t video_filter;
-	
 	/* Teletext state */
 	tt_t tt;
 	
@@ -334,6 +352,10 @@ struct vid_t {
 	/* VBI line allocation flag */
 	int *vbialloclist;
 	int *vbialloc;
+	
+	/* Line processes */
+	int nprocesses;
+	_lineprocess_t *processes;
 };
 
 extern const vid_configs_t vid_configs[];
@@ -342,7 +364,6 @@ extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * con
 extern void vid_free(vid_t *s);
 extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
-extern int vid_init_filter(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
 extern int16_t *vid_adj_delay(vid_t *s, int lines);
 extern int16_t *vid_next_line(vid_t *s, size_t *samples);

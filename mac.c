@@ -1238,7 +1238,7 @@ static void _rotate(vid_t *s, int x1, int x2, int xc)
 	}
 }
 
-void mac_next_line(vid_t *s)
+int mac_next_line(vid_t *s, void *arg)
 {
 	uint8_t data[MAC_LINE_BYTES];
 	int x, y;
@@ -1441,5 +1441,7 @@ void mac_next_line(vid_t *s)
 			}
 		}
 	}
+	
+	return(1);
 }
 
