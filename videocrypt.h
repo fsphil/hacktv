@@ -63,8 +63,6 @@ typedef struct {
 
 typedef struct {
 	
-	vid_t *vid;
-	
 	uint8_t counter;
 	
 	/* VC1 blocks */
@@ -93,7 +91,7 @@ typedef struct {
 
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);
 extern void vc_free(vc_t *s);
-extern void vc_render_line(vc_t *s);
+extern int vc_render_line(vid_t *s, void *arg);
 
 #endif
 

@@ -2452,12 +2452,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg)
 		}
 	}
 	
-	/* Videocrypt scrambling, if enabled */
-	if(s->conf.videocrypt || s->conf.videocrypt2)
-	{
-		vc_render_line(&s->vc);
-	}
-	
 	/* Videocrypt S scrambling, if enabled */
 	if(s->conf.videocrypts)
 	{
@@ -2946,6 +2940,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_add_lineprocess(s, "wss", &s->wss, wss_render, NULL);
 	}
 	
+	/* Initialise videocrypt I/II encoder */
+	if(s->conf.videocrypt || s->conf.videocrypt2)
+	{
+		if((r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "videocrypt", &s->vc, vc_render_line, NULL);
+	}
+	
 	/* Initalise the teletext system */
 	if(s->conf.teletext)
 	{
@@ -3060,14 +3066,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 		
 		_add_lineprocess(s, "fmmod", NULL, _vid_fmmod_process, NULL);
-	}
-	
-	/* Initialise videocrypt I/II encoder */
-	if((s->conf.videocrypt || s->conf.videocrypt2) &&
-	   (r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
 	}
 	
 	/* Initialise videocrypt S encoder */

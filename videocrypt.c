@@ -204,7 +204,6 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 	
 	memset(s, 0, sizeof(vc_t));
 	
-	s->vid      = vid;
 	s->counter  = 0;
 	s->cw       = VC_PRBS_CW_FA;
 	
@@ -252,10 +251,10 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 	s->block2 = 0;
 	
 	/* Sample rate ratio */
-	f = (double) s->vid->width / VC_WIDTH;
+	f = (double) vid->width / VC_WIDTH;
 	
 	/* Videocrypt timings appear to be calculated against the centre of the hsync pulse */
-	l = (double) VC_SAMPLE_RATE * s->vid->conf.hsync_width / 2;
+	l = (double) VC_SAMPLE_RATE * vid->conf.hsync_width / 2;
 	
 	/* Quick and dirty sample rate conversion array */
 	for(x = 0; x < VC_WIDTH; x++)
@@ -264,7 +263,7 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 	}
 	
 	/* Add one delay line */
-	s->vid->olines += 1;
+	vid->olines += 1;
 	
 	return(VID_OK);
 }
@@ -274,154 +273,155 @@ void vc_free(vc_t *s)
 	/* Nothing */
 }
 
-void vc_render_line(vc_t *s)
+int vc_render_line(vid_t *s, void *arg)
 {
+	vc_t *v = arg;
 	int x;
 	const uint8_t *bline = NULL;
 	
 	/* On the first line of each frame, generate the VBI data */
-	if(s->vid->line == 1)
+	if(s->line == 1)
 	{
 		uint64_t iw;
 		uint8_t crc;
 		
 		/* Videocrypt I */
-		if(s->blocks)
+		if(v->blocks)
 		{
-			if((s->counter & 7) == 0)
+			if((v->counter & 7) == 0)
 			{
 				/* The active message is updated every 8th frame. The last
 				 * message in the block is a duplicate of the first. */
 				for(crc = x = 0; x < 31; x++)
 				{
-					crc += s->message[x] = s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][x];
+					crc += v->message[x] = v->blocks[v->block].messages[((v->counter >> 3) & 7) % 7][x];
 				}
 				
-				s->message[x] = ~crc + 1;
+				v->message[x] = ~crc + 1;
 			}
 			
-			if((s->counter & 4) == 0)
+			if((v->counter & 4) == 0)
 			{
 				/* The first half of the message. Transmitted for 4 frames */
 				_encode_vbi(
-					s->vbi, s->message,
-					_sequence[(s->counter >> 4) & 7],
-					s->counter & 0xFF
+					v->vbi, v->message,
+					_sequence[(v->counter >> 4) & 7],
+					v->counter & 0xFF
 				);
 			}
 			else
 			{
 				/* The second half of the message. Transmitted for 4 frames */
 				_encode_vbi(
-					s->vbi, s->message + 16,
-					_rnibble(_sequence[(s->counter >> 4) & 7]),
-					s->blocks[s->block].mode
+					v->vbi, v->message + 16,
+					_rnibble(_sequence[(v->counter >> 4) & 7]),
+					v->blocks[v->block].mode
 				);
 			}
 		}
 		
 		/* Videocrypt II */
-		if(s->blocks2)
+		if(v->blocks2)
 		{
-			if((s->counter & 1) == 0)
+			if((v->counter & 1) == 0)
 			{
 				/* The active message is updated every 2nd frame */
 				for(crc = x = 0; x < 31; x++)
 				{
-					crc += s->message2[x] = s->blocks2[s->block2].messages[(s->counter >> 1) & 7][x];
+					crc += v->message2[x] = v->blocks2[v->block2].messages[(v->counter >> 1) & 7][x];
 				}
 				
-				s->message2[x] = ~crc + 1;
+				v->message2[x] = ~crc + 1;
 			}
 			
-			if((s->counter & 1) == 0)
+			if((v->counter & 1) == 0)
 			{
 				/* The first half of the message */
 				_encode_vbi(
-					s->vbi2, s->message2,
-					_sequence2[(s->counter >> 1) & 7],
-					s->counter & 0xFF
+					v->vbi2, v->message2,
+					_sequence2[(v->counter >> 1) & 7],
+					v->counter & 0xFF
 				);
 			}
 			else
 			{
 				/* The second half of the message */
 				_encode_vbi(
-					s->vbi2, s->message2 + 16,
-					_rnibble(_sequence2[(s->counter >> 1) & 7]),
-					(s->counter & 0x08 ? 0x00 : s->blocks2[s->block2].mode)
+					v->vbi2, v->message2 + 16,
+					_rnibble(_sequence2[(v->counter >> 1) & 7]),
+					(v->counter & 0x08 ? 0x00 : v->blocks2[v->block2].mode)
 				);
 			}
 		}
 		
 		/* Reset the PRBS */
-		iw = _generate_iw(s->cw, s->counter);
-		s->sr1 = iw & VC_PRBS_SR1_MASK;
-		s->sr2 = (iw >> 31) & VC_PRBS_SR2_MASK;
+		iw = _generate_iw(v->cw, v->counter);
+		v->sr1 = iw & VC_PRBS_SR1_MASK;
+		v->sr2 = (iw >> 31) & VC_PRBS_SR2_MASK;
 		
-		s->counter++;
+		v->counter++;
 		
 		/* After 64 frames, advance to the next VC1 block and codeword */
-		if((s->counter & 0x3F) == 0)
+		if((v->counter & 0x3F) == 0)
 		{
 			/* Apply the current block codeword */
-			if(s->blocks)
+			if(v->blocks)
 			{
-				s->cw = s->blocks[s->block].codeword;
+				v->cw = v->blocks[v->block].codeword;
 			}
 			
 			/* Move to the next block */
-			if(++s->block == s->block_len)
+			if(++v->block == v->block_len)
 			{
-				s->block = 0;
+				v->block = 0;
 			}
 		}
 		
 		/* After 16 frames, advance to the next VC2 block and codeword */
-		if((s->counter & 0x0F) == 0)
+		if((v->counter & 0x0F) == 0)
 		{
 			/* Apply the current block codeword */
-			if(s->blocks2)
+			if(v->blocks2)
 			{
-				s->cw = s->blocks2[s->block2].codeword;
+				v->cw = v->blocks2[v->block2].codeword;
 			}
 			
 			/* Move to the next block */
-			if(++s->block2 == s->block2_len)
+			if(++v->block2 == v->block2_len)
 			{
-				s->block2 = 0;
+				v->block2 = 0;
 			}
 		}
 	}
 	
 	/* Calculate VBI line, or < 0 if not */
-	if(s->blocks &&
-	   s->vid->line >= VC_VBI_FIELD_1_START &&
-	   s->vid->line < VC_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
+	if(v->blocks &&
+	   s->line >= VC_VBI_FIELD_1_START &&
+	   s->line < VC_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Top VBI field */
-		bline = &s->vbi[(s->vid->line - VC_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(s->line - VC_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
 	}
-	else if(s->blocks &&
-	        s->vid->line >= VC_VBI_FIELD_2_START &&
-	        s->vid->line < VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
+	else if(v->blocks &&
+	        s->line >= VC_VBI_FIELD_2_START &&
+	        s->line < VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Bottom VBI field */
-		bline = &s->vbi[(s->vid->line - VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(s->line - VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
 	}
-	else if(s->blocks2 &&
-	        s->vid->line >= VC2_VBI_FIELD_1_START &&
-	        s->vid->line < VC2_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
+	else if(v->blocks2 &&
+	        s->line >= VC2_VBI_FIELD_1_START &&
+	        s->line < VC2_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Top VBI field VC2 */
-		bline = &s->vbi2[(s->vid->line - VC2_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi2[(s->line - VC2_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
 	}
-	else if(s->blocks2 &&
-	        s->vid->line >= VC2_VBI_FIELD_2_START &&
-	        s->vid->line < VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
+	else if(v->blocks2 &&
+	        s->line >= VC2_VBI_FIELD_2_START &&
+	        s->line < VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Bottom VBI field VC2 */
-		bline = &s->vbi2[(s->vid->line - VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi2[(s->line - VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
 	}
 	
 	/* Render the VBI line if necessary */
@@ -429,82 +429,84 @@ void vc_render_line(vc_t *s)
 	{
 		int b, c;
 		
-		x = s->video_scale[VC_VBI_LEFT];
+		x = v->video_scale[VC_VBI_LEFT];
 		
 		for(b = 0; b < VC_VBI_BITS_PER_LINE; b++)
 		{
 			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? s->vid->white_level : s->vid->black_level;
+			c = c ? s->white_level : s->black_level;
 			
-			for(; x < s->video_scale[VC_VBI_LEFT + VC_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
+			for(; x < v->video_scale[VC_VBI_LEFT + VC_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->vid->output[x * 2] = c;
+				s->output[x * 2] = c;
 			}
 		}
 		
-		*s->vid->vbialloc = 1;
+		*s->vbialloc = 1;
 	}
 	
 	/* Scramble the line if necessary */
 	x = -1;
 	
-	if((s->vid->line >= VC_FIELD_1_START && s->vid->line < VC_FIELD_1_START + VC_LINES_PER_FIELD) ||
-	   (s->vid->line >= VC_FIELD_2_START && s->vid->line < VC_FIELD_2_START + VC_LINES_PER_FIELD))
+	if((s->line >= VC_FIELD_1_START && s->line < VC_FIELD_1_START + VC_LINES_PER_FIELD) ||
+	   (s->line >= VC_FIELD_2_START && s->line < VC_FIELD_2_START + VC_LINES_PER_FIELD))
 	{
 		int i;
 		
-		x = (s->c >> 8) & 0xFF;
+		x = (v->c >> 8) & 0xFF;
 		
 		for(i = 0; i < 16; i++)
 		{
 			int a;
 			
 			/* Update shift registers */
-			s->sr1 = (s->sr1 >> 1) ^ (s->sr1 & 1 ? 0x7BB88888UL : 0);
-			s->sr2 = (s->sr2 >> 1) ^ (s->sr2 & 1 ? 0x17A2C100UL : 0);
+			v->sr1 = (v->sr1 >> 1) ^ (v->sr1 & 1 ? 0x7BB88888UL : 0);
+			v->sr2 = (v->sr2 >> 1) ^ (v->sr2 & 1 ? 0x17A2C100UL : 0);
 			
 			/* Load the multiplexer address */
-			a = _rev(s->sr2, 29) & 0x1F;
+			a = _rev(v->sr2, 29) & 0x1F;
 			if(a == 31) a = 30;
 			
 			/* Shift into result register */
-			s->c = (s->c >> 1) | (((_rev(s->sr1, 31) >> a) & 1) << 15);
+			v->c = (v->c >> 1) | (((_rev(v->sr1, 31) >> a) & 1) << 15);
 		}
 		
 		/* Line 336 is scrambled into line 335, a VBI line. Mark it
 		 * as allocated to prevent teletext data appearing there */
-		if(s->vid->line == 336)
+		if(s->line == 336)
 		{
-			s->vid->vbialloclist[s->vid->odelay - 1] = 1;
+			s->vbialloclist[s->odelay - 1] = 1;
 		}
 	}
 	
 	/* Hack to preserve WSS signal data */
-	if(s->vid->line == 24) x = -1;
+	if(s->line == 24) x = -1;
 	
 	if(x != -1)
 	{
 		int cut;
 		int lshift;
 		int y;
-		int16_t *delay = s->vid->oline[s->vid->odelay - 1];
+		int16_t *delay = s->oline[s->odelay - 1];
 		
 		cut = 105 + (0xFF - x) * 2;
 		lshift = 710 - cut;
 		
-		y = s->video_scale[VC_LEFT + lshift];
-		for(x = s->video_scale[VC_LEFT]; x < s->video_scale[VC_LEFT + cut]; x++, y++)
+		y = v->video_scale[VC_LEFT + lshift];
+		for(x = v->video_scale[VC_LEFT]; x < v->video_scale[VC_LEFT + cut]; x++, y++)
 		{
-			delay[x * 2] = s->vid->output[y * 2];
+			delay[x * 2] = s->output[y * 2];
 		}
 		
-		y = s->video_scale[VC_LEFT];
-		for(; x < s->video_scale[VC_RIGHT + VC_OVERLAP]; x++, y++)
+		y = v->video_scale[VC_LEFT];
+		for(; x < v->video_scale[VC_RIGHT + VC_OVERLAP]; x++, y++)
 		{
-			delay[x * 2] = s->vid->output[y * 2];
+			delay[x * 2] = s->output[y * 2];
 		}
 	}
 	
-	vid_adj_delay(s->vid, 1);
+	vid_adj_delay(s, 1);
+	
+	return(1);
 }
 
