@@ -2468,8 +2468,8 @@ static void _vid_filter_free(vid_t *s, void *arg)
 static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vid_line_t *l = lines[0];
-	static int16_t audio[2] = { 0, 0 };
-	static int interp = 0;
+	int16_t audio[2] = { 0, 0 };
+	int interp = 0;
 	int x;
 	
 	for(x = 0; x < s->width; x++)

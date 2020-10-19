@@ -20,6 +20,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <signal.h>
+#include <math.h>
 #include "hacktv.h"
 #include "test.h"
 #include "ffmpeg.h"
@@ -876,6 +877,16 @@ int main(int argc, char *argv[])
 	}
 	
 	vid_info(&s.vid);
+
+	static vid_t vid2;
+	r = vid_init(&vid2, s.samplerate, &vid_conf);
+	if(r != VID_OK)
+	{
+		fprintf(stderr, "Unable to initialise video encoder.\n");
+		return(-1);
+	}
+	
+	vid_info(&vid2);
 	
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{
@@ -915,6 +926,37 @@ int main(int argc, char *argv[])
 	}
 	
 	av_ffmpeg_init();
+
+	pre = argv[optind++];
+	sub = strchr(pre, ':');
+
+	if(sub != NULL)
+	{
+		l = sub - pre;
+		sub++;
+	}
+	else
+	{
+		l = strlen(pre);
+	}
+
+	if(strncmp(pre, "test", l) == 0)
+	{
+		r = av_test_open(&vid2);
+	}
+	else if(strncmp(pre, "ffmpeg", l) == 0)
+	{
+		r = av_ffmpeg_open(&vid2, sub);
+	}
+	else
+	{
+		r = av_ffmpeg_open(&vid2, pre);
+	}
+	
+	if(r != HACKTV_OK)
+	{
+		return 1;
+	}
 	
 	do
 	{
@@ -952,6 +994,17 @@ int main(int argc, char *argv[])
 				/* Error opening this source. Move to the next */
 				continue;
 			}
+
+			int16_t offset_counter = INT16_MAX;
+
+			cint32_t offset_phase;
+			offset_phase.i = INT16_MAX;
+			offset_phase.q = 0;
+
+			cint32_t offset_delta;
+			double d = 2.0 * M_PI / s.vid.sample_rate * 6e6;
+			offset_delta.i = lround(cos(d) * INT32_MAX);
+			offset_delta.q = lround(sin(d) * INT32_MAX);
 			
 			while(!_abort)
 			{
@@ -959,6 +1012,42 @@ int main(int argc, char *argv[])
 				int16_t *data = vid_next_line(&s.vid, &samples);
 				
 				if(data == NULL) break;
+
+				size_t samples2;
+				int16_t *data2 = vid_next_line(&vid2, &samples2);
+				
+				if(data2 == NULL) break;
+
+				if(samples != samples2) break;
+
+				for(int i = 0; i < samples; i++)
+				{
+					cint32_mul(&offset_phase, &offset_phase, &offset_delta);
+
+					cint32_t data_sample;
+					data_sample.i = data[i * 2] >> 1;
+					data_sample.q = data[i * 2 + 1] >> 1;
+
+					cint32_t data2_sample;
+					data2_sample.i = data2[i * 2] >> 1;
+					data2_sample.q = data2[i * 2 + 1] >> 1;
+
+					cint32_mula(&data_sample, &data2_sample, &offset_phase);
+
+					data[i * 2] = data_sample.i;
+					data[i * 2 + 1] = data_sample.q;
+					
+					/* Correct the amplitude after INT16_MAX samples */
+					if(--offset_counter == 0)
+					{
+						double ra = atan2(offset_phase.q, offset_phase.i);
+						
+						offset_phase.i = lround(cos(ra) * INT32_MAX);
+						offset_phase.q = lround(sin(ra) * INT32_MAX);
+						
+						offset_counter = INT16_MAX;
+					}
+				}
 				
 				if(_hacktv_rf_write(&s, data, samples) != HACKTV_OK) break;
 			}
