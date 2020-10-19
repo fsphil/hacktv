@@ -135,13 +135,14 @@ void wss_free(wss_t *s)
 	memset(s, 0, sizeof(wss_t));
 }
 
-int wss_render(vid_t *s, void *arg)
+int wss_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	wss_t *w = arg;
+	vid_line_t *l = lines[0];
 	int x;
 	
 	/* WSS is rendered on line 23 */
-	if(s->line != 23)
+	if(l->line != 23)
 	{
 		return(1);
 	}
@@ -157,12 +158,12 @@ int wss_render(vid_t *s, void *arg)
 	 * overlap active video */
 	for(x = s->half_width; x < w->blank_width; x++)
 	{
-		s->output[x * 2] = s->black_level;
+		l->output[x * 2] = s->black_level;
 	}
 	
-	vbidata_render_nrz(w->lut, w->vbi, -55, 137, VBIDATA_MSB_FIRST, s->output, 2);
+	vbidata_render_nrz(w->lut, w->vbi, -55, 137, VBIDATA_MSB_FIRST, l->output, 2);
 	
-	*s->vbialloc = 1;
+	l->vbialloc = 1;
 	
 	return(1);
 }

@@ -77,7 +77,7 @@ typedef struct {
 extern int ng_init(ng_t *s, vid_t *vs);
 extern void ng_free(ng_t *s);
 extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
-extern int ng_render_line(vid_t *s, void *arg);
+extern int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

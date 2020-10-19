@@ -291,35 +291,36 @@ void vits_free(vits_t *s)
 	memset(s, 0, sizeof(vits_t));
 }
 
-int vits_render(vid_t *s, void *arg)
+int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vits_t *v = arg;
 	int x, i = -1;
 	int16_t *lut_i;
+	vid_line_t *l = lines[0];
 	
 	if(v->lines == 625)
 	{
-		if(s->line == 17 || s->line == 18) i = s->line - 17;
-		else if(s->line == 330 || s->line == 331) i = s->line - 330 + 2;
+		if(l->line == 17 || l->line == 18) i = l->line - 17;
+		else if(l->line == 330 || l->line == 331) i = l->line - 330 + 2;
 	}
 	else if(v->lines == 525)
 	{
-		if(s->line == 17) i = s->line - 17;
-		else if(s->line == 280) i = s->line - 280 + 1;
+		if(l->line == 17) i = l->line - 17;
+		else if(l->line == 280) i = l->line - 280 + 1;
 	}
 	
 	if(i < 0) return(0);
 	if(!v->line[i]) return(0);
 	
-	vid_get_colour_subcarrier(s, s->frame, s->line, NULL, &lut_i, NULL);
+	vid_get_colour_subcarrier(s, l->frame, l->line, NULL, &lut_i, NULL);
 	
 	for(x = 0; x < s->width; x++)
 	{
-		s->output[x * 2] += v->line[i][x * 2 + 0];
-		s->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
+		l->output[x * 2] += v->line[i][x * 2 + 0];
+		l->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
 	}
 	
-	*s->vbialloc = 1;
+	l->vbialloc = 1;
 	
 	return(1);
 }

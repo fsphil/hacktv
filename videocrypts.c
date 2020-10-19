@@ -214,9 +214,6 @@ int vcs_init(vcs_t *s, vid_t *vid, const char *mode)
 		s->video_scale[x] = round(x * f);
 	}
 	
-	/* Allocate memory for the delay */
-	vid->olines += VCS_DELAY_LINES;
-	
 	return(VID_OK);
 }
 
@@ -225,20 +222,19 @@ void vcs_free(vcs_t *s)
 	/* Nothing */
 }
 
-int vcs_render_line(vid_t *s, void *arg)
+int vcs_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vcs_t *v = arg;
 	int x, j;
 	uint8_t *bline = NULL;
-	
-	vid_adj_delay(s, VCS_DELAY_LINES);
+	vid_line_t *l = lines[0];
 	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
 	j = 0;
 	
-	if((s->line >=  28 && s->line <= 309) ||
-	   (s->line >= 340 && s->line <= 621))
+	if((l->line >=  28 && l->line <= 309) ||
+	   (l->line >= 340 && l->line <= 621))
 	{
 		int block;
 		int bline;
@@ -247,7 +243,7 @@ int vcs_render_line(vid_t *s, void *arg)
 		 *   0 - 281 top field,
 		 * 282 - 563 bottom field
 		*/
-		x = s->line - (s->line < 340 ? 28 : 340 - 282);
+		x = l->line - (l->line < 340 ? 28 : 340 - 282);
 		
 		/* Calculate block number and block line */
 		block = x / 47;
@@ -268,21 +264,21 @@ int vcs_render_line(vid_t *s, void *arg)
 		bline = v->block[bline];
 		
 		/* Calculate position in delay buffer */
-		j = (_block_start[block] + bline) - s->line;
+		j = (_block_start[block] + bline) - l->line;
 		if(j < 0) j += s->conf.lines;
 	}
 	
 	if(j > 0)
 	{
-		int16_t *dline = s->oline[s->odelay + j];
+		int16_t *dline = lines[j]->output;
 		for(x = s->active_left * 2; x < s->width * 2; x += 2)
 		{
-			s->output[x] = dline[x];
+			l->output[x] = dline[x];
 		}
 	}
 	
 	/* On the first line of each frame, generate the VBI data */
-	if(s->line == 1)
+	if(l->line == 1)
 	{
 		uint8_t crc;
 		
@@ -336,17 +332,17 @@ int vcs_render_line(vid_t *s, void *arg)
 	}
 	
 	/* Set a pointer to the VBI data to render on this line, or NULL if none */
-	if(s->line >= VCS_VBI_FIELD_1_START &&
-	   s->line <  VCS_VBI_FIELD_1_START + VCS_VBI_LINES_PER_FIELD)
+	if(l->line >= VCS_VBI_FIELD_1_START &&
+	   l->line <  VCS_VBI_FIELD_1_START + VCS_VBI_LINES_PER_FIELD)
 	{
 		/* Top field VBI */
-		bline = &v->vbi[(s->line - VCS_VBI_FIELD_1_START) * VCS_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(l->line - VCS_VBI_FIELD_1_START) * VCS_VBI_BYTES_PER_LINE];
 	}
-	else if(s->line >= VCS_VBI_FIELD_2_START &&
-	        s->line <  VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD)
+	else if(l->line >= VCS_VBI_FIELD_2_START &&
+	        l->line <  VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD)
 	{
 		/* Bottom field VBI */
-		bline = &v->vbi[(s->line - VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD) * VCS_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(l->line - VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD) * VCS_VBI_BYTES_PER_LINE];
 	}
 	
 	if(bline)
@@ -356,7 +352,7 @@ int vcs_render_line(vid_t *s, void *arg)
 		/* Videocrypt S's VBI data sits in the active video area. Clear it first */
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
-			s->output[x * 2] = s->black_level;
+			l->output[x * 2] = s->black_level;
 		}
 		
 		x = v->video_scale[VCS_VBI_LEFT];
@@ -368,11 +364,11 @@ int vcs_render_line(vid_t *s, void *arg)
 			
 			for(; x < v->video_scale[VCS_VBI_LEFT + VCS_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->output[x * 2] = c;
+				l->output[x * 2] = c;
 			}
 		}
 		
-		*s->vbialloc = 1;
+		l->vbialloc = 1;
 	}
 	
 	return(1);

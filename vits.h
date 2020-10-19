@@ -30,7 +30,7 @@ typedef struct {
 extern int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int16_t level);
 extern void vits_free(vits_t *s);
 
-extern int vits_render(vid_t *s, void *arg);
+extern int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

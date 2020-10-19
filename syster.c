@@ -357,9 +357,6 @@ int ng_init(ng_t *s, vid_t *vid)
 	s->r = 0;
 	_update_field_order(s);
 	
-	/* Allocate memory for the delay */
-	vid->olines += NG_DELAY_LINES;
-	
 	/* Allocate memory for the audio inversion FIR filters */
 	s->firli = calloc(NTAPS * 2, sizeof(int16_t));
 	s->firlq = calloc(NTAPS * 2, sizeof(int16_t));
@@ -445,20 +442,16 @@ void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples)
 	}
 }
 
-int ng_render_line(vid_t *s, void *arg)
+int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	ng_t *n = arg;
 	int j = 0;
 	int x, f, i;
-	int line;
-	
-	/* Calculate which line is about to be transmitted due to the delay */
-	line = s->line - NG_DELAY_LINES;
-	if(line < 0) line += s->conf.lines;
+	vid_line_t *l = lines[0];
 	
 	/* Calculate the field and field line */
-	f = (line < NG_FIELD_2_START ? 1 : 2);
-	i = line - (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START);
+	f = (l->line < NG_FIELD_2_START ? 1 : 2);
+	i = l->line - (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START);
 	
 	if(i >= 0 && i < NG_LINES_PER_FIELD)
 	{
@@ -473,9 +466,9 @@ int ng_render_line(vid_t *s, void *arg)
 		/* Reinitialise the seeds if this is a new field */
 		if(i == 0)
 		{
-			int sf = s->frame % 50;
+			int sf = l->frame % 50;
 			
-			if((sf == 6 || sf == 31) && f == 2)
+			if((sf == 6 || sf == 31) && f == 1)
 			{
 				_prbs_reset(n, n->cw);
 			}
@@ -490,10 +483,10 @@ int ng_render_line(vid_t *s, void *arg)
 		
 		/* Calculate which line in the delay buffer to copy image data from */
 		j = (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START) + n->order[i];
-		if(j < line) j += s->conf.lines;
-		j -= line;
+		if(j < l->line) j += s->conf.lines;
+		j -= l->line;
 		
-		if(j < 0 || j >= NG_DELAY_LINES)
+		if(j < 0 || j >= nlines)
 		{
 			/* We should never get to this point */
 			fprintf(stderr, "*** Nagravision Syster scrambler is trying to read an invalid line ***\n");
@@ -501,13 +494,11 @@ int ng_render_line(vid_t *s, void *arg)
 		}
 	}
 	
-	vid_adj_delay(s, NG_DELAY_LINES);
-	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
 	if(j > 0)
 	{
-		int16_t *dline = s->oline[s->odelay + j];
+		int16_t *dline = lines[j]->output;
 		
 		/* For PAL the colour burst is not moved, just the active
 		 * video. For SECAM the entire line is moved. */
@@ -517,13 +508,14 @@ int ng_render_line(vid_t *s, void *arg)
 		
 		for(; x < s->width * 2; x += 2)
 		{
-			s->output[x] = dline[x];
+			l->output[x] = dline[x];
 		}
 	}
 	
 	/* Render the VBI data
 	 * These lines where used by Premiere */
-	if(line == 14 || line == 15 || line == 327 || line == 328)
+	if(l->line ==  14 || l->line ==  15 ||
+	   l->line == 327 || l->line == 328)
 	{
 		if(n->vbi_seq == 0)
 		{
@@ -533,10 +525,10 @@ int ng_render_line(vid_t *s, void *arg)
 			uint8_t msg2[NG_MSG_BYTES];
 			
 			/* Transmit the PPUA EMM every 1000 frames */
-			if(s->frame > n->next_ppua)
+			if(l->frame > n->next_ppua)
 			{
 				emm1 = _ppua_emm;
-				n->next_ppua = s->frame + 1000;
+				n->next_ppua = l->frame + 1000;
 			}
 			
 			/* Build part 1 of the VBI block */
@@ -572,8 +564,8 @@ int ng_render_line(vid_t *s, void *arg)
 		}
 		
 		/* Render the line */
-		vbidata_render_nrz(n->lut, n->vbi[n->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->output, 2);
-		*s->vbialloc = 1;
+		vbidata_render_nrz(n->lut, n->vbi[n->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l->output, 2);
+		l->vbialloc = 1;
 		
 		if(n->vbi_seq == 10)
 		{

@@ -486,14 +486,14 @@ static uint64_t _update_cw(eurocrypt_t *e, int t)
 	return(cw);
 }
 
-void eurocrypt_next_frame(vid_t *vid)
+void eurocrypt_next_frame(vid_t *vid, int frame)
 {
 	eurocrypt_t *e = &vid->mac.ec;
 	
 	/* Update the CW at the beginning of frames FCNT == 1 */
-	if((vid->frame & 0xFF) == 1)
+	if((frame & 0xFF) == 1)
 	{
-		int t = (vid->frame >> 8) & 1;
+		int t = (frame >> 8) & 1;
 		
 		/* Fetch and update next CW */
 		vid->mac.cw = _update_cw(e, t);
@@ -503,7 +503,7 @@ void eurocrypt_next_frame(vid_t *vid)
 	}
 	
 	/* Send an ECM packet every 12 frames - ~0.5s */
-	if(vid->frame % 12 == 0)
+	if(frame % 12 == 0)
 	{
 		mac_write_packet(vid, 0, e->ecm_addr, 0, e->ecm_pkt, 0);
 	}

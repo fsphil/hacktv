@@ -69,17 +69,18 @@ void acp_free(acp_t *s)
 	memset(s, 0, sizeof(acp_t));
 }
 
-int acp_render_line(vid_t *s, void *arg)
+int acp_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	acp_t *a = arg;
 	int i, x;
+	vid_line_t *l = lines[0];
 	
 	i = 0;
 	
-	if(s->line == 1)
+	if(l->line == 1)
 	{
 		/* Vary the AGC pulse level, clipped sawtooth waveform */
-		i = abs(s->frame * 4 % 1712 - 856) - 150;
+		i = abs(l->frame * 4 % 1712 - 856) - 150;
 		
 		if(i < 0) i = 0;
 		else if(i > 255) i = 255;
@@ -94,17 +95,17 @@ int acp_render_line(vid_t *s, void *arg)
 	if(s->conf.lines == 625)
 	{
 		/* For 625-line modes, ACP is rendered on lines 9-18 and 321-330 */
-		if(s->line >=   9 && s->line <=  18) i = 1;
-		if(s->line >= 321 && s->line <= 330) i = 1;
+		if(l->line >=   9 && l->line <=  18) i = 1;
+		if(l->line >= 321 && l->line <= 330) i = 1;
 	}
 	else
 	{
 		/* For 525-line modes, ACP is rendered on lines 12-19 and 275-282 */
-		if(s->line >=  12 && s->line <=  19) i = 1;
-		if(s->line >= 275 && s->line <= 282) i = 1;
+		if(l->line >=  12 && l->line <=  19) i = 1;
+		if(l->line >= 275 && l->line <= 282) i = 1;
 	}
 	
-	if(i == 0 || *s->vbialloc) return(1);
+	if(i == 0 || l->vbialloc) return(1);
 	
 	/* Render the P-Sync / AGC pulse pairs */
 	for(i = 0; i < 6; i++)
@@ -112,17 +113,17 @@ int acp_render_line(vid_t *s, void *arg)
 		/* Render the P-Sync pulse */
 		for(x = a->left[i]; x < a->left[i] + a->psync_width; x++)
 		{
-			s->output[x * 2] = a->psync_level;
+			l->output[x * 2] = a->psync_level;
 		}
 		
 		/* Render the AGC pulse */
 		for(; x < a->left[i] + a->psync_width + a->pagc_width; x++)
 		{
-			s->output[x * 2] = a->pagc_level;
+			l->output[x * 2] = a->pagc_level;
 		}
 	}
 	
-	*s->vbialloc = 1;
+	l->vbialloc = 1;
 	
 	return(1);
 }

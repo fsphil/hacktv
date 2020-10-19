@@ -36,8 +36,8 @@
 #define VC_LEFT                120
 #define VC_RIGHT               (VC_LEFT + 710)
 #define VC_OVERLAP             15
-#define VC_FIELD_1_START       24
-#define VC_FIELD_2_START       336
+#define VC_FIELD_1_START       23
+#define VC_FIELD_2_START       335
 #define VC_LINES_PER_FIELD     287
 #define VC_LINES_PER_FRAME     (VC_LINES_PER_FIELD * 2)
 
@@ -91,7 +91,7 @@ typedef struct {
 
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);
 extern void vc_free(vc_t *s);
-extern int vc_render_line(vid_t *s, void *arg);
+extern int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

@@ -23,6 +23,7 @@
 #include "dance.h"
 #include "fir.h"
 
+typedef struct vid_line_t vid_line_t;
 typedef struct vid_t vid_t;
 
 #include "mac.h"
@@ -218,7 +219,24 @@ typedef struct {
 	int16_t q;
 } _yiq16_t;
 
-typedef int (*vid_lineprocess_process_t)(vid_t *s, void *arg);
+struct vid_line_t {
+	
+	/* The output line buffer */
+	int16_t *output;
+	
+	/* Frame and line number */
+	int frame;
+	int line;
+	
+	/* Status */
+	int vbialloc;
+	
+	/* Pointer the next line */
+	vid_line_t *next;
+};
+
+/* Line process function prototypes */
+typedef int (*vid_lineprocess_process_t)(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 typedef void (*vid_lineprocess_free_t)(vid_t *s, void *arg);
 typedef struct _lineprocess_t _lineprocess_t;
 
@@ -226,6 +244,10 @@ struct _lineprocess_t {
 	
 	/* A simple identifier for this process */
 	char name[16];
+	
+	/* Line window */
+	int nlines;
+	vid_line_t **lines;
 	
 	/* Process callbacks */
 	vid_lineprocess_process_t process;
@@ -344,18 +366,13 @@ struct vid_t {
 	mac_t mac;
 	
 	/* Output line(s) buffer */
-	int olines;		/* The number of lines */
-	int16_t **oline;	/* Pointer to each line */
-	int16_t *output;	/* Pointer to the current line */
-	int odelay;		/* Index of the current line */
-	
-	/* VBI line allocation flag */
-	int *vbialloclist;
-	int *vbialloc;
+	int olines;
+	vid_line_t *oline;
 	
 	/* Line processes */
 	int nprocesses;
 	_lineprocess_t *processes;
+	_lineprocess_t *output_process;
 };
 
 extern const vid_configs_t vid_configs[];
@@ -366,7 +383,6 @@ extern void vid_get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **p
 extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
-extern int16_t *vid_adj_delay(vid_t *s, int lines);
 extern int16_t *vid_next_line(vid_t *s, size_t *samples);
 
 #endif

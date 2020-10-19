@@ -133,7 +133,7 @@ static int _duobinary(vid_t *s, int bit)
 	return(0);
 }
 
-static void _render_duobinary(vid_t *s, uint8_t *data, int nbits)
+static void _render_duobinary(vid_t *s, vid_line_t **lines, uint8_t *data, int nbits)
 {
 	const int16_t *taps;
 	int symbol;
@@ -153,12 +153,12 @@ static void _render_duobinary(vid_t *s, uint8_t *data, int nbits)
 		/* 0 bits don't need to be rendered */
 		if(!symbol) continue;
 		
-		l = 0;
+		l = 1;
 		xo = *taps;
 		
 		if(xo < 0)
 		{
-			l = -1;
+			l = 0;
 			xo += s->width;
 		}
 		
@@ -172,13 +172,13 @@ static void _render_duobinary(vid_t *s, uint8_t *data, int nbits)
 				l++;
 			}
 			
-			t = s->oline[s->odelay + l][xo * 2] + (symbol == 1 ? taps[x] : -taps[x]);
+			t = lines[l]->output[xo * 2] + (symbol == 1 ? taps[x] : -taps[x]);
 			
 			/* Don't let the duobinary signal clip */
 			if(t < INT16_MIN) t = INT16_MIN;
 			else if(t > INT16_MAX) t = INT16_MAX;
 			
-			s->oline[s->odelay + l][xo * 2] = t;
+			lines[l]->output[xo * 2] = t;
 		}
 	}
 }
@@ -834,7 +834,6 @@ int mac_init(vid_t *s)
 	mac_t *mac = &s->mac;
 	int i, x;
 	
-	s->olines += 2; /* Increase the output buffer to three lines */
 	s->audio = 1; /* MAC always has audio */
 	
 	memset(mac, 0, sizeof(mac_t));
@@ -991,9 +990,9 @@ static uint8_t _hsync_word(int frame, int line)
 	return(hsync ? MAC_LSW : ~MAC_LSW);
 }
 
-static int _line(vid_t *s, uint8_t *data, int x)
+static int _line(vid_t *s, int frame, int line, uint8_t *data, int x)
 {
-	uint16_t poly = s->mac.prbs[s->line - 1];
+	uint16_t poly = s->mac.prbs[line - 1];
 	uint64_t sr5 = 0;
 	int i, c;
 	
@@ -1009,7 +1008,7 @@ static int _line(vid_t *s, uint8_t *data, int x)
 			{
 				_mac_packet_queue_item_t pkt;
 				
-				if(s->line == 623)
+				if(line == 623)
 				{
 					/* Line 623 contains only the last 4 bits
 					 * of packet 82. The remainder is empty */
@@ -1057,7 +1056,7 @@ static int _line(vid_t *s, uint8_t *data, int x)
 	return(x);
 }
 
-static int _line_624(vid_t *s, uint8_t *data, int x)
+static int _line_624(vid_t *s, int frame, int line, uint8_t *data, int x)
 {
 	if(s->conf.mac_mode == MAC_MODE_D2)
 	{
@@ -1079,9 +1078,9 @@ static int _line_624(vid_t *s, uint8_t *data, int x)
 	return(x);
 }
 
-static int _line_625(vid_t *s, uint8_t *data, int x)
+static int _line_625(vid_t *s, int frame, int line, uint8_t *data, int x)
 {
-	uint16_t poly = s->mac.prbs[s->line - 1];
+	uint16_t poly = s->mac.prbs[line - 1];
 	uint16_t b;
 	uint8_t df[16];
 	uint8_t il[69];
@@ -1090,11 +1089,11 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	int i;
 	
 	/* The clock run-in and frame sync word (transmitted MSB first) */
-	x = _rbits(data, x, s->frame & 1 ? MAC_CRI : ~MAC_CRI, 32);
-	x = _rbits(data, x, s->frame & 1 ? MAC_FSW : ~MAC_FSW, 64);
+	x = _rbits(data, x, frame & 1 ? MAC_CRI : ~MAC_CRI, 32);
+	x = _rbits(data, x, frame & 1 ? MAC_FSW : ~MAC_FSW, 64);
 	
 	/* UDT (transmitted MSB first) */
-	ix = _rbits(il, 0, s->mac.udt[s->frame % 25], 5);
+	ix = _rbits(il, 0, s->mac.udt[frame % 25], 5);
 	
 	/* SDF */
 	dx = _bits(df,  0, s->conf.chid, 16);  /* CHID Satellite channel identification */
@@ -1114,7 +1113,7 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	b |= 1 << 0;      /* Video configuration: 0: no or incompatible video, 1: compatible video */
 	dx = _bits(df, dx, b, 8);
 	
-	dx = _bits(df, dx, (s->frame >> 8) & 0xFFFFF, 20); /* CAFCNT Conditional access frame count */
+	dx = _bits(df, dx, (frame >> 8) & 0xFFFFF, 20);    /* CAFCNT Conditional access frame count */
 	dx = _bits(df, dx, 1, 1);                          /* Rp Repacement */
 	dx = _bits(df, dx, 1, 1);                          /* Fp Fingerprint */
 	dx = _bits(df, dx, 3, 2);                          /* Unallocated, both bits set to 1 */
@@ -1125,7 +1124,7 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	
 	/* RDF */
 	rdf = (s->conf.mac_mode == MAC_MODE_D2 ? _rdf_d2 : _rdf_d);
-	dx = _bits(df,  0, s->frame & 0xFF, 8);			/* FCNT (8 bits) */
+	dx = _bits(df,  0, frame & 0xFF, 8);			/* FCNT (8 bits) */
 	dx = _bits(df, dx, 0, 1);				/* UDF (1 bit) */
 	dx = _bits(df, dx, rdf[s->mac.rdf].tdmcid, 8);		/* TDMCID (8 bits) */
 	dx = _bits(df, dx, rdf[s->mac.rdf].fln1, 10);		/* FLN1 (10 bits) */
@@ -1172,21 +1171,21 @@ static int _line_625(vid_t *s, uint8_t *data, int x)
 	return(x);
 }
 
-static int _vbi_teletext(vid_t *s, uint8_t *data)
+static int _vbi_teletext(vid_t *s, uint8_t *data, int frame, int line)
 {
-	uint16_t poly = s->mac.prbs[s->line - 1];
+	uint16_t poly = s->mac.prbs[line - 1];
 	uint8_t vbi[45];
 	int x, i;
 	
-	if(!((s->line >= 1 && s->line <= 22) ||
-	     (s->line >= 313 && s->line <= 334)))
+	if(!((line >=   1 && line <=  22) ||
+	     (line >= 313 && line <= 334)))
 	{
 		/* Not a teletext line */
 		return(-1);
 	}
 	
 	/* Fetch the next teletext packet */
-	i = tt_next_packet(&s->tt, vbi);
+	i = tt_next_packet(&s->tt, vbi, frame, line);
 	
 	if(i != TT_OK)
 	{
@@ -1220,7 +1219,7 @@ static int _vbi_teletext(vid_t *s, uint8_t *data)
 	return(0);
 }
 
-static void _rotate(vid_t *s, int x1, int x2, int xc)
+static void _rotate(vid_t *s, int16_t *output, int x1, int x2, int xc)
 {
 	int x;
 	
@@ -1228,41 +1227,43 @@ static void _rotate(vid_t *s, int x1, int x2, int xc)
 	
 	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
-		s->output[x * 2 + 1] = s->output[xc++ * 2];
+		output[x * 2 + 1] = output[xc++ * 2];
 		if(xc > s->mac.video_scale[x2]) xc = s->mac.video_scale[x1];
 	}
 	
 	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
 	{
-		s->output[x * 2] = s->output[x * 2 + 1];
+		output[x * 2] = output[x * 2 + 1];
 	}
 }
 
-int mac_next_line(vid_t *s, void *arg)
+int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	uint8_t data[MAC_LINE_BYTES];
+	vid_line_t *l = lines[1];
 	int x, y;
+	
+	l->frame    = s->bframe;
+	l->line     = s->bline;
+	l->vbialloc = 0;
 	
 	/* Blank the +1 line */
 	for(x = 0; x < s->width; x++)
 	{
-		s->output[x * 2] = s->blanking_level;
+		lines[2]->output[x * 2] = s->blanking_level;
 	}
 	
-	/* Move to the 0 line */
-	vid_adj_delay(s, 1);
-	
-	if(s->line == 1 && s->mac.eurocrypt)
+	if(l->line == 1 && s->mac.eurocrypt)
 	{
-		eurocrypt_next_frame(s);
+		eurocrypt_next_frame(s, l->frame);
 	}
 	
-	if(s->line == 1)
+	if(l->line == 1)
 	{
 		uint8_t pkt[MAC_PACKET_BYTES];
 		
 		/* Reset PRBS for packet scrambling */
-		_prbs1_reset(&s->mac, s->frame - 1);
+		_prbs1_reset(&s->mac, l->frame - 1);
 		
 		/* Update the aspect ratio flag */
 		s->mac.ratio = (s->ratio <= (14.0 / 9.0) ? 0 : 1);
@@ -1270,7 +1271,7 @@ int mac_next_line(vid_t *s, void *arg)
 		/* Push a service information packet at the start of each new
 		 * frame. Alternates between DG0 and DG3 each frame. DG0 is
 		 * added to both subframes for D-MAC */
-		switch(s->frame & 1)
+		switch(l->frame & 1)
 		{
 		case 0: /* Write DG0 to 1st and 2nd subframes */
 			
@@ -1294,7 +1295,7 @@ int mac_next_line(vid_t *s, void *arg)
 		}
 		
 		/* Update the UDT date and time every 25 frames */
-		if(s->frame % 25 == 0)
+		if(l->frame % 25 == 0)
 		{
 			_update_udt(s->mac.udt, time(NULL));
 		}
@@ -1312,77 +1313,77 @@ int mac_next_line(vid_t *s, void *arg)
 	}
 	
 	/* Apply the line sync word (transmitted MSB first) */
-	x = _rbits(data, x, _hsync_word(s->frame, s->line), 6);
+	x = _rbits(data, x, _hsync_word(l->frame, l->line), 6);
 	
 	/* Apply the remainder of the line */
-	if(s->line == 625)
+	if(l->line == 625)
 	{
-		x = _line_625(s, data, x);
+		x = _line_625(s, l->frame, l->line, data, x);
 	}
-	else if(s->line == 624)
+	else if(l->line == 624)
 	{
-		x = _line_624(s, data, x);
+		x = _line_624(s, l->frame, l->line, data, x);
 	}
 	else
 	{
-		x = _line(s, data, x);
+		x = _line(s, l->frame, l->line, data, x);
 	}
 	
 	/* Generate the teletext data, if enabled */
 	if(s->conf.teletext)
 	{
-		_vbi_teletext(s, data);
+		_vbi_teletext(s, data, l->frame, l->line);
 	}
 	
 	/* Render the duobinary into the line */
-	_render_duobinary(s, data, (s->conf.mac_mode == MAC_MODE_D2 ? 648 : 1296));
+	_render_duobinary(s, lines, data, (s->conf.mac_mode == MAC_MODE_D2 ? 648 : 1296));
 	
 	/* Flatten the clamping areas */
-	/*if(s->line <= 624)
+	/*if(l->line <= 624)
 	{
 		for(x = s->mac.video_scale[207]; x < s->mac.video_scale[207 + 20]; x++)
 		{
-			s->output[x * 2] = s->blanking_level;
+			l->output[x * 2] = s->blanking_level;
 		}
 	}*/
 	
 	/* Lines 23 and 335 have a black luminance reference area */
-	if(s->line == 23 || s->line == 335)
+	if(l->line == 23 || l->line == 335)
 	{
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
-			s->output[x * 2] = s->black_level;
+			l->output[x * 2] = s->black_level;
 		}
 	}
 	
 	/* Line 624 has grey, black and white reference areas */
-	if(s->line == 624)
+	if(l->line == 624)
 	{
 		/* White */
 		for(x = s->mac.white_ref_left; x < s->mac.black_ref_left; x++)
 		{
-			s->output[x * 2] = s->white_level;
+			l->output[x * 2] = s->white_level;
 		}
 		
 		/* Black */
 		for(; x < s->mac.black_ref_right; x++)
 		{
-			s->output[x * 2] = s->black_level;
+			l->output[x * 2] = s->black_level;
 		}
 	}
 	
 	/* Render the luminance */
 	y = -1;
 	
-	if(s->line >= 24 && s->line <= 310)
+	if(l->line >= 24 && l->line <= 310)
 	{
 		/* Top field */
-		y = (s->line - 24) * 2 + 2;
+		y = (l->line - 24) * 2 + 2;
 	}
-	else if(s->line >= 336 && s->line <= 622)
+	else if(l->line >= 336 && l->line <= 622)
 	{
 		/* Bottom field */
-		y = (s->line - 336) * 2 + 1;
+		y = (l->line - 336) * 2 + 1;
 	}
 	
 	/* Render the luminance */
@@ -1393,12 +1394,12 @@ int mac_next_line(vid_t *s, void *arg)
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
 			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
-			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
+			l->output[x * 2] = s->yiq_level_lookup[rgb].y;
 		}
 	}
 	
 	/* Render the chrominance (one line ahead of the luminance) */
-	vid_adj_delay(s, 1);
+	l = lines[0];
 	
 	if(y >= 0)
 	{
@@ -1407,7 +1408,7 @@ int mac_next_line(vid_t *s, void *arg)
 		for(x = s->mac.chrominance_left; x < s->mac.chrominance_left + s->mac.chrominance_width; x++)
 		{
 			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
-			s->output[x * 2] += (s->line & 1 ? s->yiq_level_lookup[rgb].q : s->yiq_level_lookup[rgb].i);
+			l->output[x * 2] += (l->line & 1 ? s->yiq_level_lookup[rgb].q : s->yiq_level_lookup[rgb].i);
 			if(px != NULL) px++;
 		}
 	}
@@ -1418,9 +1419,9 @@ int mac_next_line(vid_t *s, void *arg)
 		uint16_t prbs;
 		
 		/* Reset CA PRBS2 at the beginning of each frame */
-		if(s->line == 1)
+		if(l->line == 1)
 		{
-			_prbs2_reset(&s->mac, s->frame - 1);
+			_prbs2_reset(&s->mac, l->frame - 1);
 		}
 		
 		/* Fetch the next CA PRBS2 code */
@@ -1431,13 +1432,13 @@ int mac_next_line(vid_t *s, void *arg)
 			if((s->mac.vsam & 2) == 0)
 			{
 				/* Double Cut rotation */
-				_rotate(s, 229,  580, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
-				_rotate(s, 586, 1285, 682 + ((prbs & 0x00FF) << 1)); /* Luminance */
+				_rotate(s, l->output, 229,  580, 282 + ((prbs & 0xFF00) >> 8)); /* Colour-diff */
+				_rotate(s, l->output, 586, 1285, 682 + ((prbs & 0x00FF) << 1)); /* Luminance */
 			}
 			else
 			{
 				/* Single Cut rotation */
-				_rotate(s, 230, 1285, 282 + ((prbs & 0xFF00) >> 8));
+				_rotate(s, l->output, 230, 1285, 282 + ((prbs & 0xFF00) >> 8));
 			}
 		}
 	}

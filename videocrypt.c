@@ -262,9 +262,6 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		s->video_scale[x] = round((l + x) * f);
 	}
 	
-	/* Add one delay line */
-	vid->olines += 1;
-	
 	return(VID_OK);
 }
 
@@ -273,14 +270,15 @@ void vc_free(vc_t *s)
 	/* Nothing */
 }
 
-int vc_render_line(vid_t *s, void *arg)
+int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vc_t *v = arg;
 	int x;
 	const uint8_t *bline = NULL;
+	vid_line_t *l = lines[0];
 	
 	/* On the first line of each frame, generate the VBI data */
-	if(s->line == 1)
+	if(l->line == 1)
 	{
 		uint64_t iw;
 		uint8_t crc;
@@ -396,32 +394,32 @@ int vc_render_line(vid_t *s, void *arg)
 	
 	/* Calculate VBI line, or < 0 if not */
 	if(v->blocks &&
-	   s->line >= VC_VBI_FIELD_1_START &&
-	   s->line < VC_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
+	   l->line >= VC_VBI_FIELD_1_START &&
+	   l->line < VC_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Top VBI field */
-		bline = &v->vbi[(s->line - VC_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(l->line - VC_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
 	}
 	else if(v->blocks &&
-	        s->line >= VC_VBI_FIELD_2_START &&
-	        s->line < VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
+	        l->line >= VC_VBI_FIELD_2_START &&
+	        l->line < VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Bottom VBI field */
-		bline = &v->vbi[(s->line - VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(l->line - VC_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
 	}
 	else if(v->blocks2 &&
-	        s->line >= VC2_VBI_FIELD_1_START &&
-	        s->line < VC2_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
+	        l->line >= VC2_VBI_FIELD_1_START &&
+	        l->line < VC2_VBI_FIELD_1_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Top VBI field VC2 */
-		bline = &v->vbi2[(s->line - VC2_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi2[(l->line - VC2_VBI_FIELD_1_START) * VC_VBI_BYTES_PER_LINE];
 	}
 	else if(v->blocks2 &&
-	        s->line >= VC2_VBI_FIELD_2_START &&
-	        s->line < VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
+	        l->line >= VC2_VBI_FIELD_2_START &&
+	        l->line < VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD)
 	{
 		/* Bottom VBI field VC2 */
-		bline = &v->vbi2[(s->line - VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
+		bline = &v->vbi2[(l->line - VC2_VBI_FIELD_2_START + VC_VBI_LINES_PER_FIELD) * VC_VBI_BYTES_PER_LINE];
 	}
 	
 	/* Render the VBI line if necessary */
@@ -438,18 +436,18 @@ int vc_render_line(vid_t *s, void *arg)
 			
 			for(; x < v->video_scale[VC_VBI_LEFT + VC_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->output[x * 2] = c;
+				l->output[x * 2] = c;
 			}
 		}
 		
-		*s->vbialloc = 1;
+		l->vbialloc = 1;
 	}
 	
 	/* Scramble the line if necessary */
 	x = -1;
 	
-	if((s->line >= VC_FIELD_1_START && s->line < VC_FIELD_1_START + VC_LINES_PER_FIELD) ||
-	   (s->line >= VC_FIELD_2_START && s->line < VC_FIELD_2_START + VC_LINES_PER_FIELD))
+	if((l->line >= VC_FIELD_1_START && l->line < VC_FIELD_1_START + VC_LINES_PER_FIELD) ||
+	   (l->line >= VC_FIELD_2_START && l->line < VC_FIELD_2_START + VC_LINES_PER_FIELD))
 	{
 		int i;
 		
@@ -473,21 +471,21 @@ int vc_render_line(vid_t *s, void *arg)
 		
 		/* Line 336 is scrambled into line 335, a VBI line. Mark it
 		 * as allocated to prevent teletext data appearing there */
-		if(s->line == 336)
+		if(l->line == 335)
 		{
-			s->vbialloclist[s->odelay - 1] = 1;
+			l->vbialloc = 1;
 		}
 	}
 	
 	/* Hack to preserve WSS signal data */
-	if(s->line == 24) x = -1;
+	if(l->line == 24) x = -1;
 	
 	if(x != -1)
 	{
 		int cut;
 		int lshift;
 		int y;
-		int16_t *delay = s->oline[s->odelay - 1];
+		int16_t *delay = lines[1]->output;
 		
 		cut = 105 + (0xFF - x) * 2;
 		lshift = 710 - cut;
@@ -495,17 +493,15 @@ int vc_render_line(vid_t *s, void *arg)
 		y = v->video_scale[VC_LEFT + lshift];
 		for(x = v->video_scale[VC_LEFT]; x < v->video_scale[VC_LEFT + cut]; x++, y++)
 		{
-			delay[x * 2] = s->output[y * 2];
+			l->output[x * 2] = delay[y * 2];
 		}
 		
 		y = v->video_scale[VC_LEFT];
 		for(; x < v->video_scale[VC_RIGHT + VC_OVERLAP]; x++, y++)
 		{
-			delay[x * 2] = s->output[y * 2];
+			l->output[x * 2] = delay[y * 2];
 		}
 	}
-	
-	vid_adj_delay(s, 1);
 	
 	return(1);
 }
