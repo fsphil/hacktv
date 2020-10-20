@@ -2725,16 +2725,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
 	
-	/* Calculate the "actual" sample rate we use. This is calculated
-	 * to give us an exact number of samples per line */
-	//s->sample_rate = s->width * s->conf.lines * s->conf.frame_rate;
-	// This won't work with NTSC
-	
-	//if(s->sample_rate != sample_rate)
-	//{
-	//	fprintf(stderr, "Sample rate error %0.2f%%\n", (double) s->sample_rate / sample_rate * 100);
-	//}
-	
 	s->sample_rate = sample_rate;
 	
 	/* Calculate the active video width and offset */
