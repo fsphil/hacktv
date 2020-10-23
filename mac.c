@@ -631,6 +631,17 @@ static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
 	pkt[x++] = (b & 0x00FF) >> 0;	/* TV config LSB */
 	pkt[x++] = (b & 0xFF00) >> 8;	/* TV config MSB */
 	
+	/* Parameter LISTX (OTA - for EMMs) */
+	pkt[x++] = 0x18;				/* PI LISTX (List of index values) */
+	pkt[x++] = 0x04;				/* LI Length (4 bytes) */
+	pkt[x++] = 0x04;				/* Over-air addressing service */
+	pkt[x++] = 0x01;				/* Index value 1 */
+	b  = 4 << 12;					/* Over-air addressing, detailed description = DG4 */
+	b |= 1 << 10;					/* Subframe identification, TDMCID = 01 */
+	b |= s->ec.emm_addr;			/* Packet address of EMM */
+	pkt[x++] = (b & 0x00FF) >> 0;	/* OTA config LSB */
+	pkt[x++] = (b & 0xFF00) >> 8;	/* OTA config MSB */
+	
 	/* Update the CI command length */
 	pkt[10] = x - pkt[10];
 	
@@ -755,6 +766,75 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	if(x > 45 - 2)
 	{
 		fprintf(stderr, "SI DG3 packet overflow (%d/43 bytes)\n", x);
+	}
+	
+	/* Generate the overall packet CRC (excludes PT and CRC) */
+	x = MAC_PAYLOAD_BYTES;
+	b = _crc16(&pkt[1], x - 3);
+	pkt[x - 2] = (b & 0x00FF) >> 0;
+	pkt[x - 1] = (b & 0xFF00) >> 8;
+}
+
+static void _create_si_dg4_packet(mac_t *s, uint8_t *pkt)
+{
+	int x;
+	uint16_t b;
+	
+	memset(pkt, 0, MAC_PAYLOAD_BYTES);
+	
+	/* PT Packet Type */
+	pkt[0] = 0xF8;
+	
+	/* DGH (Data Group Header) */
+	pkt[1] = _hamming[4];           /* TG data group type */
+	pkt[2] = _hamming[0];           /* C  data group continuity */
+	pkt[3] = _hamming[15];          /* R  data group repetition */
+	pkt[4] = _hamming[0];           /* S1 MSB number of packets carrying the data group */
+	pkt[5] = _hamming[1];           /* S2 LSB number of packets carrying the data group */
+	pkt[6] = _hamming[0];           /* F1 MSB number of data group bytes in the last packet */
+	pkt[7] = _hamming[0];           /* F2 LSB number of data group bytes in the last packet */
+	pkt[8] = _hamming[1];           /* N  data group suffix indicator */
+	
+	pkt[9]  = 0xC0;                 /* OTA Command (Medium Priority) */
+	pkt[10] = 11;                   /* LI Length (bytes, everything following up until the DGS) */
+	x = 11;
+	
+	/* Parameter SREF */
+	pkt[x++] = 0x40;		/* PI Service Reference */
+	pkt[x++] = 1 + strlen(_sname);	/* LI Length */
+	pkt[x++] = 1;			/* Index value 1 */
+	strcpy((char *) &pkt[x], _sname);
+	x += strlen(_sname);
+	
+	/* Parameter ACMM */
+	if(s->eurocrypt && s->ec.emmode->id != NULL)
+	{
+		pkt[x++] = 0x78;
+		pkt[x++] = 0x03;        /* Packet length = 3 */
+		b  = 1 << 10;           /* Subframe related location - TDMCID 01 */
+		b |= s->ec.emm_addr;    /* Address 347 */
+		pkt[x++] = (b & 0x00FF) >> 0;
+		pkt[x++] = (b & 0xFF00) >> 8;
+		pkt[x++] = 0x40;        /* Eurocrypt */
+	}
+	
+	/* Update the CI command length */
+	pkt[10] = x - pkt[10];
+	
+	/* Generate the DGS CRC */
+	b = _crc16(&pkt[9], pkt[10] + 2);
+	pkt[x++] = (b & 0x00FF) >> 0;
+	pkt[x++] = (b & 0xFF00) >> 8;
+	
+	/* Update the DGH length */
+	x -= 1;
+	pkt[6] = _hamming[(x & 0xF0) >> 4];
+	pkt[7] = _hamming[(x & 0x0F) >> 0];
+	
+	/* Test if the data is too large for a single packet */
+	if(x > 45 - 2)
+	{
+		fprintf(stderr, "SI DG4 packet overflow (%d/43 bytes)\n", x);
 	}
 	
 	/* Generate the overall packet CRC (excludes PT and CRC) */
@@ -1270,7 +1350,7 @@ void mac_next_line(vid_t *s)
 		/* Push a service information packet at the start of each new
 		 * frame. Alternates between DG0 and DG3 each frame. DG0 is
 		 * added to both subframes for D-MAC */
-		switch(s->frame & 1)
+		switch(s->frame % 3)
 		{
 		case 0: /* Write DG0 to 1st and 2nd subframes */
 			
@@ -1290,6 +1370,12 @@ void mac_next_line(vid_t *s)
 			_create_si_dg3_packet(&s->mac, pkt);
 			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
 			
+			break;
+			
+		case 2: /* Write DG4 to 1st subframe */
+			
+			_create_si_dg4_packet(&s->mac, pkt);
+			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
 			break;
 		}
 		

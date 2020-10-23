@@ -6,7 +6,14 @@ warrant inclusions into original source.
 
 I will try and keep this as up to date as possible with official releases.
 
-**All credit for original code goes to author.**
+**All credit for original code goes to author (fsphil)**
+
+2020-10-23:
+A few changes to Eurocrypt, including the addition of EMMs for Eurocrypt-M. 
+
+To test it, program your card with the newly supplied Multimac PIC files
+and run hacktv using Eurocrypt mode "tv3update". The card will update 
+within 30 seconds.
 
 2020-08-05:
 Added HTB+ Russia for Syster

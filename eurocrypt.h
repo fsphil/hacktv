@@ -19,6 +19,12 @@
 #ifndef _EUROCRYPT_H
 #define _EUROCRYPT_H
 
+#define ECM_PAYLOAD_BYTES 45
+#define EMMU 0x00
+#define EMMS 0xF8
+#define EMMC 0xC7
+#define EMMG 0x3F
+
 typedef struct {
 	const char *id;   /* Mode id */
 	int emode;        /* Eurocrypt M or S2 mode */
@@ -28,8 +34,17 @@ typedef struct {
 } ec_mode_t;
 
 typedef struct {
+	const char *id;   /* Mode id */
+	int emode;        /* Eurocrypt M or S2 mode */
+	uint8_t key[7];   /* Decryption key */
+	uint8_t ppid[3];  /* Programme provider identifier */
+	uint8_t sa[3];    /* Shared Address */
+} em_mode_t;
+
+typedef struct {
 	
 	const ec_mode_t *mode;
+	const em_mode_t *emmode;
 	
 	/* Encrypted even and odd control words */
 	uint8_t ecw[2][8];
@@ -37,9 +52,22 @@ typedef struct {
 	/* Decrypted even and odd control words */
 	uint8_t cw[2][8];
 	
+	/* Hash */
+	uint8_t ecm_hash[8];
+	uint8_t emm_hash[8];
+	
 	/* ECM packet */
 	int ecm_addr;
-	uint8_t ecm_pkt[MAC_PAYLOAD_BYTES];
+	uint8_t ecm_pkt[MAC_PAYLOAD_BYTES * 2];
+	
+	/* Packet continuities */
+	int ecm_cont;
+	int emm_cont;
+	
+	/* EMM packet */
+	int emm_addr;
+	uint8_t emms_pkt[MAC_PAYLOAD_BYTES];
+	uint8_t emmg_pkt[MAC_PAYLOAD_BYTES * 2];
 	
 } eurocrypt_t;
 

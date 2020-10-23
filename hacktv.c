@@ -353,6 +353,8 @@ static void print_usage(void)
 		"  tvs         = (S) A valid TVS (Denmark) card is required to decode.\n"
 		"  rdv         = (S) A valid RDV card is required to decode.\n"
 		"  nrk         = (S) A valid NRK card is required to decode.\n"
+		"  cplus       = (3DES) A valid Canal+ Nordic card is required to decode.\n"
+		"  tv3update   = (M) Autoupdate mode with included PIC/EEPROM files.\n"
 		"\n"
 		"MultiMac style cards can also be used.\n"
 		"\n"
