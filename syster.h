@@ -63,12 +63,13 @@ typedef struct {
 	data[3] = ??
 	data[4] = date
 	data[5] = date
-	data[6] = ??
-	data[7] = ??
+	data[6] = PPV date
+	data[7] = PPV date
 	*/
 	
 	char *date;			/* Broadcast date */
 	int vbioffset;		/* VBI offset */
+	int t;				/* Key table to use */
 } ng_mode_t;
 
 typedef struct {
@@ -81,6 +82,10 @@ typedef struct {
 	ng_ecm_t *blocks;
 	ng_mode_t *mode;
 	int id;
+	
+	/* Permute tables */
+	const uint8_t *table;
+	int t;
 
 	/* VBI */
 	int16_t *lut;
@@ -122,10 +127,10 @@ typedef struct {
 extern int ng_init(ng_t *s, vid_t *vs, char *mode);
 extern void ng_free(ng_t *s);
 extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
-extern void ng_render_line(ng_t *s);
+extern int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 extern int d11_init(ng_t *s, vid_t *vid, char *mode);
-extern void d11_render_line(ng_t *s);
+extern int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 extern int smartcrypt_init(ng_t *s, vid_t *vid, char *mode);
-extern void smartcrypt_render_line(ng_t *s);
+extern int smartcrypt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif

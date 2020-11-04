@@ -72,13 +72,13 @@
 
 /* ECM data table */
 static ng_mode_t _ng_modes[] = {
-	{ "premiere-fa", { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0xFF, 0xFF, 0x00, 0x00 }, "01/01/1999",  0 },
-	{ "premiere-ca", { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34 }, { 0x7F, 0x01, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00 }, "01/01/1999",  0 },
-	{ "cplfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x05, 0x11, 0x00, 0x88, 0x15, 0x00, 0x00 }, "01/01/1997", -4 },
-	{ "cfrca",       { 0x00, 0xAE, 0x52, 0x90, 0x49, 0xF1, 0xF1, 0xBB }, { 0xFF, 0x01, 0x01, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
-	{ "cfrfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
-	{ "cesfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -4 },
-	{ "ntvfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x08, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00 }, "01/01/1997",  1 }, /* HTB+ Russia */
+	{ "premiere-fa", { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0xFF, 0xFF, 0x00, 0x00 }, "01/01/1999",  0, 1 },
+	{ "premiere-ca", { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34 }, { 0x7F, 0x01, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00 }, "01/01/1999",  0, 1 },
+	{ "cplfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x05, 0x11, 0x00, 0x88, 0x15, 0x00, 0x00 }, "01/01/1997", -4, 1 },
+	{ "cfrca",       { 0x00, 0xAE, 0x52, 0x90, 0x49, 0xF1, 0xF1, 0xBB }, { 0xFF, 0x01, 0x01, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1, 2 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
+	{ "cfrfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0xFF, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -1, 2 }, /* VBI offset: -1 = old Canal+ France keys (white), -3 = new Canal+ France keys (grey) */
+	{ "cesfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x01, 0x11, 0x00, 0x7B, 0x0A, 0x00, 0x00 }, "01/01/1997", -4, 1 },
+	{ "ntvfa",       { 0xC4, 0xA5, 0xA8, 0x18, 0x74, 0x93, 0xC7, 0x65 }, { 0x80, 0x08, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00 }, "01/01/1997",  1, 2 }, /* HTB+ Russia */
 };
 
 /* 0 - 12.8 kHz complex FIR filter taps, sample rate 32 kHz */
@@ -103,7 +103,6 @@ static const int16_t _mixq[5] = { 0, 9630, -15581, 15581, -9630 };
 #define _PRBS_SR2_MASK (((uint32_t) 1 << 29) - 1)
 
 /* The standard syster substitution table */
-
 static const uint8_t _key_table1[0x100] = {
 	10, 11, 12, 13, 16, 17, 18, 19, 13, 14, 15, 16,  0,  1,  2,  3,
 	21, 22, 23, 24, 18, 19, 20, 21, 23, 24, 25, 26, 26, 27, 28, 29,
@@ -124,24 +123,24 @@ static const uint8_t _key_table1[0x100] = {
 };
 
 /* Canal+ FR (Oct 1997) */
-/* static const uint8_t _key_table2[0x100] = {
-	 0,  1,  2,  3,  4,  5,  6,  7,  2,  5,  4,  7,  8,  9, 10, 11,
-	14, 17, 16, 19, 22, 25, 24, 27, 28, 31, 30,  1, 24, 27, 26, 29,
-	 8, 11, 10, 13, 20, 23, 22, 25, 20, 21, 22, 23, 30, 31,  0,  1,
-	16, 17, 18, 19, 28, 29, 30, 31, 10, 11, 12, 13, 16, 17, 18, 19,
-	12, 15, 14, 17,  0,  1,  2,  3, 20, 23, 22, 25, 18, 19, 20, 21,
-	22, 25, 24, 27, 26, 27, 28, 29, 18, 21, 20, 23, 10, 13, 12, 15,
-	28, 29, 30, 31,  4,  5,  6,  7, 22, 23, 24, 25,  4,  7,  6,  9,
-	30,  1,  0,  3, 26, 29, 28, 31,  2,  5,  4,  7,  8,  9, 10, 11,
-	14, 15, 16, 17, 24, 27, 26, 29, 14, 17, 16, 19,  6,  9,  8, 11,
-	16, 19, 18, 21, 28, 31, 30,  1, 24, 25, 26, 27, 20, 21, 22, 23,
-	 0,  3,  2,  5,  6,  7,  8,  9, 12, 13, 14, 15,  8, 11, 10, 13,
-	 2,  3,  4,  5, 30, 31,  0,  1, 24, 25, 26, 27,  2,  3,  4,  5,
-	30,  1,  0,  3,  6,  9,  8, 11, 12, 15, 14, 17, 26, 27, 28, 29,
-	14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,  4,  7,  6,  9,
-	18, 21, 20, 23, 12, 13, 14, 15, 16, 19, 18, 21, 26, 29, 28, 31,
-	10, 11, 12, 13, 10, 13, 12, 15,  6,  7,  8,  9,  0,  3,  2,  5
-};*/
+static const uint8_t _key_table2[0x100] = {
+	10, 11, 12, 13, 16, 17, 18, 19, 12, 15, 14, 17,  0,  1,  2,  3,
+	20, 23, 22, 25, 18, 19, 20, 21, 22, 25, 24, 27, 26, 27, 28, 29,
+	18, 21, 20, 23, 10, 13, 12, 15, 28, 29, 30, 31,  4,  5,  6,  7,
+	22, 23, 24, 25,  4,  7,  6,  9, 30,  1,  0,  3, 26, 29, 28, 31,
+	 2,  5,  4,  7,  8,  9, 10, 11, 14, 15, 16, 17, 24, 27, 26, 29,
+	14, 17, 16, 19,  6,  9,  8, 11, 16, 19, 18, 21, 28, 31, 30,  1,
+	24, 25, 26, 27, 20, 21, 22, 23,  0,  3,  2,  5,  6,  7,  8,  9,
+	12, 13, 14, 15,  8, 11, 10, 13,  2,  3,  4,  5, 30, 31,  0,  1,
+	24, 25, 26, 27,  2,  3,  4,  5, 30,  1,  0,  3,  6,  9,  8, 11,
+	12, 15, 14, 17, 26, 27, 28, 29, 14, 15, 16, 17, 18, 19, 20, 21,
+	22, 23, 24, 25,  4,  7,  6,  9, 18, 21, 20, 23, 12, 13, 14, 15,
+	16, 19, 18, 21, 26, 29, 28, 31, 10, 11, 12, 13, 10, 13, 12, 15,
+	 6,  7,  8,  9,  0,  3,  2,  5,  0,  1,  2,  3,  4,  5,  6,  7,
+	 2,  5,  4,  7,  8,  9, 10, 11, 14, 17, 16, 19, 22, 25, 24, 27,
+	28, 31, 30,  1, 24, 27, 26, 29,  8, 11, 10, 13, 20, 23, 22, 25,
+	20, 21, 22, 23, 30, 31,  0,  1, 16, 17, 18, 19, 28, 29, 30, 31
+};
 
 static const uint8_t _vbi_sequence[10] = {
 	0x73, 0x9B, 0x5E, 0xB6, 0x49, 0xA1, 0x02, 0xEA, 0x15, 0xFD
@@ -185,10 +184,6 @@ static uint16_t _prbs_update(ng_t *s)
 	
 	return(code >> 1);
 }
-
- static const int d11_lookup_table[8] = {
-	 0x00, 0x01, 0x02, 0x02, 0x02, 0x00, 0x00, 0x01 
- };
 
 static uint16_t _crc(const uint8_t *data, size_t length)
 {
@@ -275,9 +270,9 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 	
 	/* Calculate ECM table offset for this block */
 	c = (s->block_seq / 20 * 2 + il[s->block_seq % 20]) & 0x7F;
-
+	
 	ecm = &s->blocks[c / 2];
-
+	
 	/* Get a pointer to the 8 ECM bytes to send */
 	d = &ecm->ecm[c & 1 ? 8 : 0];
 	
@@ -293,14 +288,14 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 	}
 	else if(s->block_seq % 20 == 13)
 	{
-			/* Print ECM */
-			if(s->vid->conf.showecm)
-			{
-				fprintf(stderr, "\n\nECM In:  ");
-				for(i = 0; i < 16; i++) fprintf(stderr, "%02X ", ecm->ecm[i]);
-				fprintf(stderr, "\nECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) (ecm->cw >> (8 * i) & 0xFF));
-			}
+		/* Print ECM */
+		if(s->vid->conf.showecm)
+		{
+			fprintf(stderr, "\n\nECM In:  ");
+			for(i = 0; i < 16; i++) fprintf(stderr, "%02X ", ecm->ecm[i]);
+			fprintf(stderr, "\nECM Out: ");
+			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) (ecm->cw >> (8 * i) & 0xFF));
+		}
 	}
 }
 
@@ -323,67 +318,19 @@ static void _update_field_order(ng_t *s)
 	
 	for(i = 0; i < 287; i++)
 	{
-		j = i <= 254 ? _key_table1[(s->r + (2 * s->s + 1) * i) & 0xFF] : i - 255;
+		j = i <= 254 ? s->table[(s->r + (2 * s->s + 1) * i) & 0xFF] : i - 255;
 		b[j] = s->order[b[j] + 32] = i;
-	}
-}
-
-/* 
- * This function generates the line delays for each of the 6 frames
- * within a D11 cycle period in audience 7 mode (free access).
- *
- * Most of the information has been obtained from author of CryptImage
- * http://cryptimage.vot.pl/cryptimage.php
- *
- * Additional info here:
- * https://web.archive.org/web/20180726143048/http://wintzx.fr/blog/2014/01/codage-et-decodage-des-chaines-analogiques-en-1984-partie-1/
-*/
-
-void _create_d11_delay_table(ng_t *s)
-{
-	/* Magic starting seed = 1337d shifted 177 times */
-	int seed = 0x672;
-	int b10, b8, d11_delay_index;
-	int d11_field = -1;
-
-	for(int line = 0; line < D11_LINES_PER_FIELD * D11_FIELDS ; line++)
-	{
-		if(line % D11_LINES_PER_FIELD == 0) d11_field++;
-
-		/* Get bit 10 */
-		b10 = ((seed & 0x400) >> 10) & 0x01;
-
-		/* Get bit 8 */
-		b8  = ((seed & 0x100) >> 8) & 0x01;
-
-		/* Get z bit */
-		d11_delay_index  = ((d11_field / 3) & 0x1) << 2;
-
-		/* Bit y b0 poly */
-		d11_delay_index |= (seed & 0x01) << 1;
-
-		/* Bit x b10 poly */
-		d11_delay_index |= b10 ;
-
-		/* Build delay array */
-		s->d11_line_delay[line] = d11_lookup_table[d11_delay_index];
-
-		/* Shift along */
-		seed <<= 1;
-		seed |= b10 ^ b8;
-		seed &= 0x7FF;
 	}
 }
 
 int _ng_vbi_init(ng_t *s, vid_t *vid)
 {
 	int i;
-	s->vid = vid;
 	
 	/* Calculate the high level for the VBI data, 66% of the white level */
 	i = round((vid->white_level - vid->black_level) * 0.66);
 	s->lut = vbidata_init(
-		NG_VBI_WIDTH, s->vid->width,
+		NG_VBI_WIDTH, vid->width,
 		i,
 		VBIDATA_FILTER_RC, 0.7
 	);
@@ -399,10 +346,9 @@ int _ng_vbi_init(ng_t *s, vid_t *vid)
 	return(VID_OK);
 }
 
-void _render_ng_vbi(ng_t *s, int line, int mode)
+void _render_ng_vbi(ng_t *s, vid_line_t *l)
 {
 	int x;
-	
 	ng_mode_t n = _ng_modes[s->id];
 	
 	/* Render the VBI data */
@@ -410,9 +356,9 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 	/* Premiere  key lines: 14, 15, 327, 328 (ATR 1C381405FF14E1E5) (offset 0) */
 	/* Polish C+ key lines: 10, 11, 323, 324 (ATR 1CE00C01FF14E1E5) (offset 4) */
 	
-	if(line == 14 + n.vbioffset|| line == 15 + n.vbioffset|| line == 327 + n.vbioffset || line == 328 + n.vbioffset)
+	if(l->line == 14 + n.vbioffset|| l->line == 15 + n.vbioffset||
+	   l->line == 327 + n.vbioffset || l->line == 328 + n.vbioffset)
 	{
-		
 		if(s->vbi_seq == 0)
 		{
 			const uint8_t *emm1 = _dummy_emm;
@@ -421,17 +367,17 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 			uint8_t msg2[NG_MSG_BYTES];
 			
 			/* Transmit the PPUA EMM every 1000 frames */
-			if(s->vid->frame > s->next_ppua)
+			if(l->frame > s->next_ppua)
 			{
 				emm1 = _ppua_emm;
-				s->next_ppua = s->vid->frame + 1000;
+				s->next_ppua = l->frame + 1000;
 			}
 			
 			/* Build part 1 of the VBI block */
-			msg1[ 0] = mode | ((n.data[2] >> 5) & 1);    /* Decoder parameters + audience */
+			msg1[ 0] = s->flags | ((n.data[2] >> 5) & 1);    /* Decoder parameters + audience */
 			_ecm_part(s, &msg1[1]);
 			msg1[ 1] |= n.data[2] << 3;                  /* Audience uses 5 top bits of msg1[1] */
-			msg1[11] = 0xFF;                             /* Simple checksum -- the Premiere VBI sample only has 0x00/0xFF here */
+			msg1[11] = 0xFF;	/* Simple checksum -- the Premiere VBI sample only has 0x00/0xFF here */
 			for(x = 0; x < 11; x++)
 			{
 				msg1[11] ^= msg1[x];
@@ -440,7 +386,7 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 			
 			/* Build part 2 of the VBI block */
 			msg2[ 0] = 0xFE;                             /* ??? Premiere DE: 0xFE, Canal+ PL: 0x00, HTB+: 0x01 */
-			msg2[ 1] = 0x28 | ((mode >> 2) & 1);         /* ??? Premiere DE: 0x28 (cut and rotate: 0x29), Canal+ PL: 0x2A, HTB+: 0x3A */
+			msg2[ 1] = 0x28 | ((s->flags >> 2) & 1);     /* ??? Premiere DE: 0x28 (cut and rotate: 0x29), Canal+ PL: 0x2A, HTB+: 0x3A */
 			msg2[ 2] = 0xB1;                             /* ??? Premiere DE: 0xB1, Canal+ PL: 0xE4, HTB+: 0x16 */
 			msg2[ 3] = emm1 == _ppua_emm ? 0x01 : 0x00;  /* 0x00, or 0x01 when a broadcast EMM is present */
 			msg2[ 4] = emm2 == _ppua_emm ? 0x01 : 0x00;
@@ -461,7 +407,8 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 		}
 		
 		/* Render the line */
-		vbidata_render_nrz(s->lut, s->vbi[s->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, s->vid->output, 2);
+		vbidata_render_nrz(s->lut, s->vbi[s->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l->output, 2);
+		l->vbialloc = 1;
 		
 		if(s->vbi_seq == 10)
 		{
@@ -515,6 +462,8 @@ uint16_t _get_date(char *dtm)
 
 int _init_common(ng_t *s, char *mode)
 {
+	memset(s, 0, sizeof(ng_t));
+	
 	ng_mode_t *n = s->mode;
 	s->id = 0;
 	
@@ -549,6 +498,8 @@ int _init_common(ng_t *s, char *mode)
 	n->data[5] = d >> 8;
 
 	s->blocks = _ecm_table_rand;
+	s->t = n->t;
+	s->table = s->t == 1 ? _key_table1 : _key_table2;
 	
 	/* Generate random seeds */
 	_rand_seed(s, n->data, n->key);
@@ -556,163 +507,37 @@ int _init_common(ng_t *s, char *mode)
 	return(VID_OK);
 }
 
-int d11_init(ng_t *s, vid_t *vid, char *mode)
-{
-	memset(s, 0, sizeof(ng_t));
-	
-	if(_init_common(s, mode) == VID_ERROR)
-	{
-		return VID_ERROR;
-	};
-
-	s->vid = vid;
-	
-	s->flags |= 0 << 6; /* ?? Unused */
-	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
-	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	s->flags |= 0 << 3; /* 0: full frame scrambling, 1: half-frame scrambling */
-	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
-	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
-	s->flags |= 0 << 0; /* 6th high bit of audience level */
-	
-	/* Initialise VBI sequences - this is still necessary for D11 */
-	_ng_vbi_init(s,vid);
-	_ng_audio_init(s);
-	
-	s->d11_delay = (1 / 4433618.75) * 4 * s->vid->sample_rate;
-	
-	_create_d11_delay_table(s);
-
-	return(VID_OK);
-}
-
-int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
-{
-	memset(s, 0, sizeof(ng_t));
-	
-	if(_init_common(s, mode) == VID_ERROR)
-	{
-		return VID_ERROR;
-	};
-	
-	s->flags  = 0 << 7; /* ?? Unused */
-	s->flags |= 0 << 6; /* ?? Unused */
-	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
-	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	s->flags |= 0 << 3; /* 0: full frame scrambling, 1: half-frame scrambling */
-	s->flags |= 1 << 2; /* Seems to enable cut-and-rotate on some decoders */
-	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
-	s->flags |= 0 << 0; /* 6th high bit of audience level */
-
-	s->vid = vid;
-	
-	/* Initialise VBI sequences - this is still necessary for Smartcrypt */
-	_ng_vbi_init(s,vid);
-	_ng_audio_init(s);
-	
-	return(VID_OK);
-}
-
-void d11_render_line(ng_t *s)
-{
-	int x, f, i, d11_field, index, line, delay;
-
-	/* Calculate the field and field line */
-	line = s->vid->line;
-	f = (line < D11_FIELD_2_START ? 0 : 1);
-	i = line - (f == 0 ? D11_FIELD_1_START : D11_FIELD_2_START);
-	d11_field = (s->vid->frame % 3) + (s->vid->frame % 3) + f;
-	
-	if(i > 0 && i < D11_LINES_PER_FIELD)
-	{
-		 /* Calculate index for delay values - sequence starts on last field of the last frame */
-		index = ((d11_field == 5 ? 0 : d11_field + 1) * D11_LINES_PER_FIELD) + i ;
-		
-		/* Calculate delay for this line */
-		delay = s->d11_line_delay[index] * s->d11_delay;
-	  
-		/* Delay line */		
-		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
-		{
-			s->vid->output[x * 2 + 1] = x < s->vid->active_left + delay ? s->vid->black_level : s->vid->output[(x - delay) * 2];
-		}
-		
-		/* Copy delayed line to output buffer */
-		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
-		{
-			s->vid->output[x * 2] = s->vid->output[x * 2 + 1];
-		}
-	}
-	
-	/* D11 sequence sync line 622 - always white level for audience 7 mode */
-	if(line == 622)
-	{
-			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
-			{
-				s->vid->output[x * 2] = s->vid->white_level;
-			}
-	}
-	
-	/* D11 sequence sync line 310 - triggers white level on the last field of the last frame  */
-	if(line == 310)
-	{
-			for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
-			{
-				s->vid->output[x * 2] = (s->vid->frame % 3 == 2 ? s->vid->white_level : s->vid->black_level);
-			}
-	}
-	
-	_render_ng_vbi(s, line, s->flags);
-}
-
 int ng_init(ng_t *s, vid_t *vid, char *mode)
 {
 	time_t t;
 	srand((unsigned) time(&t));
-
-	memset(s, 0, sizeof(ng_t));
+		
+	if(_init_common(s, mode) == VID_ERROR)
+	{
+		return VID_ERROR;
+	};
 	
 	s->vid = vid;
-	s->id = 0;
 	
-	s->flags |= 0 << 6; /* ?? Unused */
+	s->flags  = 1 << 6; /* ?? Unused */
 	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
 	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	s->flags |= 0 << 3; /* 0: full frame scrambling, 1: half-frame scrambling */
+	s->flags |= (s->t == 1 ? 0 : 1) << 3; /* 0: key table 1, 1: key table 2 */
 	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
 	s->flags |= 1 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
 	s->flags |= 0 << 0; /* 6th high bit of audience level */
-
-	_ng_vbi_init(s,vid);
+	
+	_ng_vbi_init(s, vid);
 	_ng_audio_init(s);
+	
+	s->vbi_seq = 0;
+	s->block_seq = 0;
 	
 	/* Initial seeds. Updated every field. */
 	s->s = 0;
 	s->r = 0;
 	_update_field_order(s);
-
-	if(_init_common(s, mode) == VID_ERROR)
-	{
-		return VID_ERROR;
-	};
 	
-	/* Allocate memory for the delay */
-	s->vid->olines += NG_DELAY_LINES;
-	
-	/* Allocate memory for the audio inversion FIR filters */
-	s->firli = calloc(NTAPS * 2, sizeof(int16_t));
-	s->firlq = calloc(NTAPS * 2, sizeof(int16_t));
-	s->firri = calloc(NTAPS * 2, sizeof(int16_t));
-	s->firrq = calloc(NTAPS * 2, sizeof(int16_t));
-	s->mixx = 0;
-	s->firx = 0;
-	
-	if(s->firli == NULL || s->firlq == NULL ||
-	   s->firri == NULL || s->firrq == NULL)
-	{
-		return(VID_OUT_OF_MEMORY);
-	}
-
 	return(VID_OK);
 }
 
@@ -785,19 +610,16 @@ void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples)
 	}
 }
 
-void ng_render_line(ng_t *s)
+int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
+	ng_t *n = arg;
 	int j = 0;
 	int x, f, i;
-	int line;
-	
-	/* Calculate which line is about to be transmitted due to the delay */
-	line = s->vid->line - NG_DELAY_LINES;
-	if(line < 0) line += s->vid->conf.lines;
+	vid_line_t *l = lines[0];
 	
 	/* Calculate the field and field line */
-	f = (line < NG_FIELD_2_START ? 1 : 2);
-	i = line - (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START);
+	f = (l->line < NG_FIELD_2_START ? 1 : 2);
+	i = l->line - (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START);
 	
 	if(i >= 0 && i < NG_LINES_PER_FIELD)
 	{
@@ -812,27 +634,27 @@ void ng_render_line(ng_t *s)
 		/* Reinitialise the seeds if this is a new field */
 		if(i == 0)
 		{
-			int sf = s->vid->frame % 50;
+			int sf = l->frame % 25;
 			
-			if((sf == 6 || sf == 31) && f == 2)
+			if((sf == 6 || sf == 31) && f == 1)
 			{
-				_prbs_reset(s, s->cw);
+				_prbs_reset(n, n->cw);
 			}
 			
-			x = _prbs_update(s);
+			x = _prbs_update(n);
 			
-			s->s = x & 0x7F;
-			s->r = x >> 7;
+			n->s = x & 0x7F;
+			n->r = x >> 7;
 			
-			_update_field_order(s);
+			_update_field_order(n);
 		}
 		
 		/* Calculate which line in the delay buffer to copy image data from */
-		j = (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START) + s->order[i];
-		if(j < line) j += s->vid->conf.lines;
-		j -= line;
+		j = (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START) + n->order[i];
+		if(j < l->line) j += s->conf.lines;
+		j -= l->line;
 		
-		if(j < 0 || j >= NG_DELAY_LINES)
+		if(j < 0 || j >= nlines)
 		{
 			/* We should never get to this point */
 			fprintf(stderr, "*** Nagravision Syster scrambler is trying to read an invalid line ***\n");
@@ -840,43 +662,220 @@ void ng_render_line(ng_t *s)
 		}
 	}
 	
-	vid_adj_delay(s->vid, NG_DELAY_LINES);
-	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
 	if(j > 0)
 	{
-		int16_t *dline = s->vid->oline[s->vid->odelay + j];
+		int16_t *dline = lines[j]->output;
 		
 		/* For PAL the colour burst is not moved, just the active
 		 * video. For SECAM the entire line is moved. */
-		x = s->vid->active_left * 2;
+		x = s->active_left * 2;
 		
-		if(s->vid->conf.colour_mode == VID_SECAM) x = 0;
+		if(s->conf.colour_mode == VID_SECAM) x = 0;
 		
-		for(; x < s->vid->width * 2; x += 2)
+		for(; x < s->width * 2; x += 2)
 		{
-			s->vid->output[x] = dline[x];
+			l->output[x] = dline[x];
 		}
 	}
 	
-	_render_ng_vbi(s, line, s->flags);
+	_render_ng_vbi(n, l);
+	
+	return(1);
 }
 
-void smartcrypt_render_line(ng_t *s)
+/* D11 */
+
+/* 
+ * This function generates the line delays for each of the 6 frames
+ * within a D11 cycle period in audience 7 mode (free access).
+ *
+ * Most of the information has been obtained from author of CryptImage
+ * http://cryptimage.vot.pl/cryptimage.php
+ *
+ * Additional info here:
+ * https://web.archive.org/web/20180726143048/http://wintzx.fr/blog/2014/01/codage-et-decodage-des-chaines-analogiques-en-1984-partie-1/
+*/
+
+static const int d11_lookup_table[8] = {
+	 0x00, 0x01, 0x02, 0x02, 0x02, 0x00, 0x00, 0x01 
+ };
+ 
+void _create_d11_delay_table(ng_t *n)
 {
-	/* TODO: many things */
-	
-	int x;
-	
-	/* Blank lines 310 and 622 */
-	if(s->vid->line == 310 || s->vid->line == 622)
+	/* Magic starting seed = 1337d shifted 177 times */
+	int seed = 0x672;
+	int b10, b8, d11_delay_index;
+	int d11_field = -1;
+
+	for(int line = 0; line < D11_LINES_PER_FIELD * D11_FIELDS ; line++)
 	{
-		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
+		if(line % D11_LINES_PER_FIELD == 0) d11_field++;
+
+		/* Get bit 10 */
+		b10 = ((seed & 0x400) >> 10) & 0x01;
+
+		/* Get bit 8 */
+		b8  = ((seed & 0x100) >> 8) & 0x01;
+
+		/* Get z bit */
+		d11_delay_index  = ((d11_field / 3) & 0x1) << 2;
+
+		/* Bit y b0 poly */
+		d11_delay_index |= (seed & 0x01) << 1;
+
+		/* Bit x b10 poly */
+		d11_delay_index |= b10 ;
+
+		/* Build delay array */
+		n->d11_line_delay[line] = d11_lookup_table[d11_delay_index];
+
+		/* Shift along */
+		seed <<= 1;
+		seed |= b10 ^ b8;
+		seed &= 0x7FF;
+	}
+}
+
+int d11_init(ng_t *s, vid_t *vid, char *mode)
+{
+	memset(s, 0, sizeof(ng_t));
+	
+	if(_init_common(s, mode) == VID_ERROR)
+	{
+		return VID_ERROR;
+	};
+	
+	s->flags  = 0 << 7; /* ?? Unused */
+	s->flags |= 0 << 6; /* ?? Unused */
+	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
+	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	s->flags |= 0 << 3; /* 0: key table 1, 1: key table 2 */
+	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
+	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
+	s->flags |= 0 << 0; /* 6th high bit of audience level */
+	
+	s->vid = vid;
+	
+	/* Initialise VBI sequences - this is still necessary for D11 */
+	_ng_vbi_init(s, vid);
+	_ng_audio_init(s);
+	
+	s->d11_delay = (1 / 4433618.75) * 4 * vid->sample_rate;
+	
+	_create_d11_delay_table(s);
+
+	return(VID_OK);
+}
+
+int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	int x, f, i, d11_field, index, delay;
+	
+	ng_t *d = arg;
+	vid_line_t *l = lines[0];
+	
+	int16_t *buffer = malloc(sizeof(int16_t) * 2 * s->width);
+	
+	d->vid = s;
+
+	/* Calculate the field and field line */
+	f = (l->line < D11_FIELD_2_START ? 0 : 1);
+	i = l->line - (f == 0 ? D11_FIELD_1_START : D11_FIELD_2_START);
+	d11_field = (l->frame % 3) + (l->frame % 3) + f;
+	
+	if(i > 0 && i < D11_LINES_PER_FIELD)
+	{
+		 /* Calculate index for delay values - sequence starts on last field of the last frame */
+		index = ((d11_field == 5 ? 0 : d11_field + 1) * D11_LINES_PER_FIELD) + i ;
+		
+		/* Calculate delay for this line */
+		delay = d->d11_line_delay[index] * d->d11_delay;
+	  
+		/* Delay line */		
+		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
-			s->vid->output[x * 2] = s->vid->black_level;
+			buffer[x * 2] = x < s->active_left + delay ? s->black_level : l->output[(x - delay) * 2];
+		}
+		
+		/* Copy delayed line to output buffer */
+		for(x = s->active_left; x < s->active_left + s->active_width; x++)
+		{
+			l->output[x * 2] = buffer[x * 2];
 		}
 	}
 	
-	_render_ng_vbi(s, s->vid->line, s->flags);
+	/* D11 sequence sync line 622 - always white level for audience 7 mode */
+	if(l->line == 622)
+	{
+		for(x = s->active_left; x < s->active_left + s->active_width; x++)
+		{
+			l->output[x * 2] = s->white_level;
+		}
+	}
+	
+	/* D11 sequence sync line 310 - triggers white level on the last field of the last frame  */
+	if(l->line == 310)
+	{
+		for(x = s->active_left; x < s->active_left + s->active_width; x++)
+		{
+			l->output[x * 2] = (l->frame % 3 == 2 ? s->white_level : s->black_level);
+		}
+	}
+	
+	_render_ng_vbi(d, l);
+	
+	free(&buffer);
+	
+	return(1);
+}
+
+/* Smartcrypt */
+int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
+{
+	memset(s, 0, sizeof(ng_t));
+	
+	if(_init_common(s, mode) == VID_ERROR)
+	{
+		return VID_ERROR;
+	};
+	
+	s->flags  = 0 << 7; /* ?? Unused */
+	s->flags |= 0 << 6; /* ?? Unused */
+	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
+	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
+	s->flags |= 1 << 3; /* 0: key table 1, 1: key table 2 */
+	s->flags |= 1 << 2; /* Seems to enable cut-and-rotate on some decoders */
+	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
+	s->flags |= 0 << 0; /* 6th high bit of audience level */
+	
+	s->vid = vid;
+	
+	/* Initialise VBI sequences - this is still necessary for Smartcrypt */
+	_ng_vbi_init(s, vid);
+	_ng_audio_init(s);
+	
+	return(VID_OK);
+}
+
+int smartcrypt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	/* TODO: many things */
+	ng_t *n = arg;
+	int x;
+	vid_line_t *l = lines[0];
+	
+	/* Blank lines 310 and 622 */
+	if(l->line == 310 || l->line == 622)
+	{
+		for(x = s->active_left; x < s->active_left + s->active_width; x++)
+		{
+			l->output[x * 2] = s->black_level;
+		}
+	}
+	
+	_render_ng_vbi(n, l);
+	
+	return(1);
 }

@@ -689,14 +689,14 @@ static uint64_t _update_cw(eurocrypt_t *e, int t)
 	return(cw);
 }
 
-void eurocrypt_next_frame(vid_t *vid)
+void eurocrypt_next_frame(vid_t *vid, int frame)
 {
 	eurocrypt_t *e = &vid->mac.ec;
 	
 	/* Update the CW at the beginning of frames FCNT == 1 */
-	if((vid->frame & 0xFF) == 1)
+	if((frame & 0xFF) == 1)
 	{
-		int t = (vid->frame >> 8) & 1;
+		int t = (frame >> 8) & 1;
 		
 		/* Fetch and update next CW */
 		vid->mac.cw = _update_cw(e, t);
@@ -708,17 +708,18 @@ void eurocrypt_next_frame(vid_t *vid)
 		if(vid->conf.showecm)
 		{
 			int i;
-			fprintf(stderr, "\n\nOp key used (%02X):\t", e->mode->ppid[2] & 0x0F);
+			fprintf(stderr, "\n\n***** ECM *****");
+			fprintf(stderr, "\nOperational key [%02X]:\t", e->mode->ppid[2] & 0x0F);
 			for(i = 0; i < 7; i++) fprintf(stderr, "%02X ", e->mode->key[i]);
-			fprintf(stderr, "\nEurocrypt ECM (enc):\t");
+			fprintf(stderr, "\nEurocrypt ECM   [in]:\t");
 			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->ecw[0][i]);
 			fprintf(stderr, "| ");
 			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->ecw[1][i]);
-			fprintf(stderr,"\nEurocrypt ECM (dec):\t");
+			fprintf(stderr,"\nEurocrypt ECM   [out]:\t");
 			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->cw[0][i]);
 			fprintf(stderr, "| ");
 			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->cw[1][i]);
-			fprintf(stderr,"\nUsing CW (%s):  \t%s", t ? "odd" : "even", t ? "                          " : "");
+			fprintf(stderr,"\nUsing CW        [%s]:\t%s", t ? "odd" : "even", t ? "                          " : "");
 			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) e->cw[t][i]);
 			fprintf(stderr,"\nHash:\t\t\t");
 			for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) e->ecm_hash[i]);
@@ -727,7 +728,7 @@ void eurocrypt_next_frame(vid_t *vid)
 	}
 	
 	/* Send an ECM packet every 12 frames - ~0.5s */
-	if(vid->frame % 12 == 0)
+	if(frame % 12 == 0)
 	{
 		uint8_t pkt[MAC_PAYLOAD_BYTES];
 		memset(pkt, 0, MAC_PAYLOAD_BYTES);
@@ -779,15 +780,14 @@ void eurocrypt_next_frame(vid_t *vid)
 			if(vid->conf.showecm)
 			{
 				int i;
-				fprintf(stderr, "\n\nSending EMM!");
-				fprintf(stderr, "\n============");
+				fprintf(stderr, "\n\n ***** EMM *****");
 				fprintf(stderr, "\nShared address:\t\t");
 				for(i = 0; i < 3; i++) fprintf(stderr, "%02X ", e->emmode->sa[2 - i]);
-				fprintf(stderr, "\nMgmt key used (%02X):\t", e->emmode->ppid[2] & 0x0F);
+				fprintf(stderr, "\nManagement key   [%02X]:\t", e->emmode->ppid[2] & 0x0F);
 				for(i = 0; i < 7; i++) fprintf(stderr, "%02X ", e->emmode->key[i]);
-				fprintf(stderr, "\nUpdating op key (%02X):\t", e->mode->ppid[2] & 0x0F);
+				fprintf(stderr, "\nDecrypted op key [%02X]:\t", e->mode->ppid[2] & 0x0F);
 				for(i = 0; i < 7; i++) fprintf(stderr, "%02X ", e->mode->key[i]);
-				fprintf(stderr, "\nEncrypted op key (%02X):\t", e->mode->ppid[2] & 0x0F);
+				fprintf(stderr, "\nEncrypted op key [%02X]:\t", e->mode->ppid[2] & 0x0F);
 				for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->emmg_pkt[15 + i]);
 				fprintf(stderr,"\nHash:\t\t\t");
 				for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) e->emm_hash[i]);

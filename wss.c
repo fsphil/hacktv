@@ -135,30 +135,36 @@ void wss_free(wss_t *s)
 	memset(s, 0, sizeof(wss_t));
 }
 
-void wss_render_line(wss_t *s)
+int wss_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
+	wss_t *w = arg;
+	vid_line_t *l = lines[0];
 	int x;
 	
 	/* WSS is rendered on line 23 */
-	if(s->vid->line == 23)
+	if(l->line != 23)
 	{
-		if(s->code == 0xFF)
-		{
-			/* Auto mode selects between 4:3 and 16:9 based on the
-			 * the ratio of the source frame. */
-			_group_bits(s->vbi, s->vid->ratio <= (14.0 / 9.0) ? 0x08 : 0x07, 29 + 24, 4);
-		}
-		
-		/* 42.5μs of line 23 needs to be blanked otherwise the WSS bits may
-		 * overlap active video */
-		for(x = s->vid->half_width; x < s->blank_width; x++)
-		{
-			s->vid->output[x * 2] = s->vid->black_level;
-		}
-		
-		vbidata_render_nrz(s->lut, s->vbi, -55, 137, VBIDATA_MSB_FIRST, s->vid->output, 2);
-		
-		*s->vid->vbialloc = 1;
+		return(1);
 	}
+	
+	if(w->code == 0xFF)
+	{
+		/* Auto mode selects between 4:3 and 16:9 based on the
+		 * the ratio of the source frame. */
+		_group_bits(w->vbi, s->ratio <= (14.0 / 9.0) ? 0x08 : 0x07, 29 + 24, 4);
+	}
+	
+	/* 42.5μs of line 23 needs to be blanked otherwise the WSS bits may
+	 * overlap active video */
+	for(x = s->half_width; x < w->blank_width; x++)
+	{
+		l->output[x * 2] = s->black_level;
+	}
+	
+	vbidata_render_nrz(w->lut, w->vbi, -55, 137, VBIDATA_MSB_FIRST, l->output, 2);
+	
+	l->vbialloc = 1;
+	
+	return(1);
 }
 

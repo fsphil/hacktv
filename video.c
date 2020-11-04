@@ -770,14 +770,15 @@ const vid_config_t vid_config_d2mac_am = {
 	.vsb_lower_bw   = 0, /* Hz */
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 0.000028938,
-	.active_width   = 0.000034667,
+	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.00, /* Overall signal level */
 	.video_level    = 0.85, /* Chrominance may clip if this is set to 1 */
@@ -808,14 +809,15 @@ const vid_config_t vid_config_d2mac_fm = {
 	.fm_deviation   = 13.5e6, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 0.000028938,
-	.active_width   = 0.000034667,
+	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
@@ -842,14 +844,15 @@ const vid_config_t vid_config_d2mac = {
 	.output_type    = HACKTV_INT16_REAL,
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 0.000028938,
-	.active_width   = 0.000034667,
+	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
@@ -878,14 +881,15 @@ const vid_config_t vid_config_dmac_am = {
 	.modulation     = VID_AM,
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 0.000028938,
-	.active_width   = 0.000034667,
+	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.00, /* Overall signal level */
 	.video_level    = 0.85, /* Chrominance may clip if this is set to 1 */
@@ -916,13 +920,14 @@ const vid_config_t vid_config_dmac_fm = {
 	.fm_deviation   = 13.5e6, /* 13.5 MHz/V */
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 584.0 / MAC_CLOCK_RATE, // 0.000028938,
+	.active_left    = 586.0 / MAC_CLOCK_RATE,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
@@ -950,14 +955,15 @@ const vid_config_t vid_config_dmac = {
 	.output_type    = HACKTV_INT16_REAL,
 	
 	.type           = VID_MAC,
+	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
 	.lines          = 625,
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 0.000028938,
-	.active_width   = 0.000034667,
+	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
@@ -1552,7 +1558,7 @@ const int16_t fm_525_taps[] = {
 
 /* Test taps for D/D2-MAC pre-emphasis at 20.25 MHz */
 const int16_t fm_mac_taps[] = {
-	-1,0,-1,0,-1,-1,-2,-2,-4,-5,-9,-13,-22,-33,-55,-86,-141,-222,-360,-567,-919,-1442,-2361,32767,-2361,-1442,-919,-567,-360,-222,-141,-86,-55,-33,-22,-13,-9,-5,-4,-2,-2,-1,-1,0,-1,0,-1
+	-2,5,-8,10,-11,8,1,-16,38,-65,93,-115,124,-111,69,5,-112,239,-382,498,-596,585,-543,267,-54,-622,837,-2115,1741,-4241,1702,-7544,-1383,32606,4417,-4102,3619,-3012,2335,-1645,995,-429,-21,342,-531,603,-580,490,-363,225,-98,-5,75,-114,124,-113,90,-62,35,-14,-1,9,-11,10,-7,4,-2
 };
 
 static double _dlimit(double v, double min, double max)
@@ -1597,11 +1603,12 @@ static int16_t *_burstwin(unsigned int sample_rate, double width, double rise, d
 	return(win);
 }
 
-static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
+static int16_t *_colour_subcarrier_phase(vid_t *s, int frame, int line, int phase)
 {
-	int frame = (s->frame - 1) & 3;
-	int line = s->line - 1;
 	int p;
+	
+	frame = (frame - 1) & 3;
+	line = line - 1;
 	
 	/* Limit phase offset to 0 > 359 */
 	if((phase %= 360) < 0)
@@ -1651,6 +1658,31 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 	
 	/* Return a pointer to the line */
 	return(&s->colour_lookup[p]);
+}
+
+void vid_get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq)
+{
+	int16_t *b = NULL;
+	int16_t *i = NULL;
+	int16_t *q = NULL;
+	int odd = (frame + line + 1) & 1;
+	
+	if(s->conf.colour_mode == VID_PAL)
+	{
+		b = _colour_subcarrier_phase(s, frame, line, odd ? -135 : 135);
+		i = _colour_subcarrier_phase(s, frame, line, odd ? -90 : 90);
+		q = _colour_subcarrier_phase(s, frame, line, 0);
+	}
+	else if(s->conf.colour_mode == VID_NTSC)
+	{
+		b = _colour_subcarrier_phase(s, frame, line, 180);
+		i = _colour_subcarrier_phase(s, frame, line, 90);
+		q = _colour_subcarrier_phase(s, frame, line, 0);
+	}
+	
+	if(pb) *pb = b;
+	if(pi) *pi = i;
+	if(pq) *pq = q;
 }
 
 /* FM modulator
@@ -1836,6 +1868,848 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 	fprintf(stderr, "Next valid sample rates: %u, %u\n", m * r, m * (r + 1));
 }
 
+static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	const char *seq;
+	int x;
+	int vy;
+	int w;
+	uint32_t rgb;
+	int pal = 0;
+	int fsc = 0;
+	int16_t *lut_b = NULL;
+	int16_t *lut_i = NULL;
+	int16_t *lut_q = NULL;
+	vid_line_t *l = lines[0];
+	
+	l->frame    = s->bframe;
+	l->line     = s->bline;
+	l->vbialloc = 0;
+	
+	/* Sequence codes: abcd
+	 * 
+	 * a: first sync
+	 *    h = horizontal sync pulse
+	 *    v = short vertical sync pulse
+	 *    V = long vertical sync pulse
+	 *    _ = no sync pulse
+	 * 
+	 * b: colour burst
+	 *    0 = line always has a colour burst
+	 *    _ = line never has a colour burst
+	 *    1 = line has a colour burst on odd frames
+	 *    2 = line has a colour burst on even frames
+	 * 
+	 * c: left content
+	 *    _ = blanking
+	 *    a = active video
+	 * 
+	 * d: right content
+	 *    _ = blanking
+	 *    a = active video
+	 *    v = short vertical sync pulse
+	 *    V = long vertical sync pulse
+	 * 
+	 **** I don't like this code, it's overly complicated for all it does.
+	*/
+	
+	vy = -1;
+	seq = "____";
+	
+	if(s->conf.type == VID_RASTER_625)
+	{
+		switch(l->line)
+		{
+		case 1:   seq = "V__V"; break;
+		case 2:   seq = "V__V"; break;
+		case 3:   seq = "V__v"; break;
+		case 4:   seq = "v__v"; break;
+		case 5:   seq = "v__v"; break;
+		case 6:   seq = "h1__"; break;
+		case 7:   seq = "h0__"; break;
+		case 8:   seq = "h0__"; break;
+		case 9:   seq = "h0__"; break;
+		case 10:  seq = "h0__"; break;
+		case 11:  seq = "h0__"; break;
+		case 12:  seq = "h0__"; break;
+		case 13:  seq = "h0__"; break;
+		case 14:  seq = "h0__"; break;
+		case 15:  seq = "h0__"; break;
+		case 16:  seq = "h0__"; break;
+		case 17:  seq = "h0__"; break;
+		case 18:  seq = "h0__"; break;
+		case 19:  seq = "h0__"; break;
+		case 20:  seq = "h0__"; break;
+		case 21:  seq = "h0__"; break;
+		case 22:  seq = "h0__"; break;
+		case 23:  seq = "h0_a"; break;
+		
+		case 310: seq = "h1aa"; break;
+		case 311: seq = "v__v"; break;
+		case 312: seq = "v__v"; break;
+		case 313: seq = "v__V"; break;
+		case 314: seq = "V__V"; break;
+		case 315: seq = "V__V"; break;
+		case 316: seq = "v__v"; break;
+		case 317: seq = "v__v"; break;
+		case 318: seq = "v___"; break;
+		case 319: seq = "h2__"; break;
+		case 320: seq = "h0__"; break;
+		case 321: seq = "h0__"; break;
+		case 322: seq = "h0__"; break;
+		case 323: seq = "h0__"; break;
+		case 324: seq = "h0__"; break;
+		case 325: seq = "h0__"; break;
+		case 326: seq = "h0__"; break;
+		case 327: seq = "h0__"; break;
+		case 328: seq = "h0__"; break;
+		case 329: seq = "h0__"; break;
+		case 330: seq = "h0__"; break;
+		case 331: seq = "h0__"; break;
+		case 332: seq = "h0__"; break;
+		case 333: seq = "h0__"; break;
+		case 334: seq = "h0__"; break;
+		case 335: seq = "h0__"; break;
+		
+		case 622: seq = "h1aa"; break;
+		case 623: seq = "h_av"; break;
+		case 624: seq = "v__v"; break;
+		case 625: seq = "v__v"; break;
+		
+		default:  seq = "h0aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (l->line < 313 ? (l->line - 23) * 2 : (l->line - 336) * 2 + 1);
+	}
+	else if(s->conf.type == VID_RASTER_525)
+	{
+		switch(l->line)
+		{
+		case 1:   seq = "v__v"; break;
+		case 2:   seq = "v__v"; break;
+		case 3:   seq = "v__v"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
+		case 6:   seq = "V__V"; break;
+		case 7:   seq = "v__v"; break;
+		case 8:   seq = "v__v"; break;
+		case 9:   seq = "v__v"; break;
+		case 10:  seq = "h0__"; break;
+		case 11:  seq = "h0__"; break;
+		case 12:  seq = "h0__"; break;
+		case 13:  seq = "h0__"; break;
+		case 14:  seq = "h0__"; break;
+		case 15:  seq = "h0__"; break;
+		case 16:  seq = "h0__"; break;
+		case 17:  seq = "h0__"; break;
+		case 18:  seq = "h0__"; break;
+		case 19:  seq = "h0__"; break;
+		case 20:  seq = "h0__"; break;
+		
+		case 263: seq = "h0av"; break;
+		case 264: seq = "v__v"; break;
+		case 265: seq = "v__v"; break;
+		case 266: seq = "v__V"; break;
+		case 267: seq = "V__V"; break;
+		case 268: seq = "V__V"; break;
+		case 269: seq = "V__v"; break;
+		case 270: seq = "v__v"; break;
+		case 271: seq = "v__v"; break;
+		case 272: seq = "v___"; break;
+		case 273: seq = "h0__"; break;
+		case 274: seq = "h0__"; break;
+		case 275: seq = "h0__"; break;
+		case 276: seq = "h0__"; break;
+		case 277: seq = "h0__"; break;
+		case 278: seq = "h0__"; break;
+		case 279: seq = "h0__"; break;
+		case 280: seq = "h0__"; break;
+		case 281: seq = "h0__"; break;
+		case 282: seq = "h0__"; break;
+		case 283: seq = "h0_a"; break;
+		
+		default:  seq = "h0aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		
+		/* There are 486 lines in this mode with some active video,
+		 * but encoded files normally only have 480 of these. Here
+		 * we use the line numbers suggested by SMPTE Recommended
+		 * Practice RP-202. Lines 23-262 from the first field and
+		 * 286-525 from the second. */
+		
+		vy = (l->line < 265 ? (l->line - 23) * 2 : (l->line - 286) * 2 + 1);
+	}
+	else if(s->conf.type == VID_RASTER_819)
+	{
+		switch(l->line)
+		{
+		case 817: seq = "h___"; break;
+		case 818: seq = "h___"; break;
+		case 819: seq = "h___"; break;
+		case 1:   seq = "V___"; break;
+		case 2:   seq = "h___"; break;
+		case 3:   seq = "h___"; break;
+		case 4:   seq = "h___"; break;
+		case 5:   seq = "h___"; break;
+		case 6:   seq = "h___"; break;
+		case 7:   seq = "h___"; break;
+		case 8:   seq = "h___"; break;
+		case 9:   seq = "h___"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		case 16:  seq = "h___"; break;
+		case 17:  seq = "h___"; break;
+		case 18:  seq = "h___"; break;
+		case 19:  seq = "h___"; break;
+		case 20:  seq = "h___"; break;
+		case 21:  seq = "h___"; break;
+		case 22:  seq = "h___"; break;
+		case 23:  seq = "h___"; break;
+		case 24:  seq = "h___"; break;
+		case 25:  seq = "h___"; break;
+		case 26:  seq = "h___"; break;
+		case 27:  seq = "h___"; break;
+		case 28:  seq = "h___"; break;
+		case 29:  seq = "h___"; break;
+		case 30:  seq = "h___"; break;
+		case 31:  seq = "h___"; break;
+		case 32:  seq = "h___"; break;
+		case 33:  seq = "h___"; break;
+		case 34:  seq = "h___"; break;
+		case 35:  seq = "h___"; break;
+		case 36:  seq = "h___"; break;
+		case 37:  seq = "h___"; break;
+		case 38:  seq = "h___"; break;
+		
+		case 406: seq = "h_a_"; break;
+		case 407: seq = "h___"; break;
+		case 408: seq = "h___"; break;
+		case 409: seq = "h__V"; break;
+		case 410: seq = "h___"; break;
+		case 411: seq = "h___"; break;
+		case 412: seq = "h___"; break;
+		case 413: seq = "h___"; break;
+		case 414: seq = "h___"; break;
+		case 415: seq = "h___"; break;
+		case 416: seq = "h___"; break;
+		case 417: seq = "h___"; break;
+		case 418: seq = "h___"; break;
+		case 419: seq = "h___"; break;
+		case 420: seq = "h___"; break;
+		case 421: seq = "h___"; break;
+		case 422: seq = "h___"; break;
+		case 423: seq = "h___"; break;
+		case 424: seq = "h___"; break;
+		case 425: seq = "h___"; break;
+		case 426: seq = "h___"; break;
+		case 427: seq = "h___"; break;
+		case 428: seq = "h___"; break;
+		case 429: seq = "h___"; break;
+		case 430: seq = "h___"; break;
+		case 431: seq = "h___"; break;
+		case 432: seq = "h___"; break;
+		case 433: seq = "h___"; break;
+		case 434: seq = "h___"; break;
+		case 435: seq = "h___"; break;
+		case 436: seq = "h___"; break;
+		case 437: seq = "h___"; break;
+		case 438: seq = "h___"; break;
+		case 439: seq = "h___"; break;
+		case 440: seq = "h___"; break;
+		case 441: seq = "h___"; break;
+		case 442: seq = "h___"; break;
+		case 443: seq = "h___"; break;
+		case 444: seq = "h___"; break;
+		case 445: seq = "h___"; break;
+		case 446: seq = "h___"; break;
+		case 447: seq = "h__a"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (l->line < 406 ? (l->line - 48) * 2 : (l->line - 457) * 2 + 1);
+	}
+	else if(s->conf.type == VID_RASTER_405)
+	{
+		switch(l->line)
+		{
+		case 1:   seq = "V__V"; break;
+		case 2:   seq = "V__V"; break;
+		case 3:   seq = "V__V"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "h___"; break;
+		case 6:   seq = "h___"; break;
+		case 7:   seq = "h___"; break;
+		case 8:   seq = "h___"; break;
+		case 9:   seq = "h___"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		
+		case 203: seq = "h_aV"; break;
+		case 204: seq = "V__V"; break;
+		case 205: seq = "V__V"; break;
+		case 206: seq = "V__V"; break;
+		case 207: seq = "V___"; break;
+		case 208: seq = "h___"; break;
+		case 209: seq = "h___"; break;
+		case 210: seq = "h___"; break;
+		case 211: seq = "h___"; break;
+		case 212: seq = "h___"; break;
+		case 213: seq = "h___"; break;
+		case 214: seq = "h___"; break;
+		case 215: seq = "h___"; break;
+		case 216: seq = "h___"; break;
+		case 217: seq = "h___"; break;
+		case 218: seq = "h__a"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (l->line < 210 ? (l->line - 16) * 2 : (l->line - 219) * 2 + 1);
+	}
+	else if(s->conf.type == VID_CBS_405)
+	{
+		switch(l->line)
+		{
+		case 1:   seq = "v__v"; break;
+		case 2:   seq = "v__v"; break;
+		case 3:   seq = "v__v"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
+		case 6:   seq = "V__V"; break;
+		case 7:   seq = "v__v"; break;
+		case 8:   seq = "v__v"; break;
+		case 9:   seq = "v__v"; break;
+		case 10:  seq = "h___"; break;
+		case 11:  seq = "h___"; break;
+		case 12:  seq = "h___"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		
+		case 203: seq = "h_av"; break;
+		case 204: seq = "v__v"; break;
+		case 205: seq = "v__v"; break;
+		case 206: seq = "v__V"; break;
+		case 207: seq = "V__V"; break;
+		case 208: seq = "V__V"; break;
+		case 209: seq = "V__v"; break;
+		case 210: seq = "v__v"; break;
+		case 211: seq = "v__v"; break;
+		case 212: seq = "v___"; break;
+		case 213: seq = "h___"; break;
+		case 214: seq = "h___"; break;
+		case 215: seq = "h___"; break;
+		case 216: seq = "h___"; break;
+		case 217: seq = "h__a"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = (l->line < 210 ? (l->line - 16) * 2 : (l->line - 219) * 2 + 1);
+	}
+	else if(s->conf.type == VID_APOLLO_320)
+	{
+		if(l->line <= 8) seq = "V__v";
+		else seq = "h_aa";
+		
+		vy = l->line - 9;
+		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
+	}
+	else if(s->conf.type == VID_BAIRD_240)
+	{
+		switch(l->line)
+		{
+		case 1:   seq = "V__V"; break;
+		case 2:   seq = "V__V"; break;
+		case 3:   seq = "V__V"; break;
+		case 4:   seq = "V__V"; break;
+		case 5:   seq = "V__V"; break;
+		case 6:   seq = "V__V"; break;
+		case 7:   seq = "V__V"; break;
+		case 8:   seq = "V__V"; break;
+		case 9:   seq = "V__V"; break;
+		case 10:  seq = "V__V"; break;
+		case 11:  seq = "V__V"; break;
+		case 12:  seq = "V__V"; break;
+		case 13:  seq = "h___"; break;
+		case 14:  seq = "h___"; break;
+		case 15:  seq = "h___"; break;
+		case 16:  seq = "h___"; break;
+		case 17:  seq = "h___"; break;
+		case 18:  seq = "h___"; break;
+		case 19:  seq = "h___"; break;
+		case 20:  seq = "h___"; break;
+		
+		default:  seq = "h_aa"; break;
+		}
+		
+		/* Calculate the active line number */
+		vy = l->line - 20;
+	}
+	else if(s->conf.type == VID_BAIRD_30)
+	{
+		/* The original Baird 30 line standard has no sync pulses */
+		seq = "__aa";
+		vy = l->line - 1;
+	}
+	
+	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
+	
+	if(s->conf.colour_mode == VID_PAL ||
+	   s->conf.colour_mode == VID_NTSC)
+	{
+		/* Does this line use colour? */
+		pal  = seq[1] == '0';
+		pal |= seq[1] == '1' && (l->frame & 1) == 1;
+		pal |= seq[1] == '2' && (l->frame & 1) == 0;
+		
+		/* Calculate colour sub-carrier lookup-positions for the start of this line */
+		vid_get_colour_subcarrier(s, l->frame, l->line, &lut_b, &lut_i, &lut_q);
+	}
+	if(s->conf.colour_mode == VID_APOLLO_FSC)
+	{
+		/* Apollo Field Sequential Colour */
+		fsc = (l->frame * 2 + (l->line < 264 ? 0 : 1)) % 3;
+		pal = 0;
+	}
+	else if(s->conf.colour_mode == VID_CBS_FSC)
+	{
+		/* CBS Field Sequential Colour */
+		fsc = (l->frame * 2 + (l->line < 202 ? 0 : 1)) % 3;
+		pal = 0;
+	}
+	
+	/* Render the left side sync pulse */
+	if(seq[0] == 'v') w = s->vsync_short_width;
+	else if(seq[0] == 'V') w = s->vsync_long_width;
+	else if(seq[0] == 'h') w = s->hsync_width;
+	else w = 0;
+	
+	for(x = 0; x < w && x < s->half_width; x++)
+	{
+		l->output[x * 2] = s->sync_level;
+	}
+	
+	/* Render left side of active video if required */
+	if(seq[2] == 'a' && vy != -1)
+	{
+		for(; x < s->active_left; x++)
+		{
+			l->output[x * 2] = s->blanking_level;
+		}
+		
+		for(; x < s->half_width; x++)
+		{
+			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
+			
+			if(s->conf.colour_mode == VID_APOLLO_FSC ||
+			   s->conf.colour_mode == VID_CBS_FSC)
+			{
+				rgb  = (rgb >> (8 * fsc)) & 0xFF;
+				rgb |= (rgb << 8) | (rgb << 16);
+			}
+			
+			l->output[x * 2] = s->yiq_level_lookup[rgb].y;
+			
+			if(pal)
+			{
+				l->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
+				l->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
+			}
+		}
+	}
+	else
+	{
+		for(; x < s->half_width; x++)
+		{
+			l->output[x * 2] = s->blanking_level;
+		}
+	}
+	
+	if(seq[3] == 'a' && vy != -1)
+	{
+		for(; x < s->active_left + s->active_width; x++)
+		{
+			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
+			
+			if(s->conf.colour_mode == VID_APOLLO_FSC ||
+			   s->conf.colour_mode == VID_CBS_FSC)
+			{
+				rgb  = (rgb >> (8 * fsc)) & 0xFF;
+				rgb |= (rgb << 8) | (rgb << 16);
+			}
+			
+			l->output[x * 2] = s->yiq_level_lookup[rgb].y;
+			
+			if(pal)
+			{
+				l->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
+				l->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
+			}
+		}
+	}
+	else
+	{
+		if(seq[3] == 'v') w = s->vsync_short_width;
+		else if(seq[3] == 'V') w = s->vsync_long_width;
+		else w = 0;
+		
+		for(; x < s->half_width + w && x < s->width; x++)
+		{
+			l->output[x * 2] = s->sync_level;
+		}
+	}
+	
+	/* Blank the remainder of the line */
+	for(; x < s->width; x++)
+	{
+		l->output[x * 2] = s->blanking_level;
+	}
+	
+	/* Render the colour burst */
+	if(pal)
+	{
+		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
+		{
+			l->output[x * 2] += (lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
+		}
+	}
+	
+	/* Render the FSC flag */
+	if(s->conf.colour_mode == VID_APOLLO_FSC && fsc == 1 &&
+	  (l->line == 18 || l->line == 281))
+	{
+		/* The Apollo colour standard transmits one colour per field
+		 * (Blue, Red, Green), with the green field indicated by a flag
+		 * on field line 18. The flag also indicates the temperature of
+		 * the camera by its duration, varying between 5 and 45 μs. The
+		 * duration is fixed to 20 μs in hacktv. */
+		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
+		{
+			l->output[x * 2] = s->fsc_flag_level;
+		}
+	}
+	
+	/* Render the CBS FSC flag */
+	if(s->conf.colour_mode == VID_CBS_FSC && fsc == 2 &&
+	  (l->line == 1 || l->line == 203))
+	{
+		w = (l->line == 1 ? s->fsc_flag_left : s->half_width + s->fsc_flag_left);
+		for(x = 0; x < s->vsync_short_width; x++)
+		{
+			l->output[(w + x) * 2] = s->sync_level;
+		}
+	}
+	
+	/* Render the SECAM colour subcarrier */
+	if(s->conf.colour_mode == VID_SECAM &&
+	   (seq[2] == 'a' || seq[3] == 'a'))
+	{
+		x = s->active_left;
+		w = x + s->active_width;
+		
+		if(seq[2] != 'a') x = s->half_width;
+		if(seq[3] != 'a') w = s->half_width;
+		
+		x -= s->active_left - s->burst_left;
+		
+		for(; x < w; x++)
+		{
+			rgb = 0x000000;
+			
+			if(x >= s->active_left && x < s->active_left + s->active_width)
+			{
+				rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
+			}
+			
+			if(((l->frame * s->conf.lines) + l->line) & 1)
+			{
+				_fm_modulator_add(&s->fm_secam_cb, &l->output[x * 2], s->yiq_level_lookup[rgb].q);
+			}
+			else
+			{
+				_fm_modulator_add(&s->fm_secam_cr, &l->output[x * 2], s->yiq_level_lookup[rgb].i);
+			}
+		}
+	}
+	
+	/* Clear the Q channel */
+	for(x = 0; x < s->width; x++)
+	{
+		l->output[x * 2 + 1] = 0;
+	}
+	
+	return(1);
+}
+
+static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	vid_line_t *l = lines[0];
+	fir_int16_t *fir = arg;
+	fir_int16_process(fir, l->output, l->output, s->width);
+	return(1);
+}
+
+static void _vid_filter_free(vid_t *s, void *arg)
+{
+	fir_int16_t *fir = arg;
+	fir_int16_free(fir);
+	free(fir);
+}
+
+static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	vid_line_t *l = lines[0];
+	static int16_t audio[2] = { 0, 0 };
+	static int interp = 0;
+	int x;
+	
+	for(x = 0; x < s->width; x++)
+	{
+		int16_t add[2] = { 0, 0 };
+		
+		/* TODO: Replace this with a real FIR filter... */
+		interp += HACKTV_AUDIO_SAMPLE_RATE;
+		if(interp >= s->sample_rate)
+		{
+			interp -= s->sample_rate;
+			
+			if(s->audiobuffer_samples == 0)
+			{
+				s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
+				
+				if(s->conf.systeraudio == 1)
+				{
+					ng_invert_audio(&s->ng, s->audiobuffer, s->audiobuffer_samples);
+				}
+			}
+			
+			if(s->audiobuffer)
+			{
+				/* Fetch next sample */
+				audio[0] = s->audiobuffer[0];
+				audio[1] = s->audiobuffer[1];
+				s->audiobuffer += 2;
+				s->audiobuffer_samples--;
+			}
+			else
+			{
+				/* No audio from the source */
+				audio[0] = 0;
+				audio[1] = 0;
+			}
+			
+			if((s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0) ||
+			   s->conf.type == VID_MAC)
+			{
+				s->nicam_buf[s->nicam_buf_len++] = audio[0];
+				s->nicam_buf[s->nicam_buf_len++] = audio[1];
+				
+				if(s->nicam_buf_len == NICAM_AUDIO_LEN * 2)
+				{
+					if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+					{
+						nicam_mod_input(&s->nicam, s->nicam_buf);
+					}
+					
+					if(s->conf.type == VID_MAC)
+					{
+						mac_write_audio(s, s->nicam_buf);
+					}
+					
+					s->nicam_buf_len = 0;
+				}
+			}
+			
+			if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
+			{
+				s->dance_buf[s->dance_buf_len++] = audio[0];
+				s->dance_buf[s->dance_buf_len++] = audio[1];
+				
+				if(s->dance_buf_len == DANCE_A_AUDIO_LEN * 2)
+				{
+					dance_mod_input(&s->dance, s->dance_buf);
+					s->dance_buf_len = 0;
+				}
+			}
+		}
+		
+		if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
+		{
+			_fm_modulator_add(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
+		}
+		
+		if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
+		{
+			_fm_modulator_add(&s->fm_left, add, audio[0]);
+		}
+		
+		if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
+		{
+			_fm_modulator_add(&s->fm_right, add, audio[1]);
+		}
+		
+		if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
+		{
+			_am_modulator_add(&s->am_mono, add, (audio[0] + audio[1]) / 2);
+		}
+		
+		l->output[x * 2 + 0] += add[0];
+		l->output[x * 2 + 1] += add[1];
+	}
+	
+	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
+	{
+		nicam_mod_output(&s->nicam, l->output, s->width);
+	}
+	
+	if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
+	{
+		dance_mod_output(&s->dance, l->output, s->width);
+	}
+	
+	return(1);
+}
+
+static int _vid_fmmod_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	vid_line_t *l = lines[0];
+	int x;
+	
+	/* FM modulate the video and audio if requested */
+	for(x = 0; x < s->width; x++)
+	{
+		_fm_modulator(&s->fm_video, &l->output[x * 2], l->output[x * 2]);
+	}
+	
+	return(1);
+}
+
+static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, vid_lineprocess_process_t pprocess, vid_lineprocess_free_t pfree)
+{
+	_lineprocess_t *p;
+	
+	p = realloc(s->processes, sizeof(_lineprocess_t) * (s->nprocesses + 1));
+	if(!p)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	s->processes = p;
+	p = &s->processes[s->nprocesses++];
+	
+	strncpy(p->name, name, 15);
+	p->vid = s;
+	p->nlines = nlines;
+	p->arg = arg;
+	p->process = pprocess;
+	p->free = pfree;
+	
+	p->lines = calloc(sizeof(vid_line_t *), nlines);
+	if(!p->lines)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	/* Update required line total (non-threaded version) */
+	s->olines += nlines - 1;
+	
+	return(VID_OK);
+}
+
+static int _init_vfilter(vid_t *s)
+{
+	fir_int16_t *fir;
+	int ntaps;
+	
+	fir = malloc(sizeof(fir_int16_t));
+	if(!fir)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	if(s->conf.modulation == VID_VSB)
+	{
+		int16_t *taps;
+		
+		ntaps = 51;
+		
+		taps = calloc(ntaps, sizeof(int16_t) * 2);
+		if(!taps)
+		{
+			free(fir);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
+		fir_int16_scomplex_init(fir, taps, ntaps);
+		free(taps);
+	}
+	else if(s->conf.modulation == VID_FM)
+	{
+		const int16_t *taps;
+		
+		if(s->conf.type == VID_MAC)
+		{
+			if(s->sample_rate != 20250000)
+			{
+				fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz.\n");
+			}
+			
+			taps = fm_mac_taps;
+			ntaps = sizeof(fm_mac_taps) / sizeof(int16_t);
+		}
+		else if(s->conf.lines == 525)
+		{
+			if(s->sample_rate != 18000000)
+			{
+				fprintf(stderr, "Warning: The 525-line FM video pre-emphasis filter is designed to run at 18 MHz.\n");
+			}
+			
+			taps = fm_525_taps;
+			ntaps = sizeof(fm_525_taps) / sizeof(int16_t);
+		}
+		else
+		{
+			if(s->sample_rate == 14000000)
+			{
+				taps = fm_625_14_taps;
+				ntaps = sizeof(fm_625_14_taps) / sizeof(int16_t);
+			}
+			else
+			{
+				if(s->sample_rate != 20250000)
+				{
+					fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
+				}
+				
+				taps = fm_625_taps;
+				ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
+			}
+		}
+		
+		fir_int16_init(fir, taps, ntaps);	
+	}
+	
+	_add_lineprocess(s, "vfilter", 1, fir, _vid_filter_process, _vid_filter_free);
+	
+	return(VID_OK);
+}
+
 int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
 {
 	int r, x;
@@ -1843,6 +2717,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	double d;
 	double glut[0x100];
 	double level, slevel;
+	vid_line_t *l;
 	
 	/* Seed the system's PRNG, used by some of the video scramblers */
 	srand(time(NULL));
@@ -1855,16 +2730,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
-	
-	/* Calculate the "actual" sample rate we use. This is calculated
-	 * to give us an exact number of samples per line */
-	//s->sample_rate = s->width * s->conf.lines * s->conf.frame_rate;
-	// This won't work with NTSC
-	
-	//if(s->sample_rate != sample_rate)
-	//{
-	//	fprintf(stderr, "Sample rate error %0.2f%%\n", (double) s->sample_rate / sample_rate * 100);
-	//}
 	
 	s->sample_rate = sample_rate;
 	
@@ -2008,8 +2873,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	/* Set the next line/frame counter */
 	/* NOTE: TV line and frame numbers start at 1 rather than 0 */
-	s->bline  = s->line = 1;
-	s->bframe = s->frame = 1;
+	s->bline  = 1;
+	s->bframe = 1;
 	
 	s->framebuffer = NULL;
 	s->olines = 1;
@@ -2024,6 +2889,125 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		{
 			return(r);
 		}
+		
+		_add_lineprocess(s, "macraster", 3, NULL, mac_next_line, NULL);
+	}
+	else
+	{
+		_add_lineprocess(s, "raster", 1, NULL, _vid_next_line_raster, NULL);
+	}
+	
+	/* Initalise VITS inserter */
+	if(s->conf.vits)
+	{
+		if((r = vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "vits", 1, &s->vits, vits_render, NULL);
+	}
+	
+	/* Initalise the WSS system */
+	if(s->conf.wss)
+	{
+		if((r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "wss", 1, &s->wss, wss_render, NULL);
+	}
+	
+	/* Initialise videocrypt I/II encoder */
+	if(s->conf.videocrypt || s->conf.videocrypt2)
+	{
+		if((r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "videocrypt", 2, &s->vc, vc_render_line, NULL);
+	}
+	
+	/* Initialise videocrypt S encoder */
+	if(s->conf.videocrypts)
+	{
+		if((r = vcs_init(&s->vcs, s, s->conf.videocrypts)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "videocrypts", VCS_DELAY_LINES, &s->vcs, vcs_render_line, NULL);
+	}
+	
+	/* Initalise syster encoder */
+	if(s->conf.syster)
+	{
+		if((r = ng_init(&s->ng, s, s->conf.syster)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "syster", NG_DELAY_LINES, &s->ng, ng_render_line, NULL);
+	}
+
+	/* Initalise D11 encoder */
+	if(s->conf.d11)
+	{
+		if((r = d11_init(&s->ng, s, s->conf.d11)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "discret11", 2, &s->ng, d11_render_line, NULL);
+	}
+	
+	/* Initalise Smartcrypt encoder */
+	if(s->conf.smartcrypt)
+	{
+		if((r = smartcrypt_init(&s->ng, s, s->conf.smartcrypt)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "smartcrypt", 2, &s->ng, smartcrypt_render_line, NULL);
+	}
+		
+	/* Initalise ACP renderer */
+	if(s->conf.acp)
+	{
+		if((r = acp_init(&s->acp, s)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "acp", 1, &s->acp, acp_render_line, NULL);
+	}
+	
+	/* Initalise the teletext system */
+	if(s->conf.teletext)
+	{
+		if((r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "teletext", 1, &s->tt, tt_render_line, NULL);
+	}
+	
+	if(s->conf.vfilter)
+	{
+		_init_vfilter(s);
 	}
 	
 	/* FM audio */
@@ -2106,6 +3090,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		s->audio = 1;
 	}
 	
+	/* Add the audio process */
+	if(s->audio == 1)
+	{
+		_add_lineprocess(s, "audio", 1, NULL, _vid_audio_process, NULL);
+	}
+	
 	/* FM video */
 	if(s->conf.modulation == VID_FM)
 	{
@@ -2115,82 +3105,17 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			vid_free(s);
 			return(r);
 		}
+		
+		_add_lineprocess(s, "fmmod", 1, NULL, _vid_fmmod_process, NULL);
 	}
 	
-	/* Initalise the WSS system */
-	if(s->conf.wss && (r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initialise videocrypt encoder */
-	if((s->conf.videocrypt || s->conf.videocrypt2) && 
-	(r = vc_init(&s->vc, s, s->conf.videocrypt, s->conf.videocrypt2)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initialise videocrypt S encoder */
-	if(s->conf.videocrypts && (r = vcs_init(&s->vcs, s, s->conf.videocrypts)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise syster encoder */
-	if(s->conf.syster && (r = ng_init(&s->ng, s, s->conf.syster)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise D11 encoder */
-	if(s->conf.d11 && (r = d11_init(&s->ng, s, s->conf.d11)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise Smartcrypt encoder */
-	if(s->conf.smartcrypt && (r = smartcrypt_init(&s->ng, s, s->conf.smartcrypt)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
- 
-	/* Initalise ACP renderer */
-	if(s->conf.acp && (r = acp_init(&s->acp, s)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise VITS inserter */
-	if(s->conf.vits && vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level) != 0)
-	{
-		vid_free(s);
-		return(r);
-	}
-	
-	/* Initalise the teletext system */
-	if(s->conf.teletext && (r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
-	{
-		vid_free(s);
-		return(r);
-	}
+	/* The final process is only for output */
+	_add_lineprocess(s, "output", 1, NULL, NULL, NULL);
+	s->output_process = &s->processes[s->nprocesses - 1];
 	
 	/* Output line buffer(s) */
-	s->oline = calloc(sizeof(int16_t *), s->olines);
+	s->oline = calloc(sizeof(vid_line_t), s->olines);
 	if(!s->oline)
-	{
-		vid_free(s);
-		return(VID_OUT_OF_MEMORY);
-	}
-	
-	s->vbialloclist = calloc(sizeof(int), s->olines);
-	if(!s->vbialloclist)
 	{
 		vid_free(s);
 		return(VID_OUT_OF_MEMORY);
@@ -2198,8 +3123,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	for(r = 0; r < s->olines; r++)
 	{
-		s->oline[r] = malloc(sizeof(int16_t) * 2 * s->width);
-		if(!s->oline[r])
+		s->oline[r].output = malloc(sizeof(int16_t) * 2 * s->width);
+		if(!s->oline[r].output)
 		{
 			vid_free(s);
 			return(VID_OUT_OF_MEMORY);
@@ -2208,7 +3133,27 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		/* Blank the lines */
 		for(x = 0; x < s->width; x++)
 		{
-			s->oline[r][x * 2] = s->blanking_level;
+			s->oline[r].output[x * 2] = s->blanking_level;
+		}
+		
+		s->oline[r].frame = 1;
+		s->oline[r].line = 0;
+		s->oline[r].vbialloc = 0;
+		s->oline[r].next = &s->oline[(r + 1) % s->olines];
+	}
+	
+	/* Setup lineprocess output windows (non-threaded version) */
+	l = &s->oline[s->olines - 1];
+	
+	for(r = 0; r < s->nprocesses; r++)
+	{
+		_lineprocess_t *p = &s->processes[r];
+		
+		l -= p->nlines - 1;
+		
+		for(x = 0; x < p->nlines; x++)
+		{
+			p->lines[x] = &l[x];
 		}
 	}
 	
@@ -2221,6 +3166,17 @@ void vid_free(vid_t *s)
 	
 	/* Close the AV source */
 	vid_av_close(s);
+	
+	for(i = 0; i < s->nprocesses; i++)
+	{
+		if(s->processes[i].free)
+		{
+			s->processes[i].free(s, s->processes[i].arg);
+		}
+		
+		free(s->processes[i].lines);
+	}
+	free(s->processes);
 	
 	if(s->conf.teletext)
 	{
@@ -2257,8 +3213,6 @@ void vid_free(vid_t *s)
 		wss_free(&s->wss);
 	}
 	
-	fir_int16_free(&s->video_filter);
-	
 	if(s->conf.type == VID_MAC)
 	{
 		mac_free(s);
@@ -2281,12 +3235,11 @@ void vid_free(vid_t *s)
 	{
 		for(i = 0; i < s->olines; i++)
 		{
-			free(s->oline[i]);
+			free(s->oline[i].output);
 		}
 		free(s->oline);
 	}
 	
-	free(s->vbialloclist);
 	free(s->burst_win);
 	
 	memset(s, 0, sizeof(vid_t));
@@ -2303,940 +3256,18 @@ void vid_info(vid_t *s)
 	fprintf(stderr, "Sample rate: %d\n", s->sample_rate);
 }
 
-int vid_init_filter(vid_t *s)
-{
-	int ntaps;
-	
-	if(s->conf.modulation == VID_VSB)
-	{
-		int16_t *taps;
-		
-		ntaps = 51;
-		
-		taps = calloc(ntaps, sizeof(int16_t) * 2);
-		if(!taps)
-		{
-			return(VID_OUT_OF_MEMORY);
-		}
-		
-		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_complex_init(&s->video_filter, taps, ntaps);
-		free(taps);
-	}
-	else if(s->conf.modulation == VID_FM)
-	{
-		const int16_t *taps;
-		
-		if(s->conf.type == VID_MAC)
-		{
-			if(s->sample_rate != 20250000)
-			{
-				fprintf(stderr, "Warning: The D/D2-MAC pre-emphasis filter is designed to run at 20.25 MHz.\n");
-			}
-			
-			taps = fm_mac_taps;
-			ntaps = sizeof(fm_mac_taps) / sizeof(int16_t);
-		}
-		else if(s->conf.lines == 525)
-		{
-			if(s->sample_rate != 18000000)
-			{
-				fprintf(stderr, "Warning: The 525-line FM video pre-emphasis filter is designed to run at 18 MHz.\n");
-			}
-			
-			taps = fm_525_taps;
-			ntaps = sizeof(fm_525_taps) / sizeof(int16_t);
-		}
-		else
-		{
-			if(s->sample_rate == 14000000)
-			{
-				taps = fm_625_14_taps;
-				ntaps = sizeof(fm_625_14_taps) / sizeof(int16_t);
-			}
-			else
-			{
-				if(s->sample_rate != 20250000)
-				{
-					fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
-				}
-				
-				taps = fm_625_taps;
-				ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
-			}
-		}
-		
-		fir_int16_init(&s->video_filter, taps, ntaps);
-	}
-	
-	return(VID_OK);
-}
-
 size_t vid_get_framebuffer_length(vid_t *s)
 {
 	return(sizeof(uint32_t) * s->active_width * s->conf.active_lines);
 }
 
-int16_t *vid_adj_delay(vid_t *s, int lines)
+static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
 {
-	s->odelay -= lines;
-	s->output = s->oline[s->odelay];
-	s->vbialloc = &s->vbialloclist[s->odelay];
-	
-	s->line -= lines;
-	while(s->line < 1)
-	{
-		s->line += s->conf.lines;
-		s->frame--;
-	}
-	
-	return(s->output);
-}
-
-static void _vid_next_line_raster(vid_t *s)
-{
-	const char *seq;
-	int x;
-	int vy;
-	int w;
-	uint32_t rgb;
-	int pal;
-	int odd;
-	int fsc = 0;
-	int16_t *lut_b;
-	int16_t *lut_i;
-	int16_t *lut_q;
-	
-	/* Sequence codes: abcd
-	 * 
-	 * a: first sync
-	 *    h = horizontal sync pulse
-	 *    v = short vertical sync pulse
-	 *    V = long vertical sync pulse
-	 *    _ = no sync pulse
-	 * 
-	 * b: colour burst
-	 *    0 = line always has a colour burst
-	 *    _ = line never has a colour burst
-	 *    1 = line has a colour burst on odd frames
-	 *    2 = line has a colour burst on even frames
-	 * 
-	 * c: left content
-	 *    _ = blanking
-	 *    a = active video
-	 * 
-	 * d: right content
-	 *    _ = blanking
-	 *    a = active video
-	 *    v = short vertical sync pulse
-	 *    V = long vertical sync pulse
-	 * 
-	 **** I don't like this code, it's overly complicated for all it does.
-	*/
-	
-	vy = -1;
-	seq = "____";
-	
-	if(s->conf.type == VID_RASTER_625)
-	{
-		switch(s->line)
-		{
-		case 1:   seq = "V__V"; break;
-		case 2:   seq = "V__V"; break;
-		case 3:   seq = "V__v"; break;
-		case 4:   seq = "v__v"; break;
-		case 5:   seq = "v__v"; break;
-		case 6:   seq = "h1__"; break;
-		case 7:   seq = "h0__"; break;
-		case 8:   seq = "h0__"; break;
-		case 9:   seq = "h0__"; break;
-		case 10:  seq = "h0__"; break;
-		case 11:  seq = "h0__"; break;
-		case 12:  seq = "h0__"; break;
-		case 13:  seq = "h0__"; break;
-		case 14:  seq = "h0__"; break;
-		case 15:  seq = "h0__"; break;
-		case 16:  seq = "h0__"; break;
-		case 17:  seq = "h0__"; break;
-		case 18:  seq = "h0__"; break;
-		case 19:  seq = "h0__"; break;
-		case 20:  seq = "h0__"; break;
-		case 21:  seq = "h0__"; break;
-		case 22:  seq = "h0__"; break;
-		case 23:  seq = "h0_a"; break;
-		
-		case 310: seq = "h1aa"; break;
-		case 311: seq = "v__v"; break;
-		case 312: seq = "v__v"; break;
-		case 313: seq = "v__V"; break;
-		case 314: seq = "V__V"; break;
-		case 315: seq = "V__V"; break;
-		case 316: seq = "v__v"; break;
-		case 317: seq = "v__v"; break;
-		case 318: seq = "v___"; break;
-		case 319: seq = "h2__"; break;
-		case 320: seq = "h0__"; break;
-		case 321: seq = "h0__"; break;
-		case 322: seq = "h0__"; break;
-		case 323: seq = "h0__"; break;
-		case 324: seq = "h0__"; break;
-		case 325: seq = "h0__"; break;
-		case 326: seq = "h0__"; break;
-		case 327: seq = "h0__"; break;
-		case 328: seq = "h0__"; break;
-		case 329: seq = "h0__"; break;
-		case 330: seq = "h0__"; break;
-		case 331: seq = "h0__"; break;
-		case 332: seq = "h0__"; break;
-		case 333: seq = "h0__"; break;
-		case 334: seq = "h0__"; break;
-		case 335: seq = "h0__"; break;
-		
-		case 622: seq = "h1aa"; break;
-		case 623: seq = "h_av"; break;
-		case 624: seq = "v__v"; break;
-		case 625: seq = "v__v"; break;
-		
-		default:  seq = "h0aa"; break;
-		}
-		
-		/* Calculate the active line number */
-		vy = (s->line < 313 ? (s->line - 23) * 2 : (s->line - 336) * 2 + 1);
-	}
-	else if(s->conf.type == VID_RASTER_525)
-	{
-		switch(s->line)
-		{
-		case 1:   seq = "v__v"; break;
-		case 2:   seq = "v__v"; break;
-		case 3:   seq = "v__v"; break;
-		case 4:   seq = "V__V"; break;
-		case 5:   seq = "V__V"; break;
-		case 6:   seq = "V__V"; break;
-		case 7:   seq = "v__v"; break;
-		case 8:   seq = "v__v"; break;
-		case 9:   seq = "v__v"; break;
-		case 10:  seq = "h0__"; break;
-		case 11:  seq = "h0__"; break;
-		case 12:  seq = "h0__"; break;
-		case 13:  seq = "h0__"; break;
-		case 14:  seq = "h0__"; break;
-		case 15:  seq = "h0__"; break;
-		case 16:  seq = "h0__"; break;
-		case 17:  seq = "h0__"; break;
-		case 18:  seq = "h0__"; break;
-		case 19:  seq = "h0__"; break;
-		case 20:  seq = "h0__"; break;
-		
-		case 263: seq = "h0av"; break;
-		case 264: seq = "v__v"; break;
-		case 265: seq = "v__v"; break;
-		case 266: seq = "v__V"; break;
-		case 267: seq = "V__V"; break;
-		case 268: seq = "V__V"; break;
-		case 269: seq = "V__v"; break;
-		case 270: seq = "v__v"; break;
-		case 271: seq = "v__v"; break;
-		case 272: seq = "v___"; break;
-		case 273: seq = "h0__"; break;
-		case 274: seq = "h0__"; break;
-		case 275: seq = "h0__"; break;
-		case 276: seq = "h0__"; break;
-		case 277: seq = "h0__"; break;
-		case 278: seq = "h0__"; break;
-		case 279: seq = "h0__"; break;
-		case 280: seq = "h0__"; break;
-		case 281: seq = "h0__"; break;
-		case 282: seq = "h0__"; break;
-		case 283: seq = "h0_a"; break;
-		
-		default:  seq = "h0aa"; break;
-		}
-		
-		/* Calculate the active line number */
-		
-		/* There are 486 lines in this mode with some active video,
-		 * but encoded files normally only have 480 of these. Here
-		 * we use the line numbers suggested by SMPTE Recommended
-		 * Practice RP-202. Lines 23-262 from the first field and
-		 * 286-525 from the second. */
-		
-		vy = (s->line < 265 ? (s->line - 23) * 2 : (s->line - 286) * 2 + 1);
-	}
-	else if(s->conf.type == VID_RASTER_819)
-	{
-		switch(s->line)
-		{
-		case 817: seq = "h___"; break;
-		case 818: seq = "h___"; break;
-		case 819: seq = "h___"; break;
-		case 1:   seq = "V___"; break;
-		case 2:   seq = "h___"; break;
-		case 3:   seq = "h___"; break;
-		case 4:   seq = "h___"; break;
-		case 5:   seq = "h___"; break;
-		case 6:   seq = "h___"; break;
-		case 7:   seq = "h___"; break;
-		case 8:   seq = "h___"; break;
-		case 9:   seq = "h___"; break;
-		case 10:  seq = "h___"; break;
-		case 11:  seq = "h___"; break;
-		case 12:  seq = "h___"; break;
-		case 13:  seq = "h___"; break;
-		case 14:  seq = "h___"; break;
-		case 15:  seq = "h___"; break;
-		case 16:  seq = "h___"; break;
-		case 17:  seq = "h___"; break;
-		case 18:  seq = "h___"; break;
-		case 19:  seq = "h___"; break;
-		case 20:  seq = "h___"; break;
-		case 21:  seq = "h___"; break;
-		case 22:  seq = "h___"; break;
-		case 23:  seq = "h___"; break;
-		case 24:  seq = "h___"; break;
-		case 25:  seq = "h___"; break;
-		case 26:  seq = "h___"; break;
-		case 27:  seq = "h___"; break;
-		case 28:  seq = "h___"; break;
-		case 29:  seq = "h___"; break;
-		case 30:  seq = "h___"; break;
-		case 31:  seq = "h___"; break;
-		case 32:  seq = "h___"; break;
-		case 33:  seq = "h___"; break;
-		case 34:  seq = "h___"; break;
-		case 35:  seq = "h___"; break;
-		case 36:  seq = "h___"; break;
-		case 37:  seq = "h___"; break;
-		case 38:  seq = "h___"; break;
-		
-		case 406: seq = "h_a_"; break;
-		case 407: seq = "h___"; break;
-		case 408: seq = "h___"; break;
-		case 409: seq = "h__V"; break;
-		case 410: seq = "h___"; break;
-		case 411: seq = "h___"; break;
-		case 412: seq = "h___"; break;
-		case 413: seq = "h___"; break;
-		case 414: seq = "h___"; break;
-		case 415: seq = "h___"; break;
-		case 416: seq = "h___"; break;
-		case 417: seq = "h___"; break;
-		case 418: seq = "h___"; break;
-		case 419: seq = "h___"; break;
-		case 420: seq = "h___"; break;
-		case 421: seq = "h___"; break;
-		case 422: seq = "h___"; break;
-		case 423: seq = "h___"; break;
-		case 424: seq = "h___"; break;
-		case 425: seq = "h___"; break;
-		case 426: seq = "h___"; break;
-		case 427: seq = "h___"; break;
-		case 428: seq = "h___"; break;
-		case 429: seq = "h___"; break;
-		case 430: seq = "h___"; break;
-		case 431: seq = "h___"; break;
-		case 432: seq = "h___"; break;
-		case 433: seq = "h___"; break;
-		case 434: seq = "h___"; break;
-		case 435: seq = "h___"; break;
-		case 436: seq = "h___"; break;
-		case 437: seq = "h___"; break;
-		case 438: seq = "h___"; break;
-		case 439: seq = "h___"; break;
-		case 440: seq = "h___"; break;
-		case 441: seq = "h___"; break;
-		case 442: seq = "h___"; break;
-		case 443: seq = "h___"; break;
-		case 444: seq = "h___"; break;
-		case 445: seq = "h___"; break;
-		case 446: seq = "h___"; break;
-		case 447: seq = "h__a"; break;
-		
-		default:  seq = "h_aa"; break;
-		}
-		
-		/* Calculate the active line number */
-		vy = (s->line < 406 ? (s->line - 48) * 2 : (s->line - 457) * 2 + 1);
-	}
-	else if(s->conf.type == VID_RASTER_405)
-	{
-		switch(s->line)
-		{
-		case 1:   seq = "V__V"; break;
-		case 2:   seq = "V__V"; break;
-		case 3:   seq = "V__V"; break;
-		case 4:   seq = "V__V"; break;
-		case 5:   seq = "h___"; break;
-		case 6:   seq = "h___"; break;
-		case 7:   seq = "h___"; break;
-		case 8:   seq = "h___"; break;
-		case 9:   seq = "h___"; break;
-		case 10:  seq = "h___"; break;
-		case 11:  seq = "h___"; break;
-		case 12:  seq = "h___"; break;
-		case 13:  seq = "h___"; break;
-		case 14:  seq = "h___"; break;
-		case 15:  seq = "h___"; break;
-		
-		case 203: seq = "h_aV"; break;
-		case 204: seq = "V__V"; break;
-		case 205: seq = "V__V"; break;
-		case 206: seq = "V__V"; break;
-		case 207: seq = "V___"; break;
-		case 208: seq = "h___"; break;
-		case 209: seq = "h___"; break;
-		case 210: seq = "h___"; break;
-		case 211: seq = "h___"; break;
-		case 212: seq = "h___"; break;
-		case 213: seq = "h___"; break;
-		case 214: seq = "h___"; break;
-		case 215: seq = "h___"; break;
-		case 216: seq = "h___"; break;
-		case 217: seq = "h___"; break;
-		case 218: seq = "h__a"; break;
-		
-		default:  seq = "h_aa"; break;
-		}
-		
-		/* Calculate the active line number */
-		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
-	}
-	else if(s->conf.type == VID_CBS_405)
-	{
-		switch(s->line)
-		{
-		case 1:   seq = "v__v"; break;
-		case 2:   seq = "v__v"; break;
-		case 3:   seq = "v__v"; break;
-		case 4:   seq = "V__V"; break;
-		case 5:   seq = "V__V"; break;
-		case 6:   seq = "V__V"; break;
-		case 7:   seq = "v__v"; break;
-		case 8:   seq = "v__v"; break;
-		case 9:   seq = "v__v"; break;
-		case 10:  seq = "h___"; break;
-		case 11:  seq = "h___"; break;
-		case 12:  seq = "h___"; break;
-		case 13:  seq = "h___"; break;
-		case 14:  seq = "h___"; break;
-		
-		case 203: seq = "h_av"; break;
-		case 204: seq = "v__v"; break;
-		case 205: seq = "v__v"; break;
-		case 206: seq = "v__V"; break;
-		case 207: seq = "V__V"; break;
-		case 208: seq = "V__V"; break;
-		case 209: seq = "V__v"; break;
-		case 210: seq = "v__v"; break;
-		case 211: seq = "v__v"; break;
-		case 212: seq = "v___"; break;
-		case 213: seq = "h___"; break;
-		case 214: seq = "h___"; break;
-		case 215: seq = "h___"; break;
-		case 216: seq = "h___"; break;
-		case 217: seq = "h__a"; break;
-		
-		default:  seq = "h_aa"; break;
-		}
-		
-		/* Calculate the active line number */
-		vy = (s->line < 210 ? (s->line - 16) * 2 : (s->line - 219) * 2 + 1);
-	}
-	else if(s->conf.type == VID_APOLLO_320)
-	{
-		if(s->line <= 8) seq = "V__v";
-		else seq = "h_aa";
-		
-		vy = s->line - 9;
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
-	}
-	else if(s->conf.type == VID_BAIRD_240)
-	{
-		switch(s->line)
-		{
-		case 1:   seq = "V__V"; break;
-		case 2:   seq = "V__V"; break;
-		case 3:   seq = "V__V"; break;
-		case 4:   seq = "V__V"; break;
-		case 5:   seq = "V__V"; break;
-		case 6:   seq = "V__V"; break;
-		case 7:   seq = "V__V"; break;
-		case 8:   seq = "V__V"; break;
-		case 9:   seq = "V__V"; break;
-		case 10:  seq = "V__V"; break;
-		case 11:  seq = "V__V"; break;
-		case 12:  seq = "V__V"; break;
-		case 13:  seq = "h___"; break;
-		case 14:  seq = "h___"; break;
-		case 15:  seq = "h___"; break;
-		case 16:  seq = "h___"; break;
-		case 17:  seq = "h___"; break;
-		case 18:  seq = "h___"; break;
-		case 19:  seq = "h___"; break;
-		case 20:  seq = "h___"; break;
-		
-		default:  seq = "h_aa"; break;
-		}
-		
-		/* Calculate the active line number */
-		vy = s->line - 20;
-	}
-	else if(s->conf.type == VID_BAIRD_30)
-	{
-		/* The original Baird 30 line standard has no sync pulses */
-		seq = "__aa";
-		vy = s->line - 1;
-	}
-	
-	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
-	
-	/* Does this line use colour? */
-	pal  = seq[1] == '0';
-	pal |= seq[1] == '1' && (s->frame & 1) == 1;
-	pal |= seq[1] == '2' && (s->frame & 1) == 0;
-	
-	/* odd == 1 if this is an odd line, otherwise odd == 0 */
-	odd = (s->frame + s->line + 1) & 1;
-	
-	/* Calculate colour sub-carrier lookup-positions for the start of this line */
-	if(s->conf.colour_mode == VID_PAL)
-	{
-		/* PAL */
-		lut_b = _colour_subcarrier_phase(s, odd ? -135 : 135);
-		lut_i = _colour_subcarrier_phase(s, odd ? -90 : 90);
-		lut_q = _colour_subcarrier_phase(s, 0);
-	}
-	else if(s->conf.colour_mode == VID_NTSC)
-	{
-		/* NTSC */
-		lut_b = _colour_subcarrier_phase(s, 180);
-		lut_i = _colour_subcarrier_phase(s, 90);
-		lut_q = _colour_subcarrier_phase(s, 0);
-	}
-	else if(s->conf.colour_mode == VID_APOLLO_FSC)
-	{
-		/* Apollo Field Sequential Colour */
-		fsc = (s->frame * 2 + (s->line < 264 ? 0 : 1)) % 3;
-		lut_b = NULL;
-		lut_i = NULL;
-		lut_q = NULL;
-		pal = 0;
-	}
-	else if(s->conf.colour_mode == VID_CBS_FSC)
-	{
-		/* CBS Field Sequential Colour */
-		fsc = (s->frame * 2 + (s->line < 202 ? 0 : 1)) % 3;
-		lut_b = NULL;
-		lut_i = NULL;
-		lut_q = NULL;
-		pal = 0;
-	}
-	else
-	{
-		/* No colour */
-		lut_b = NULL;
-		lut_i = NULL;
-		lut_q = NULL;
-		pal = 0;
-	}
-	
-	/* Render the left side sync pulse */
-	if(seq[0] == 'v') w = s->vsync_short_width;
-	else if(seq[0] == 'V') w = s->vsync_long_width;
-	else if(seq[0] == 'h') w = s->hsync_width;
-	else w = 0;
-	
-	for(x = 0; x < w && x < s->half_width; x++)
-	{
-		s->output[x * 2] = s->sync_level;
-	}
-	
-	/* Render left side of active video if required */
-	if(seq[2] == 'a' && vy != -1)
-	{
-		for(; x < s->active_left; x++)
-		{
-			s->output[x * 2] = s->blanking_level;
-		}
-		
-		for(; x < s->half_width; x++)
-		{
-			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-			
-			if(s->conf.colour_mode == VID_APOLLO_FSC ||
-			   s->conf.colour_mode == VID_CBS_FSC)
-			{
-				rgb  = (rgb >> (8 * fsc)) & 0xFF;
-				rgb |= (rgb << 8) | (rgb << 16);
-			}
-			
-			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
-			
-			if(pal)
-			{
-				s->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
-				s->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
-			}
-		}
-	}
-	else
-	{
-		for(; x < s->half_width; x++)
-		{
-			s->output[x * 2] = s->blanking_level;
-		}
-	}
-	
-	if(seq[3] == 'a' && vy != -1)
-	{
-		for(; x < s->active_left + s->active_width; x++)
-		{
-			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-			
-			if(s->conf.colour_mode == VID_APOLLO_FSC ||
-			   s->conf.colour_mode == VID_CBS_FSC)
-			{
-				rgb  = (rgb >> (8 * fsc)) & 0xFF;
-				rgb |= (rgb << 8) | (rgb << 16);
-			}
-			
-			s->output[x * 2] = s->yiq_level_lookup[rgb].y;
-			
-			if(pal)
-			{
-				s->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
-				s->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
-			}
-		}
-	}
-	else
-	{
-		if(seq[3] == 'v') w = s->vsync_short_width;
-		else if(seq[3] == 'V') w = s->vsync_long_width;
-		else w = 0;
-		
-		for(; x < s->half_width + w && x < s->width; x++)
-		{
-			s->output[x * 2] = s->sync_level;
-		}
-	}
-	
-	/* Blank the remainder of the line */
-	for(; x < s->width; x++)
-	{
-		s->output[x * 2] = s->blanking_level;
-	}
-	
-	/* Render the colour burst */
-	if(pal)
-	{
-		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
-		{
-			s->output[x * 2] += (lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
-		}
-	}
-	
-	/* Render the FSC flag */
-	if(s->conf.colour_mode == VID_APOLLO_FSC && fsc == 1 &&
-	  (s->line == 18 || s->line == 281))
-	{
-		/* The Apollo colour standard transmits one colour per field
-		 * (Blue, Red, Green), with the green field indicated by a flag
-		 * on field line 18. The flag also indicates the temperature of
-		 * the camera by its duration, varying between 5 and 45 μs. The
-		 * duration is fixed to 20 μs in hacktv. */
-		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
-		{
-			s->output[x * 2] = s->fsc_flag_level;
-		}
-	}
-	
-	/* Render the CBS FSC flag */
-	if(s->conf.colour_mode == VID_CBS_FSC && fsc == 2 &&
-	  (s->line == 1 || s->line == 203))
-	{
-		w = (s->line == 1 ? s->fsc_flag_left : s->half_width + s->fsc_flag_left);
-		for(x = 0; x < s->vsync_short_width; x++)
-		{
-			s->output[(w + x) * 2] = s->sync_level;
-		}
-	}
-	
-	/* Render the SECAM colour subcarrier */
-	if(s->conf.colour_mode == VID_SECAM &&
-	   (seq[2] == 'a' || seq[3] == 'a'))
-	{
-		x = s->active_left;
-		w = x + s->active_width;
-		
-		if(seq[2] != 'a') x = s->half_width;
-		if(seq[3] != 'a') w = s->half_width;
-		
-		x -= s->active_left - s->burst_left;
-		
-		for(; x < w; x++)
-		{
-			rgb = 0x000000;
-			
-			if(x >= s->active_left && x < s->active_left + s->active_width)
-			{
-				rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-			}
-			
-			if(((s->frame * s->conf.lines) + s->line) & 1)
-			{
-				_fm_modulator_add(&s->fm_secam_cb, &s->output[x * 2], s->yiq_level_lookup[rgb].q);
-			}
-			else
-			{
-				_fm_modulator_add(&s->fm_secam_cr, &s->output[x * 2], s->yiq_level_lookup[rgb].i);
-			}
-		}
-	}
-	
-	/* WSS, if enabled */
-	if(s->conf.wss)
-	{
-		wss_render_line(&s->wss);
-	}
-	
-	/* Videocrypt scrambling, if enabled */
-	if(s->conf.videocrypt || s->conf.videocrypt2)
-	{
-		vc_render_line(&s->vc, s->conf.videocrypt, s->conf.videocrypt2);
-	}
-	
-	/* Videocrypt S scrambling, if enabled */
-	if(s->conf.videocrypts)
-	{
-		vcs_render_line(&s->vcs);
-	}
-	
-	/* Syster scrambling, if enabled */
-	if(s->conf.syster)
-	{
-		ng_render_line(&s->ng);
-	}
-	
-	/* D11 scrambling, if enabled */
-	if(s->conf.d11)
-	{
-		d11_render_line(&s->ng);
-	}
-	
-	/* Smartcrypt scrambling, if enabled */
-	if(s->conf.smartcrypt)
-	{
-		smartcrypt_render_line(&s->ng);
-	}
-	
-	if(s->conf.acp == 1)
-	{
-		acp_render_line(&s->acp);
-	}
-	
-	/* VITS renderer, if enabled */
-	if(s->conf.vits == 1)
-	{
-		if(vits_render(&s->vits, s->output, s->line, lut_i, lut_q))
-		{
-			/* Mark this line as allocated to VITS */
-			*s->vbialloc = 1;
-		}
-	}
-	
-	/* Teletext, if enabled */
-	if(s->conf.teletext)
-	{
-		tt_render_line(&s->tt);
-	}
-	
-	/* Clear the Q channel */
-	for(x = 0; x < s->width; x++)
-	{
-		s->output[x * 2 + 1] = 0;
-	}
-}
-
-static void _process_audio(vid_t *s)
-{
-	static int16_t audio[2] = { 0, 0 };
-	static int interp = 0;
-	int x;
-	
-	for(x = 0; x < s->width; x++)
-	{
-		int16_t add[2] = { 0, 0 };
-		
-		/* TODO: Replace this with a real FIR filter... */
-		interp += HACKTV_AUDIO_SAMPLE_RATE;
-		if(interp >= s->sample_rate)
-		{
-			interp -= s->sample_rate;
-			
-			if(s->audiobuffer_samples == 0)
-			{
-				s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
-				
-				if(s->conf.systeraudio == 1)
-				{
-					ng_invert_audio(&s->ng, s->audiobuffer, s->audiobuffer_samples);
-				}
-			}
-			
-			if(s->audiobuffer)
-			{
-				/* Fetch next sample */
-				audio[0] = s->audiobuffer[0];
-				audio[1] = s->audiobuffer[1];
-				s->audiobuffer += 2;
-				s->audiobuffer_samples--;
-			}
-			else
-			{
-				/* No audio from the source */
-				audio[0] = 0;
-				audio[1] = 0;
-			}
-			
-			if((s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0) ||
-			   s->conf.type == VID_MAC)
-			{
-				s->nicam_buf[s->nicam_buf_len++] = audio[0];
-				s->nicam_buf[s->nicam_buf_len++] = audio[1];
-				
-				if(s->nicam_buf_len == NICAM_AUDIO_LEN * 2)
-				{
-					if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
-					{
-						nicam_mod_input(&s->nicam, s->nicam_buf);
-					}
-					
-					if(s->conf.type == VID_MAC)
-					{
-						mac_write_audio(s, s->nicam_buf);
-					}
-					
-					s->nicam_buf_len = 0;
-				}
-			}
-			
-			if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
-			{
-				s->dance_buf[s->dance_buf_len++] = audio[0];
-				s->dance_buf[s->dance_buf_len++] = audio[1];
-				
-				if(s->dance_buf_len == DANCE_A_AUDIO_LEN * 2)
-				{
-					dance_mod_input(&s->dance, s->dance_buf);
-					s->dance_buf_len = 0;
-				}
-			}
-		}
-		
-		if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
-		{
-			_fm_modulator_add(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
-		}
-		
-		if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
-		{
-			_fm_modulator_add(&s->fm_left, add, audio[0]);
-		}
-		
-		if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
-		{
-			_fm_modulator_add(&s->fm_right, add, audio[1]);
-		}
-		
-		if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
-		{
-			_am_modulator_add(&s->am_mono, add, (audio[0] + audio[1]) / 2);
-		}
-		
-		s->output[x * 2 + 0] += add[0];
-		s->output[x * 2 + 1] += add[1];
-	}
-	
-	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
-	{
-		nicam_mod_output(&s->nicam, s->output, s->width);
-	}
-	
-	if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
-	{
-		dance_mod_output(&s->dance, s->output, s->width);
-	}
-}
-
-/* A small 2-bit hacktv logo */
-// #define CHAR_WIDTH  8
-// #define CHAR_HEIGHT 9
-// #define CHARS 40
-// #define LOGO_SCALE  1
-
-// #define FONT_WIDTH 72
-// #define FONT_HEIGHT 68
-// #define FONT_CHARS 37
-// static char _logo_text[] = "HACK TV";
-// #include "evolventa.h"
-
-// static uint32_t *_overlay_logo(vid_t *s, char *logotext, int pos)
-// {	
-// 	int x, y, z, charindex = 0;
-// 	int logotextlength = strlen(logotext);
-// 	uint32_t c;
-// 	int w,i;
-// 	uint32_t *logo;
-// 	int l;
-// 	int width, height;
-	
-// 	width = s->active_width;
-// 	height = s->conf.active_lines;
-	
-// 	for(i = w = 0; i < logotextlength; i++) w +=evolventa72_Widths[logotext[z]-32];
-	
-	
-	
-// 	for (z= l =0 ; z < logotextlength; z++ )
-// 	{
-// 		// fprintf(stderr,"text width %i, vid width %i\n", w, av->width);
-// 		/* Find char index within ASCII table */
-// 		//for(l=0;l<FONT_CHARS;l++)  if(toupper(logotext[z]) == fontchars[l]) charindex = l;
-// 		l+=evolventa72_Widths[charindex];
-		
-// 		charindex = logotext[z]-32;
-		
-// 		for (x=0; x < evolventa72_Widths[charindex] * LOGO_SCALE; x++) 
-// 		{
-// 			for(y=0; y < FONT_HEIGHT * LOGO_SCALE; y++)
-// 			{
-// 			// 	c = (ascii[(y / LOGO_SCALE * CHAR_WIDTH + x / LOGO_SCALE) + (CHAR_WIDTH * CHAR_HEIGHT * charindex)  ] ==  ' ' ? 0x000000 : 0xFFFFFF ) ;
-// 			// 	av->video[(av->height / pos + y) * av->width + ((av->width - CHAR_WIDTH * (logotextlength - z * 2) * LOGO_SCALE) / 2 ) + x] = c;
-				
-// 				// c = (evolventa72_Bitmaps[(x/(8 * LOGO_SCALE)) + (((y/LOGO_SCALE )* 2)) + (charindex * ((FONT_WIDTH * 2) + FONT_HEIGHT))] & 1 << ((8-((x/LOGO_SCALE)+1)) % 8)? 0xFFFFFF : 0x000000 ) ;
-// 				c = (evolventa72_Bitmaps[(x/8) + (y * FONT_WIDTH/8) + (612*charindex)] & 1 << (8-x-1) % 8 ? 0xFFFFFF : 0x5A5A5A) ;
-// 				s->framebuffer[((height / pos + y) * width)  +(width - w)/2 + l + x] = c;
-// 			}
-// 		}
-		
-// 	}
-// 	return(s->framebuffer);
-// }
-
-static int16_t *_vid_next_line(vid_t *s, size_t *samples)
-{
-	int x;
-	
-	s->odelay = s->olines - 1;
-	s->output = s->oline[s->odelay];
-	s->vbialloc = &s->vbialloclist[s->odelay];
-	
-	s->frame = s->bframe;
-	s->line = s->bline;
+	vid_line_t *l = s->output_process->lines[0];
+	int i, j;
 	
 	/* Load the next frame */
-	if(s->line == 1 || (s->conf.interlace && s->line == s->conf.hline))
+	if(s->bline == 1 || (s->conf.interlace && s->bline == s->conf.hline))
 	{
 		/* Have we reached the end of the video? */
 		if(_av_eof(s))
@@ -3246,39 +3277,18 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		s->framebuffer = _av_read_video(s, &s->ratio);
 	}
 	
-	if(s->conf.type == VID_MAC)
+	for(i = 0; i < s->nprocesses; i++)
 	{
-		mac_next_line(s);
-	}
-	else
-	{
-		_vid_next_line_raster(s);
-	}
-	
-	/* Ensure the Q part of the signal is zero */
-	for(x = 0; x < s->width; x++)
-	{
-		s->output[x * 2 + 1] = 0;
-	}
-	
-	/* Apply video filter if enabled */
-	if(s->video_filter.type)
-	{
-		fir_int16_process(&s->video_filter, s->output, s->width);
-	}
-	
-	/* Process the audio */
-	if(s->audio == 1)
-	{
-		_process_audio(s);
-	}
-	
-	/* FM modulate the video and audio if requested */
-	if(s->conf.modulation == VID_FM)
-	{
-		for(x = 0; x < s->width; x++)
+		_lineprocess_t *p = &s->processes[i];
+		
+		if(p->process)
 		{
-			_fm_modulator(&s->fm_video, &s->output[x * 2], s->output[x * 2]);
+			p->process(p->vid, p->arg, p->nlines, p->lines);
+		}
+		
+		for(j = 0; j < p->nlines; j++)
+		{
+			p->lines[j] = p->lines[j]->next;
 		}
 	}
 	
@@ -3289,33 +3299,30 @@ static int16_t *_vid_next_line(vid_t *s, size_t *samples)
 		s->bframe++;
 	}
 	
-	/* Return a pointer to the line buffer */
-	*samples = s->width;
-	
-	/* Rotate the output lines */
-	s->output = s->oline[0];
-	for(x = 1; x < s->olines; x++)
+	/* Return a pointer to the output buffer */
+	if(samples)
 	{
-		s->oline[x - 1] = s->oline[x];
-		s->vbialloclist[x - 1] = s->vbialloclist[x];
+		*samples = s->width;
 	}
-	s->oline[x - 1] = s->output;
-	s->vbialloclist[x - 1] = 0;
 	
-	return(s->output);
+	return(l);
 }
 
 int16_t *vid_next_line(vid_t *s, size_t *samples)
 {
-	int16_t *output;
+	vid_line_t *l;
 	
 	/* Drop any delay lines introduced by scramblers / filters */
 	do
 	{
-		output = _vid_next_line(s, samples);
+		l = _vid_next_line(s, samples);
+		if(l == NULL) return(NULL);
 	}
-	while(s->frame < 1);
+	while(l->line < 1);
 	
-	return(output);
+	s->frame = l->frame;
+	s->line  = l->line;
+	
+	return(l->output);
 }
 

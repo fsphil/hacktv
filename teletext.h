@@ -135,8 +135,8 @@ typedef struct {
 
 extern int tt_init(tt_t *s, vid_t *vid, char *path);
 extern void tt_free(tt_t *s);
-extern int tt_next_packet(tt_t *s, uint8_t vbi[45]);
-extern void tt_render_line(tt_t *s);
+extern int tt_next_packet(tt_t *s, uint8_t vbi[45], int frame, int line);
+extern int tt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

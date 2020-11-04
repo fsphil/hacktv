@@ -22,7 +22,6 @@
 #include "video.h"
 
 typedef struct {
-	vid_t *vid;
 	
 	int left[6];
 	
@@ -36,7 +35,7 @@ typedef struct {
 
 extern int acp_init(acp_t *s, vid_t *vid);
 extern void acp_free(acp_t *s);
-extern void acp_render_line(acp_t *s);
+extern int acp_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

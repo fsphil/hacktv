@@ -31,7 +31,7 @@ typedef struct {
 
 extern int wss_init(wss_t *s, vid_t *vid, char *mode);
 extern void wss_free(wss_t *s);
-extern void wss_render_line(wss_t *s);
+extern int wss_render(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

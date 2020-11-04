@@ -72,7 +72,7 @@ typedef struct {
 } eurocrypt_t;
 
 extern int eurocrypt_init(vid_t *s, const char *mode);
-extern void eurocrypt_next_frame(vid_t *s);
+extern void eurocrypt_next_frame(vid_t *s, int frame);
 
 #endif
 

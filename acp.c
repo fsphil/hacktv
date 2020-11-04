@@ -32,9 +32,7 @@ int acp_init(acp_t *s, vid_t *vid)
 	
 	memset(s, 0, sizeof(acp_t));
 	
-	s->vid = vid;
-	
-	if(s->vid->conf.lines == 625)
+	if(vid->conf.lines == 625)
 	{
 		left = 8.88e-6;
 		spacing = 5.92e-6;
@@ -71,58 +69,62 @@ void acp_free(acp_t *s)
 	memset(s, 0, sizeof(acp_t));
 }
 
-void acp_render_line(acp_t *s)
+int acp_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
+	acp_t *a = arg;
 	int i, x;
+	vid_line_t *l = lines[0];
 	
 	i = 0;
 	
-	if(s->vid->line == 1)
+	if(l->line == 1)
 	{
 		/* Vary the AGC pulse level, clipped sawtooth waveform */
-		i = abs(s->vid->frame * 4 % 1712 - 856) - 150;
+		i = abs(l->frame * 4 % 1712 - 856) - 150;
 		
 		if(i < 0) i = 0;
 		else if(i > 255) i = 255;
 		
-		i = s->vid->yiq_level_lookup[i << 16 | i << 8 | i].y;
+		i = s->yiq_level_lookup[i << 16 | i << 8 | i].y;
 		
-		s->pagc_level = s->vid->sync_level + round((i - s->vid->sync_level) * 1.10);
+		a->pagc_level = s->sync_level + round((i - s->sync_level) * 1.10);
 	}
 	
 	i = 0;
 	
-	if(s->vid->conf.lines == 625)
+	if(s->conf.lines == 625)
 	{
 		/* For 625-line modes, ACP is rendered on lines 9-18 and 321-330 */
-		if(s->vid->line >=   9 && s->vid->line <=  18) i = 1;
-		if(s->vid->line >= 321 && s->vid->line <= 330) i = 1;
+		if(l->line >=   9 && l->line <=  18) i = 1;
+		if(l->line >= 321 && l->line <= 330) i = 1;
 	}
 	else
 	{
 		/* For 525-line modes, ACP is rendered on lines 12-19 and 275-282 */
-		if(s->vid->line >=  12 && s->vid->line <=  19) i = 1;
-		if(s->vid->line >= 275 && s->vid->line <= 282) i = 1;
+		if(l->line >=  12 && l->line <=  19) i = 1;
+		if(l->line >= 275 && l->line <= 282) i = 1;
 	}
 	
-	if(i == 0) return;
+	if(i == 0 || l->vbialloc) return(1);
 	
 	/* Render the P-Sync / AGC pulse pairs */
 	for(i = 0; i < 6; i++)
 	{
 		/* Render the P-Sync pulse */
-		for(x = s->left[i]; x < s->left[i] + s->psync_width; x++)
+		for(x = a->left[i]; x < a->left[i] + a->psync_width; x++)
 		{
-			s->vid->output[x * 2] = s->psync_level;
+			l->output[x * 2] = a->psync_level;
 		}
 		
 		/* Render the AGC pulse */
-		for(; x < s->left[i] + s->psync_width + s->pagc_width; x++)
+		for(; x < a->left[i] + a->psync_width + a->pagc_width; x++)
 		{
-			s->vid->output[x * 2] = s->pagc_level;
+			l->output[x * 2] = a->pagc_level;
 		}
 	}
 	
-	*s->vid->vbialloc = 1;
+	l->vbialloc = 1;
+	
+	return(1);
 }
 

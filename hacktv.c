@@ -52,7 +52,7 @@ static void _sigint_callback_handler(int signum)
 		exit(-1);
 	}
 	
-	_abort++;
+	_abort = 1;
 }
 
 /* RF sink callback handlers */
@@ -112,6 +112,7 @@ static void print_usage(void)
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
+		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --subtitles <stream idx>   Enable subtitles. Takes an optional argument.\n"
@@ -120,6 +121,7 @@ static void print_usage(void)
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
+		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -361,34 +363,38 @@ static void print_usage(void)
 	);
 }
 
-#define _OPT_TELETEXT       1000
-#define _OPT_WSS            1001
-#define _OPT_VIDEOCRYPT     1002
-#define _OPT_VIDEOCRYPT2    1003
-#define _OPT_VIDEOCRYPTS    1004
-#define _OPT_SYSTER         1005
-#define _OPT_SYSTERAUDIO    1006
-#define _OPT_EUROCRYPT      1007
-#define _OPT_ACP            1008
-#define _OPT_VITS           1009
-#define _OPT_FILTER         1010
-#define _OPT_NOAUDIO        1011
-#define _OPT_NONICAM        1012
-#define _OPT_SINGLE_CUT     1013
-#define _OPT_DOUBLE_CUT     1014
-#define _OPT_SCRAMBLE_AUDIO 1015
-#define _OPT_LOGO           2000
-#define _OPT_TIMECODE       2001
-#define _OPT_DISCRET        2002
-#define _OPT_ENABLE_EMM     2003
-#define _OPT_DISABLE_EMM    2004
-#define _OPT_SHOW_ECM       2005
-#define _OPT_SUBTITLES      2006
-#define _OPT_SMARTCRYPT     2007
-#define _OPT_LETTERBOX      2008
-#define _OPT_PILLARBOX      2009
-#define _OPT_SHOWSERIAL     2010
-#define _OPT_FINDKEY        2011
+enum {
+	_OPT_TELETEXT = 1000,
+	_OPT_WSS,
+	_OPT_VIDEOCRYPT,
+	_OPT_VIDEOCRYPT2,
+	_OPT_VIDEOCRYPTS,
+	_OPT_SYSTER,
+	_OPT_SYSTERAUDIO,
+	_OPT_EUROCRYPT,
+	_OPT_ACP,
+	_OPT_VITS,
+	_OPT_FILTER,
+	_OPT_NOCOLOUR,
+	_OPT_NOAUDIO,
+	_OPT_NONICAM,
+	_OPT_SINGLE_CUT,
+	_OPT_DOUBLE_CUT,
+	_OPT_SCRAMBLE_AUDIO,
+	_OPT_CHID,
+	_OPT_LOGO,
+	_OPT_TIMECODE,
+	_OPT_DISCRET,
+	_OPT_ENABLE_EMM,
+	_OPT_DISABLE_EMM,
+	_OPT_SHOW_ECM,
+	_OPT_SUBTITLES,
+	_OPT_SMARTCRYPT,
+	_OPT_LETTERBOX,
+	_OPT_PILLARBOX,
+	_OPT_SHOWSERIAL,
+	_OPT_FINDKEY
+};
 
 int main(int argc, char *argv[])
 {
@@ -426,8 +432,15 @@ int main(int argc, char *argv[])
 		{ "vits",           no_argument,       0, _OPT_VITS },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
 		{ "subtitles",      optional_argument, 0, _OPT_SUBTITLES },
+		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
+		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
 		{ "nonicam",        no_argument,       0, _OPT_NONICAM },
+		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
+		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
+		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
+		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
+		{ "chid",           required_argument, 0, _OPT_CHID },
 		{ "frequency",      required_argument, 0, 'f' },
 		{ "amp",            no_argument,       0, 'a' },
 		{ "gain",           required_argument, 0, 'x' },
@@ -480,11 +493,12 @@ int main(int argc, char *argv[])
 	s.acp = 0;
 	s.vits = 0;
 	s.filter = 0;
-	s.subtitles = 0;
+	s.nocolour = 0;
 	s.noaudio = 0;
 	s.nonicam = 0;
 	s.scramble_video = 0;
 	s.scramble_audio = 0;
+	s.chid = -1;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -495,6 +509,7 @@ int main(int argc, char *argv[])
 	s.enableemm = 0;
 	s.disableemm = 0;
 	s.showecm = 0;
+	s.subtitles = 0;
 	
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:p:k:", long_options, &option_index)) != -1)
@@ -702,6 +717,10 @@ int main(int argc, char *argv[])
 			return(0);
 			break;
 		
+		case _OPT_NOCOLOUR: /* --nocolour / --nocolor */
+			s.nocolour = 1;
+			break;
+		
 		case _OPT_NOAUDIO: /* --noaudio */
 			s.noaudio = 1;
 			break;
@@ -725,6 +744,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_SCRAMBLE_AUDIO: /* --scramble-audio */
 			s.scramble_audio = 1;
+			break;
+		
+		case _OPT_CHID: /* --chid <id> */
+			s.chid = strtol(optarg, NULL, 0);
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -827,6 +850,16 @@ int main(int argc, char *argv[])
 	if(s.interlace)
 	{
 		vid_conf.interlace = 1;
+	}
+	
+	if(s.nocolour)
+	{
+		if(vid_conf.colour_mode == VID_PAL ||
+		   vid_conf.colour_mode == VID_SECAM ||
+		   vid_conf.colour_mode == VID_NTSC)
+		{
+			vid_conf.colour_mode = VID_NONE;
+		}
 	}
 	
 	if(s.noaudio > 0)
@@ -1133,6 +1166,16 @@ int main(int argc, char *argv[])
 		vid_conf.vits = 1;
 	}
 	
+	if(vid_conf.type == VID_MAC && s.chid >= 0)
+	{
+		vid_conf.chid = (uint16_t) s.chid;
+	}
+	
+	if(s.filter)
+	{
+		vid_conf.vfilter = 1;
+	}
+	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, &vid_conf);
 	if(r != VID_OK)
@@ -1142,11 +1185,6 @@ int main(int argc, char *argv[])
 	}
 	
 	vid_info(&s.vid);
-	
-	if(s.filter)
-	{
-		vid_init_filter(&s.vid);
-	}
 	
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{
@@ -1220,8 +1258,8 @@ int main(int argc, char *argv[])
 			
 			if(r != HACKTV_OK)
 			{
-				vid_free(&s.vid);
-				return(-1);
+				/* Error opening this source. Move to the next */
+				continue;
 			}
 			
 			while(!_abort)

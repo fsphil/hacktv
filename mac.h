@@ -180,7 +180,7 @@ extern void mac_free(vid_t *s);
 extern int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const uint8_t *data, int scramble);
 extern int mac_write_audio(vid_t *s, const int16_t *audio);
 
-extern void mac_next_line(vid_t *s);
+extern int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

@@ -50,8 +50,6 @@ typedef struct {
 
 typedef struct {
 	
-	vid_t *vid;
-	
 	uint8_t counter;
 	
 	/* VCS blocks */
@@ -69,7 +67,7 @@ typedef struct {
 
 extern int vcs_init(vcs_t *s, vid_t *vs, const char *mode);
 extern void vcs_free(vcs_t *s);
-extern void vcs_render_line(vcs_t *s);
+extern int vcs_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 

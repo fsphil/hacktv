@@ -82,6 +82,7 @@ typedef struct {
 	int vits;
 	int filter;
 	int subtitles;
+	int nocolour;
 	int noaudio;
 	int nonicam;
 	int scramble_video;
@@ -96,6 +97,7 @@ typedef struct {
 	uint32_t enableemm;
 	uint32_t disableemm;
 	int showecm;
+	int chid;
 	
 	/* Video encoder state */
 	vid_t vid;

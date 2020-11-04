@@ -36,9 +36,9 @@
 
 #define VC_LEFT                120
 #define VC_RIGHT               (VC_LEFT + 710)
-#define VC_OVERLAP             17
-#define VC_FIELD_1_START       24
-#define VC_FIELD_2_START       336
+#define VC_OVERLAP             15
+#define VC_FIELD_1_START       23
+#define VC_FIELD_2_START       335
 #define VC_LINES_PER_FIELD     287
 #define VC_LINES_PER_FRAME     (VC_LINES_PER_FIELD * 2)
 
@@ -51,8 +51,6 @@
 #define VC2_VBI_FIELD_2_START (VC_VBI_FIELD_2_START - 4)
 
 typedef struct {
-	
-	vid_t *vid;
 	
 	uint8_t counter;
 	uint8_t mode;
@@ -79,11 +77,15 @@ typedef struct {
 	
 	int video_scale[VC_WIDTH];
 	
+	const char *vcmode;
+	const char *vcmode2;
+	
 	uint8_t _ppv_card_data[7];
 } vc_t;
 
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);
 extern void vc_free(vc_t *s);
-extern void vc_render_line(vc_t *s, const char *mode, const char *mode2);
+extern int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
+
 #endif
 

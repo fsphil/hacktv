@@ -185,7 +185,6 @@ int vcs_init(vcs_t *s, vid_t *vid, const char *mode)
 	
 	memset(s, 0, sizeof(vcs_t));
 	
-	s->vid      = vid;
 	s->counter  = 0;
 	
 	if(strcmp(mode, "free") == 0)
@@ -207,16 +206,13 @@ int vcs_init(vcs_t *s, vid_t *vid, const char *mode)
 	s->block_num = 0;
 	
 	/* Sample rate ratio */
-	f = (double) s->vid->width / VCS_WIDTH;
+	f = (double) vid->width / VCS_WIDTH;
 	
 	/* Quick and dirty sample rate conversion array */
 	for(x = 0; x < VCS_WIDTH; x++)
 	{
 		s->video_scale[x] = round(x * f);
 	}
-	
-	/* Allocate memory for the delay */
-	s->vid->olines += VCS_DELAY_LINES;
 	
 	return(VID_OK);
 }
@@ -226,19 +222,19 @@ void vcs_free(vcs_t *s)
 	/* Nothing */
 }
 
-void vcs_render_line(vcs_t *s)
+int vcs_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
+	vcs_t *v = arg;
 	int x, j;
 	uint8_t *bline = NULL;
-	
-	vid_adj_delay(s->vid, VCS_DELAY_LINES);
+	vid_line_t *l = lines[0];
 	
 	/* Swap the active line with the oldest line in the delay buffer,
 	 * with active video offset in j if necessary. */
 	j = 0;
 	
-	if((s->vid->line >=  28 && s->vid->line <= 309) ||
-	   (s->vid->line >= 340 && s->vid->line <= 621))
+	if((l->line >=  28 && l->line <= 309) ||
+	   (l->line >= 340 && l->line <= 621))
 	{
 		int block;
 		int bline;
@@ -247,7 +243,7 @@ void vcs_render_line(vcs_t *s)
 		 *   0 - 281 top field,
 		 * 282 - 563 bottom field
 		*/
-		x = s->vid->line - (s->vid->line < 340 ? 28 : 340 - 282);
+		x = l->line - (l->line < 340 ? 28 : 340 - 282);
 		
 		/* Calculate block number and block line */
 		block = x / 47;
@@ -259,94 +255,94 @@ void vcs_render_line(vcs_t *s)
 			
 			for(i = 0; i < 47; i++)
 			{
-				s->block[i] = _fa_sequence[s->counter & 0xFF][block][i];
+				v->block[i] = _fa_sequence[v->counter & 0xFF][block][i];
 			}
 		}
 		
 		/* Calculate target block/line */
 		block = (block + 1) % 12;
-		bline = s->block[bline];
+		bline = v->block[bline];
 		
 		/* Calculate position in delay buffer */
-		j = (_block_start[block] + bline) - s->vid->line;
-		if(j < 0) j += s->vid->conf.lines;
+		j = (_block_start[block] + bline) - l->line;
+		if(j < 0) j += s->conf.lines;
 	}
 	
 	if(j > 0)
 	{
-		int16_t *dline = s->vid->oline[s->vid->odelay + j];
-		for(x = s->vid->active_left * 2; x < s->vid->width * 2; x += 2)
+		int16_t *dline = lines[j]->output;
+		for(x = s->active_left * 2; x < s->width * 2; x += 2)
 		{
-			s->vid->output[x] = dline[x];
+			l->output[x] = dline[x];
 		}
 	}
 	
 	/* On the first line of each frame, generate the VBI data */
-	if(s->vid->line == 1)
+	if(l->line == 1)
 	{
 		uint8_t crc;
 		
-		if((s->counter & 3) == 0)
+		if((v->counter & 3) == 0)
 		{
 			/* The active message is updated every 4th frame */
 			for(crc = x = 0; x < 31; x++)
 			{
-				crc += s->message[x] = s->blocks[s->block_num].messages[(s->counter >> 2) & 7][x];
+				crc += v->message[x] = v->blocks[v->block_num].messages[(v->counter >> 2) & 7][x];
 			}
 			
-			s->message[x] = ~crc + 1;
+			v->message[x] = ~crc + 1;
 		}
 		
-		if((s->counter & 2) == 0)
+		if((v->counter & 2) == 0)
 		{
 			/* The first half of the message */
 			_encode_vbi(
-				s->vbi, s->message,
-				_sequence[(s->counter >> 2) & 0x07],
-				s->counter & 0xFF
+				v->vbi, v->message,
+				_sequence[(v->counter >> 2) & 0x07],
+				v->counter & 0xFF
 			);
 		}
 		else
 		{
 			/* The second half of the message */
 			_encode_vbi(
-				s->vbi, s->message + 16,
-				_rnibble(_sequence[(s->counter >> 2) & 0x07]),
-				(s->counter & 0x08 ? s->blocks[s->block_num].channel : s->blocks[s->block_num].mode)
+				v->vbi, v->message + 16,
+				_rnibble(_sequence[(v->counter >> 2) & 0x07]),
+				(v->counter & 0x08 ? v->blocks[v->block_num].channel : v->blocks[v->block_num].mode)
 			);
 		}
 		
-		s->counter++;
+		v->counter++;
 		
 		/* After 32 frames, advance to the next VCS block and codeword */
-		if((s->counter & 0x1F) == 0)
+		if((v->counter & 0x1F) == 0)
 		{
 			/* Apply the current block codeword */
-			if(s->blocks)
+			if(v->blocks)
 			{
-				//s->cw = s->blocks[s->block_num].codeword;
+				//v->cw = v->blocks[v->block_num].codeword;
 			}
 			
 			/* Move to the next block */
-			if(++s->block_num == s->block_len)
+			if(++v->block_num == v->block_len)
 			{
-				s->block_num = 0;
+				v->block_num = 0;
 			}
 		}
 	}
 	
 	/* Set a pointer to the VBI data to render on this line, or NULL if none */
-	if(s->vid->line >= VCS_VBI_FIELD_1_START &&
-	   s->vid->line <  VCS_VBI_FIELD_1_START + VCS_VBI_LINES_PER_FIELD)
+	if(l->line >= VCS_VBI_FIELD_1_START &&
+	   l->line <  VCS_VBI_FIELD_1_START + VCS_VBI_LINES_PER_FIELD)
 	{
 		/* Top field VBI */
-		bline = &s->vbi[(s->vid->line - VCS_VBI_FIELD_1_START) * VCS_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(l->line - VCS_VBI_FIELD_1_START) * VCS_VBI_BYTES_PER_LINE];
 	}
-	else if(s->vid->line >= VCS_VBI_FIELD_2_START &&
-	        s->vid->line <  VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD)
+	else if(l->line >= VCS_VBI_FIELD_2_START &&
+	        l->line <  VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD)
 	{
 		/* Bottom field VBI */
-		bline = &s->vbi[(s->vid->line - VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD) * VCS_VBI_BYTES_PER_LINE];
+		bline = &v->vbi[(l->line - VCS_VBI_FIELD_2_START + VCS_VBI_LINES_PER_FIELD) * VCS_VBI_BYTES_PER_LINE];
 	}
 	
 	if(bline)
@@ -354,25 +350,27 @@ void vcs_render_line(vcs_t *s)
 		int b, c;
 		
 		/* Videocrypt S's VBI data sits in the active video area. Clear it first */
-		for(x = s->vid->active_left; x < s->vid->active_left + s->vid->active_width; x++)
+		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
-			s->vid->output[x * 2] = s->vid->black_level;
+			l->output[x * 2] = s->black_level;
 		}
 		
-		x = s->video_scale[VCS_VBI_LEFT];
+		x = v->video_scale[VCS_VBI_LEFT];
 		
 		for(b = 0; b < VCS_VBI_BITS_PER_LINE; b++)
 		{
 			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? s->vid->white_level : s->vid->black_level;
+			c = c ? s->white_level : s->black_level;
 			
-			for(; x < s->video_scale[VCS_VBI_LEFT + VCS_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
+			for(; x < v->video_scale[VCS_VBI_LEFT + VCS_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
 			{
-				s->vid->output[x * 2] = c;
+				l->output[x * 2] = c;
 			}
 		}
 		
-		*s->vid->vbialloc = 1;
+		l->vbialloc = 1;
 	}
+	
+	return(1);
 }
 

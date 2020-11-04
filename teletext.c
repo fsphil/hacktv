@@ -1174,13 +1174,13 @@ void tt_free(tt_t *s)
 	memset(s, 0, sizeof(tt_t));
 }
 
-int tt_next_packet(tt_t *s, uint8_t vbi[45])
+int tt_next_packet(tt_t *s, uint8_t vbi[45], int frame, int line)
 {
 	int r;
 	
 	/* Update the timecode */
-	s->timecode  = (s->vid->frame - 1) * s->vid->conf.lines;
-	s->timecode += s->vid->line - 1;
+	s->timecode  = (frame - 1) * s->vid->conf.lines;
+	s->timecode += line - 1;
 	
 	/* Fetch the next line, or TT_NO_PACKET */
 	if(s->raw)
@@ -1207,26 +1207,30 @@ int tt_next_packet(tt_t *s, uint8_t vbi[45])
 	return(r);
 }
 
-void tt_render_line(tt_t *s)
+int tt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
+	tt_t *tt = arg;
+	vid_line_t *l = lines[0];
 	uint8_t vbi[45];
 	int r;
 	
 	/* Don't render teletext if this VBI line has already been allocated */
-	if(*s->vid->vbialloc != 0) return;
+	if(l->vbialloc != 0) return(1);
 	
 	/* Use 16 lines per field for teletext */
-	if((s->vid->line >= 7 && s->vid->line <= 22) ||
-	   (s->vid->line >= 320 && s->vid->line <= 335))
+	if((l->line >=   7 && l->line <=  22) ||
+	   (l->line >= 320 && l->line <= 335))
 	{
-		r = tt_next_packet(s, vbi);
+		r = tt_next_packet(tt, vbi, l->frame, l->line);
 		
 		if(r == TT_OK)
 		{
-			vbidata_render_nrz(s->lut, vbi, -70, 360, VBIDATA_LSB_FIRST, s->vid->output, 2);
+			vbidata_render_nrz(tt->lut, vbi, -70, 360, VBIDATA_LSB_FIRST, l->output, 2);
 		}
 		
-		*s->vid->vbialloc = 1;
+		l->vbialloc = 1;
 	}
+	
+	return(1);
 }
 

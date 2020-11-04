@@ -23,6 +23,7 @@
 #include "dance.h"
 #include "fir.h"
 
+typedef struct vid_line_t vid_line_t;
 typedef struct vid_t vid_t;
 
 #include "mac.h"
@@ -214,8 +215,12 @@ typedef struct {
 	
 	/* D/D2-MAC options */
 	int mac_mode;
+	uint16_t chid;
 	int scramble_video;
 	int scramble_audio;
+	
+	/* Video filter enable flag */
+	int vfilter;
 	
 } vid_config_t;
 
@@ -229,6 +234,45 @@ typedef struct {
 	int16_t i;
 	int16_t q;
 } _yiq16_t;
+
+struct vid_line_t {
+	
+	/* The output line buffer */
+	int16_t *output;
+	
+	/* Frame and line number */
+	int frame;
+	int line;
+	
+	/* Status */
+	int vbialloc;
+	
+	/* Pointer the next line */
+	vid_line_t *next;
+};
+
+/* Line process function prototypes */
+typedef int (*vid_lineprocess_process_t)(vid_t *s, void *arg, int nlines, vid_line_t **lines);
+typedef void (*vid_lineprocess_free_t)(vid_t *s, void *arg);
+typedef struct _lineprocess_t _lineprocess_t;
+
+struct _lineprocess_t {
+	
+	/* A simple identifier for this process */
+	char name[16];
+	
+	/* Line window */
+	int nlines;
+	vid_line_t **lines;
+	
+	/* Process callbacks */
+	vid_lineprocess_process_t process;
+	vid_lineprocess_free_t free;
+	
+	/* Callback parameters */
+	vid_t *vid;
+	void *arg;
+};
 
 struct vid_t {
 	
@@ -291,9 +335,6 @@ struct vid_t {
 	/* Current frame's aspect ratio */
 	float ratio;
 	
-	/* Video filter */
-	fir_int16_t video_filter;
-	
 	/* Teletext state */
 	tt_t tt;
 	
@@ -343,25 +384,23 @@ struct vid_t {
 	mac_t mac;
 	
 	/* Output line(s) buffer */
-	int olines;		/* The number of lines */
-	int16_t **oline;	/* Pointer to each line */
-	int16_t *output;	/* Pointer to the current line */
-	int odelay;		/* Index of the current line */
+	int olines;
+	vid_line_t *oline;
 	
-	/* VBI line allocation flag */
-	int *vbialloclist;
-	int *vbialloc;
+	/* Line processes */
+	int nprocesses;
+	_lineprocess_t *processes;
+	_lineprocess_t *output_process;
 };
 
 extern const vid_configs_t vid_configs[];
 
 extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf);
 extern void vid_free(vid_t *s);
+extern void vid_get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq);
 extern int vid_av_close(vid_t *s);
 extern void vid_info(vid_t *s);
-extern int vid_init_filter(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
-extern int16_t *vid_adj_delay(vid_t *s, int lines);
 extern int16_t *vid_next_line(vid_t *s, size_t *samples);
 
 #endif
