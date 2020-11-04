@@ -634,7 +634,7 @@ int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		/* Reinitialise the seeds if this is a new field */
 		if(i == 0)
 		{
-			int sf = l->frame % 25;
+			int sf = l->frame % 50;
 			
 			if((sf == 6 || sf == 31) && f == 1)
 			{
