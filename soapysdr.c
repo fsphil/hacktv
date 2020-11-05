@@ -58,7 +58,7 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 	SoapySDRKwargs *results;
 	size_t length;
 	
-	if(s->vid.conf.output_type != HACKTV_INT16_COMPLEX)
+	if(s->chans.conf.output_type != HACKTV_INT16_COMPLEX)
 	{
 		fprintf(stderr, "rf_soapysdr_open(): Unsupported mode output type for this device.\n");
 		return(HACKTV_ERROR);
@@ -104,7 +104,7 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 		return(HACKTV_ERROR);
 	}
 	
-	if(SoapySDRDevice_setSampleRate(rf->d, SOAPY_SDR_TX, 0, s->vid.sample_rate) != 0)
+	if(SoapySDRDevice_setSampleRate(rf->d, SOAPY_SDR_TX, 0, s->chans.sample_rate) != 0)
 	{
 		fprintf(stderr, "SoapySDRDevice_setSampleRate() failed: %s\n", SoapySDRDevice_lastError());
 		free(rf);

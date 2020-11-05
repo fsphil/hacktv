@@ -297,7 +297,7 @@ int rf_file_open(hacktv_t *s, char *filename, int type)
 		return(HACKTV_ERROR);
 	}
 	
-	rf->complex = s->vid.conf.output_type == HACKTV_INT16_COMPLEX;
+	rf->complex = s->chans.conf.output_type == HACKTV_INT16_COMPLEX;
 	rf->type = type;
 	
 	if(filename == NULL)
@@ -341,7 +341,7 @@ int rf_file_open(hacktv_t *s, char *filename, int type)
 	if(rf->complex) rf->data_size *= 2;
 	
 	/* Allocate enough memory for one TV line */
-	rf->samples = s->vid.width;
+	rf->samples = s->chans.width;
 	
 	/* Allocate the memory, unless the output is int16 complex */
 	if(rf->type != HACKTV_INT16 || !rf->complex)

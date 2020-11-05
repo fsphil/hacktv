@@ -266,7 +266,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	hackrf_t *rf;
 	int r;
 	
-	if(s->vid.conf.output_type != HACKTV_INT16_COMPLEX)
+	if(s->chans.conf.output_type != HACKTV_INT16_COMPLEX)
 	{
 		fprintf(stderr, "rf_hackrf_open(): Unsupported mode output type for this device.\n");
 		return(HACKTV_ERROR);
@@ -279,7 +279,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	}
 	
 	/* Allocate memory for output buffers, each one large enough to hold a single frame */
-	_buffer_init(&rf->buffers, BUFFERS, s->vid.width * s->vid.conf.lines * sizeof(int8_t) * 2);
+	_buffer_init(&rf->buffers, BUFFERS, s->chans.width * s->chans.conf.lines * sizeof(int8_t) * 2);
 	
 	/* Prepare the HackRF for output */
 	r = hackrf_init();
@@ -298,7 +298,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 		return(HACKTV_ERROR);
 	}
 	
-	r = hackrf_set_sample_rate_manual(rf->d, s->vid.sample_rate, 1);
+	r = hackrf_set_sample_rate_manual(rf->d, s->chans.sample_rate, 1);
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_sample_rate_set() failed: %s (%d)\n", hackrf_error_name(r), r);
@@ -306,7 +306,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 		return(HACKTV_ERROR);
 	}
 	
-	r = hackrf_set_baseband_filter_bandwidth(rf->d, hackrf_compute_baseband_filter_bw(s->vid.sample_rate));
+	r = hackrf_set_baseband_filter_bandwidth(rf->d, hackrf_compute_baseband_filter_bw(s->chans.sample_rate));
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_baseband_filter_bandwidth_set() failed: %s (%d)\n", hackrf_error_name(r), r);

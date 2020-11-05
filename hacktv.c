@@ -22,8 +22,6 @@
 #include <signal.h>
 #include <math.h>
 #include "hacktv.h"
-#include "test.h"
-#include "ffmpeg.h"
 #include "file.h"
 #include "hackrf.h"
 
@@ -869,30 +867,18 @@ int main(int argc, char *argv[])
 	}
 	
 	/* Setup video encoder */
-	r = vid_init(&s.vid, s.samplerate, &vid_conf);
+	r = chans_init(&s.chans, s.samplerate, &vid_conf);
 	if(r != VID_OK)
 	{
-		fprintf(stderr, "Unable to initialise video encoder.\n");
+		fprintf(stderr, "Unable to initialise channels encoder.\n");
 		return(-1);
 	}
-	
-	vid_info(&s.vid);
-
-	static vid_t vid2;
-	r = vid_init(&vid2, s.samplerate, &vid_conf);
-	if(r != VID_OK)
-	{
-		fprintf(stderr, "Unable to initialise video encoder.\n");
-		return(-1);
-	}
-	
-	vid_info(&vid2);
 	
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{
 		if(rf_hackrf_open(&s, s.output, s.frequency, s.gain, s.amp) != HACKTV_OK)
 		{
-			vid_free(&s.vid);
+			chans_free(&s.chans);
 			return(-1);
 		}
 	}
@@ -901,7 +887,7 @@ int main(int argc, char *argv[])
 	{
 		if(rf_soapysdr_open(&s, s.output, s.frequency, s.gain, s.antenna) != HACKTV_OK)
 		{
-			vid_free(&s.vid);
+			chans_free(&s.chans);
 			return(-1);
 		}
 	}
@@ -911,7 +897,7 @@ int main(int argc, char *argv[])
 	{
 		if(rf_fl2k_open(&s, s.output) != HACKTV_OK)
 		{
-			vid_free(&s.vid);
+			chans_free(&s.chans);
 			return(-1);
 		}
 	}
@@ -920,148 +906,64 @@ int main(int argc, char *argv[])
 	{
 		if(rf_file_open(&s, s.output, s.file_type) != HACKTV_OK)
 		{
-			vid_free(&s.vid);
+			chans_free(&s.chans);
 			return(-1);
 		}
 	}
-	
-	av_ffmpeg_init();
 
-	pre = argv[optind++];
-	sub = strchr(pre, ':');
-
-	if(sub != NULL)
-	{
-		l = sub - pre;
-		sub++;
-	}
-	else
-	{
-		l = strlen(pre);
-	}
-
-	if(strncmp(pre, "test", l) == 0)
-	{
-		r = av_test_open(&vid2);
-	}
-	else if(strncmp(pre, "ffmpeg", l) == 0)
-	{
-		r = av_ffmpeg_open(&vid2, sub);
-	}
-	else
-	{
-		r = av_ffmpeg_open(&vid2, pre);
-	}
+	int offset_freq = 0;
 	
-	if(r != HACKTV_OK)
+	for(c = optind; c < argc && !_abort; c++)
 	{
-		return 1;
-	}
-	
-	do
-	{
-		for(c = optind; c < argc && !_abort; c++)
+		/* Get a pointer to the output prefix and target */
+		pre = argv[c];
+		sub = strchr(pre, ':');
+		
+		if(sub != NULL)
 		{
-			/* Get a pointer to the output prefix and target */
-			pre = argv[c];
-			sub = strchr(pre, ':');
-			
-			if(sub != NULL)
-			{
-				l = sub - pre;
-				sub++;
-			}
-			else
-			{
-				l = strlen(pre);
-			}
-			
-			if(strncmp(pre, "test", l) == 0)
-			{
-				r = av_test_open(&s.vid);
-			}
-			else if(strncmp(pre, "ffmpeg", l) == 0)
-			{
-				r = av_ffmpeg_open(&s.vid, sub);
-			}
-			else
-			{
-				r = av_ffmpeg_open(&s.vid, pre);
-			}
-			
-			if(r != HACKTV_OK)
-			{
-				/* Error opening this source. Move to the next */
-				continue;
-			}
-
-			int16_t offset_counter = INT16_MAX;
-
-			cint32_t offset_phase;
-			offset_phase.i = INT16_MAX;
-			offset_phase.q = 0;
-
-			cint32_t offset_delta;
-			double d = 2.0 * M_PI / s.vid.sample_rate * 6e6;
-			offset_delta.i = lround(cos(d) * INT32_MAX);
-			offset_delta.q = lround(sin(d) * INT32_MAX);
-			
-			while(!_abort)
-			{
-				size_t samples;
-				int16_t *data = vid_next_line(&s.vid, &samples);
-				
-				if(data == NULL) break;
-
-				size_t samples2;
-				int16_t *data2 = vid_next_line(&vid2, &samples2);
-				
-				if(data2 == NULL) break;
-
-				if(samples != samples2) break;
-
-				for(int i = 0; i < samples; i++)
-				{
-					cint32_mul(&offset_phase, &offset_phase, &offset_delta);
-
-					cint32_t data_sample;
-					data_sample.i = data[i * 2] >> 1;
-					data_sample.q = data[i * 2 + 1] >> 1;
-
-					cint32_t data2_sample;
-					data2_sample.i = data2[i * 2] >> 1;
-					data2_sample.q = data2[i * 2 + 1] >> 1;
-
-					cint32_mula(&data_sample, &data2_sample, &offset_phase);
-
-					data[i * 2] = data_sample.i;
-					data[i * 2 + 1] = data_sample.q;
-					
-					/* Correct the amplitude after INT16_MAX samples */
-					if(--offset_counter == 0)
-					{
-						double ra = atan2(offset_phase.q, offset_phase.i);
-						
-						offset_phase.i = lround(cos(ra) * INT32_MAX);
-						offset_phase.q = lround(sin(ra) * INT32_MAX);
-						
-						offset_counter = INT16_MAX;
-					}
-				}
-				
-				if(_hacktv_rf_write(&s, data, samples) != HACKTV_OK) break;
-			}
-			
-			vid_av_close(&s.vid);
+			l = sub - pre;
+			sub++;
 		}
+		else
+		{
+			l = strlen(pre);
+		}
+		
+		if(strncmp(pre, "test", l) == 0)
+		{
+			r = chans_test_add(&s.chans, offset_freq);
+		}
+		else if(strncmp(pre, "ffmpeg", l) == 0)
+		{
+			r = chans_ffmpeg_add(&s.chans, offset_freq, sub);
+		}
+		else
+		{
+			r = chans_ffmpeg_add(&s.chans, offset_freq, pre);
+		}
+		
+		if(r != HACKTV_OK)
+		{
+			/* Error opening this source. Move to the next */
+			continue;
+		}
+
+		offset_freq += 6000000;
 	}
-	while(s.repeat && !_abort);
+
+	while(!_abort)
+	{
+		size_t samples;
+		int16_t *data = chans_next_line(&s.chans, &samples);
+		
+		if(data == NULL) break;
+
+		if(_hacktv_rf_write(&s, data, samples) != HACKTV_OK) break;
+	}
 	
 	_hacktv_rf_close(&s);
-	vid_free(&s.vid);
-	
-	av_ffmpeg_deinit();
-	
+	chans_free(&s.chans);
+
 	fprintf(stderr, "\n");
 	
 	return(0);

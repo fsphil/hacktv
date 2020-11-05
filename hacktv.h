@@ -19,7 +19,7 @@
 #define _HACKTV_H
 
 #include <stdint.h>
-#include "video.h"
+#include "channels.h"
 
 /* Return codes */
 #define HACKTV_OK             0
@@ -88,7 +88,7 @@ typedef struct {
 	int chid;
 	
 	/* Video encoder state */
-	vid_t vid;
+	chans_t chans;
 	
 	/* RF sink interface */
 	void *rf_private;
