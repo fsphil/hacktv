@@ -252,7 +252,7 @@ static void _pack_vbi_block(uint8_t vbi[10][NG_VBI_BYTES], const uint8_t msg1[NG
 	}
 }
 
-void _ecm_part(ng_t *s, uint8_t *dst)
+void _ecm_part(ng_t *s, vid_t *vid, uint8_t *dst)
 {
 	const uint8_t il[20] = {
 		0x00, 0x01, 0x30, 0x31, 0x40, 0x41, 0x20, 0x21, 0x60, 0x61,
@@ -289,7 +289,7 @@ void _ecm_part(ng_t *s, uint8_t *dst)
 	else if(s->block_seq % 20 == 13)
 	{
 		/* Print ECM */
-		if(s->vid->conf.showecm)
+		if(vid->conf.showecm)
 		{
 			fprintf(stderr, "\n\nECM In:  ");
 			for(i = 0; i < 16; i++) fprintf(stderr, "%02X ", ecm->ecm[i]);
@@ -346,7 +346,7 @@ int _ng_vbi_init(ng_t *s, vid_t *vid)
 	return(VID_OK);
 }
 
-void _render_ng_vbi(ng_t *s, vid_line_t *l)
+void _render_ng_vbi(ng_t *s, vid_t *vid, vid_line_t *l)
 {
 	int x;
 	ng_mode_t n = _ng_modes[s->id];
@@ -375,7 +375,7 @@ void _render_ng_vbi(ng_t *s, vid_line_t *l)
 			
 			/* Build part 1 of the VBI block */
 			msg1[ 0] = s->flags | ((n.data[2] >> 5) & 1);    /* Decoder parameters + audience */
-			_ecm_part(s, &msg1[1]);
+			_ecm_part(s, vid, &msg1[1]);
 			msg1[ 1] |= n.data[2] << 3;                  /* Audience uses 5 top bits of msg1[1] */
 			msg1[11] = 0xFF;	/* Simple checksum -- the Premiere VBI sample only has 0x00/0xFF here */
 			for(x = 0; x < 11; x++)
@@ -460,7 +460,7 @@ uint16_t _get_date(char *dtm)
 	return (uint16_t) ((0x8000 | (year - 1990) << 9 | (mon > 6 ? 1:0) << 8 | ((mon > 6 ? 1:0) + mon % 7) << 5 | day));
 }
 
-int _init_common(ng_t *s, char *mode)
+int _init_common(ng_t *s, vid_t *vid, char *mode)
 {
 	memset(s, 0, sizeof(ng_t));
 	
@@ -498,8 +498,13 @@ int _init_common(ng_t *s, char *mode)
 	n->data[5] = d >> 8;
 
 	s->blocks = _ecm_table_rand;
-	s->t = n->t;
-	s->table = s->t == 1 ? _key_table1 : _key_table2;
+	
+	if(vid->conf.scramble_video == 0)
+	{
+		vid->conf.scramble_video = n->t;
+	}
+	
+	s->table = (vid->conf.scramble_video == 1 ? _key_table1 : _key_table2);
 	
 	/* Generate random seeds */
 	_rand_seed(s, n->data, n->key);
@@ -512,17 +517,15 @@ int ng_init(ng_t *s, vid_t *vid, char *mode)
 	time_t t;
 	srand((unsigned) time(&t));
 		
-	if(_init_common(s, mode) == VID_ERROR)
+	if(_init_common(s, vid, mode) == VID_ERROR)
 	{
 		return VID_ERROR;
 	};
 	
-	s->vid = vid;
-	
 	s->flags  = 1 << 6; /* ?? Unused */
 	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
 	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	s->flags |= (s->t == 1 ? 0 : 1) << 3; /* 0: key table 1, 1: key table 2 */
+	s->flags |= (vid->conf.scramble_video == 1 ? 0 : 1) << 3; /* 0: key table 1, 1: key table 2 */
 	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
 	s->flags |= 1 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
 	s->flags |= 0 << 0; /* 6th high bit of audience level */
@@ -680,7 +683,7 @@ int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		}
 	}
 	
-	_render_ng_vbi(n, l);
+	_render_ng_vbi(n, s, l);
 	
 	return(1);
 }
@@ -742,7 +745,7 @@ int d11_init(ng_t *s, vid_t *vid, char *mode)
 {
 	memset(s, 0, sizeof(ng_t));
 	
-	if(_init_common(s, mode) == VID_ERROR)
+	if(_init_common(s, vid, mode) == VID_ERROR)
 	{
 		return VID_ERROR;
 	};
@@ -755,8 +758,6 @@ int d11_init(ng_t *s, vid_t *vid, char *mode)
 	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
 	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
 	s->flags |= 0 << 0; /* 6th high bit of audience level */
-	
-	s->vid = vid;
 	
 	/* Initialise VBI sequences - this is still necessary for D11 */
 	_ng_vbi_init(s, vid);
@@ -778,8 +779,6 @@ int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	int16_t *buffer = malloc(sizeof(int16_t) * 2 * s->width);
 	
-	d->vid = s;
-
 	/* Calculate the field and field line */
 	f = (l->line < D11_FIELD_2_START ? 0 : 1);
 	i = l->line - (f == 0 ? D11_FIELD_1_START : D11_FIELD_2_START);
@@ -824,7 +823,7 @@ int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		}
 	}
 	
-	_render_ng_vbi(d, l);
+	_render_ng_vbi(d, s, l);
 	
 	free(&buffer);
 	
@@ -836,7 +835,7 @@ int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
 {
 	memset(s, 0, sizeof(ng_t));
 	
-	if(_init_common(s, mode) == VID_ERROR)
+	if(_init_common(s, vid, mode) == VID_ERROR)
 	{
 		return VID_ERROR;
 	};
@@ -849,8 +848,6 @@ int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
 	s->flags |= 1 << 2; /* Seems to enable cut-and-rotate on some decoders */
 	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
 	s->flags |= 0 << 0; /* 6th high bit of audience level */
-	
-	s->vid = vid;
 	
 	/* Initialise VBI sequences - this is still necessary for Smartcrypt */
 	_ng_vbi_init(s, vid);
@@ -875,7 +872,7 @@ int smartcrypt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		}
 	}
 	
-	_render_ng_vbi(n, l);
+	_render_ng_vbi(n, s, l);
 	
 	return(1);
 }

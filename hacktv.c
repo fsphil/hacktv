@@ -122,6 +122,8 @@ static void print_usage(void)
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
 		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
+		"      --key-table-1              Set permutation key table 1 in Syster.\n"
+		"      --key-table-2              Set permutation key table 2 in Syster.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -316,18 +318,17 @@ static void print_usage(void)
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
 		"are vertically shuffled within a field.\n"
 		"\n"
-		"hacktv supports the following modes:\n"
+		"hacktv supports the following modes (number in brackets indicates the permutation table):\n"
 		"\n"
-		"  premiere-fa     = A valid Premiere 'key' is required to decode - free access.\n"
-		"  premiere-ca     = A valid Premiere 'key' is required to decode - subscription level access.\n"
-		"  cfrfa           = A valid Canal+ France 'key' is required to decode - free access. \n"
-		"  cfrca           = A valid Canal+ France 'key' is required to decode - subscription level access.\n"
-		"  cplfa           = A valid Canal+ Poland 'key' is required to decode - free access.\n"
-		"  cesfa           = A valid Canal+ Spain 'key' is required to decode - free access.\n"
-		"  ntvfa           = A valid HTB+ Russia 'key' is required to decode - free access.\n"
+		"  premiere-fa     = (1) A valid Premiere 'key' is required to decode - free access.\n"
+		"  premiere-ca     = (1) A valid Premiere 'key' is required to decode - subscription level access.\n"
+		"  cfrfa           = (2) A valid Canal+ France 'key' is required to decode - free access. \n"
+		"  cfrca           = (2) A valid Canal+ France 'key' is required to decode - subscription level access.\n"
+		"  cplfa           = (1) A valid Canal+ Poland 'key' is required to decode - free access.\n"
+		"  cesfa           = (1) A valid Canal+ Spain 'key' is required to decode - free access.\n"
+		"  ntvfa           = (2) A valid HTB+ Russia 'key' is required to decode - free access.\n"
 		"\n"
-		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
-		"with most hardware.\n"
+		"By default, PAL providers use permutation table 1 and SECAM ones use table 2.\n"
 		"\n"
 		"Discret 11\n"
 		"\n"
@@ -393,7 +394,9 @@ enum {
 	_OPT_LETTERBOX,
 	_OPT_PILLARBOX,
 	_OPT_SHOWSERIAL,
-	_OPT_FINDKEY
+	_OPT_FINDKEY,
+	_OPT_SYSTER_KT1,
+	_OPT_SYSTER_KT2
 };
 
 int main(int argc, char *argv[])
@@ -423,8 +426,9 @@ int main(int argc, char *argv[])
 		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
-		{ "key",            required_argument, 0, 'k'},
 		{ "syster",         required_argument, 0, _OPT_SYSTER },
+		{ "key-table-1",    no_argument,       0, _OPT_SYSTER_KT1 },
+		{ "key-table-2",    no_argument,       0, _OPT_SYSTER_KT2 },
 		{ "d11",            required_argument, 0, _OPT_DISCRET },
 		{ "smartcrypt",     required_argument, 0, _OPT_SMARTCRYPT },
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
@@ -512,7 +516,7 @@ int main(int argc, char *argv[])
 	s.subtitles = 0;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:p:k:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:p:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -665,6 +669,14 @@ int main(int argc, char *argv[])
 			s.syster = strdup(optarg);
 			break;
 			
+		case _OPT_SYSTER_KT1: /* --key-table-1 */
+			s.scramble_video = 1;
+			break;
+		
+		case _OPT_SYSTER_KT2: /* --key-table-2 */
+			s.scramble_video = 2;
+			break;
+			
 		case _OPT_DISCRET: /* --d11 */
 			free(s.d11);
 			s.d11 = strdup(optarg);
@@ -686,7 +698,7 @@ int main(int argc, char *argv[])
 		case _OPT_VITS: /* --vits */
 			s.vits = 1;
 			break;
-		
+			
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
 			break;
@@ -703,7 +715,7 @@ int main(int argc, char *argv[])
 			free(s.logo);
 			s.logo = strdup(optarg);
 			break;
-				
+			
 		case _OPT_TIMECODE: /* --timestamp */
 			s.timestamp = 1;
 			break;
@@ -712,11 +724,6 @@ int main(int argc, char *argv[])
 			s.position = atof(optarg);
 			break;
 			
-		case 'k': /* -k, --key */
-			fprintf(stderr, "\nERROR: key option has been deprecated. Please see help text for details.\n\n");
-			return(0);
-			break;
-		
 		case _OPT_NOCOLOUR: /* --nocolour / --nocolor */
 			s.nocolour = 1;
 			break;

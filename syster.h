@@ -74,7 +74,6 @@ typedef struct {
 
 typedef struct {
 
-	vid_t *vid;
 	
 	uint8_t flags;
 
@@ -85,7 +84,6 @@ typedef struct {
 	
 	/* Permute tables */
 	const uint8_t *table;
-	int t;
 
 	/* VBI */
 	int16_t *lut;
