@@ -1014,8 +1014,8 @@ const vid_config_t vid_config_819_e = {
 	.bw_co          = 0.114, /* B weight */
 	
 	/* AM modulated */
-	.am_mono_carrier   = 11500000, /* Hz */
-	.am_mono_bandwidth =    10000, /* Hz */
+	.am_mono_carrier   = 11.15e6, /* Hz */
+	.am_mono_bandwidth =   10000, /* Hz */
 };
 
 const vid_config_t vid_config_819 = {
