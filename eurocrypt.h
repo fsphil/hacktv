@@ -30,7 +30,8 @@ typedef struct {
 	int emode;        /* Eurocrypt M or S2 mode */
 	uint8_t key[14];  /* Decryption keys */
 	uint8_t ppid[3];  /* Programme provider identifier */
-	uint8_t cdate[4]; /* CDATE + THEME/LEVEL */
+	char date[10];    /* Broadcast date */
+	uint8_t theme[2]; /* Theme */
 } ec_mode_t;
 
 typedef struct {
