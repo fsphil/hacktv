@@ -102,6 +102,8 @@ static void print_usage(void)
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
 		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
+		"      --offset <value>           Add a frequency offset in Hz (Complex modes only).\n"
+		"      --passthru <file>          Read and add an int16 complex signal.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -326,6 +328,8 @@ enum {
 	_OPT_DOUBLE_CUT,
 	_OPT_SCRAMBLE_AUDIO,
 	_OPT_CHID,
+	_OPT_OFFSET,
+	_OPT_PASSTHRU,
 };
 
 int main(int argc, char *argv[])
@@ -361,6 +365,8 @@ int main(int argc, char *argv[])
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
 		{ "chid",           required_argument, 0, _OPT_CHID },
+		{ "offset",         required_argument, 0, _OPT_OFFSET },
+		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "frequency",      required_argument, 0, 'f' },
 		{ "amp",            no_argument,       0, 'a' },
 		{ "gain",           required_argument, 0, 'x' },
@@ -584,6 +590,15 @@ int main(int argc, char *argv[])
 		
 		case _OPT_CHID: /* --chid <id> */
 			s.chid = strtol(optarg, NULL, 0);
+			break;
+		
+		case _OPT_OFFSET: /* --offset <value Hz> */
+			s.offset = (int64_t) strtod(optarg, NULL);
+			break;
+		
+		case _OPT_PASSTHRU: /* --passthru <path> */
+			free(s.passthru);
+			s.passthru = strdup(optarg);
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -866,6 +881,9 @@ int main(int argc, char *argv[])
 	{
 		vid_conf.vfilter = 1;
 	}
+	
+	vid_conf.offset = s.offset;
+	vid_conf.passthru = s.passthru;
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, &vid_conf);

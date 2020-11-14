@@ -89,6 +89,12 @@ typedef struct {
 	cint32_t delta;
 } _mod_am_t;
 
+typedef struct {
+	int32_t counter;
+	cint32_t phase;
+	cint32_t delta;
+} _mod_offset_t;
+
 
 
 typedef struct {
@@ -109,6 +115,10 @@ typedef struct {
 	
 	/* Overall signal level (pre-modulation) */
 	double level;
+	
+	/* Signal offset and passthru */
+	int64_t offset;
+	char *passthru;
 	
 	/* Level of each component. The total sum should be exactly 1.0 */
 	double video_level;
@@ -361,6 +371,13 @@ struct vid_t {
 	
 	/* FM Video state */
 	_mod_fm_t fm_video;
+	
+	/* Offset signal */
+	_mod_offset_t offset;
+	
+	/* Passthru source */
+	FILE *passthru;
+	int16_t *passline;
 	
 	/* D/D2-MAC specific data */
 	mac_t mac;

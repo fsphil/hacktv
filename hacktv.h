@@ -86,6 +86,8 @@ typedef struct {
 	char *antenna;
 	int file_type;
 	int chid;
+	int64_t offset;
+	char *passthru;
 	
 	/* Video encoder state */
 	vid_t vid;
