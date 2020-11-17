@@ -40,6 +40,8 @@ typedef struct {
 	uint8_t key[7];   /* Decryption key */
 	uint8_t ppid[3];  /* Programme provider identifier */
 	uint8_t sa[3];    /* Shared Address */
+	uint8_t ua[4];    /* Unique Address */
+	int emmtype;
 } em_mode_t;
 
 typedef struct {
@@ -68,6 +70,7 @@ typedef struct {
 	/* EMM packet */
 	int emm_addr;
 	uint8_t emms_pkt[MAC_PAYLOAD_BYTES];
+	uint8_t emmu_pkt[MAC_PAYLOAD_BYTES * 2];
 	uint8_t emmg_pkt[MAC_PAYLOAD_BYTES * 2];
 	
 } eurocrypt_t;

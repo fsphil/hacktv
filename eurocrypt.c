@@ -58,7 +58,7 @@ const static ec_mode_t _ec_modes[] = {
 
 /* Data for EC controlled-access EMMs */
 const static em_mode_t _em_modes[] = {
-	{ "tv3update",EC_M, { 0x99, 0xCF, 0xCA, 0x13, 0x7A, 0x53, 0x6D }, { 0x00, 0x04, 0x04 }, { 0x70, 0x31, 0x12 } },
+	{ "tv3update",EC_M, { 0x99, 0xCF, 0xCA, 0x13, 0x7A, 0x53, 0x6D }, { 0x00, 0x04, 0x04 }, { 0x70, 0x31, 0x12 }, { 0, 0, 0, 0 }, EMMS },
 	{ NULL } 
 };
 
@@ -516,7 +516,6 @@ static void _build_emmg_hash_data(uint8_t *hash, eurocrypt_t *e)
 	memset(hash, 0, 8);
 	
 	/* Copy card's Shared Address into hash buffer */
-	memcpy(hash + 5, e->emmode->sa, 3);
 	hash[5] = e->emmode->sa[2];
 	hash[6] = e->emmode->sa[1];
 	hash[7] = e->emmode->sa[0];
@@ -538,6 +537,32 @@ static void _build_emmg_hash_data(uint8_t *hash, eurocrypt_t *e)
 	
 	/* Copy entitlements into data buffer */
 	memcpy(msg + msglen, e->emmg_pkt + 8, 15); msglen += 15;
+	
+	_calc_ec_hash(hash, msg, e->mode->emode, msglen, e->emmode->key);
+}
+
+static void _build_emmu_hash_data(uint8_t *hash, eurocrypt_t *e, int x)
+{
+	uint8_t msg[MAC_PAYLOAD_BYTES];
+	int msglen;
+	
+	/* Clear hash memory */
+	memset(hash, 0, 8);
+	
+	/* Copy card's Unique Address into hash buffer */
+	hash[4] = e->emmode->ua[3];
+	hash[5] = e->emmode->ua[2];
+	hash[6] = e->emmode->ua[1];
+	hash[7] = e->emmode->ua[0];
+	
+	/* Do the initial hashing of the buffer */
+	_eurocrypt(hash, e->emmode->key, HASH, e->mode->emode, 1);
+	
+	/* Build the hash data */
+	msglen = 0;
+	
+	/* Copy entitlements into data buffer */
+	memcpy(msg + msglen, e->emmu_pkt + 8, x - 10); msglen += x - 10;
 	
 	_calc_ec_hash(hash, msg, e->mode->emode, msglen, e->emmode->key);
 }
@@ -688,6 +713,59 @@ static uint8_t _update_emmg_packet(eurocrypt_t *e, int t)
 	return(x / ECM_PAYLOAD_BYTES);
 }
 
+static uint8_t _update_emmu_packet(eurocrypt_t *e, int t)
+{
+	int x;
+	uint16_t b;
+	uint8_t *pkt = e->emmu_pkt;
+	
+	memset(pkt, 0, MAC_PAYLOAD_BYTES * 2);
+	
+	/* Packet Type */
+	x = 0;
+	pkt[x++] = EMMU;
+
+	/* Unique Address - reversed */
+	memcpy(&pkt[x], e->emmode->ua, 4); x += 4;
+	
+	/* Command Identifier, CI */
+	b  = 0x20 << 2;     /* Crypto-algo type - always 0x20 for Eurocrypt PC2 implementation */
+	b |= 1 << 1;        /* Format bit - 0: fixed, 1: variable */
+	b |= t << 0;        /* Toggle */
+	pkt[x++] = b;
+	
+	/* Command Length Indicator, CLI -- updated later */
+	pkt[x++] = 0;
+	
+	/* PPID */
+	pkt[x++] = 0x90; /* PI */
+	pkt[x++] = 0x03; /* LI */
+	/* Provider ID and op-key to update */
+	memcpy(&pkt[x], e->mode->ppid, 3); x += 3;
+	
+	/* IDUP */
+	pkt[x++] = 0xa1;
+	pkt[x++] = 0x03;
+	/* Provider ID and op-key to update */
+	memcpy(&pkt[x], e->emmode->ppid, 3); x += 3;
+	
+	/* CLE */
+	pkt[x++] = 0xEF;
+	pkt[x++] = 0x08;
+	_encrypt_opkey(&pkt[x], e); x += 8;
+	
+	/* EMM hash */
+	pkt[x++] = 0xF0;
+	pkt[x++] = 0x08;
+	_build_emmu_hash_data(&pkt[x], e, x); x += 8;
+	memcpy(e->emm_hash, &pkt[x - 8], 8);
+	
+	/* Update the CI command length */
+	pkt[6] = x - 7;
+	
+	return(x / ECM_PAYLOAD_BYTES);
+}
+
 static uint64_t _update_cw(eurocrypt_t *e, int t)
 {
 	uint64_t cw;
@@ -779,47 +857,51 @@ void eurocrypt_next_frame(vid_t *vid, int frame)
 	{
 		if((vid->frame & 0xFF) == 0x7F)
 		{
-			/* Generate EMM-Group packet */
-			uint8_t pkt[MAC_PAYLOAD_BYTES];
-			memset(pkt, 0, MAC_PAYLOAD_BYTES);
-			int i;
-			
-			int t = (vid->frame >> 8) & 1;
-			
-			e->emm_cont = _update_emmg_packet(e, t);
-			
-			/* Break up the EMM-G packet, if required */
-			for(i = 0; i <= e->emm_cont; i++)
+			/* Generate EMM-Shared packet */
+			if(e->emmode->emmtype == EMMS)
 			{
-				memcpy(pkt, e->emmg_pkt + (i * ECM_PAYLOAD_BYTES), ECM_PAYLOAD_BYTES);
-				
-				/* Golay encode the payload */
-				mac_golay_encode(pkt + 1 - i, 30);
-				
-				mac_write_packet(vid, 0, e->emm_addr, i, pkt, 0);
-			}
-			
-			/* Update the EMM-S packet (always fixed length) */
-			_update_emms_packet(e);
-			
-			mac_write_packet(vid, 0, e->emm_addr, 0, e->emms_pkt, 0);
-			
-			/* Print ECM */
-			if(vid->conf.showecm)
-			{
+				uint8_t pkt[MAC_PAYLOAD_BYTES];
+				memset(pkt, 0, MAC_PAYLOAD_BYTES);
 				int i;
-				fprintf(stderr, "\n\n ***** EMM *****");
-				fprintf(stderr, "\nShared address:\t\t");
-				for(i = 0; i < 3; i++) fprintf(stderr, "%02X ", e->emmode->sa[2 - i]);
-				fprintf(stderr, "\nManagement key   [%02X]:\t", e->emmode->ppid[2] & 0x0F);
-				for(i = 0; i < 7; i++) fprintf(stderr, "%02X ", e->emmode->key[i]);
-				fprintf(stderr, "\nDecrypted op key [%02X]:\t", e->mode->ppid[2] & 0x0F);
-				for(i = 0; i < 7; i++) fprintf(stderr, "%02X ", e->mode->key[i]);
-				fprintf(stderr, "\nEncrypted op key [%02X]:\t", e->mode->ppid[2] & 0x0F);
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->emmg_pkt[15 + i]);
-				fprintf(stderr,"\nHash:\t\t\t");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) e->emm_hash[i]);
-				fprintf(stderr,"\n");
+				
+				int t = (vid->frame >> 8) & 1;
+				
+				/* Shared EMM packet requires EMM-Global packet before it */
+				e->emm_cont = _update_emmg_packet(e, t);
+				
+				/* Break up the EMM-G packet, if required */
+				for(i = 0; i <= e->emm_cont; i++)
+				{
+					memcpy(pkt, e->emmg_pkt + (i * ECM_PAYLOAD_BYTES), ECM_PAYLOAD_BYTES);
+					
+					/* Golay encode the payload */
+					mac_golay_encode(pkt + 1 - i, 30);
+					
+					mac_write_packet(vid, 0, e->emm_addr, i, pkt, 0);
+				}
+				
+				/* Generate the EMM-S packet (always fixed length) */
+				_update_emms_packet(e);
+				
+				mac_write_packet(vid, 0, e->emm_addr, 0, e->emms_pkt, 0);
+				
+				/* Print EMM */
+				if(vid->conf.showecm)
+				{
+					int i;
+					fprintf(stderr, "\n\n ***** EMM *****");
+					fprintf(stderr, "\nShared address:\t\t");
+					for(i = 0; i < 3; i++) fprintf(stderr, "%02X ", e->emmode->sa[2 - i]);
+					fprintf(stderr, "\nManagement key   [%02X]:\t", e->emmode->ppid[2] & 0x0F);
+					for(i = 0; i < 7; i++) fprintf(stderr, "%02X ", e->emmode->key[i]);
+					fprintf(stderr, "\nDecrypted op key [%02X]:\t", e->mode->ppid[2] & 0x0F);
+					for(i = 0; i < 7; i++) fprintf(stderr, "%02X ", e->mode->key[i]);
+					fprintf(stderr, "\nEncrypted op key [%02X]:\t", e->mode->ppid[2] & 0x0F);
+					for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", e->emmg_pkt[15 + i]);
+					fprintf(stderr,"\nHash:\t\t\t");
+					for(i = 0; i < 8; i++) fprintf(stderr, "%02X ", (uint8_t) e->emm_hash[i]);
+					fprintf(stderr,"\n");
+				}
 			}
 		}
 	}
