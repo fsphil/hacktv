@@ -32,6 +32,7 @@ typedef struct {
 	uint8_t ppid[3];  /* Programme provider identifier */
 	char date[10];    /* Broadcast date */
 	uint8_t theme[2]; /* Theme */
+	char channame[32];/* Channel name to display */
 } ec_mode_t;
 
 typedef struct {

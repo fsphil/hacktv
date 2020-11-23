@@ -931,6 +931,8 @@ int mac_init(vid_t *s)
 		{
 			return(i);
 		}
+		
+		_sname = s->mac.ec.mode->channame;
 	}
 	
 	/* Configure scrambling */
