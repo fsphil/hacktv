@@ -83,5 +83,12 @@ $ hacktv -f 551250000 -m i -g 47 --teletext teefax test
 # Transmit two channels simultaneously on UHF channel 68 and 69 (PAL I)
 $ hacktv -s 20000000 --offset -6.75e6 --level 0.5 --filter -o - test | hacktv -s 20000000 -f 854e6 --offset 1.25e6 --level 0.5 --passthru /dev/stdin -g 47 --filter test
 
+
+LINKS
+
+https://github.com/captainjack64/hacktv - Fork of hacktv with support for additional scrambling systems
+https://github.com/steeviebops/jhacktv-gui - A cross platform GUI for hacktv written in Java
+
+
 -Philip Heron <phil@sanslogic.co.uk>
 
