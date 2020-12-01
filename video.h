@@ -47,9 +47,10 @@ typedef struct vid_t vid_t;
 #define VID_RASTER_819 3
 #define VID_BAIRD_240  4
 #define VID_BAIRD_30   5
-#define VID_APOLLO_320 6
-#define VID_MAC        7
-#define VID_CBS_405    8
+#define VID_NBTV_32    6
+#define VID_APOLLO_320 7
+#define VID_MAC        8
+#define VID_CBS_405    9
 
 /* Output modulation types */
 #define VID_NONE 0

@@ -189,6 +189,8 @@ static void print_usage(void)
 		"  240           = No colour, 25 fps, 240 lines, unmodulated (real)\n"
 		"  30-am         = No colour, 12.5 fps, 30 lines, AM (complex)\n"
 		"  30            = No colour, 12.5 fps, 30 lines, unmodulated (real)\n"
+		"  nbtv-am       = No colour, 12.5 fps, 32 lines, AM (complex)\n"
+		"  nbtv          = No colour, 12.5 fps, 32 lines, unmodulated (real)\n"
 		"  apollo-fsc-fm = Field sequential colour, 30/1.001 fps, 525 lines, FM (complex)\n"
 		"                  1.25 MHz FM audio\n"
 		"  apollo-fsc    = Field sequential colour, 30/1.001 fps, 525 lines, unmodulated\n"

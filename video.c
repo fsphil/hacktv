@@ -1238,6 +1238,66 @@ const vid_config_t vid_config_baird_30 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_nbtv_32_am = {
+	
+	/* NBTV Club standard, AM modulation (negative) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_AM,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_NBTV_32,
+	.frame_rate_num = 25,
+	.frame_rate_den = 2,
+	.lines          = 32,
+	
+	.active_lines   = 32,
+	.active_width   = 2.5e-3 - 0.1e-3, /* 2.5ms - hsync */
+	.active_left    = 0.1e-3,
+	
+	.hsync_width    = 0.1e-3, /* 0.1 to 0.25ms */
+	
+	.white_level    = 0.10,
+	.black_level    = 0.73,
+	.blanking_level = 0.73,
+	.sync_level     = 1.00,
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
+const vid_config_t vid_config_nbtv_32 = {
+	
+	/* NBTV Club standard */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_NBTV_32,
+	.frame_rate_num = 25,
+	.frame_rate_den = 2,
+	.lines          = 32,
+	
+	.active_lines   = 32,
+	.active_width   = 2.5e-3 - 0.1e-3, /* 2.5ms - hsync */
+	.active_left    = 0.1e-3,
+	
+	.hsync_width    = 0.1e-3, /* 0.1 to 0.25ms */
+	
+	.white_level    = 1.00,
+	.black_level    = 0.30,
+	.blanking_level = 0.30,
+	.sync_level     = 0.00,
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
 const vid_config_t vid_config_apollo_colour_fm = {
 	
 	/* Unified S-Band, Apollo Colour Lunar Television */
@@ -1526,6 +1586,8 @@ const vid_configs_t vid_configs[] = {
 	{ "240",           &vid_config_baird_240        },
 	{ "30-am",         &vid_config_baird_30_am      },
 	{ "30",            &vid_config_baird_30         },
+	{ "nbtv-am",       &vid_config_nbtv_32_am       },
+	{ "nbtv",          &vid_config_nbtv_32          },
 	{ "apollo-fsc-fm", &vid_config_apollo_colour_fm },
 	{ "apollo-fsc",    &vid_config_apollo_colour    },
 	{ "apollo-fm",     &vid_config_apollo_mono_fm   },
@@ -2258,6 +2320,16 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		/* The original Baird 30 line standard has no sync pulses */
 		seq = "__aa";
+		vy = l->line - 1;
+	}
+	else if(s->conf.type == VID_NBTV_32)
+	{
+		switch(l->line)
+		{
+		case 1:  seq = "__aa"; break;
+		default: seq = "h_aa"; break;
+		}
+		
 		vy = l->line - 1;
 	}
 	
