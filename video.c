@@ -2757,7 +2757,7 @@ static int _init_vfilter(vid_t *s)
 	fir_int16_t *fir;
 	int ntaps;
 	
-	fir = malloc(sizeof(fir_int16_t));
+	fir = calloc(1, sizeof(fir_int16_t));
 	if(!fir)
 	{
 		return(VID_OUT_OF_MEMORY);
@@ -2824,6 +2824,13 @@ static int _init_vfilter(vid_t *s)
 		}
 		
 		fir_int16_init(fir, taps, ntaps);	
+	}
+	
+	if(fir->type == 0)
+	{
+		/* No filter has been created */
+		free(fir);
+		return(VID_OK);
 	}
 	
 	_add_lineprocess(s, "vfilter", 1, fir, _vid_filter_process, _vid_filter_free);
