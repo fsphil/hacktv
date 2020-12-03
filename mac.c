@@ -1443,6 +1443,12 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		}
 	}
 	
+	/* Clear the Q channel */
+	for(x = 0; x < s->width; x++)
+	{
+		l->output[x * 2 + 1] = 0;
+	}
+	
 	return(1);
 }
 
