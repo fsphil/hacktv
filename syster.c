@@ -844,7 +844,7 @@ int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
 	s->flags |= 0 << 6; /* ?? Unused */
 	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
 	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	s->flags |= 1 << 3; /* 0: key table 1, 1: key table 2 */
+	s->flags |= 0 << 3; /* 0: key table 1, 1: key table 2 */
 	s->flags |= 1 << 2; /* Seems to enable cut-and-rotate on some decoders */
 	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
 	s->flags |= 0 << 0; /* 6th high bit of audience level */
@@ -863,12 +863,30 @@ int smartcrypt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	int x;
 	vid_line_t *l = lines[0];
 	
+	/* Calculate the field and field line */
+	int f = (l->line < SC_FIELD_2_START ? 0 : 1);
+	int i = l->line - (f == 0 ? SC_FIELD_1_START : SC_FIELD_2_START);
+	
 	/* Blank lines 310 and 622 */
 	if(l->line == 310 || l->line == 622)
 	{
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
 			l->output[x * 2] = s->black_level;
+		}
+	}
+	
+	/* Render line */
+	if(i > 0 && i < SC_LINES_PER_FIELD)
+	{
+		/* Smartcrypt seems to employ a one-line delay*/
+		int16_t *dline = lines[1]->output;
+		
+		x = s->active_left * 2;
+		
+		for(; x < s->width * 2; x += 2)
+		{
+			l->output[x] = dline[x];
 		}
 	}
 	

@@ -36,6 +36,10 @@
 #define D11_LINES_PER_FIELD 286
 #define D11_FIELDS 6
 
+#define SC_FIELD_1_START   23
+#define SC_FIELD_2_START   335
+#define SC_LINES_PER_FIELD 286
+
 #define NG_ENCRYPT 1
 #define NG_DECRYPT 0
 
