@@ -124,6 +124,8 @@ static void print_usage(void)
 		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
 		"      --key-table-1              Set permutation key table 1 in Syster.\n"
 		"      --key-table-2              Set permutation key table 2 in Syster.\n"
+		"      --offset <value>           Add a frequency offset in Hz (Complex modes only).\n"
+		"      --passthru <file>          Read and add an int16 complex signal.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -209,6 +211,8 @@ static void print_usage(void)
 		"  240           = No colour, 25 fps, 240 lines, unmodulated (real)\n"
 		"  30-am         = No colour, 12.5 fps, 30 lines, AM (complex)\n"
 		"  30            = No colour, 12.5 fps, 30 lines, unmodulated (real)\n"
+		"  nbtv-am       = No colour, 12.5 fps, 32 lines, AM (complex)\n"
+		"  nbtv          = No colour, 12.5 fps, 32 lines, unmodulated (real)\n"
 		"  apollo-fsc-fm = Field sequential colour, 30/1.001 fps, 525 lines, FM (complex)\n"
 		"                  1.25 MHz FM audio\n"
 		"  apollo-fsc    = Field sequential colour, 30/1.001 fps, 525 lines, unmodulated\n"
@@ -396,7 +400,9 @@ enum {
 	_OPT_SHOWSERIAL,
 	_OPT_FINDKEY,
 	_OPT_SYSTER_KT1,
-	_OPT_SYSTER_KT2
+	_OPT_SYSTER_KT2,
+	_OPT_OFFSET,
+	_OPT_PASSTHRU,
 };
 
 int main(int argc, char *argv[])
@@ -445,6 +451,8 @@ int main(int argc, char *argv[])
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
 		{ "chid",           required_argument, 0, _OPT_CHID },
+		{ "offset",         required_argument, 0, _OPT_OFFSET },
+		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "frequency",      required_argument, 0, 'f' },
 		{ "amp",            no_argument,       0, 'a' },
 		{ "gain",           required_argument, 0, 'x' },
@@ -755,6 +763,15 @@ int main(int argc, char *argv[])
 		
 		case _OPT_CHID: /* --chid <id> */
 			s.chid = strtol(optarg, NULL, 0);
+			break;
+		
+		case _OPT_OFFSET: /* --offset <value Hz> */
+			s.offset = (int64_t) strtod(optarg, NULL);
+			break;
+		
+		case _OPT_PASSTHRU: /* --passthru <path> */
+			free(s.passthru);
+			s.passthru = strdup(optarg);
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -1182,6 +1199,9 @@ int main(int argc, char *argv[])
 	{
 		vid_conf.vfilter = 1;
 	}
+	
+	vid_conf.offset = s.offset;
+	vid_conf.passthru = s.passthru;
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, &vid_conf);

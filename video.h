@@ -49,9 +49,10 @@ typedef struct vid_t vid_t;
 #define VID_RASTER_819 3
 #define VID_BAIRD_240  4
 #define VID_BAIRD_30   5
-#define VID_APOLLO_320 6
-#define VID_MAC        7
-#define VID_CBS_405    8
+#define VID_NBTV_32    6
+#define VID_APOLLO_320 7
+#define VID_MAC        8
+#define VID_CBS_405    9
 
 /* Output modulation types */
 #define VID_NONE 0
@@ -91,6 +92,12 @@ typedef struct {
 	cint32_t delta;
 } _mod_am_t;
 
+typedef struct {
+	int32_t counter;
+	cint32_t phase;
+	cint32_t delta;
+} _mod_offset_t;
+
 
 
 typedef struct {
@@ -111,6 +118,10 @@ typedef struct {
 	
 	/* Overall signal level (pre-modulation) */
 	double level;
+	
+	/* Signal offset and passthru */
+	int64_t offset;
+	char *passthru;
 	
 	/* Level of each component. The total sum should be exactly 1.0 */
 	double video_level;
@@ -379,6 +390,13 @@ struct vid_t {
 	
 	/* FM Video state */
 	_mod_fm_t fm_video;
+	
+	/* Offset signal */
+	_mod_offset_t offset;
+	
+	/* Passthru source */
+	FILE *passthru;
+	int16_t *passline;
 	
 	/* D/D2-MAC specific data */
 	mac_t mac;

@@ -1244,6 +1244,66 @@ const vid_config_t vid_config_baird_30 = {
 	.bw_co          = 0.114, /* B weight */
 };
 
+const vid_config_t vid_config_nbtv_32_am = {
+	
+	/* NBTV Club standard, AM modulation (negative) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_AM,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_NBTV_32,
+	.frame_rate_num = 25,
+	.frame_rate_den = 2,
+	.lines          = 32,
+	
+	.active_lines   = 32,
+	.active_width   = 2.5e-3 - 0.1e-3, /* 2.5ms - hsync */
+	.active_left    = 0.1e-3,
+	
+	.hsync_width    = 0.1e-3, /* 0.1 to 0.25ms */
+	
+	.white_level    = 0.10,
+	.black_level    = 0.73,
+	.blanking_level = 0.73,
+	.sync_level     = 1.00,
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
+const vid_config_t vid_config_nbtv_32 = {
+	
+	/* NBTV Club standard */
+	.output_type    = HACKTV_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.type           = VID_NBTV_32,
+	.frame_rate_num = 25,
+	.frame_rate_den = 2,
+	.lines          = 32,
+	
+	.active_lines   = 32,
+	.active_width   = 2.5e-3 - 0.1e-3, /* 2.5ms - hsync */
+	.active_left    = 0.1e-3,
+	
+	.hsync_width    = 0.1e-3, /* 0.1 to 0.25ms */
+	
+	.white_level    = 1.00,
+	.black_level    = 0.30,
+	.blanking_level = 0.30,
+	.sync_level     = 0.00,
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+};
+
 const vid_config_t vid_config_apollo_colour_fm = {
 	
 	/* Unified S-Band, Apollo Colour Lunar Television */
@@ -1532,6 +1592,8 @@ const vid_configs_t vid_configs[] = {
 	{ "240",           &vid_config_baird_240        },
 	{ "30-am",         &vid_config_baird_30_am      },
 	{ "30",            &vid_config_baird_30         },
+	{ "nbtv-am",       &vid_config_nbtv_32_am       },
+	{ "nbtv",          &vid_config_nbtv_32          },
 	{ "apollo-fsc-fm", &vid_config_apollo_colour_fm },
 	{ "apollo-fsc",    &vid_config_apollo_colour    },
 	{ "apollo-fm",     &vid_config_apollo_mono_fm   },
@@ -2266,6 +2328,16 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		seq = "__aa";
 		vy = l->line - 1;
 	}
+	else if(s->conf.type == VID_NBTV_32)
+	{
+		switch(l->line)
+		{
+		case 1:  seq = "__aa"; break;
+		default: seq = "h_aa"; break;
+		}
+		
+		vy = l->line - 1;
+	}
 	
 	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	
@@ -2599,6 +2671,61 @@ static int _vid_fmmod_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 	return(1);
 }
 
+static int _vid_offset_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	vid_line_t *l = lines[0];
+	int x;
+	
+	for(x = 0; x < s->width; x++)
+	{
+		cint16_t a, b;
+		
+		cint32_mul(&s->offset.phase, &s->offset.phase, &s->offset.delta);
+		
+		a.i = l->output[x * 2 + 0];
+		a.q = l->output[x * 2 + 1];
+		b.i = s->offset.phase.i >> 16;
+		b.q = s->offset.phase.q >> 16;
+		cint16_mul(&a, &a, &b);
+		
+		l->output[x * 2 + 0] = a.i;
+		l->output[x * 2 + 1] = a.q;
+		
+		/* Correct the amplitude after INT16_MAX samples */
+		if(--s->offset.counter == 0)
+		{
+			double ra = atan2(s->offset.phase.q, s->offset.phase.i);
+			
+			s->offset.phase.i = lround(cos(ra) * INT32_MAX);
+			s->offset.phase.q = lround(sin(ra) * INT32_MAX);
+			
+			s->offset.counter = INT16_MAX;
+		}
+	}
+	
+	return(1);
+}
+
+static int _vid_passthru_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	vid_line_t *l = lines[0];
+	int x;
+	
+	if(feof(s->passthru))
+	{
+		return(1);
+	}
+	
+	fread(s->passline, sizeof(int16_t) * 2, s->width, s->passthru);
+	
+	for(x = 0; x < s->width * 2; x++)
+	{
+		l->output[x] += s->passline[x];
+	}
+	
+	return(1);
+}
+
 static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, vid_lineprocess_process_t pprocess, vid_lineprocess_free_t pfree)
 {
 	_lineprocess_t *p;
@@ -2636,7 +2763,7 @@ static int _init_vfilter(vid_t *s)
 	fir_int16_t *fir;
 	int ntaps;
 	
-	fir = malloc(sizeof(fir_int16_t));
+	fir = calloc(1, sizeof(fir_int16_t));
 	if(!fir)
 	{
 		return(VID_OUT_OF_MEMORY);
@@ -2703,6 +2830,13 @@ static int _init_vfilter(vid_t *s)
 		}
 		
 		fir_int16_init(fir, taps, ntaps);	
+	}
+	
+	if(fir->type == 0)
+	{
+		/* No filter has been created */
+		free(fir);
+		return(VID_OK);
 	}
 	
 	_add_lineprocess(s, "vfilter", 1, fir, _vid_filter_process, _vid_filter_free);
@@ -3109,6 +3243,51 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_add_lineprocess(s, "fmmod", 1, NULL, _vid_fmmod_process, NULL);
 	}
 	
+	if(s->conf.offset != 0)
+	{
+		double d;
+		
+		s->offset.counter = INT16_MAX;
+		s->offset.phase.i = INT16_MAX;
+		s->offset.phase.q = 0;
+		
+		d = 2.0 * M_PI / s->sample_rate * s->conf.offset;
+		s->offset.delta.i = lround(cos(d) * INT32_MAX);
+		s->offset.delta.q = lround(sin(d) * INT32_MAX);
+		
+		_add_lineprocess(s, "offset", 1, NULL, _vid_offset_process, NULL);
+	}
+	
+	if(s->conf.passthru)
+	{
+		/* Open the passthru source */
+		if(strcmp(s->conf.passthru, "-") == 0)
+		{
+			s->passthru = stdin;
+		}
+		else
+		{
+			s->passthru = fopen(s->conf.passthru, "rb");
+		}
+		
+		if(!s->passthru)
+		{
+			perror(s->conf.passthru);
+			vid_free(s);
+			return(VID_ERROR);
+		}
+		
+		/* Allocate memory for the temporary passthru buffer */
+		s->passline = calloc(sizeof(int16_t) * 2, s->width);
+		if(!s->passline)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		_add_lineprocess(s, "passthru", 1, NULL, _vid_passthru_process, NULL);
+	}
+	
 	/* The final process is only for output */
 	_add_lineprocess(s, "output", 1, NULL, NULL, NULL);
 	s->output_process = &s->processes[s->nprocesses - 1];
@@ -3177,6 +3356,12 @@ void vid_free(vid_t *s)
 		free(s->processes[i].lines);
 	}
 	free(s->processes);
+	
+	if(s->conf.passthru)
+	{
+		fclose(s->passthru);
+		free(s->passline);
+	}
 	
 	if(s->conf.teletext)
 	{

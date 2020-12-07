@@ -98,6 +98,8 @@ typedef struct {
 	uint32_t disableemm;
 	int showecm;
 	int chid;
+	int64_t offset;
+	char *passthru;
 	
 	/* Video encoder state */
 	vid_t vid;
