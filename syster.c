@@ -825,8 +825,6 @@ int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	_render_ng_vbi(d, s, l);
 	
-	free(&buffer);
-	
 	return(1);
 }
 
