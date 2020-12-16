@@ -8,6 +8,12 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author (fsphil)**
 
+2020-12-16
+Addeed a very rudimentary Syster "cut and rotate" mode. Only works on Premiere decoders.
+  Run with --systercnr at multiples of Syster line sampling rate, such as 17750000 (4x 4437500).
+
+Removed references to "Smartcrypt" - a similar cut and rotate system but likely not what this is.
+
 2020-11-06:
 Added option to specify Syster permutation table to use.
 

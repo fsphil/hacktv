@@ -107,8 +107,8 @@ static void print_usage(void)
 		"      --findkey                  Attempt to find keys of PPV Videocrypt card.\n"
 		"      --syster <mode>            Enable Nagravision Syster scrambling. (PAL only)\n"
 		"      --d11 <mode>               Enable Discret 11 scrambling. (PAL only)\n"
-		"      --smartcrypt <mode>        Enable Smartcrypt scrambling (***INCOMPLETE***). (PAL only)\n"
-		"      --systeraudio              Invert the audio spectrum when using Syster, Smartcrypt or D11 scrambling.\n"
+		"      --systercnr <mode>        Enable Syster cut and rotate scrambling (***INCOMPLETE***). (PAL only)\n"
+		"      --systeraudio              Invert the audio spectrum when using Syster, Syster CnR or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
 		{ "key-table-1",    no_argument,       0, _OPT_SYSTER_KT1 },
 		{ "key-table-2",    no_argument,       0, _OPT_SYSTER_KT2 },
 		{ "d11",            required_argument, 0, _OPT_DISCRET },
-		{ "smartcrypt",     required_argument, 0, _OPT_SMARTCRYPT },
+		{ "systercnr",     required_argument, 0, _OPT_SMARTCRYPT },
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "vits",           no_argument,       0, _OPT_VITS },
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
 	s.eurocrypt = NULL;
 	s.syster = NULL;
 	s.d11 = NULL;
-	s.smartcrypt = NULL;
+	s.systercnr = NULL;
 	s.systeraudio = 0;
 	s.acp = 0;
 	s.vits = 0;
@@ -690,9 +690,9 @@ int main(int argc, char *argv[])
 			s.d11 = strdup(optarg);
 			break;
 		
-		case _OPT_SMARTCRYPT: /* --smartcrypt */
-			free(s.smartcrypt);
-			s.smartcrypt = strdup(optarg);
+		case _OPT_SMARTCRYPT: /* --systercnr */
+			free(s.systercnr);
+			s.systercnr = strdup(optarg);
 			break;
 			
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
@@ -1121,11 +1121,11 @@ int main(int argc, char *argv[])
 		vid_conf.systeraudio = s.systeraudio;
 	}
 
-	if(s.smartcrypt)
+	if(s.systercnr)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
 		{
-			fprintf(stderr, "Smartcrypt is only compatible with 625 line PAL modes.\n");
+			fprintf(stderr, "Syster CnR is only compatible with 625 line PAL modes.\n");
 			return(-1);
 		}
 		
@@ -1135,7 +1135,7 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		vid_conf.smartcrypt = s.smartcrypt;
+		vid_conf.systercnr = s.systercnr;
 		vid_conf.systeraudio = s.systeraudio;
 	}
 	

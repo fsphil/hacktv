@@ -69,6 +69,7 @@
 #include "video.h"
 #include "vbidata.h"
 #include "syster-ca.h"
+#include "systercnr.h"
 
 /* ECM data table */
 static ng_mode_t _ng_modes[] = {
@@ -436,7 +437,7 @@ int _ng_audio_init(ng_t *s)
 	return(VID_OK);
 }
 
-void _rand_seed(ng_t *s, unsigned char data[8], unsigned char key[8])
+void _rand_seed(ng_t *s, unsigned char data[8], unsigned char key[8], int ecm_type)
 {
 	int i, j;
 	
@@ -445,7 +446,7 @@ void _rand_seed(ng_t *s, unsigned char data[8], unsigned char key[8])
 	{
 		for(i = 0; i < 16; i++)
 		{
-			s->blocks[j].ecm[i] = i < 4 || i > 11 ? rand() + 0xFF : data[i-4];
+			s->blocks[j].ecm[i] = i < 4 || i > 11 ? (ecm_type == STATIC_ECM ? i : rand() + 0xFF) : data[i-4];
 		}
 		
 		/* Encrypt plain control word to send to card */
@@ -460,7 +461,7 @@ uint16_t _get_date(char *dtm)
 	return (uint16_t) ((0x8000 | (year - 1990) << 9 | (mon > 6 ? 1:0) << 8 | ((mon > 6 ? 1:0) + mon % 7) << 5 | day));
 }
 
-int _init_common(ng_t *s, vid_t *vid, char *mode)
+int _init_common(ng_t *s, vid_t *vid, char *mode, int ecm_type)
 {
 	memset(s, 0, sizeof(ng_t));
 	
@@ -507,7 +508,7 @@ int _init_common(ng_t *s, vid_t *vid, char *mode)
 	s->table = (vid->conf.scramble_video == 1 ? _key_table1 : _key_table2);
 	
 	/* Generate random seeds */
-	_rand_seed(s, n->data, n->key);
+	_rand_seed(s, n->data, n->key, ecm_type);
 	
 	return(VID_OK);
 }
@@ -517,7 +518,7 @@ int ng_init(ng_t *s, vid_t *vid, char *mode)
 	time_t t;
 	srand((unsigned) time(&t));
 		
-	if(_init_common(s, vid, mode) == VID_ERROR)
+	if(_init_common(s, vid, mode, RANDOM_ECM) == VID_ERROR)
 	{
 		return VID_ERROR;
 	};
@@ -745,7 +746,7 @@ int d11_init(ng_t *s, vid_t *vid, char *mode)
 {
 	memset(s, 0, sizeof(ng_t));
 	
-	if(_init_common(s, vid, mode) == VID_ERROR)
+	if(_init_common(s, vid, mode, STATIC_ECM) == VID_ERROR)
 	{
 		return VID_ERROR;
 	};
@@ -828,12 +829,13 @@ int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	return(1);
 }
 
-/* Smartcrypt */
-int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
+/* Syster cut and rotate (German Premiere decoders only) */
+int systercnr_init(ng_t *s, vid_t *vid, char *mode)
 {
+	int x;
 	memset(s, 0, sizeof(ng_t));
 	
-	if(_init_common(s, vid, mode) == VID_ERROR)
+	if(_init_common(s, vid, mode, STATIC_ECM) == VID_ERROR)
 	{
 		return VID_ERROR;
 	};
@@ -847,23 +849,43 @@ int smartcrypt_init(ng_t *s, vid_t *vid, char *mode)
 	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
 	s->flags |= 0 << 0; /* 6th high bit of audience level */
 	
-	/* Initialise VBI sequences - this is still necessary for Smartcrypt */
+	/* Initialise VBI sequences - this is still necessary for cut and rotate mode */
 	_ng_vbi_init(s, vid);
 	_ng_audio_init(s);
+	
+	/* Create scale array */
+	double f = (double) (vid->width / (float) SCNR_WIDTH);
+	
+	for(x = 0; x < vid->width; x++)
+	{
+		s->video_scale[x] = round((x) * f);
+	}
 	
 	return(VID_OK);
 }
 
-int smartcrypt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+static void _rotate_syster(vid_line_t *l, ng_t *n, int16_t *dline, int xc)
+{
+	int x, x1, x2;
+	
+	xc = n->video_scale[xc];
+	
+	x1 = n->video_scale[SCNR_LEFT];
+	x2 = n->video_scale[SCNR_WIDTH - 7];
+	
+	for(x = x1; x <= x2; x++)
+	{
+		l->output[x * 2] = dline[xc++ * 2];
+		if(xc > x2) xc = x1 + n->video_scale[4] + 1;
+	}
+}
+
+int systercnr_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	/* TODO: many things */
 	ng_t *n = arg;
 	int x;
 	vid_line_t *l = lines[0];
-	
-	/* Calculate the field and field line */
-	int f = (l->line < SC_FIELD_2_START ? 0 : 1);
-	int i = l->line - (f == 0 ? SC_FIELD_1_START : SC_FIELD_2_START);
 	
 	/* Blank lines 310 and 622 */
 	if(l->line == 310 || l->line == 622)
@@ -874,18 +896,23 @@ int smartcrypt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		}
 	}
 	
+	/* Get active line number */
+	int line = (l->line < NG_FIELD_2_START - NG_FIELD_1_START ? (l->line - NG_FIELD_1_START) * 2 : (l->line - NG_FIELD_2_START) * 2 + 1);
+	if(line < 0 || line >= s->conf.active_lines) line = -1;
+	
 	/* Render line */
-	if(i > 0 && i < SC_LINES_PER_FIELD)
+	if(line != -1)
 	{
-		/* Smartcrypt seems to employ a one-line delay*/
+		int xc;
+		
+		/* Cut and rotate seems to employ a one-line delay */
 		int16_t *dline = lines[1]->output;
 		
-		x = s->active_left * 2;
+		/* Get cut + offset */
+		xc = _systercnr[(s->frame) % 25][line] + SCNR_LEFT;
 		
-		for(; x < s->width * 2; x += 2)
-		{
-			l->output[x] = dline[x];
-		}
+		/* Rotate line */
+		_rotate_syster(l, n, dline, xc);
 	}
 	
 	_render_ng_vbi(n, s, l);

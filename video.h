@@ -174,7 +174,7 @@ typedef struct {
 	int showserial;
 	int findkey;
 	char *d11;
-	char *smartcrypt;
+	char *systercnr;
 	char *syster;
 	int systeraudio;
 	int acp;

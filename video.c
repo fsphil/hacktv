@@ -3103,16 +3103,16 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_add_lineprocess(s, "discret11", 2, &s->ng, d11_render_line, NULL);
 	}
 	
-	/* Initalise Smartcrypt encoder */
-	if(s->conf.smartcrypt)
+	/* Initalise Syster CnR encoder */
+	if(s->conf.systercnr)
 	{
-		if((r = smartcrypt_init(&s->ng, s, s->conf.smartcrypt)) != VID_OK)
+		if((r = systercnr_init(&s->ng, s, s->conf.systercnr)) != VID_OK)
 		{
 			vid_free(s);
 			return(r);
 		}
 		
-		_add_lineprocess(s, "smartcrypt", 2, &s->ng, smartcrypt_render_line, NULL);
+		_add_lineprocess(s, "systercnr", 2, &s->ng, systercnr_render_line, NULL);
 	}
 		
 	/* Initalise ACP renderer */
@@ -3378,7 +3378,7 @@ void vid_free(vid_t *s)
 		acp_free(&s->acp);
 	}
 	
-	if(s->conf.syster || s->conf.d11 || s->conf.smartcrypt)
+	if(s->conf.syster || s->conf.d11 || s->conf.systercnr)
 	{
 		ng_free(&s->ng);
 	}

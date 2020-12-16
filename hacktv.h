@@ -64,7 +64,7 @@ typedef struct {
 	int repeat;
 	int verbose;
 	char *d11;
-	char *smartcrypt;
+	char *systercnr;
 	char *teletext;
 	char *logo;
 	char *wss;

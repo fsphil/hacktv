@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include "video.h"
 
+#define NG_SAMPLE_RATE 4437500
+
 #define NG_VBI_WIDTH 284
 #define NG_VBI_BYTES 28
 
@@ -36,12 +38,15 @@
 #define D11_LINES_PER_FIELD 286
 #define D11_FIELDS 6
 
-#define SC_FIELD_1_START   23
-#define SC_FIELD_2_START   335
-#define SC_LINES_PER_FIELD 286
-
 #define NG_ENCRYPT 1
 #define NG_DECRYPT 0
+
+/* Cut and rotate defines */
+#define SCNR_WIDTH (NG_SAMPLE_RATE / 25 / 625) /* 284 */
+#define SCNR_LEFT          46
+
+#define RANDOM_ECM 0
+#define STATIC_ECM 1
 
 /* NG_DELAY_LINES needs to be long enough for the scrambler to access any
  * line in the next field from at least the last 32 lines of the current.
@@ -123,6 +128,8 @@ typedef struct {
 	int16_t *firri, *firrq; /* Right channel, I + Q */
 	int mixx;
 	int firx;
+	
+	int video_scale[8520];
 
 } ng_t;
 
@@ -132,7 +139,7 @@ extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
 extern int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 extern int d11_init(ng_t *s, vid_t *vid, char *mode);
 extern int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
-extern int smartcrypt_init(ng_t *s, vid_t *vid, char *mode);
-extern int smartcrypt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
+extern int systercnr_init(ng_t *s, vid_t *vid, char *mode);
+extern int systercnr_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
