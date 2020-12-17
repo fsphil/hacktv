@@ -876,7 +876,7 @@ static void _rotate_syster(vid_line_t *l, ng_t *n, int16_t *dline, int xc)
 	for(x = x1; x <= x2; x++)
 	{
 		l->output[x * 2] = dline[xc++ * 2];
-		if(xc > x2) xc = x1 + n->video_scale[4] + 1;
+		if(xc > x2 - n->video_scale[2]) xc = x1 + n->video_scale[2] + 1;
 	}
 }
 
@@ -909,7 +909,7 @@ int systercnr_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		int16_t *dline = lines[1]->output;
 		
 		/* Get cut + offset */
-		xc = _systercnr[(s->frame) % 25][line] + SCNR_LEFT;
+		xc = _systercnr[s->frame % 25][line] + _systercnr_offset[(s->frame)% 25][line] + SCNR_LEFT - n->video_scale[2];
 		
 		/* Rotate line */
 		_rotate_syster(l, n, dline, xc);
