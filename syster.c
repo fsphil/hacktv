@@ -841,7 +841,7 @@ int systercnr_init(ng_t *s, vid_t *vid, char *mode)
 	};
 	
 	s->flags  = 0 << 7; /* ?? Unused */
-	s->flags |= 0 << 6; /* ?? Unused */
+	s->flags |= 1 << 6; /* ?? Unused */
 	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
 	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
 	s->flags |= 0 << 3; /* 0: key table 1, 1: key table 2 */
