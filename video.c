@@ -221,6 +221,8 @@ const vid_config_t vid_config_pal = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.video_bw       = 6.0e6,
+	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
@@ -318,6 +320,8 @@ const vid_config_t vid_config_525pal = {
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
+	
+	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
@@ -516,6 +520,8 @@ const vid_config_t vid_config_secam = {
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
+	
+	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -720,6 +726,8 @@ const vid_config_t vid_config_ntsc = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.video_bw       = 6.0e6,
+	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
@@ -837,6 +845,8 @@ const vid_config_t vid_config_d2mac = {
 	/* D2-MAC */
 	.output_type    = HACKTV_INT16_REAL,
 	
+	.video_bw       = 6.0e6,
+	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
@@ -948,6 +958,8 @@ const vid_config_t vid_config_dmac = {
 	/* D-MAC */
 	.output_type    = HACKTV_INT16_REAL,
 	
+	.video_bw       = 8.4e6,
+	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
@@ -1023,6 +1035,8 @@ const vid_config_t vid_config_819 = {
 	/* 819 line video, French variant */
 	.output_type    = HACKTV_INT16_REAL,
 	
+	.video_bw       = 10.4e6,
+	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
@@ -1096,6 +1110,8 @@ const vid_config_t vid_config_405 = {
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
+	
+	.video_bw       = 3.0e6,
 	
 	.type           = VID_RASTER_405,
 	.frame_rate_num = 25,
@@ -1596,6 +1612,16 @@ const vid_configs_t vid_configs[] = {
 	{ "cbs405",        &vid_config_cbs405           },
 	{ NULL,            NULL },
 };
+
+/* Video filter process */
+typedef struct {
+	
+	int lines;
+	int offset;
+	
+	fir_int16_t fir;
+	
+} _vid_filter_process_t;
 
 /* Test taps for a CCIR-405 625 line video pre-emphasis filter at 20.25 MHz */
 const int16_t fm_625_taps[] = {
@@ -2524,17 +2550,24 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 
 static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
-	vid_line_t *l = lines[0];
-	fir_int16_t *fir = arg;
-	fir_int16_process(fir, l->output, l->output, s->width);
+	_vid_filter_process_t *p = arg;
+	vid_line_t *src = lines[nlines - 1];
+	int x1, x2;
+	
+	x1 = p->offset;
+	x2 = s->width - x1;
+	fir_int16_process(&p->fir, &lines[0]->output[x1 * 2], &src->output[0], x2);
+	fir_int16_process(&p->fir, &lines[1]->output[0], &src->output[x2 * 2], x1);
+	
 	return(1);
 }
 
 static void _vid_filter_free(vid_t *s, void *arg)
 {
-	fir_int16_t *fir = arg;
-	fir_int16_free(fir);
-	free(fir);
+	_vid_filter_process_t *p = arg;
+	
+	fir_int16_free(&p->fir);
+	free(p);
 }
 
 static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
@@ -2754,11 +2787,11 @@ static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, v
 
 static int _init_vfilter(vid_t *s)
 {
-	fir_int16_t *fir;
+	_vid_filter_process_t *p;
 	int ntaps;
 	
-	fir = calloc(1, sizeof(fir_int16_t));
-	if(!fir)
+	p = calloc(1, sizeof(_vid_filter_process_t));
+	if(!p)
 	{
 		return(VID_OUT_OF_MEMORY);
 	}
@@ -2772,12 +2805,12 @@ static int _init_vfilter(vid_t *s)
 		taps = calloc(ntaps, sizeof(int16_t) * 2);
 		if(!taps)
 		{
-			free(fir);
+			free(p);
 			return(VID_OUT_OF_MEMORY);
 		}
 		
 		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_scomplex_init(fir, taps, ntaps);
+		fir_int16_scomplex_init(&p->fir, taps, ntaps);
 		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)
@@ -2823,17 +2856,38 @@ static int _init_vfilter(vid_t *s)
 			}
 		}
 		
-		fir_int16_init(fir, taps, ntaps);	
+		fir_int16_init(&p->fir, taps, ntaps);	
+	}
+	else if(s->conf.modulation == VID_AM ||
+	        s->conf.modulation == VID_NONE)
+	{
+		int16_t *taps;
+		
+		ntaps = 51;
+		
+		taps = calloc(ntaps, sizeof(int16_t));
+		if(!taps)
+		{
+			free(p);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		fir_int16_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
+		fir_int16_init(&p->fir, taps, ntaps);
+		free(taps);
 	}
 	
-	if(fir->type == 0)
+	if(p->fir.type == 0)
 	{
 		/* No filter has been created */
-		free(fir);
+		free(p);
 		return(VID_OK);
 	}
 	
-	_add_lineprocess(s, "vfilter", 1, fir, _vid_filter_process, _vid_filter_free);
+	p->lines = 1 + p->fir.ntaps / 2 / s->width;
+	p->offset = s->width - ((p->fir.ntaps / 2) % s->width);
+	
+	_add_lineprocess(s, "vfilter", 1 + p->lines, p, _vid_filter_process, _vid_filter_free);
 	
 	return(VID_OK);
 }
