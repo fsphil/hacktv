@@ -69,7 +69,7 @@
 #include "video.h"
 #include "vbidata.h"
 #include "syster-ca.h"
-#include "systercnr.h"
+#include "systercnr-sequence.h"
 
 /* ECM data table */
 static ng_mode_t _ng_modes[] = {
@@ -513,22 +513,34 @@ int _init_common(ng_t *s, vid_t *vid, char *mode, int ecm_type)
 	return(VID_OK);
 }
 
-int ng_init(ng_t *s, vid_t *vid, char *mode)
+int ng_init(ng_t *s, vid_t *vid)
 {
 	time_t t;
+	int x;
+	
 	srand((unsigned) time(&t));
-		
-	if(_init_common(s, vid, mode, RANDOM_ECM) == VID_ERROR)
+	char *mode = vid->conf.syster ? vid->conf.syster : vid->conf.systercnr;
+	
+	if(vid->conf.syster && vid->conf.systercnr)
+	{
+		if(strcmp(vid->conf.syster, vid->conf.systercnr) != 0)
+		{
+			fprintf(stderr,"Warning: different modes specified for syster and systercnr. Using mode %s.\n", vid->conf.syster);
+		}
+	}
+	
+	if(_init_common(s, vid, mode, vid->conf.systercnr ? STATIC_ECM : RANDOM_ECM) == VID_ERROR)
 	{
 		return VID_ERROR;
 	};
 	
-	s->flags  = 1 << 6; /* ?? Unused */
+	s->flags  = 0 << 7; /* ?? Unused */
+	s->flags |= 1 << 6; /* ?? Unused */
 	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
 	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
 	s->flags |= (vid->conf.scramble_video == 1 ? 0 : 1) << 3; /* 0: key table 1, 1: key table 2 */
-	s->flags |= 0 << 2; /* Seems to enable cut-and-rotate on some decoders */
-	s->flags |= 1 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
+	s->flags |= (vid->conf.systercnr ? 1 : 0) << 2; /* Seems to enable cut-and-rotate on some decoders */
+	s->flags |= (vid->conf.syster ? 1 : 0) << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
 	s->flags |= 0 << 0; /* 6th high bit of audience level */
 	
 	_ng_vbi_init(s, vid);
@@ -541,6 +553,12 @@ int ng_init(ng_t *s, vid_t *vid, char *mode)
 	s->s = 0;
 	s->r = 0;
 	_update_field_order(s);
+	
+	/* Quick and dirty sample rate conversion array */
+	for(x = 0; x < NG_VBI_WIDTH; x++)
+	{
+		s->video_scale[x] = round((double) x * vid->width / NG_VBI_WIDTH);
+	}
 	
 	return(VID_OK);
 }
@@ -614,6 +632,33 @@ void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples)
 	}
 }
 
+/* Function courtesy of fsphil */
+static void _rotate_syster(int16_t *li, vid_line_t *lo, ng_t *n, int frame, const uint8_t sequence[25][576])
+{
+	int shift;
+	int x, y;
+
+	y = lo->line < 336 ? lo->line - 23 : lo->line - 336 + 288;
+	shift = sequence[frame % 25][y];
+
+	y = n->video_scale[SCNR_LEFT + SCNR_TOTAL_CUTS - shift];
+	for(x = n->video_scale[SCNR_LEFT]; x < n->video_scale[SCNR_LEFT + SCNR_TOTAL_CUTS]; x++, y++)
+	{
+		lo->output[x * 2 + 1] =  li[y * 2];
+		if(y >= n->video_scale[SCNR_LEFT + SCNR_TOTAL_CUTS])
+		{
+			y = n->video_scale[SCNR_LEFT + 5];
+		}
+	}
+
+	for(x = n->video_scale[SCNR_LEFT]; x < n->video_scale[SCNR_LEFT + SCNR_TOTAL_CUTS]; x++)
+	{
+		/* Blank last line of each field - to stop interfering with D11 data */
+		lo->output[x * 2] = lo->line == 310 || lo->line == 622 ? 16056 : lo->output[x * 2 + 1];
+		lo->output[x * 2 + 1] = 0;
+	}
+}
+
 int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	ng_t *n = arg;
@@ -625,44 +670,59 @@ int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	f = (l->line < NG_FIELD_2_START ? 1 : 2);
 	i = l->line - (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START);
 	
-	if(i >= 0 && i < NG_LINES_PER_FIELD)
+	if(s->conf.syster)
 	{
-		/* Adjust for the decoder's 32 line delay */
-		i += 32;
-		if(i >= NG_LINES_PER_FIELD)
+		/* Cut and rotate line if enabled with shuffle mode */
+		if(s->conf.systercnr)
 		{
-			i -= NG_LINES_PER_FIELD;
-			f = (f == 1 ? 2 : 1);
+			vid_line_t *lin = lines[nlines - 1];
+			int16_t *dline = lines[nlines - 1]->output;
+			
+			if((lin->line >=  23 && lin->line <= 310) || (lin->line >= 336 && lin->line <= 623))
+			{
+				_rotate_syster(dline, lin, n, s->frame, _systercnrshuffle);
+			}
 		}
 		
-		/* Reinitialise the seeds if this is a new field */
-		if(i == 0)
+		if(i >= 0 && i < NG_LINES_PER_FIELD)
 		{
-			int sf = l->frame % 50;
-			
-			if((sf == 6 || sf == 31) && f == 1)
+			/* Adjust for the decoder's 32 line delay */
+			i += 32;
+			if(i >= NG_LINES_PER_FIELD)
 			{
-				_prbs_reset(n, n->cw);
+				i -= NG_LINES_PER_FIELD;
+				f = (f == 1 ? 2 : 1);
 			}
 			
-			x = _prbs_update(n);
+			/* Reinitialise the seeds if this is a new field */
+			if(i == 0)
+			{
+				int sf = l->frame % 50;
+				
+				if((sf == 6 || sf == 31) && f == 1)
+				{
+					_prbs_reset(n, n->cw);
+				}
+				
+				x = _prbs_update(n);
+				
+				n->s = x & 0x7F;
+				n->r = x >> 7;
+				
+				_update_field_order(n);
+			}
 			
-			n->s = x & 0x7F;
-			n->r = x >> 7;
+			/* Calculate which line in the delay buffer to copy image data from */
+			j = (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START) + n->order[i];
+			if(j < l->line) j += s->conf.lines;
+			j -= l->line;
 			
-			_update_field_order(n);
-		}
-		
-		/* Calculate which line in the delay buffer to copy image data from */
-		j = (f == 1 ? NG_FIELD_1_START : NG_FIELD_2_START) + n->order[i];
-		if(j < l->line) j += s->conf.lines;
-		j -= l->line;
-		
-		if(j < 0 || j >= nlines)
-		{
-			/* We should never get to this point */
-			fprintf(stderr, "*** Nagravision Syster scrambler is trying to read an invalid line ***\n");
-			j = 0;
+			if(j < 0 || j >= nlines)
+			{
+				/* We should never get to this point */
+				fprintf(stderr, "*** Nagravision Syster scrambler is trying to read an invalid line ***\n");
+				j = 0;
+			}
 		}
 	}
 	
@@ -681,6 +741,16 @@ int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		for(; x < s->width * 2; x += 2)
 		{
 			l->output[x] = dline[x];
+		}
+	}
+	
+	/* Rotate line without shuffling */
+	if(!s->conf.syster)
+	{
+		if((l->line >=  23 && l->line <= 310) || (l->line >= 336 && l->line <= 623))
+		{
+			int16_t *dline = lines[1]->output;
+			_rotate_syster(dline, l, n, s->frame, _systercnr);
 		}
 	}
 	
@@ -778,8 +848,6 @@ int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	ng_t *d = arg;
 	vid_line_t *l = lines[0];
 	
-	int16_t *buffer = malloc(sizeof(int16_t) * 2 * s->width);
-	
 	/* Calculate the field and field line */
 	f = (l->line < D11_FIELD_2_START ? 0 : 1);
 	i = l->line - (f == 0 ? D11_FIELD_1_START : D11_FIELD_2_START);
@@ -796,13 +864,14 @@ int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		/* Delay line */		
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
-			buffer[x * 2] = x < s->active_left + delay ? s->black_level : l->output[(x - delay) * 2];
+			l->output[x * 2 + 1] = x < s->active_left + delay ? s->black_level : l->output[(x - delay) * 2];
 		}
 		
 		/* Copy delayed line to output buffer */
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
-			l->output[x * 2] = buffer[x * 2];
+			l->output[x * 2] = l->output[x * 2 + 1];
+			l->output[x * 2 + 1] = 0;
 		}
 	}
 	
@@ -825,97 +894,6 @@ int d11_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	}
 	
 	_render_ng_vbi(d, s, l);
-	
-	return(1);
-}
-
-/* Syster cut and rotate (German Premiere decoders only) */
-int systercnr_init(ng_t *s, vid_t *vid, char *mode)
-{
-	int x;
-	memset(s, 0, sizeof(ng_t));
-	
-	if(_init_common(s, vid, mode, STATIC_ECM) == VID_ERROR)
-	{
-		return VID_ERROR;
-	};
-	
-	s->flags  = 0 << 7; /* ?? Unused */
-	s->flags |= 1 << 6; /* ?? Unused */
-	s->flags |= 1 << 5; /* 0: clear, 1: scrambled */
-	s->flags |= 1 << 4; /* Audio inversion frequency: 1: 12.8kHz, 0: ?kHz */
-	s->flags |= 0 << 3; /* 0: key table 1, 1: key table 2 */
-	s->flags |= 1 << 2; /* Seems to enable cut-and-rotate on some decoders */
-	s->flags |= 0 << 1; /* Scrambling type: 0: Discret 11, 1: Syster */
-	s->flags |= 0 << 0; /* 6th high bit of audience level */
-	
-	/* Initialise VBI sequences - this is still necessary for cut and rotate mode */
-	_ng_vbi_init(s, vid);
-	_ng_audio_init(s);
-	
-	/* Create scale array */
-	double f = (double) (vid->width / (float) SCNR_WIDTH);
-	
-	for(x = 0; x < vid->width; x++)
-	{
-		s->video_scale[x] = round((x) * f);
-	}
-	
-	return(VID_OK);
-}
-
-static void _rotate_syster(vid_line_t *l, ng_t *n, int16_t *dline, int xc)
-{
-	int x, x1, x2;
-	
-	xc = n->video_scale[xc];
-	
-	x1 = n->video_scale[SCNR_LEFT];
-	x2 = n->video_scale[SCNR_WIDTH - 7];
-	
-	for(x = x1; x <= x2; x++)
-	{
-		l->output[x * 2] = dline[xc++ * 2];
-		if(xc > x2 - n->video_scale[2]) xc = x1 + n->video_scale[2] + 1;
-	}
-}
-
-int systercnr_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
-{
-	/* TODO: many things */
-	ng_t *n = arg;
-	int x;
-	vid_line_t *l = lines[0];
-	
-	/* Blank lines 310 and 622 */
-	if(l->line == 310 || l->line == 622)
-	{
-		for(x = s->active_left; x < s->active_left + s->active_width; x++)
-		{
-			l->output[x * 2] = s->black_level;
-		}
-	}
-	
-	/* Get active line number */
-	int line = (l->line < NG_FIELD_2_START - NG_FIELD_1_START ? (l->line - NG_FIELD_1_START) * 2 : (l->line - NG_FIELD_2_START) * 2 + 1);
-	if(line < 0 || line >= s->conf.active_lines) line = -1;
-	
-	/* Render line */
-	if(line != -1)
-	{
-		int xc;
-		
-		/* Cut and rotate seems to employ a one-line delay */
-		int16_t *dline = lines[1]->output;
-		
-		/* Get cut + offset */
-		xc = _systercnr[s->frame % 25][line] + _systercnr_offset[(s->frame)% 25][line] + SCNR_LEFT - n->video_scale[2];
-		
-		/* Rotate line */
-		_rotate_syster(l, n, dline, xc);
-	}
-	
-	_render_ng_vbi(n, s, l);
 	
 	return(1);
 }

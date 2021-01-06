@@ -44,6 +44,7 @@
 /* Cut and rotate defines */
 #define SCNR_WIDTH (NG_SAMPLE_RATE / 25 / 625) /* 284 */
 #define SCNR_LEFT          46
+#define SCNR_TOTAL_CUTS    230
 
 #define RANDOM_ECM 0
 #define STATIC_ECM 1
@@ -133,7 +134,7 @@ typedef struct {
 
 } ng_t;
 
-extern int ng_init(ng_t *s, vid_t *vs, char *mode);
+extern int ng_init(ng_t *s, vid_t *vs);
 extern void ng_free(ng_t *s);
 extern void ng_invert_audio(ng_t *s, int16_t *audio, size_t samples);
 extern int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);

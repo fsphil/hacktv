@@ -3080,9 +3080,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* Initalise syster encoder */
-	if(s->conf.syster)
+	if(s->conf.syster || s->conf.systercnr)
 	{
-		if((r = ng_init(&s->ng, s, s->conf.syster)) != VID_OK)
+		if((r = ng_init(&s->ng, s)) != VID_OK)
 		{
 			vid_free(s);
 			return(r);
@@ -3103,18 +3103,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_add_lineprocess(s, "discret11", 2, &s->ng, d11_render_line, NULL);
 	}
 	
-	/* Initalise Syster CnR encoder */
-	if(s->conf.systercnr)
-	{
-		if((r = systercnr_init(&s->ng, s, s->conf.systercnr)) != VID_OK)
-		{
-			vid_free(s);
-			return(r);
-		}
-		
-		_add_lineprocess(s, "systercnr", 2, &s->ng, systercnr_render_line, NULL);
-	}
-		
 	/* Initalise ACP renderer */
 	if(s->conf.acp)
 	{

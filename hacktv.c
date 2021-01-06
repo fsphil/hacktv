@@ -1103,7 +1103,7 @@ int main(int argc, char *argv[])
 		vid_conf.systeraudio = s.systeraudio;
 	}
 
-	if(s.syster)
+	if(s.syster || s.systercnr)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
 		{
@@ -1118,23 +1118,6 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.syster = s.syster;
-		vid_conf.systeraudio = s.systeraudio;
-	}
-
-	if(s.systercnr)
-	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
-		{
-			fprintf(stderr, "Syster CnR is only compatible with 625 line PAL modes.\n");
-			return(-1);
-		}
-		
-		if(vid_conf.videocrypt || vid_conf.videocrypt2 || vid_conf.videocrypts || vid_conf.d11)
-		{
-			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
-			return(-1);
-		}
-		
 		vid_conf.systercnr = s.systercnr;
 		vid_conf.systeraudio = s.systeraudio;
 	}
