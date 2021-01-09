@@ -317,7 +317,7 @@ int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	for(x = 0; x < s->width; x++)
 	{
 		l->output[x * 2] += v->line[i][x * 2 + 0];
-		l->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
+		if(lut_i) l->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
 	}
 	
 	l->vbialloc = 1;
