@@ -46,7 +46,7 @@ static uint8_t _crc(uint8_t *data)
 	return (~crc + 1);
 }
 
-static uint8_t _rotate_left(x)
+static uint8_t _rotate_left(uint8_t x)
 {
 	return (((x) << 1) | ((x) >> 7)) & 0xFF;
 }
