@@ -39,6 +39,7 @@
  * Marco Wabbel for xtea algo and Funcard (ATMEL based) hex files - needed for xtea.
 */
 
+#include <inttypes.h>
 #include <string.h>
 #include <math.h>
 #include "video.h"
@@ -551,7 +552,7 @@ int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 				fprintf(stderr, "\n\nVC1 ECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", v->blocks[v->block].messages[strcmp(mode,"ppv") == 0 ? 0 : 5][i]);
 				fprintf(stderr,"\nVC1 ECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", v->cw >> (8 * i) & 0xFF);
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02" PRIx64 " ", v->cw >> (8 * i) & 0xFF);
 				
 				if(s->conf.enableemm || s->conf.disableemm)
 				{
@@ -599,7 +600,7 @@ int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 				fprintf(stderr, "\n\nVC2 ECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", v->blocks2[v->block2].messages[5][i]);
 				fprintf(stderr,"\nVC2 ECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02llX ", v->blocks2[v->block2].codeword >> (8 * i) & 0xFF);
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02" PRIx64 " ", v->blocks2[v->block2].codeword >> (8 * i) & 0xFF);
 				
 				if(s->conf.enableemm || s->conf.disableemm)
 				{

@@ -564,7 +564,7 @@ static void *_input_thread(void *arg)
 					int max_bitmap_height = 0;
 					int bitmap_scale;
 					int x, y, pos, last_pos;
-					last_pos = 0;
+					last_pos = pos = 0;
 					
 					for(s = 0; s < sub.num_rects; s++)
 					{

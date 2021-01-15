@@ -16,6 +16,7 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -360,64 +361,76 @@ static void _eurocrypt(uint8_t *data, const uint8_t *key, int desmode, int emode
 		uint64_t r3;
 		uint8_t k2[8];
 		
-		/* EC-M */
-		if(emode == EC_M)
-		{
-			if(desmode == HASH)
-			{
-				_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
-			}
-			
-			/* Key expansion */
-			_key_exp(&c, &d, k2);
-			
-			/* One DES round */
-			s = _ec_des_f(r, k2);
-			
-			if(desmode != HASH)
-			{
-				_key_rotate_ec(&c, &d, ROTATE_RIGHT, i);
-			}
-			
-			/* Swap first two bytes if it's a hash routine */
-			if(desmode == HASH)
-			{
-				s = ((s >> 8) & 0xFF0000L) | ((s << 8) & 0xFF000000L) | (s & 0x0000FFFFL);
-			}
-		}
-		
-		/* EC-S2 */
-		if(emode == EC_S)
-		{
-			/* Key rotation */
-			_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
-			
-			/* Key expansion */
-			_key_exp(&c, &d, k2);
-			
-			/* One DES round */
-			s = _ec_des_f(r, k2);
-			
-		}
-		/* EC-3DES */
-		if(emode == EC_3DES)
-		{
-			/* Key rotation */
-			if(rnd != 2)
-			{
-				_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
-			}
-			
-			/* Key expansion */
-			_key_exp(&c, &d, k2);
-			
-			/* One DES round */
-			s = _ec_des_f(r, k2);
-			
-			if(rnd == 2)
-			{
-				_key_rotate_ec(&c, &d, ROTATE_RIGHT, i);
-			}
+		switch (emode) {
+			/* If mode is not valid, abort -- this is a bug! */
+			default:
+				fprintf(stderr, "_eurocrypt: BUG: invalid encryption mode!!!\n");
+				assert(0);
+				break;
+
+			/* EC-M */
+			case EC_M:
+				{
+					if(desmode == HASH)
+					{
+						_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
+					}
+					
+					/* Key expansion */
+					_key_exp(&c, &d, k2);
+					
+					/* One DES round */
+					s = _ec_des_f(r, k2);
+					
+					if(desmode != HASH)
+					{
+						_key_rotate_ec(&c, &d, ROTATE_RIGHT, i);
+					}
+					
+					/* Swap first two bytes if it's a hash routine */
+					if(desmode == HASH)
+					{
+						s = ((s >> 8) & 0xFF0000L) | ((s << 8) & 0xFF000000L) | (s & 0x0000FFFFL);
+					}
+				}
+				break;
+
+			/* EC-S2 */
+			case EC_S:
+				{
+					/* Key rotation */
+					_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
+					
+					/* Key expansion */
+					_key_exp(&c, &d, k2);
+					
+					/* One DES round */
+					s = _ec_des_f(r, k2);
+					
+				}
+				break;
+
+			/* EC-3DES */
+			case EC_3DES:
+				{
+					/* Key rotation */
+					if(rnd != 2)
+					{
+						_key_rotate_ec(&c, &d, ROTATE_LEFT, i);
+					}
+					
+					/* Key expansion */
+					_key_exp(&c, &d, k2);
+					
+					/* One DES round */
+					s = _ec_des_f(r, k2);
+					
+					if(rnd == 2)
+					{
+						_key_rotate_ec(&c, &d, ROTATE_RIGHT, i);
+					}
+				}
+				break;
 		}
 		
 		/* Rotate halves around */

@@ -46,7 +46,7 @@ static uint8_t _crc(uint8_t *data)
 	return (~crc + 1);
 }
 
-static uint8_t _rotate_left(x)
+static uint8_t _rotate_left(uint8_t x)
 {
 	return (((x) << 1) | ((x) >> 7)) & 0xFF;
 }
@@ -498,7 +498,7 @@ void _hash_ppv(uint64_t *answ, size_t len)
 	{
 		for (j = 1; j != len; j++) 
 		{
-			m = tab_1421[i] + answ[j - 1] & 0xFF;
+			m = (tab_1421[i] + answ[j - 1]) & 0xFF;
 			answ[j] = _rotate_left(answ[j] ^ moduli[m]);
 		}
 		answ[0] ^= answ[len-1];
