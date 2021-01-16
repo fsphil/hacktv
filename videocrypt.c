@@ -478,7 +478,7 @@ int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	}
 	
 	/* Hack to preserve WSS signal data */
-	if(l->line == 24) x = -1;
+	if(l->line == 23) x = -1;
 	
 	if(x != -1)
 	{
