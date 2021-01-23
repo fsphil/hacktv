@@ -3160,7 +3160,11 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			return(r);
 		}
 		
-		_add_lineprocess(s, "teletext", 1, &s->tt, tt_render_line, NULL);
+		/* Start the teletext renderer thread for non-MAC modes */
+		if(s->conf.type != VID_MAC)
+		{
+			_add_lineprocess(s, "teletext", 1, &s->tt, tt_render_line, NULL);
+		}
 	}
 	
 	if(s->conf.vfilter)
