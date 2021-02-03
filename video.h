@@ -36,6 +36,7 @@ typedef struct vid_t vid_t;
 #include "font.h"
 #include "subtitles.h"
 #include "vits.h"
+#include "graphics.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -298,6 +299,9 @@ struct vid_t {
 	
 	/* Signal configuration */
 	vid_config_t conf;
+	
+	/* Logo configuration */
+	image_t vid_logo;
 	
 	/* Video setup */
 	int sample_rate;

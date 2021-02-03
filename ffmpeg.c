@@ -799,6 +799,22 @@ static void *_video_scaler_thread(void *arg)
 			}
 		}
 		
+		/* Print logo, if enabled */
+		if(av->s->conf.logo)
+		{
+			/* Reload and resize logo if video ratio has changed */
+			if(av->s->ratio && av->s->ratio != av->s->vid_logo.vratio)
+			{
+				av->s->vid_logo.vratio = av->s->ratio;
+				if(_load_png(&av->s->vid_logo, av->s->active_width, av->s->conf.active_lines, av->s->conf.logo, 0.75, 
+				              av->s->vid_logo.vratio >= 14.0 / 9.0 ? 16.0 / 9.0 : 4.0 / 3.0) != HACKTV_OK)
+				{
+					av->s->conf.logo = NULL;
+				}
+			}
+			_overlay_image_logo((uint32_t *) oframe->data[0], &av->s->vid_logo, av->s->active_width, av->s->conf.active_lines, LOGO_POS_TR);
+		}
+		
 		av_frame_unref(frame);
 		
 		_frame_dbuffer_ready(&av->out_video_buffer, 0);
@@ -1290,25 +1306,12 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		double fps = av->video_stream->r_frame_rate.num / (double) av->video_stream->r_frame_rate.den;	
 
 		char *_vid_filter;
-		char *_vid_logo_filter;
 		char *_vid_timecode_filter;
 		char *_vid_output_filter;
-		
-		/* Filter definition for overlaying logo */
-		if(s->conf.logo)
-		{
-			asprintf(&_vid_logo_filter,"movie = %s,"
-			                           "scale = iw / (%i / %i) / %f : iw / (iw / ih) / (%i / %i) / (4.0 / 3.0)[logo];",
-			                            s->conf.logo,
-			                            video_width_ws, source_width, s->conf.pillarbox || s->conf.letterbox || !ws ? 1 : 4.0 / 3.0, s->conf.active_lines, source_height);
-			
-			asprintf(&_vid_output_filter,"[logo]overlay = W * (20 / 25) : H * (2 / 25)");
-		}
-		else
-		{
-			asprintf(&_vid_logo_filter," ");
-			asprintf(&_vid_output_filter,"null");
-		}
+
+		/* Default states */
+		asprintf(&_vid_filter,"null");
+		asprintf(&_vid_output_filter,"null");
 		
 		/* Filter definition for overlaying timestamp */
 		if(s->conf.timestamp)
@@ -1337,18 +1340,12 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 				asprintf(&_vid_filter,"pad = 'iw:iw / (%i/%i) : 0 : (oh-ih) / 2', scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
 			}
 		}
-		else
-		{
-			asprintf(&_vid_filter,"null");
-		}
 		
 		asprintf(&_vfi,
 			"[in]%s[video];"
-			"%s"
 			"[video]%s[timestamp];"
 			"[timestamp]%s[out]", 
 			_vid_filter,
-			_vid_logo_filter,
 			_vid_timecode_filter,
 			_vid_output_filter);
 		

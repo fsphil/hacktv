@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include "hacktv.h"
 #include  "ascii.h"
-#include "bitmap.h"
+#include "graphics.h"
 
 /* A small 2-bit hacktv logo */
 #define CHAR_WIDTH  8
@@ -38,14 +38,14 @@ typedef struct {
 	uint32_t *video;
 	int16_t *audio;
 	size_t audio_samples;
-	int lwidth;
-	int lheight;
-	uint32_t *logo;
+	int vlogo_width;
+	int vlogo_height;
+	image_t image;
 } av_test_t;
 
-static char _logo_text[] = "HACK TV";
+static char _logo_text[] = "HACKTV";
 
-static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
+static uint32_t *_overlay_text_logo(void *private, char *logotext, int pos)
 {
 	av_test_t *av = private;
 	
@@ -70,82 +70,16 @@ static uint32_t *_overlay_logo(void *private, char *logotext, int pos)
 	return(av->video);
 }
 
-void _read_bmp(void *private)
-{
-	av_test_t *av = private;
-	int width, height;
-	int row_padded, i, k;
-	unsigned char *data;
-	unsigned char info[54];
-	uint32_t *logo;
-	
-	FILE* f = fopen("hacktv.bmp", "rb");	
-	if(f != NULL) 
-	{
-		fread(info, sizeof(unsigned char), 54, f); 
-		width = *(int*)&info[18];
-		height = *(int*)&info[22];	
-		
-		/* Hack to deal with sampling rate issues */
-		av->lwidth = (width * 1.15) / (832.00 / (float) av->width);
-		av->lheight = height;
-		
-		row_padded = (width * 3 + 3) & (~3);
-		data = malloc(row_padded * sizeof(uint8_t));
-		logo = malloc(width * height * sizeof(uint32_t));
-		av->logo = malloc(av->lwidth * av->lheight * sizeof(uint32_t));	
-					
-		for(i = k = 0; i < height; i++)
-		{
-			fread(data, sizeof(uint8_t), row_padded, f);
-						
-			for(int j = 0; j < width * 3; j += 3, k++)
-			{
-				logo[k] = data[j + 2] << 16 | data[j + 1] << 8 | data[j] << 0;
-			}
-		}
-		
-		resize_bitmap(logo, av->logo, width, height, av->lwidth, av->lheight);
-		
-		fclose(f);
-	}
-	else
-	{
-		/* Overlay the logo */
-		_overlay_logo(av,_logo_text, 7);
-	}
-}
-
-static uint32_t *_overlay_bitmap(void *private, int pos)
-{
-	av_test_t *av = private;
-	int x, y, vi;
-	uint32_t c;
-	
-	_read_bmp(av);
-		
-	for (x=0; x < av->lwidth; x++) 
-	{
-		for(y=0; y < av->lheight; y++)
-		{
-			c = av->logo[x + ((av->lheight - y - 1) * av->lwidth)];
-			vi = (av->height / pos + y) * av->width + ((av->width - av->lwidth) / 2) + x;			
-			av->video[vi] = c;
-		}
-	}
-	return(av->video);
-}
-
 static uint32_t *_av_test_read_video(void *private, float *ratio)
 {
-	/* Get time */
-	char timestr[9];	
+	/* Get current time */
+	char timestr[9];
 	time_t secs = time(0);
 	struct tm *local = localtime(&secs);
 	sprintf(timestr, "%02d:%02d:%02d", local->tm_hour, local->tm_min, local->tm_sec);
 	
 	av_test_t *av = private;
-	_overlay_logo(av,timestr, 3);
+	_overlay_text_logo(av,timestr, 3);
 	if(ratio) *ratio = 4.0 / 3.0;
 	return(av->video);
 }
@@ -235,8 +169,22 @@ int av_test_open(vid_t *s)
 	}
 	
 	/* Overlay the logo */
-	_overlay_bitmap(av, 7);	
+	if(_load_png(&av->image, av->width, av->height, "hacktv.png", 1.0, 4.0/3.0) == HACKTV_OK)
+	{
+		_overlay_image_logo(av->video, &av->image, av->width, av->height, LOGO_POS_CENTRE);
+	}
+	else
+	{
+		/* Overlay a text logo, if there was an error loading the image */
+		_overlay_text_logo(av,_logo_text, 7);
+	}
 	
+	/* Print logo, if enabled */
+	if(s->conf.logo)
+	{
+		_overlay_image_logo(av->video, &s->vid_logo, av->width, av->height, LOGO_POS_TR);
+	}
+
 	/* Generate the 1khz test tones (BBC 1 style) */
 	d = 1000.0 * 2 * M_PI / HACKTV_AUDIO_SAMPLE_RATE;
 	y = HACKTV_AUDIO_SAMPLE_RATE * 64 / 100; /* 640ms */

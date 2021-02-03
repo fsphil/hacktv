@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include "subtitles.h"
 #include "hacktv.h"
-#include "bitmap.h"
+#include "graphics.h"
 
 /* Convert hh:mm:ss,mmm to milliseconds */
 unsigned int get_ms(char *fmt)

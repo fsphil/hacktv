@@ -3014,6 +3014,14 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	s->olines = 1;
 	s->audio = 0;
 	
+	if(s->conf.logo)
+	{
+		if(_load_png(&s->vid_logo, s->active_width, s->conf.active_lines, s->conf.logo, 0.75, 4.0/3.0) != HACKTV_OK)
+		{
+			s->conf.logo = NULL;
+		}
+	}
+	
 	/* Initalise D/D2-MAC state */
 	if(s->conf.type == VID_MAC)
 	{
