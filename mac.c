@@ -1305,15 +1305,15 @@ static void _rotate(vid_t *s, int16_t *output, int x1, int x2, int xc)
 {
 	int x;
 	
-	xc = s->mac.video_scale[xc - 2];
+	xc = s->mac.video_scale[xc - 5];
 	
-	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
+	for(x = s->mac.video_scale[x1 - 5]; x <= s->mac.video_scale[x2 + 5]; x++)
 	{
 		output[x * 2 + 1] = output[xc++ * 2];
 		if(xc > s->mac.video_scale[x2]) xc = s->mac.video_scale[x1];
 	}
 	
-	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
+	for(x = s->mac.video_scale[x1 - 5]; x <= s->mac.video_scale[x2 + 5]; x++)
 	{
 		output[x * 2] = output[x * 2 + 1];
 	}
