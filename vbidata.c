@@ -29,7 +29,7 @@ static double _sinc(double x)
 static double _raised_cosine(double x, double b, double t)
 {
 	if(x == 0) return(1.0);
-        return(_sinc(x / t) * (cos(M_PI * b * x / t) / (1.0 - (4.0 * b * b * x * x / (t * t)))));
+        return sqrt(_sinc(x / t) * (cos(M_PI * b * x / t) / (1.0 - (4.0 * b * b * x * x / (t * t)))));
 }
 
 static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwidth, int16_t level, int filter, double beta)
