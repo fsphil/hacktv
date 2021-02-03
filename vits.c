@@ -158,7 +158,7 @@ static int _init_625(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 				
 				for(b = 0; b < 6; b++)
 				{
-					r += _win(t, (12 + 3 * b) * h, 3 * h, 200e-9, 0.21)
+					r += _win(t, (12 + 3 * b) * h, 2 * h, 200e-9, 0.21)
 					   * sin((t - (12 + 3 * b) * h) * bs[b]);
 				}
 				
