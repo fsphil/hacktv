@@ -333,7 +333,7 @@ int _ng_vbi_init(ng_t *s, vid_t *vid)
 	s->lut = vbidata_init(
 		NG_VBI_WIDTH, vid->width,
 		i,
-		VBIDATA_FILTER_RC, 0.7
+		VBIDATA_FILTER_RC, 0.9
 	);
 	
 	if(!s->lut)
