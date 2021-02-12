@@ -21,54 +21,20 @@
 #include <string.h>
 #include <ctype.h>
 #include "hacktv.h"
-#include  "ascii.h"
 #include "graphics.h"
-
-/* A small 2-bit hacktv logo */
-#define CHAR_WIDTH  8
-#define CHAR_HEIGHT 9
-#define CHARS 40
-#define LOGO_SCALE  4
 
 /* AV test pattern source */
 typedef struct {
-	int width;
-	int height;
-	int sample_rate;
+	int vid_width;
+	int vid_height;
 	uint32_t *video;
 	int16_t *audio;
 	size_t audio_samples;
-	int vlogo_width;
-	int vlogo_height;
+	int img_width;
+	int img_height;
 	image_t image;
+	av_font_t *font[10];
 } av_test_t;
-
-static char _logo_text[] = "HACKTV";
-
-static uint32_t *_overlay_text_logo(void *private, char *logotext, int pos)
-{
-	av_test_t *av = private;
-	
-	int l, x, y, z, charindex = 0;
-	int logotextlength = strlen(logotext);
-	uint32_t c;
-	
-	for (z=0 ; z < logotextlength; z++)
-	{
-		/* Find char index within ASCII table */
-		for(l=0;l<CHARS;l++)  if(toupper(logotext[z]) == chars[l]) charindex = l;
-		
-		for (x=0; x < CHAR_WIDTH * LOGO_SCALE; x++) 
-		{
-			for(y=0; y < CHAR_HEIGHT * LOGO_SCALE; y++)
-			{
-				c = (ascii[(y / LOGO_SCALE * CHAR_WIDTH + x / LOGO_SCALE) + (CHAR_WIDTH * CHAR_HEIGHT * charindex)  ] ==  ' ' ? 0x000000 : 0xFFFFFF ) ;
-				av->video[(av->height / pos + y) * av->width + ((av->width - CHAR_WIDTH * (logotextlength - z * 2) * LOGO_SCALE) / 2 ) + x] = c;
-			}			
-		}
-	}
-	return(av->video);
-}
 
 static uint32_t *_av_test_read_video(void *private, float *ratio)
 {
@@ -79,7 +45,16 @@ static uint32_t *_av_test_read_video(void *private, float *ratio)
 	sprintf(timestr, "%02d:%02d:%02d", local->tm_hour, local->tm_min, local->tm_sec);
 	
 	av_test_t *av = private;
-	_overlay_text_logo(av,timestr, 3);
+	
+	/* Print clock */
+	if(av->font[0])
+	{
+		print_generic_text(	av->font[0],
+							av->video,
+							timestr,
+							av->font[0]->x_loc, av->font[0]->y_loc, 0, 1, 0, 1);
+	}
+						
 	if(ratio) *ratio = 4.0 / 3.0;
 	return(av->video);
 }
@@ -100,7 +75,7 @@ static int _av_test_close(void *private)
 	return(HACKTV_OK);
 }
 
-int av_test_open(vid_t *s)
+int av_test_open(vid_t *s, char *test_screen)
 {
 	uint32_t const bars[8] = {
 		0x000000,
@@ -124,16 +99,16 @@ int av_test_open(vid_t *s)
 	}
 	
 	/* Generate a basic test pattern */
-	av->width = s->active_width;
-	av->height = s->conf.active_lines;
+	av->vid_width = s->active_width;
+	av->vid_height = s->conf.active_lines;
 	av->video = malloc(vid_get_framebuffer_length(s));
-	av->sample_rate = s->sample_rate;
 	if(!av->video)
 	{
 		free(av);
 		return(HACKTV_OUT_OF_MEMORY);
 	}
 	
+	/* Colour bars - for non-625 line modes */
 	for(y = 0; y < s->conf.active_lines; y++)
 	{
 		for(x = 0; x < s->active_width; x++)
@@ -168,23 +143,71 @@ int av_test_open(vid_t *s)
 		}
 	}
 	
-	/* Overlay the logo */
-	if(_load_png(&av->image, av->width, av->height, "hacktv.png", 1.0, 4.0/3.0) == HACKTV_OK)
+	/* Initialise default fonts */
+	
+	/* Clock */
+	font_init(s, 56, 4.0/3.0);
+	av->font[0] = s->av_font;
+	av->font[0]->x_loc = 50;
+	av->font[0]->y_loc = 50;
+	
+	/* HACKTV text*/
+	font_init(s, 72, 4.0/3.0);
+	av->font[1] = s->av_font;
+	av->font[1]->x_loc = 50;
+	av->font[1]->y_loc = 25;
+	
+	if(test_screen == NULL) test_screen = "pm5544";
+	
+	/* Overlay test screen */
+	if(av->vid_height == 576 && strcmp(test_screen, "colourbars") != 0)
 	{
-		_overlay_image_logo(av->video, &av->image, av->width, av->height, LOGO_POS_CENTRE);
+		if(load_png(&av->image, av->vid_width, av->vid_height, test_screen, 1.0, 4.0 / 3.0, IMG_TEST) == HACKTV_OK)
+		{	
+			overlay_image(av->video, &av->image, av->vid_width, av->vid_height, IMG_POS_FULL);
+			
+			if(strcmp(test_screen, "pm5544") == 0)
+			{
+				av->font[0]->y_loc = 82.3;
+			}
+			else if(strcmp(test_screen, "fubk") == 0)
+			{
+				/* Reinit font with new size */
+				font_init(s, 44, 4.0/3.0);
+				av->font[0] = s->av_font;
+				av->font[0]->x_loc = 52;
+				av->font[0]->y_loc = 55.5;
+			}
+			else if(strcmp(test_screen, "ueitm") == 0)
+			{
+				/* Don't display clock */
+				av->font[0] = NULL;
+			}
+			
+		}
+		else
+		{
+			print_generic_text(	av->font[1], av->video, "HACKTV", av->font[1]->x_loc, av->font[1]->y_loc, 0, 1, 0, 1);
+		}
 	}
 	else
 	{
-		/* Overlay a text logo, if there was an error loading the image */
-		_overlay_text_logo(av,_logo_text, 7);
+		print_generic_text(	av->font[1], av->video, "HACKTV", av->font[1]->x_loc, av->font[1]->y_loc, 0, 1, 0, 1);
 	}
 	
 	/* Print logo, if enabled */
 	if(s->conf.logo)
 	{
-		_overlay_image_logo(av->video, &s->vid_logo, av->width, av->height, LOGO_POS_TR);
+		if(load_png(&s->vid_logo, s->active_width, s->conf.active_lines, s->conf.logo, 0.75, 4.0/3.0, IMG_LOGO) != HACKTV_OK)
+		{
+			s->conf.logo = NULL;
+		}
+		else
+		{
+			overlay_image(av->video, &s->vid_logo, av->vid_width, av->vid_height, IMG_POS_TR);
+		}
 	}
-
+	
 	/* Generate the 1khz test tones (BBC 1 style) */
 	d = 1000.0 * 2 * M_PI / HACKTV_AUDIO_SAMPLE_RATE;
 	y = HACKTV_AUDIO_SAMPLE_RATE * 64 / 100; /* 640ms */

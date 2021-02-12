@@ -8,6 +8,12 @@ I will try and keep this as up to date as possible with official releases.
 
 **All credit for original code goes to author (fsphil)**
 
+2021-02-12
+Tons of -alleged- improvements:
+  - Remove dependency on external resources during runtime, such as fonts and PNG images
+  - Added PM5544, UEITM and FUBK test cards. Activate with test:pm5544 ...
+  - Removed many ffmpeg filters - replaced with native functions
+
 2021-01-06
 A much improved Syster cut and rotate implemention (credit to fsphil).
 Allow combining Syster line shuffling and cut and rotate to operate simultaneously.

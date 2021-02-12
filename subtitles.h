@@ -34,13 +34,14 @@ typedef struct {
 	uint32_t *bitmap;
 	int bitmap_width;
 	int bitmap_height;
+	void *font;
 } av_subs_t;
 
-extern void load_text_subtitle(av_subs_t *subs, int32_t start_time, int32_t duration, char *fmt);
+extern void load_text_subtitle(av_subs_t *subs, uint32_t start_time, uint32_t duration, char *fmt);
 extern int subs_init_file(char *filename, vid_t *s);
 extern int subs_init_ffmpeg(vid_t *s);
-extern char *get_text_subtitle(av_subs_t *subs, int32_t ts);
+extern char *get_text_subtitle(av_subs_t *subs, uint32_t ts);
 extern uint32_t *get_bitmap_subtitle(av_subs_t *subs, int32_t ts, int *w, int *h);
-extern void load_bitmap_subtitle(av_subs_t *subs, int w, int h, int32_t start_time, int32_t duration, uint32_t *bitmap, int vid_width, int vid_height);
+extern void load_bitmap_subtitle(av_subs_t *subs, vid_t *s, int w, int h, uint32_t start_time, uint32_t duration, uint32_t *bitmap);
 extern int get_subtitle_type(av_subs_t *subs);
 #endif

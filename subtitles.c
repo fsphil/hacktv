@@ -15,15 +15,10 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include "subtitles.h"
 #include "hacktv.h"
-#include "graphics.h"
+#include <unistd.h>
 
 /* Convert hh:mm:ss,mmm to milliseconds */
 unsigned int get_ms(char *fmt)
@@ -47,8 +42,32 @@ unsigned int get_ms(char *fmt)
 	return(ret);
 }
 
+/* Needs to be moved somewhere more appropriate */
+char *get_filename(char *s) 
+{
+	char *d = 0;
+
+	while(*s) 
+	{
+		if (*s == '.') 
+		{
+			d = s;
+		}
+		else if(*s == OS_SEP)
+		{
+			d = 0;
+		}
+		s++;
+	}
+
+	/* Terminate string here */
+	if(d) *d = '\0';
+
+	return d;
+}
+
 /* Strip simple HTML tags */
-void strip_html(char *in)
+static void _strip_html(char *in)
 {
 	int i, j, k;
 	
@@ -81,7 +100,7 @@ void strip_html(char *in)
 	in[k] = '\0';
 }
 
-char *get_subtitle_string(char *fmt)
+static char *_get_subtitle_string(char *fmt)
 {
 	int c, i, l, s;
 	c = 0;
@@ -106,41 +125,13 @@ char *get_subtitle_string(char *fmt)
 	return txt;
 }
 
-char *parse_time(char *fmt, int ti)
-{
-	int c, i, l, s, t;
-	c = 0;
-	s = 1;
-
-	l = strlen(fmt);
-	static char time_txt[] = "00:00:00.000";
-			
-	t = 0;
-	for(i = 0; i < l; i++)
-	{
-		if(fmt[i] == ',')
-		{
-			c++;
-			t = i;
-		}
-			
-		if(c == ti && t != i)
-		{
-			time_txt[s] = fmt[i];
-			s++;
-		}
-	}
-	
-	return time_txt;
-}
-
-void load_text_subtitle(av_subs_t *subs, int32_t start_time, int32_t duration, char *fmt)
+void load_text_subtitle(av_subs_t *subs, uint32_t start_time, uint32_t duration, char *fmt)
 {
 	int sindex;
 	
 	sindex = subs[0].number_of_subs;
 	
-	char *s = get_subtitle_string(fmt);
+	char *s = _get_subtitle_string(fmt);
 	
 	/* Load subs struct with data */
 	subs[sindex].index = sindex;
@@ -148,7 +139,7 @@ void load_text_subtitle(av_subs_t *subs, int32_t start_time, int32_t duration, c
 	subs[sindex].end_time = start_time + duration;
 	
 	/* Strip HTML and convert \N to \n */
-	strip_html(s);
+	_strip_html(s);
 	
 	/* Copy subtitle text into subs struct */
 	memcpy(subs[sindex].text, s, 256);
@@ -160,9 +151,8 @@ void load_text_subtitle(av_subs_t *subs, int32_t start_time, int32_t duration, c
 }
 
 
-void load_bitmap_subtitle(av_subs_t *subs, int w, int h, int32_t start_time, int32_t duration, uint32_t *bitmap, int vid_width, int vid_height)
+void load_bitmap_subtitle(av_subs_t *subs, vid_t *s, int w, int h, uint32_t start_time, uint32_t duration, uint32_t *bitmap)
 {
-	
 	int sindex;
 	
 	sindex = subs[0].number_of_subs;
@@ -173,7 +163,10 @@ void load_bitmap_subtitle(av_subs_t *subs, int w, int h, int32_t start_time, int
 	subs[sindex].end_time = start_time + duration;
 	
 	subs[sindex].bitmap_height = h;
-	int new_width = (float) (vid_width / (float) vid_height) / (16.0/9.0) * w;
+	
+	/* Set correct ratio based on supplied parameters */
+	float ratio = s->conf.pillarbox || s->conf.letterbox ? 4.0/3.0 : (s->ratio ? s->ratio : 16.0/9.0);
+	int new_width = (float) (s->active_width / (float) s->conf.active_lines) / ratio * w;
 	subs[sindex].bitmap_width = new_width;
 		
 	/* Resize bitmap subtitle and load into subs struct */
@@ -193,18 +186,15 @@ int subs_init_ffmpeg(vid_t *s)
 
 	/* Give subs typedef some memory - 512Kb enough?! */
 	subs = calloc(524288 * sizeof(char), sizeof(av_subs_t));
+	if(!subs)
+	{
+		return(HACKTV_OUT_OF_MEMORY);
+	}
 	
 	memset(subs, 0, sizeof(av_subs_t));
 	
 	subs[0].pos = 0;
 	subs[0].number_of_subs = 0;
-	
-	/* Initialise fonts here    */
-	/*             size, ratio  */
-	if(font_init(s, 38, s->conf.pillarbox || s->conf.letterbox ? 4.0 / 3.0 : 16.0 / 9.0) !=0)
-	{
-		return(HACKTV_ERROR);
-	};
 	
 	/* Callback */
 	s->av_sub = subs;
@@ -212,14 +202,30 @@ int subs_init_ffmpeg(vid_t *s)
 	return(0);
 }
 
-int subs_init_file(char *filename, vid_t *s)
+int subs_init_file(char *video_path, vid_t *s)
 {
 	int bufc, c, char_count, n;
 	int sindex = 0;
 	struct stat fs;
 	
 	av_subs_t *subs;
+	
+	char *filename = malloc(strlen(video_path) + 1);
+	strcpy(filename, video_path);
+	
+	get_filename(filename);
+	
+	strncat(filename, ".srt", 4);
+	
+	if(access(filename, 0) == -1)
+	{
+		fprintf(stderr, "Warning: subtitle path '%s' does not exist!\n", filename);
 		
+		return(HACKTV_ERROR);
+	}
+	
+	fprintf(stderr, "Loading subtitles from '%s'\n", filename);
+	
 	/* Hopefully enough chars in arrays */
 	char start_time[20], end_time[20], strbuf[256];
 
@@ -228,15 +234,12 @@ int subs_init_file(char *filename, vid_t *s)
 
 	/* Give subs struct some memory */
 	subs = calloc(fs.st_size * sizeof(char), sizeof(av_subs_t));
+	if(!subs)
+	{
+		return(HACKTV_OUT_OF_MEMORY);
+	}
 	
 	memset(subs, 0, sizeof(av_subs_t));
-	
-	/* Initialise fonts here   */
-	/*             size, ratio */
-	if(font_init(s, 38, s->conf.pillarbox || s->conf.letterbox ? 4.0 / 3.0 : 16.0 / 9.0) < 0)
-	{
-		return(HACKTV_ERROR);
-	};
 	
 	if(!subs)
 	{
@@ -298,7 +301,7 @@ int subs_init_file(char *filename, vid_t *s)
 		subs[sindex].index = sindex;
 		subs[sindex].start_time = get_ms(start_time);
 		subs[sindex].end_time = get_ms(end_time);
-		strip_html(strbuf);
+		_strip_html(strbuf);
 		memcpy(subs[sindex].text, strbuf, 256);
 		sindex++;
 	}
@@ -313,10 +316,10 @@ int subs_init_file(char *filename, vid_t *s)
 	/* Callback */
 	s->av_sub = subs;
 	
-	return(0);
+	return(HACKTV_OK);
 }
 
-char *get_text_subtitle(av_subs_t *subs, int32_t ts)
+char *get_text_subtitle(av_subs_t *subs, uint32_t ts)
 {
 	char *fmt;
 	int x;

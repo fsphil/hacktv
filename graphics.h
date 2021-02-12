@@ -18,30 +18,49 @@
 #ifndef GRAPHICS_H_
 #define GRAPHICS_H_
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <png.h>
 #include "video.h"
 
-#define LOGO_POS_CENTRE 0
-#define LOGO_POS_TL 1
-#define LOGO_POS_TR 2
-#define LOGO_POS_BL 3
-#define LOGO_POS_BR 4
+#define IMG_POS_CENTRE 0
+#define IMG_POS_TL 1
+#define IMG_POS_TR 2
+#define IMG_POS_BL 3
+#define IMG_POS_BR 4
+#define IMG_POS_FULL 5
+
+#define IMG_TEST 0
+#define IMG_LOGO 1
+
+#define MAX_PNG_SIZE 50
 
 typedef struct {
-	char *filename;
+	char *name;
 	int width;
 	int height;
-	float vratio;
-	int vlogo_width;
-	int vlogo_height;
+	int img_width;
+	int img_height;
 	uint32_t *logo;
 	png_bytep *row_pointers;
 } image_t;
 
+typedef struct {
+	const uint8_t data[MAX_PNG_SIZE * 1024];
+} png_t;
+
+typedef struct {
+	const char *name;
+	const png_t *png;
+	size_t size;
+} pngs_t;
+
+typedef struct {
+	size_t size;
+	const uint8_t *data;
+	const uint8_t *cursor;
+} png_mem_t;
+
 extern int read_png_file(image_t *image);
-extern void _overlay_image_logo(uint32_t *framebuffer, image_t *l, int vid_width, int vid_height, int pos);
-extern int _load_png(image_t *image, int width, int height, char *filename, float scale, float ratio);
+extern void overlay_image(uint32_t *framebuffer, image_t *l, int vid_width, int vid_height, int pos);
+extern int load_png(image_t *image, int width, int height, char *filename, float scale, float ratio, int type);
 extern void resize_bitmap(uint32_t *input, uint32_t *output, int old_width, int old_height, int new_width, int new_height);
 #endif

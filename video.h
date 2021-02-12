@@ -19,9 +19,17 @@
 #define _VIDEO_H
 
 #include <stdint.h>
+#include <time.h>
+
 #include "nicam728.h"
 #include "dance.h"
 #include "fir.h"
+
+#ifdef WIN32
+#define OS_SEP '\\'
+#else
+#define OS_SEP '/'
+#endif
 
 typedef struct vid_line_t vid_line_t;
 typedef struct vid_t vid_t;
@@ -158,7 +166,7 @@ typedef struct {
 	
 	char *teletext;
 	char *logo;
-	int timestamp;
+	time_t timestamp;
 	int position;
 	char *mode;
 	

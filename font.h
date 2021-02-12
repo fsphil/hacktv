@@ -23,14 +23,26 @@
 #include FT_FREETYPE_H
 #include "video.h"
 
+#define TEXT_POS_CENTRE 0
+#define TEXT_POS_LEFT 1
+#define TEXT_POS_RIGHT 2
+
+
 typedef struct {
 	uint32_t *video;
-	vid_t *vs;
+	int video_width;
+	int video_height;
+	float video_ratio;
 	FT_Face fontface;
+	int font_size;
+	char *font_name;
+	float x_loc;
+	float y_loc;
 } av_font_t;
 
 
 extern int font_init(vid_t *s, int size, float ratio);
-extern void print_text(av_font_t *av, uint32_t *vid, int32_t y, char *fmt);
+extern void print_subtitle(av_font_t *av, uint32_t *vid, char *fmt);
+extern void print_generic_text(av_font_t *font, uint32_t *vid, char *fmt, float pos_x, float pos_y, int shadow, int box, int colour, int transparency);
 extern int display_bitmap_subtitle(av_font_t *av, uint32_t *vid, int w, int h, uint32_t *bitmap_data);
 #endif

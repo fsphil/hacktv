@@ -130,6 +130,9 @@ static void print_usage(void)
 		"Input options\n"
 		"\n"
 		"  test:colourbars    Generate and transmit a test pattern.\n"
+		"  test:pm5544        Transmit a PM5544 test pattern.\n"
+		"  test:ueitm         Transmit a UEITM test pattern.\n"
+		"  test:fubk          Transmit a FUBK test pattern.\n"
 		"  ffmpeg:<file|url>  Decode and transmit a video file with ffmpeg.\n"
 		"\n"
 		"  If no valid input prefix is provided, ffmpeg: is assumed.\n"
@@ -926,24 +929,18 @@ int main(int argc, char *argv[])
 	}
 	
 	if(s.logo)
-	{		
-		asprintf(&vid_conf.logo,"resources%clogos%c%s", OS_SEP, OS_SEP, s.logo);
-		
-		if( access(vid_conf.logo, F_OK ) == -1 ) 
-		{
-			fprintf(stderr, "Logo file '%s' not found.\n",vid_conf.logo);
-			return(-1);
-		}
-	}
-	
-	if(s.timestamp)
-	{		
-		vid_conf.timestamp = s.timestamp;
+	{
+		asprintf(&vid_conf.logo, "%s", s.logo);
 	}
 	
 	if(s.position)
-	{		
+	{
 		vid_conf.position = s.position;
+	}
+
+	if(s.timestamp)
+	{
+		vid_conf.timestamp = time(0);
 	}
 	
 	if(s.wss)
@@ -1255,7 +1252,7 @@ int main(int argc, char *argv[])
 			
 			if(strncmp(pre, "test", l) == 0)
 			{
-				r = av_test_open(&s.vid);
+				r = av_test_open(&s.vid, sub);
 			}
 			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{

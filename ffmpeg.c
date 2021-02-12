@@ -44,12 +44,6 @@
 
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
-#ifdef WIN32
-#define OS_SEP '\\'
-#else
-#define OS_SEP '/'
-#endif
-
 #endif
 #include <pthread.h>
 #include <ctype.h>
@@ -66,7 +60,6 @@
 #include <libavfilter/buffersrc.h>
 #include "hacktv.h"
 #include  "ascii.h"
-#include <unistd.h>
 
 /* Maximum length of the packet queue */
 /* Taken from ffplay.c */
@@ -120,6 +113,8 @@ typedef struct {
 	uint32_t *video;
 	vid_t *s;
 	int seekflag;
+	
+	av_font_t *font[10];
 	
 	AVFormatContext *format_ctx;
 	
@@ -609,7 +604,7 @@ static void *_input_thread(void *arg)
 						last_pos = pos;
 					}
 					
-					load_bitmap_subtitle(av->s->av_sub, max_bitmap_width, max_bitmap_height, pkt.pts + sub.start_display_time, sub.end_display_time, bitmap, av->s->active_width, av->s->conf.active_lines);
+					load_bitmap_subtitle(av->s->av_sub, av->s, max_bitmap_width, max_bitmap_height, pkt.pts + sub.start_display_time, sub.end_display_time, bitmap);
 					
 					free(bitmap);
 				}
@@ -780,39 +775,41 @@ static void *_video_scaler_thread(void *arg)
 			INT_MAX
 		);
 		
+		if(av->s->conf.timestamp)
+		{
+			char timestr[20];
+			time_t diff = time(0) - av->s->conf.timestamp  + (av->s->conf.position * 60) - 3600;
+			struct tm *d = localtime(&diff);
+			sprintf(timestr, "%02d:%02d:%02d", d->tm_hour, d->tm_min, d->tm_sec);
+			print_generic_text(	av->font[1],
+								(uint32_t *) oframe->data[0],
+								timestr,
+								10, 90, 1, 0, 0, 0);
+		}
+		
 		/* Print subtitles, if enabled */
 		if(av->s->conf.subtitles) 
 		{
 			if(get_subtitle_type(av->s->av_sub) == SUB_TEXT)
 			{
 				/* best_effort_timestamp is very flaky - not really a good measure of current position and doesn't work some of the time */
-				/*                                                       y%                                                              */
-				print_text(av->s->av_font, (uint32_t *) oframe->data[0], 90, get_text_subtitle(av->s->av_sub, frame->best_effort_timestamp));
+				print_subtitle(	av->font[0], 
+							(uint32_t *) oframe->data[0],
+							get_text_subtitle(av->s->av_sub, frame->best_effort_timestamp));
 			}
 			else
 			{
-				int w;
-				int h;
+				int w, h;
 				uint32_t *bitmap = get_bitmap_subtitle(av->s->av_sub, frame->best_effort_timestamp, &w, &h);
 				
-				if(w > 0) display_bitmap_subtitle(av->s->av_font, (uint32_t *) oframe->data[0], w, h, bitmap);
+				if(w > 0) display_bitmap_subtitle(av->font[0], (uint32_t *) oframe->data[0], w, h, bitmap);
 			}
 		}
 		
 		/* Print logo, if enabled */
 		if(av->s->conf.logo)
 		{
-			/* Reload and resize logo if video ratio has changed */
-			if(av->s->ratio && av->s->ratio != av->s->vid_logo.vratio)
-			{
-				av->s->vid_logo.vratio = av->s->ratio;
-				if(_load_png(&av->s->vid_logo, av->s->active_width, av->s->conf.active_lines, av->s->conf.logo, 0.75, 
-				              av->s->vid_logo.vratio >= 14.0 / 9.0 ? 16.0 / 9.0 : 4.0 / 3.0) != HACKTV_OK)
-				{
-					av->s->conf.logo = NULL;
-				}
-			}
-			_overlay_image_logo((uint32_t *) oframe->data[0], &av->s->vid_logo, av->s->active_width, av->s->conf.active_lines, LOGO_POS_TR);
+			overlay_image((uint32_t *) oframe->data[0], &av->s->vid_logo, av->s->active_width, av->s->conf.active_lines, IMG_POS_TR);
 		}
 		
 		av_frame_unref(frame);
@@ -1097,30 +1094,6 @@ static int _av_ffmpeg_close(void *private)
 	return(HACKTV_OK);
 }
 
-/* Needs to be moved somewhere more appropriate */
-char *get_subtitle_path(char *s) 
-{
-  char *d = 0;
-  
-  while(*s) 
-  {
-    if (*s == '.') 
-	{
-		d = s;
-	}
-    else if(*s == OS_SEP)
-	{
-		d = 0;
-	}
-    s++;
-  }
-  
-  /* Terminate string here */
-  if(d) *d = '\0';
-  
-  return d;
-}
-
 int av_ffmpeg_open(vid_t *s, char *input_url)
 {
 	av_ffmpeg_t *av;
@@ -1129,6 +1102,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	int64_t start_time = 0;
 	int r;
 	int i;
+	
+	float source_ratio;
 	
 	av = calloc(1, sizeof(av_ffmpeg_t));
 	if(!av)
@@ -1277,7 +1252,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		buffersink_params = av_buffersink_params_alloc();
 		buffersink_params->pixel_fmts = pix_fmts;
 		
-		if(avfilter_graph_create_filter(&av->vbuffersink_ctx, vbuffersink, "out",NULL, buffersink_params, vfilter_graph) < 0) 
+		if(avfilter_graph_create_filter(&av->vbuffersink_ctx, vbuffersink, "out", NULL, buffersink_params, vfilter_graph) < 0) 
 		{
 			fprintf(stderr,"Cannot create video buffer sink\n");
 			return(HACKTV_ERROR);
@@ -1301,35 +1276,19 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		
 		int video_width = s->conf.active_lines * (4.0 / 3.0); 
 		
-		double source_ratio = (double) source_width / (double) source_height;
-		int ws = source_ratio >= (14.0 / 9.0) ? 1 : 0;
-		double fps = av->video_stream->r_frame_rate.num / (double) av->video_stream->r_frame_rate.den;	
-
+		source_ratio = (float) source_width / (float) source_height;
+		int ws = source_ratio >= (14.0 / 9.0) ? 1 : 0;	
+		
 		char *_vid_filter;
-		char *_vid_timecode_filter;
-		char *_vid_output_filter;
-
+		
 		/* Default states */
 		asprintf(&_vid_filter,"null");
-		asprintf(&_vid_output_filter,"null");
-		
-		/* Filter definition for overlaying timestamp */
-		if(s->conf.timestamp)
-		{
-			asprintf(&_vid_timecode_filter,
-				"drawtext = resources%cfonts%cStencil.ttf:timecode = '00\\:%i\\:00\\:00' : r = %f : fontcolor = white : fontsize = w / 40 : x = w / 10: y = h * 16 / 18 : shadowx = 1 : shadowy = 1",
-				OS_SEP, OS_SEP, s->conf.position, fps);
-		}
-		else
-		{
-			asprintf(&_vid_timecode_filter,"null");
-		}
 		
 		if(ws)
 		{
 			if(s->conf.letterbox)
 			{
-				asprintf(&_vid_filter,"pad = 'iw : iw / (%i/%i) : 0 : (oh-ih) / 2', scale = %i:%i", video_width, s->conf.active_lines, source_width, source_height);
+				asprintf(&_vid_filter,"pad = 'iw:iw / (%i / %i) : 0 : (oh - ih) / 2', scale = %i:%i", video_width, s->conf.active_lines, source_width, source_height);
 			}
 			else if(s->conf.pillarbox)
 			{
@@ -1337,17 +1296,20 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			}
 			else
 			{
-				asprintf(&_vid_filter,"pad = 'iw:iw / (%i/%i) : 0 : (oh-ih) / 2', scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
+				if((video_width_ws / s->conf.active_lines) < (source_width / source_height))
+				{
+					asprintf(&_vid_filter,"pad = 'iw:iw / (%i/%i) : 0 : (oh-ih) / 2', scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
+				}
+				else
+				{
+					asprintf(&_vid_filter,"pad = 'ih * (%i / %i) : ih : (ow-iw) / 2 : 0', scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
+					// asprintf(&_vid_filter,"crop = out_w = in_w : out_h = in_w / (%i / %i), scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
+				}
 			}
 		}
 		
-		asprintf(&_vfi,
-			"[in]%s[video];"
-			"[video]%s[timestamp];"
-			"[timestamp]%s[out]", 
-			_vid_filter,
-			_vid_timecode_filter,
-			_vid_output_filter);
+		asprintf(&_vfi, "[in]%s[out]", _vid_filter);
+		// fprintf(stderr,"Using filter %s\n", _vfi);
 		
 		const char *vfilter_descr = _vfi;
 
@@ -1509,6 +1471,14 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		
 		av->subtitle_eof = 0;
 		if(s->conf.subtitles) subs_init_ffmpeg(s);
+		
+		/* Initialise fonts here    */
+		if(font_init(s, 38, source_ratio) !=0)
+		{
+			return(HACKTV_ERROR);
+		};
+		
+		av->font[0] = s->av_font;
 	}
 	else
 	{
@@ -1518,24 +1488,20 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		/* Should really be moved somewhere else */
 		if(s->conf.subtitles)
 		{
-			char *subtitle_path;
-			subtitle_path = malloc(strlen(input_url) + 1);
-			strcpy(subtitle_path, input_url);
-			get_subtitle_path(subtitle_path);
-			strncat(subtitle_path, ".srt", 4);
-			if(access(subtitle_path, 0) != -1)
+			if(subs_init_file(input_url, s) != HACKTV_OK)
 			{
-				fprintf(stderr, "Loading subtitles from '%s'\n", subtitle_path);
-				if(subs_init_file(subtitle_path,s) < 0)
-				{
-					return(HACKTV_ERROR);
-				};
-			}
-			else
-			{
-				fprintf(stderr, "Warning: subtitle path '%s' does not exist!\n", subtitle_path);
 				s->conf.subtitles = 0;
+				return(HACKTV_ERROR);
 			}
+			
+			/* Initialise fonts here */
+			if(font_init(s, 38, source_ratio) < 0)
+			{
+				s->conf.subtitles = 0;
+				return(HACKTV_ERROR);
+			}
+			
+			av->font[0] = s->av_font;
 		}
 	}
 	
@@ -1564,6 +1530,29 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	if(av->audio_stream != NULL)
 	{
 		av->audio_start_time = av_rescale_q(s->conf.position ? request_timestamp : start_time, time_base, av->audio_time_base);
+	}
+	
+	if(s->conf.timestamp)
+	{
+		s->conf.timestamp = time(0);
+	}
+	
+	if(s->conf.logo)
+	{
+		if(load_png(&s->vid_logo, s->active_width, s->conf.active_lines, s->conf.logo, 0.75, source_ratio, IMG_LOGO) == HACKTV_ERROR)
+		{
+			s->conf.logo = NULL;
+		}
+	}
+	
+	if(s->conf.timestamp)
+	{
+		if(font_init(s, 40, source_ratio) != VID_OK)
+		{
+			s->conf.timestamp = 0;
+		};
+		
+		av->font[1] = s->av_font;
 	}
 	
 	/* Register the callback functions */
@@ -1669,7 +1658,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		fprintf(stderr, "Error starting input thread.\n");
 		return(HACKTV_ERROR);
 	}
-
+	
 	return(HACKTV_OK);
 }
 
