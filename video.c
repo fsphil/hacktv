@@ -1623,8 +1623,13 @@ typedef struct {
 	
 } _vid_filter_process_t;
 
+/* Test taps for a CCIR-405 625 line video pre-emphasis filter at 28 MHz */
+const int16_t fm_625_28_taps[] = {
+	-1,-6,-4,8,19,6,-31,-47,-2,73,79,-35,-167,-135,88,264,115,-302,-537,-221,386,510,-277,-1362,-1545,-446,647,-226,-3473,-6776,-6617,-1514,6078,11329,10904,5674,-213,-2937,-1902,512,1641,842,-541,-1003,-351,469,601,104,-357,-336,9,242,168,-46,-146,-72,44,76,24,-29,-32,-4,14,10,0,-4,-1
+};
+
 /* Test taps for a CCIR-405 625 line video pre-emphasis filter at 20.25 MHz */
-const int16_t fm_625_taps[] = {
+const int16_t fm_625_2025_taps[] = {
 	-5,3,12,-11,-20,29,26,-59,-24,104,1,-161,49,218,-147,-273,284,271,-516,-267,704,-5,-1212,-1,1051,-1396,-2808,204,-319,-8341,-10028,4147,17888,12980,-921,-4238,1253,2195,-1265,-1186,1141,579,-951,-200,736,-25,-528,139,346,-178,-203,169,101,-136,-37,96,3,-60,11,32,-12,-14,9,5,-4,-1
 };
 
@@ -2844,6 +2849,11 @@ static int _init_vfilter(vid_t *s)
 				taps = fm_625_14_taps;
 				ntaps = sizeof(fm_625_14_taps) / sizeof(int16_t);
 			}
+			else if(s->sample_rate == 28000000)
+			{
+				taps = fm_625_28_taps;
+				ntaps = sizeof(fm_625_28_taps) / sizeof(int16_t);
+			}
 			else
 			{
 				if(s->sample_rate != 20250000)
@@ -2851,8 +2861,8 @@ static int _init_vfilter(vid_t *s)
 					fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
 				}
 				
-				taps = fm_625_taps;
-				ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
+				taps = fm_625_2025_taps;
+				ntaps = sizeof(fm_625_2025_taps) / sizeof(int16_t);
 			}
 		}
 		
