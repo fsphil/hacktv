@@ -37,6 +37,9 @@ int font_init(vid_t *s, int size, float ratio)
 		return(HACKTV_OUT_OF_MEMORY);
 	}
 	
+	/* Normalise ratio */
+	ratio = ratio >= 14.0/9.0 ? 16.0/9.0 : 4.0/3.0;
+	
 	font->font_size = size;
 	font->video_width = s->active_width;
 	font->video_height = s->conf.active_lines;

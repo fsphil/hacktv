@@ -1296,14 +1296,13 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			}
 			else
 			{
-				if((video_width_ws / s->conf.active_lines) < (source_width / source_height))
+				if((video_width_ws / s->conf.active_lines) <= (source_width / source_height))
 				{
 					asprintf(&_vid_filter,"pad = 'iw:iw / (%i/%i) : 0 : (oh-ih) / 2', scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
 				}
 				else
 				{
 					asprintf(&_vid_filter,"pad = 'ih * (%i / %i) : ih : (ow-iw) / 2 : 0', scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
-					// asprintf(&_vid_filter,"crop = out_w = in_w : out_h = in_w / (%i / %i), scale = %i:%i", video_width_ws, s->conf.active_lines, source_width, source_height);
 				}
 			}
 		}
@@ -1539,7 +1538,11 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	
 	if(s->conf.logo)
 	{
-		if(load_png(&s->vid_logo, s->active_width, s->conf.active_lines, s->conf.logo, 0.75, source_ratio, IMG_LOGO) == HACKTV_ERROR)
+		/* Normalise ratio */
+		float ratio = source_ratio >= (14.0 / 9.0) ? 16.0/9.0 : 4.0/3.0;
+		ratio = s->conf.pillarbox || s->conf.letterbox ? 4.0/3.0 : ratio;
+		
+		if(load_png(&s->vid_logo, s->active_width, s->conf.active_lines, s->conf.logo, 0.75, ratio, IMG_LOGO) == HACKTV_ERROR)
 		{
 			s->conf.logo = NULL;
 		}
