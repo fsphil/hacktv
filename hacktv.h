@@ -100,7 +100,7 @@ typedef struct {
 	int chid;
 	int64_t offset;
 	char *passthru;
-	int volume;
+	float volume;
 	int downmix;
 	
 	/* Video encoder state */

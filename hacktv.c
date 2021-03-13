@@ -117,7 +117,7 @@ static void print_usage(void)
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --subtitles <stream idx>   Enable subtitles. Takes an optional argument.\n"
 		"      --downmix                  Downmix 5.1 audio to 2.0.\n"
-		"      --volume <value>           Adjust volume. Takes integers as argument.\n"
+		"      --volume <value>           Adjust volume. Takes floats as argument.\n"
 		"      --showecm                  Show input and output control wordsfor scrambled modes.\n"
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
@@ -711,7 +711,7 @@ int main(int argc, char *argv[])
 			break;
 			
 		case _OPT_VOLUME: /* --volume */
-			s.volume = atoi(optarg);
+			s.volume = atof(optarg);
 			break;
 			
 		case _OPT_DOWNMIX: /* --downmix */
