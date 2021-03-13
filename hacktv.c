@@ -107,7 +107,7 @@ static void print_usage(void)
 		"      --findkey                  Attempt to find keys of PPV Videocrypt card.\n"
 		"      --syster <mode>            Enable Nagravision Syster scrambling. (PAL only)\n"
 		"      --d11 <mode>               Enable Discret 11 scrambling. (PAL only)\n"
-		"      --systercnr <mode>        Enable Syster cut and rotate scrambling (***INCOMPLETE***). (PAL only)\n"
+		"      --systercnr <mode>         Enable Syster cut and rotate scrambling (***INCOMPLETE***). (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster, Syster CnR or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
@@ -116,6 +116,8 @@ static void print_usage(void)
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --subtitles <stream idx>   Enable subtitles. Takes an optional argument.\n"
+		"      --downmix                  Downmix 5.1 audio to 2.0.\n"
+		"      --volume <value>           Adjust volume. Takes integers as argument.\n"
 		"      --showecm                  Show input and output control wordsfor scrambled modes.\n"
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
@@ -406,6 +408,8 @@ enum {
 	_OPT_SYSTER_KT2,
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
+	_OPT_DOWNMIX,
+	_OPT_VOLUME
 };
 
 int main(int argc, char *argv[])
@@ -439,7 +443,7 @@ int main(int argc, char *argv[])
 		{ "key-table-1",    no_argument,       0, _OPT_SYSTER_KT1 },
 		{ "key-table-2",    no_argument,       0, _OPT_SYSTER_KT2 },
 		{ "d11",            required_argument, 0, _OPT_DISCRET },
-		{ "systercnr",     required_argument, 0, _OPT_SMARTCRYPT },
+		{ "systercnr",      required_argument, 0, _OPT_SMARTCRYPT },
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "vits",           no_argument,       0, _OPT_VITS },
@@ -467,6 +471,8 @@ int main(int argc, char *argv[])
 		{ "enableemm",      required_argument, 0, _OPT_ENABLE_EMM },
 		{ "disableemm",     required_argument, 0, _OPT_DISABLE_EMM },
 		{ "showecm",        no_argument,       0, _OPT_SHOW_ECM },
+		{ "downmix",        no_argument,       0, _OPT_DOWNMIX },
+		{ "volume",         required_argument, 0, _OPT_VOLUME },
 		{ 0,                0,                 0,  0  }
 	};
 	static hacktv_t s;
@@ -525,6 +531,8 @@ int main(int argc, char *argv[])
 	s.disableemm = 0;
 	s.showecm = 0;
 	s.subtitles = 0;
+	s.volume = 1;
+	s.downmix = 0;
 	
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:p:", long_options, &option_index)) != -1)
@@ -700,6 +708,14 @@ int main(int argc, char *argv[])
 			
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
 			s.systeraudio = 1;
+			break;
+			
+		case _OPT_VOLUME: /* --volume */
+			s.volume = atoi(optarg);
+			break;
+			
+		case _OPT_DOWNMIX: /* --downmix */
+			s.downmix = 1;
 			break;
 			
 		case _OPT_ACP: /* --acp */
@@ -1099,7 +1115,12 @@ int main(int argc, char *argv[])
 		vid_conf.d11 = s.d11;
 		vid_conf.systeraudio = s.systeraudio;
 	}
-
+	
+	if(s.downmix)
+	{
+		vid_conf.downmix = s.downmix;
+	}
+	
 	if(s.syster || s.systercnr)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -1182,6 +1203,7 @@ int main(int argc, char *argv[])
 	
 	vid_conf.offset = s.offset;
 	vid_conf.passthru = s.passthru;
+	vid_conf.volume = s.volume;
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, &vid_conf);

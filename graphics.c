@@ -251,8 +251,8 @@ void overlay_image(uint32_t *framebuffer, image_t *l, int vid_width, int vid_hei
 	int i, j, x, y, r, g, b, vi;
 	float t;
 	uint32_t c;
-	int x_start;
-	int y_start;
+	int x_start = 0;
+	int y_start = 0;
 
 	/* Set logo position - top right corner for logos */
 	if(pos == IMG_POS_TR)
