@@ -382,16 +382,13 @@ static void _frame_dbuffer_abort(_frame_dbuffer_t *d)
 static AVFrame *_frame_dbuffer_back_buffer(_frame_dbuffer_t *d)
 {
 	AVFrame *frame;
-	// fprintf(stderr, "Mutex\n");
 	pthread_mutex_lock(&d->mutex);
 	
 	/* Wait for the ready flag to be unset */
 	while(d->ready != 0 && d->abort == 0)
 	{
-		// fprintf(stderr, "Not!\n");
 		pthread_cond_wait(&d->cond, &d->mutex);
 	}
-	// fprintf(stderr, "Ready!\n");
 	
 	frame = d->frame[1];
 	
@@ -789,13 +786,13 @@ static uint32_t *_av_ffmpeg_read_video(void *private, float *ratio)
 			}
 		}
 		
-		// if(av->s->conf.letterbox || av->s->conf.pillarbox)
-		// {
-		// 	fprintf(stderr,"letterbox\n");
-		// 	// *ratio  = (float) frame->sample_aspect_ratio.num / frame->sample_aspect_ratio.den;
-		// 	// *ratio *= (float) frame->width / frame->height;
-		// 	*ratio = 
-		// }
+		/*
+		if(av->s->conf.letterbox || av->s->conf.pillarbox)
+		{
+			*ratio  = (float) frame->sample_aspect_ratio.num / frame->sample_aspect_ratio.den;
+			*ratio *= (float) frame->width / frame->height;
+		}
+		*/
 		
 	}
 	
@@ -885,9 +882,7 @@ static void *_audio_decode_thread(void *arg)
 			}
 			
 			/* We have received a frame! */
-			// fprintf(stderr, "Pulled frame\n");
 			av_frame_ref(_frame_dbuffer_back_buffer(&av->in_audio_buffer), frame);
-			// fprintf(stderr, "Ref'd frame\n");
 			_frame_dbuffer_ready(&av->in_audio_buffer, 0);
 		}
 		else if(r != AVERROR(EAGAIN))
@@ -1295,7 +1290,6 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		}
 		
 		asprintf(&_vfi, "[in]%s[out]", _vid_filter);
-		// fprintf(stderr,"Using filter %s\n", _vfi);
 		
 		const char *vfilter_descr = _vfi;
 
@@ -1424,7 +1418,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		sprintf(fmt,"%s", av_get_sample_fmt_name(av->audio_codec_ctx->sample_fmt));
 		asprintf(&_afi,
 				"[in]%s[downmix],[downmix]volume=%i:precision=%s[out]",
-				s->conf.downmix ? "pan=stereo|FL<FC+0.30*FL+0.30*BL|FR<FC+0.30*FR+0.30*BR" : "anull",
+				s->conf.downmix ? "pan=stereo|FL < FC + 0.30*FL + 0.30*BL|FR < FC + 0.30*FR + 0.30*BR" : "anull",
 				s->conf.volume,
 				fmt[0] == 'f' ? "float" : fmt[0] == 'd' ? "double" : "fixed"
 		);
@@ -1442,8 +1436,6 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			printf("Cannot configure filter graph\n");
 			return(HACKTV_ERROR);
 		}
-		
-		fprintf(stderr,"Using filter %s\n", _afi);
 		
 		avfilter_inout_free(&ainputs);
 		avfilter_inout_free(&aoutputs);
