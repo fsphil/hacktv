@@ -580,7 +580,7 @@ static void _read_packet(mac_t *s, _mac_packet_queue_item_t *pkt, int subframe)
 	sf->queue.len--;
 }
 
-static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
+static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES], int golay)
 {
 	int x;
 	uint16_t b;
@@ -588,7 +588,7 @@ static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
 	memset(pkt, 0, MAC_PAYLOAD_BYTES);
 	
 	/* PT Packet Type */
-	pkt[0] = 0xF8;
+	pkt[0] = golay ? 0x00 : 0xF8;
 	
 	/* DGH (Data Group Header) */
 	pkt[1] = _hamming[0];		/* TG data group type */
@@ -668,7 +668,7 @@ static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
 	pkt[x - 1] = (b & 0xFF00) >> 8;
 }
 
-static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
+static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt, int golay)
 {
 	int x;
 	uint16_t b;
@@ -676,7 +676,7 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	memset(pkt, 0, MAC_PAYLOAD_BYTES);
 	
 	/* PT Packet Type */
-	pkt[0] = 0xF8;
+	pkt[0] = golay ? 0x00 : 0xF8;
 	
 	/* DGH (Data Group Header) */
 	pkt[1] = _hamming[3];           /* TG data group type */
@@ -775,7 +775,7 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	pkt[x - 1] = (b & 0xFF00) >> 8;
 }
 
-static void _create_si_dg4_packet(mac_t *s, uint8_t *pkt)
+static void _create_si_dg4_packet(mac_t *s, uint8_t *pkt, int golay)
 {
 	int x;
 	uint16_t b;
@@ -783,7 +783,7 @@ static void _create_si_dg4_packet(mac_t *s, uint8_t *pkt)
 	memset(pkt, 0, MAC_PAYLOAD_BYTES);
 	
 	/* PT Packet Type */
-	pkt[0] = 0xF8;
+	pkt[0] = golay ? 0x00 : 0xF8;
 	
 	/* DGH (Data Group Header) */
 	pkt[1] = _hamming[4];           /* TG data group type */
@@ -1199,7 +1199,7 @@ static int _line_625(vid_t *s, int frame, int line, uint8_t *data, int x)
 	dx = _bits(df, dx, 1, 1);                          /* Rp Repacement */
 	dx = _bits(df, dx, 1, 1);                          /* Fp Fingerprint */
 	dx = _bits(df, dx, 3, 2);                          /* Unallocated, both bits set to 1 */
-	dx = _bits(df, dx, 1, 1);                          /* SIFT Service identification channel format */
+	dx = _bits(df, dx, 0, 1);                          /* SIFT Service identification channel format */
 	_bch_encode(df, 71, 57);
 	
 	ix = _bits_buf(il, ix, df, 71);
@@ -1357,7 +1357,9 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		{
 		case 0: /* Write DG0 to 1st and 2nd subframes */
 			
-			_create_si_dg0_packet(&s->mac, pkt);
+			_create_si_dg0_packet(&s->mac, pkt, l->frame & 1);
+			
+			if(l->frame & 1) mac_golay_encode(pkt + 1, 30);
 			
 			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
 			
@@ -1370,14 +1372,20 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		
 		case 1: /* Write DG3 to 1st subframe */
 			
-			_create_si_dg3_packet(&s->mac, pkt);
+			_create_si_dg3_packet(&s->mac, pkt, l->frame & 1);
+			
+			if(l->frame & 1) mac_golay_encode(pkt + 1, 30);
+			
 			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
 			
 			break;
 			
 		case 2: /* Write DG4 to 1st subframe */
 			
-			_create_si_dg4_packet(&s->mac, pkt);
+			_create_si_dg4_packet(&s->mac, pkt, l->frame & 1);
+			
+			if(l->frame & 1) mac_golay_encode(pkt + 1, 30);
+			
 			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
 			break;
 		}
