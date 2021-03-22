@@ -39,7 +39,7 @@ static const uint8_t _hamming[0x10] = {
 };
 
 /* Network origin and name */
-static const char *_nwo    = "hacktv";
+static const char *_nwo    = "UNITED KINGDOM";
 static const char *_nwname = "hacktv";
 
 /* Service Reference */
@@ -580,15 +580,24 @@ static void _read_packet(mac_t *s, _mac_packet_queue_item_t *pkt, int subframe)
 	sf->queue.len--;
 }
 
-static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES], int golay)
+static void _crc_packet(uint8_t pkt[MAC_PAYLOAD_BYTES])
 {
 	int x;
 	uint16_t b;
 	
-	memset(pkt, 0, MAC_PAYLOAD_BYTES);
+	/* Generate the overall packet CRC (excludes PT and CRC) */
+	x = MAC_PAYLOAD_BYTES;
+	b = _crc16(&pkt[1], x - 3);
+	pkt[x - 2] = (b & 0x00FF) >> 0;
+	pkt[x - 1] = (b & 0xFF00) >> 8;
+}
+
+static int _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES * 2])
+{
+	int x;
+	uint16_t b;
 	
-	/* PT Packet Type */
-	pkt[0] = golay ? 0x00 : 0xF8;
+	memset(pkt, 0, MAC_PAYLOAD_BYTES * 2);
 	
 	/* DGH (Data Group Header) */
 	pkt[1] = _hamming[0];		/* TG data group type */
@@ -655,28 +664,15 @@ static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES], int 
 	pkt[6] = _hamming[(x & 0xF0) >> 4];
 	pkt[7] = _hamming[(x & 0x0F) >> 0];
 	
-	/* Test if the data is too large for a single packet */
-	if(x > 45 - 2)
-	{
-		fprintf(stderr, "SI DG0 packet overflow (%d/43 bytes)\n", x);
-	}
-	
-	/* Generate the overall packet CRC (excludes PT and CRC) */
-	x = MAC_PAYLOAD_BYTES;
-	b = _crc16(&pkt[1], x - 3);
-	pkt[x - 2] = (b & 0x00FF) >> 0;
-	pkt[x - 1] = (b & 0xFF00) >> 8;
+	return x + 1;
 }
 
-static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt, int golay)
+static int _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 {
 	int x;
 	uint16_t b;
 	
-	memset(pkt, 0, MAC_PAYLOAD_BYTES);
-	
-	/* PT Packet Type */
-	pkt[0] = golay ? 0x00 : 0xF8;
+	memset(pkt, 0, MAC_PAYLOAD_BYTES * 2);
 	
 	/* DGH (Data Group Header) */
 	pkt[1] = _hamming[3];           /* TG data group type */
@@ -762,20 +758,10 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt, int golay)
 	pkt[6] = _hamming[(x & 0xF0) >> 4];
 	pkt[7] = _hamming[(x & 0x0F) >> 0];
 	
-	/* Test if the data is too large for a single packet */
-	if(x > 45 - 2)
-	{
-		fprintf(stderr, "SI DG3 packet overflow (%d/43 bytes)\n", x);
-	}
-	
-	/* Generate the overall packet CRC (excludes PT and CRC) */
-	x = MAC_PAYLOAD_BYTES;
-	b = _crc16(&pkt[1], x - 3);
-	pkt[x - 2] = (b & 0x00FF) >> 0;
-	pkt[x - 1] = (b & 0xFF00) >> 8;
+	return x + 1;
 }
 
-static void _create_si_dg4_packet(mac_t *s, uint8_t *pkt, int golay)
+static int _create_si_dg4_packet(mac_t *s, uint8_t *pkt, int golay)
 {
 	int x;
 	uint16_t b;
@@ -831,17 +817,7 @@ static void _create_si_dg4_packet(mac_t *s, uint8_t *pkt, int golay)
 	pkt[6] = _hamming[(x & 0xF0) >> 4];
 	pkt[7] = _hamming[(x & 0x0F) >> 0];
 	
-	/* Test if the data is too large for a single packet */
-	if(x > 45 - 2)
-	{
-		fprintf(stderr, "SI DG4 packet overflow (%d/43 bytes)\n", x);
-	}
-	
-	/* Generate the overall packet CRC (excludes PT and CRC) */
-	x = MAC_PAYLOAD_BYTES;
-	b = _crc16(&pkt[1], x - 3);
-	pkt[x - 2] = (b & 0x00FF) >> 0;
-	pkt[x - 1] = (b & 0xFF00) >> 8;
+	return x + 1;
 }
 
 static void _create_audio_si_packet(mac_t *s, uint8_t *pkt)
@@ -932,7 +908,8 @@ int mac_init(vid_t *s)
 			return(i);
 		}
 		
-		_sname = s->mac.ec.mode->channame;
+		/* Update service name */
+		_sname = _nwname = s->mac.ec.mode->channame;
 	}
 	
 	/* Configure scrambling */
@@ -1039,6 +1016,39 @@ int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const 
 	sf->queue.len++;
 	
 	return(0);
+}
+
+static void _write_dg_packet(vid_t *s, uint8_t *pkt, int x, int m, int golay)
+{
+	int c, i;
+	
+	/* Calculate number of continuities */
+	c = ceil((float) x / (float) (MAC_DG_BYTES - 2));
+	
+	/* Break up packets, if needed */
+	for(i = 0; i < c; i++)
+	{
+		uint8_t p[MAC_PAYLOAD_BYTES];
+		memset(p, 0, MAC_PAYLOAD_BYTES);
+		
+		/* Copy SI packet in 45-byte chunks */
+		memcpy(p + 1, pkt + (i * MAC_DG_BYTES) + 1, MAC_DG_BYTES);
+		
+		/* PT Packet Type */
+		p[0] = golay ? i ? 0x3F : 0x00 : i ? 0xC7 : 0xF8;
+		
+		/* Tack CRC on the end of the packet */
+		_crc_packet(p);
+		
+		if(golay) mac_golay_encode(p + 1, 30);
+		
+		mac_write_packet(s, 0, 0x000, i, p, 0);
+		
+		if(m == 0 && s->conf.mac_mode == MAC_MODE_D)
+		{
+			mac_write_packet(s, 1, 0x000, i, pkt, 0);
+		}
+	}
 }
 
 int mac_write_audio(vid_t *s, const int16_t *audio)
@@ -1342,7 +1352,11 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	if(l->line == 1)
 	{
-		uint8_t pkt[MAC_PACKET_BYTES];
+		uint8_t pkt[MAC_PACKET_BYTES * 2];
+		
+		int golay;
+		
+		golay = l->frame & 1;
 		
 		/* Reset PRBS for packet scrambling */
 		_prbs1_reset(&s->mac, l->frame - 1);
@@ -1357,36 +1371,23 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		{
 		case 0: /* Write DG0 to 1st and 2nd subframes */
 			
-			_create_si_dg0_packet(&s->mac, pkt, l->frame & 1);
+			x = _create_si_dg0_packet(&s->mac, pkt);
 			
-			if(l->frame & 1) mac_golay_encode(pkt + 1, 30);
-			
-			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
-			
-			if(s->conf.mac_mode == MAC_MODE_D)
-			{
-				mac_write_packet(s, 1, 0x000, 0, pkt, 0);
-			}
-			
+			_write_dg_packet(s, pkt, x, 0, golay);
 			break;
 		
 		case 1: /* Write DG3 to 1st subframe */
 			
-			_create_si_dg3_packet(&s->mac, pkt, l->frame & 1);
-			
-			if(l->frame & 1) mac_golay_encode(pkt + 1, 30);
-			
-			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
-			
+			x = _create_si_dg3_packet(&s->mac, pkt);
+
+			_write_dg_packet(s, pkt, x, 3, golay);
 			break;
 			
 		case 2: /* Write DG4 to 1st subframe */
 			
-			_create_si_dg4_packet(&s->mac, pkt, l->frame & 1);
+			x = _create_si_dg4_packet(&s->mac, pkt, golay);
 			
-			if(l->frame & 1) mac_golay_encode(pkt + 1, 30);
-			
-			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
+			_write_dg_packet(s, pkt, x, 4, golay);
 			break;
 		}
 		
