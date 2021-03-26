@@ -64,6 +64,9 @@
 /* Taken from ffplay.c */
 #define MAX_QUEUE_SIZE (15 * 1024 * 1024)
 
+/* Temp hack */
+char current_text[256];
+
 typedef struct __packet_queue_item_t {
 	
 	AVPacket pkt;
@@ -483,7 +486,7 @@ static void *_input_thread(void *arg)
 		{
 			_packet_queue_write(&av->audio_queue, &pkt);
 		}
-		else if(av->subtitle_stream && pkt.stream_index == av->subtitle_stream->index && av->s->conf.subtitles)
+		else if(av->subtitle_stream && pkt.stream_index == av->subtitle_stream->index && (av->s->conf.subtitles || av->s->conf.txsubtitles))
 		{
 			AVSubtitle sub;
 			int got_frame;
@@ -724,16 +727,23 @@ static void *_video_scaler_thread(void *arg)
 		);
 		
 		/* Print subtitles, if enabled */
-		if(av->s->conf.subtitles) 
+		if(av->s->conf.subtitles || av->s->conf.txsubtitles) 
 		{
 			if(get_subtitle_type(av->s->av_sub) == SUB_TEXT)
 			{
 				/* best_effort_timestamp is very flaky - not really a good measure of current position and doesn't work some of the time */
-				print_subtitle(	av->font[0], 
-							(uint32_t *) oframe->data[0],
-							get_text_subtitle(av->s->av_sub, frame->best_effort_timestamp));
+				char fmt[256];
+				sprintf(fmt,"%s", get_text_subtitle(av->s->av_sub, frame->best_effort_timestamp));
+				
+				if(av->s->conf.subtitles) print_subtitle(av->font[0], (uint32_t *) oframe->data[0], fmt);
+				
+				if(av->s->conf.txsubtitles && strcmp(current_text, fmt) != 0)
+				{
+					strcpy(current_text, fmt);
+					update_teletext_subtitle(fmt, &av->s->tt.service);
+				}
 			}
-			else
+			else if(av->s->conf.subtitles)
 			{
 				int w, h;
 				uint32_t *bitmap = get_bitmap_subtitle(av->s->av_sub, frame->best_effort_timestamp, &w, &h);
@@ -1144,6 +1154,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		
 		if(av->subtitle_stream == NULL && av->format_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
 		{
+			av->subtitle_stream = av->format_ctx->streams[s->conf.txsubtitles >= i && s->conf.txsubtitles < av->format_ctx->nb_streams? s->conf.txsubtitles : i];
 			av->subtitle_stream = av->format_ctx->streams[s->conf.subtitles >= i && s->conf.subtitles < av->format_ctx->nb_streams? s->conf.subtitles : i];
 		}
 	}
@@ -1521,9 +1532,9 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		}
 		
 		av->subtitle_eof = 0;
-		if(s->conf.subtitles) subs_init_ffmpeg(s);
+		if(s->conf.subtitles || s->conf.txsubtitles) subs_init_ffmpeg(s);
 		
-		/* Initialise fonts here    */
+		/* Initialise fonts here */
 		if(font_init(s, 38, source_ratio) !=0)
 		{
 			return(HACKTV_ERROR);
@@ -1537,11 +1548,12 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		
 		/* Initialise subtitles - here because it's already supplied with the filename for video */
 		/* Should really be moved somewhere else */
-		if(s->conf.subtitles)
+		if(s->conf.subtitles || s->conf.txsubtitles)
 		{
 			if(subs_init_file(input_url, s) != HACKTV_OK)
 			{
 				s->conf.subtitles = 0;
+				s->conf.txsubtitles = 0;
 				return(HACKTV_ERROR);
 			}
 			
@@ -1549,6 +1561,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 			if(font_init(s, 38, source_ratio) < 0)
 			{
 				s->conf.subtitles = 0;
+				s->conf.txsubtitles = 0;
 				return(HACKTV_ERROR);
 			}
 			

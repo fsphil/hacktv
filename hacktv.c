@@ -116,6 +116,7 @@ static void print_usage(void)
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --subtitles <stream idx>   Enable subtitles. Takes an optional argument.\n"
+		"      --tx-subtitles <stream id> Enable subtitles on teletext page 888.\n"
 		"      --downmix                  Downmix 5.1 audio to 2.0.\n"
 		"      --volume <value>           Adjust volume. Takes floats as argument.\n"
 		"      --showecm                  Show input and output control wordsfor scrambled modes.\n"
@@ -399,6 +400,7 @@ enum {
 	_OPT_DISABLE_EMM,
 	_OPT_SHOW_ECM,
 	_OPT_SUBTITLES,
+	_OPT_TX_SUBTITLES,
 	_OPT_SMARTCRYPT,
 	_OPT_LETTERBOX,
 	_OPT_PILLARBOX,
@@ -449,6 +451,7 @@ int main(int argc, char *argv[])
 		{ "vits",           no_argument,       0, _OPT_VITS },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
 		{ "subtitles",      optional_argument, 0, _OPT_SUBTITLES },
+		{ "tx-subtitles",   optional_argument, 0, _OPT_TX_SUBTITLES },
 		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
 		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
@@ -531,6 +534,7 @@ int main(int argc, char *argv[])
 	s.disableemm = 0;
 	s.showecm = 0;
 	s.subtitles = 0;
+	s.txsubtitles = 0;
 	s.volume = 1;
 	s.downmix = 0;
 	
@@ -735,6 +739,14 @@ int main(int argc, char *argv[])
 			if(!optarg && NULL != argv[optind] && '-' != argv[optind][0])
 			{
 				s.subtitles = atof(argv[optind++]);
+			}
+			break;
+			
+		case _OPT_TX_SUBTITLES: /* --tx-subtitles */
+			s.txsubtitles = 1;
+			if(!optarg && NULL != argv[optind] && '-' != argv[optind][0])
+			{
+				s.txsubtitles = atof(argv[optind++]);
 			}
 			break;
 			
@@ -1177,6 +1189,11 @@ int main(int argc, char *argv[])
 	if(s.subtitles)
 	{
 		vid_conf.subtitles = s.subtitles;
+	}
+	
+	if(s.txsubtitles)
+	{
+		vid_conf.txsubtitles = s.txsubtitles;
 	}
 	
 	if(s.vits)

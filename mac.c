@@ -745,6 +745,19 @@ static int _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 		pkt[x++] = (b & 0xFF00) >> 8;
 	}
 	
+	if(s->txsubtitles)	
+	{
+		/* Parameter DCINF F8 - subtitle pointer to page 888 */
+		pkt[x++] = 0xF8;        /* PI CCIR system B subtitles */
+		pkt[x++] = 3;           /* LI Length (3 bytes) */
+		pkt[x++] = 0x09;        /* Language = English */
+		
+		b  = 0x00 << 1;         /* Magazine number */
+		b |= 0x88 << 0;         /* Page number */
+		pkt[x++] = (b & 0x00FF) >> 0;
+		pkt[x++] = (b & 0xFF00) >> 8;
+	}
+	
 	/* Update the CI command length */
 	pkt[10] = x - pkt[10];
 	
@@ -939,6 +952,7 @@ int mac_init(vid_t *s)
 	}
 	
 	mac->teletext = (s->conf.teletext ? 1 : 0);
+	mac->txsubtitles = (s->conf.txsubtitles ? 1 : 0);
 	
 	_update_udt(s->mac.udt, time(NULL));
 	
@@ -1427,7 +1441,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	}
 	
 	/* Generate the teletext data, if enabled */
-	if(s->conf.teletext)
+	if(s->conf.teletext || s->conf.txsubtitles)
 	{
 		_vbi_teletext(s, data, l->frame, l->line);
 	}

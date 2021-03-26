@@ -534,6 +534,14 @@ static int _next_magazine_packet(tt_service_t *s, tt_magazine_t *mag, uint8_t li
 			return(TT_NO_PACKET);
 		}
 		
+		/* Check if this page has been updated. Reset back to row 1. */
+		if(mag->page->update)
+		{
+			mag->page->update = 0;
+			mag->row = 1;
+			return(TT_NO_PACKET);
+		}
+		
 		/* Copy the packet */
 		memcpy(line, &mag->page->data[(mag->row - 1) * 45], 45);
 		
@@ -750,6 +758,9 @@ static void _add_page(tt_service_t *s, tt_page_t *new_page)
 		}
 		else
 		{
+			/* Set the update flag */
+			new_page->update = 1;
+			
 			/* This is an existing subpage, replace it */
 			
 			/* Copy the subpage pointers */
@@ -766,6 +777,113 @@ static void _add_page(tt_service_t *s, tt_page_t *new_page)
 			free(new_page);
 		}
 	}
+}
+
+int update_teletext_subtitle(char *t, tt_service_t *s)
+{
+	tt_page_t *page;
+	uint8_t lines[25][40];
+	int c, cc, l, i, p;
+	
+	uint8_t tlines[25][80];
+	
+	/* Double height, 2x start box markers */
+	const char header[3] = {0xD, 0xB, 0xB};
+	
+	/* 2x end box markers */
+	const char footer[2] = {0xA, 0xA};
+	
+	/* Create new page/allocate memory */
+	page = calloc(sizeof(tt_page_t), 1);
+	if(!page)
+	{
+		perror("calloc");
+		return(TT_OUT_OF_MEMORY);
+	}
+	
+	/* Set up page data */
+	page->data = NULL;
+	page->page = 0x888;
+	page->subpage = 0x7F;
+	page->cycle_time = 8;
+	page->cycle_mode = 0;
+	page->page_status = 0xC016;
+	page->subcode = 0x3F7F;
+	
+	/* Clear existing page data */
+	for(c = 0; c < 25; c++)
+	{
+		memset(lines[c], ' ', 40);
+		memset(tlines[c], 0, 80);
+	}
+
+	if(*t)
+	{
+		/* Break up text into several lines */
+		for(c = 0, l = 0; *t; t++)
+		{
+			/* Skip undisplayable characters */
+			if((uint8_t) *t > 0x7F)
+			{
+				continue;
+			}
+			
+			/* TODO: tidy up and optimise... eventually */
+			if(c > 36)
+			{
+				/* Break up this line - it's too long for teletext */
+				int space = 1;
+				for(cc = c/3; cc < c && space; cc++)
+				{
+					if(isspace(tlines[l][cc]))
+					{
+						/* Found space character - looks like a good place to split it */
+						memcpy(tlines[l + 2], tlines[l] + cc + 1, c - cc);
+						memset(tlines[l] + cc, 0, c - cc);
+						space = 0;
+					}
+				}
+				l += 2;
+				c = c - cc;
+			}
+			
+			if(*t == '\n')
+			{
+				/* New line character - skip and jump to next line */
+				c  = 0;
+				l += 2;
+				continue;
+			}
+			
+			tlines[l][c++] = ((*t & 0x7F) == '[' ? '(' : (*t & 0x7F) == ']' ? ')' : (*t & 0x7F));
+		}
+		
+		c = 0;
+		
+		/* Display each line */
+		for(i = 0; i <= l; i += 2)
+		{
+			/* Hack to centre subtitles on screen */
+			p = 17 - (strlen(((char *) tlines[l - i]) + 1) / 2);
+			p = p < 0 ? 0 : p;
+			
+			/* Start box */
+			memcpy(lines[22 - i] + p, header, 3);
+			
+			/* Copy line */
+			for(c = 0; tlines[l - i][c]; c++)
+			{
+				lines[22 - i][c + 3 + p] = tlines[l - i][c];
+			}
+			
+			/* End box */
+			memcpy(lines[22 - i] + c + 3 + p, footer, 2);
+		}
+	}
+	
+	_page_mkpackets(page, lines);
+	_add_page(s, page);
+	return 0;
 }
 
 static int _load_tti(tt_service_t *s, char *filename)
@@ -1102,57 +1220,63 @@ int tt_init(tt_t *s, vid_t *vid, char *path)
 	
 	_new_service(&s->service);
 	
-	/* Test if the path is a file or a directory */
-	if(stat(path, &fs) != 0)
+	if(strcmp(path,"subtitles") == 0)
 	{
-		fprintf(stderr, "%s: ", path);
-		perror("stat");
-		tt_free(s);
-		return(VID_ERROR);
+		update_teletext_subtitle("", &s->service);
 	}
-	
-	if(fs.st_mode & S_IFDIR)
+	else
 	{
-		DIR *dir;
-		struct dirent *ent;
-		char filename[PATH_MAX];
-		
-		/* Path is a directory, scan all the files within */
-		
-		dir = opendir(path);
-		
-		if(!dir)
+		/* Test if the path is a file or a directory */
+		if(stat(path, &fs) != 0)
 		{
 			fprintf(stderr, "%s: ", path);
-			perror("opendir");
+			perror("stat");
 			tt_free(s);
 			return(VID_ERROR);
 		}
 		
-		while((ent = readdir(dir)))
+		if(fs.st_mode & S_IFDIR)
 		{
-			/* Skip hidden dot files */
-			if(ent->d_name[0] == '.')
+			DIR *dir;
+			struct dirent *ent;
+			char filename[PATH_MAX];
+			
+			/* Path is a directory, scan all the files within */
+			
+			dir = opendir(path);
+			
+			if(!dir)
 			{
-				continue;
+				fprintf(stderr, "%s: ", path);
+				perror("opendir");
+				tt_free(s);
+				return(VID_ERROR);
 			}
 			
-			snprintf(filename, PATH_MAX, "%s/%s", path, ent->d_name);
-			_load_tti(&s->service, filename);
+			while((ent = readdir(dir)))
+			{
+				/* Skip hidden dot files */
+				if(ent->d_name[0] == '.')
+				{
+					continue;
+				}
+				
+				snprintf(filename, PATH_MAX, "%s/%s", path, ent->d_name);
+				_load_tti(&s->service, filename);
+			}
+			
+			closedir(dir);
 		}
-		
-		closedir(dir);
+		else if(fs.st_mode & S_IFREG)
+		{
+			/* Path is a single file */
+			_load_tti(&s->service, path);
+		}
+		else
+		{
+			fprintf(stderr, "%s: Not a file or directory\n", path);
+		}
 	}
-	else if(fs.st_mode & S_IFREG)
-	{
-		/* Path is a single file */
-		_load_tti(&s->service, path);
-	}
-	else
-	{
-		fprintf(stderr, "%s: Not a file or directory\n", path);
-	}
-	
 	return(VID_OK);
 }
 

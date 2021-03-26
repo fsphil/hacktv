@@ -82,6 +82,7 @@ typedef struct {
 	int vits;
 	int filter;
 	int subtitles;
+	int txsubtitles;
 	int nocolour;
 	int noaudio;
 	int nonicam;

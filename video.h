@@ -190,6 +190,7 @@ typedef struct {
 	int systeraudio;
 	int acp;
 	int subtitles;
+	int txsubtitles;
 	int vits;
 	char *eurocrypt;
 	

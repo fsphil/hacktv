@@ -132,6 +132,9 @@ typedef struct {
 	/* 1 = Teletext enabled */
 	int teletext;
 	
+	/* 1 = Teletext subtitles enabled */
+	int txsubtitles;
+	
 	/* UDT (Unified Date and Time) sequence */
 	uint8_t udt[25];
 	

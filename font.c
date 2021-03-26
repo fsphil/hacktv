@@ -381,8 +381,7 @@ void print_subtitle(av_font_t *font, uint32_t *vid, char *fmt)
 			}
 			else
 			{
-				text[p] = fmt[i];
-				p++;
+				text[p++] = fmt[i];
 			}
 		}
 		

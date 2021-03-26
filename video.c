@@ -3116,9 +3116,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* Initalise the teletext system */
-	if(s->conf.teletext)
+	if(s->conf.teletext || s->conf.txsubtitles)
 	{
-		if((r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+		if((r = tt_init(&s->tt, s, s->conf.teletext ? s->conf.teletext : "subtitles")) != VID_OK)
 		{
 			vid_free(s);
 			return(r);

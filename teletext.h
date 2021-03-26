@@ -66,6 +66,10 @@ typedef struct _tt_page_t {
 	 * represents the full VBI line. */
 	uint8_t *data;
 	
+	/* Flag to signal the arrival of an updated page
+	 * to avoid reading a non-existent row. */
+	int update;
+	
 	/* A pointer to the first subpage */
 	struct _tt_page_t *subpages;
 	
@@ -137,6 +141,7 @@ extern int tt_init(tt_t *s, vid_t *vid, char *path);
 extern void tt_free(tt_t *s);
 extern int tt_next_packet(tt_t *s, uint8_t vbi[45], int frame, int line);
 extern int tt_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
+extern int update_teletext_subtitle(char *fmt, tt_service_t *s);
 
 #endif
 
