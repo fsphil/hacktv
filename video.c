@@ -549,10 +549,10 @@ const vid_config_t vid_config_secam = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 };
 
 const vid_config_t vid_config_ntsc_m = {
