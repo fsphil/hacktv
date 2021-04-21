@@ -1046,7 +1046,7 @@ static void _write_dg_packet(vid_t *s, uint8_t *pkt, int x, int m, int golay)
 		memset(p, 0, MAC_PAYLOAD_BYTES);
 		
 		/* Copy SI packet in 45-byte chunks */
-		memcpy(p + 1, pkt + (i * MAC_DG_BYTES) + 1, MAC_DG_BYTES);
+		memcpy(p + 1, pkt + (i * MAC_DG_BYTES) + 1, MAC_PAYLOAD_BYTES - 1);
 		
 		/* PT Packet Type */
 		p[0] = golay ? i ? 0x3F : 0x00 : i ? 0xC7 : 0xF8;
@@ -1060,7 +1060,7 @@ static void _write_dg_packet(vid_t *s, uint8_t *pkt, int x, int m, int golay)
 		
 		if(m == 0 && s->conf.mac_mode == MAC_MODE_D)
 		{
-			mac_write_packet(s, 1, 0x000, i, pkt, 0);
+			mac_write_packet(s, 1, 0x000, i, p, 0);
 		}
 	}
 }
