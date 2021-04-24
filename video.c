@@ -400,10 +400,10 @@ const vid_config_t vid_config_secam_l = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 	
 	.am_mono_carrier = 6500000, /* Hz */
 	
@@ -451,10 +451,10 @@ const vid_config_t vid_config_secam_dk = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
@@ -501,10 +501,10 @@ const vid_config_t vid_config_secam_fm = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	//.fm_left_carrier    = 7020000, /* Hz */
