@@ -158,7 +158,7 @@ static int _init_625(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 				
 				for(b = 0; b < 6; b++)
 				{
-					r += _win(t, (12 + 3 * b) * h, 3 * h, 200e-9, 0.21)
+					r += _win(t, (12 + 3 * b) * h, 2 * h, 200e-9, 0.21)
 					   * sin((t - (12 + 3 * b) * h) * bs[b]);
 				}
 				
@@ -317,7 +317,7 @@ int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	for(x = 0; x < s->width; x++)
 	{
 		l->output[x * 2] += v->line[i][x * 2 + 0];
-		l->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
+		if(lut_i) l->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
 	}
 	
 	l->vbialloc = 1;

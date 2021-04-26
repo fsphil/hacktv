@@ -117,6 +117,9 @@ typedef struct {
 	/* Output modulation */
 	int modulation;
 	
+	/* Video bandwidth options */
+	double video_bw;
+	
 	/* VSB modulation options */
 	double vsb_upper_bw;
 	double vsb_lower_bw;

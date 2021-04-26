@@ -86,7 +86,7 @@ static void print_usage(void)
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
 		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
-		"  -D, --deviation <value>        Override the mode's FM deviation. (Hz)\n"
+		"  -D, --deviation <value>        Override the mode's FM peak deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -i, --interlace                Update image each field instead of each frame.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"

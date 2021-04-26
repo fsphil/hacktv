@@ -221,6 +221,8 @@ const vid_config_t vid_config_pal = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.video_bw       = 6.0e6,
+	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
 	.frame_rate_den = 1,
@@ -319,6 +321,8 @@ const vid_config_t vid_config_525pal = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.video_bw       = 6.0e6,
+	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
@@ -396,10 +400,10 @@ const vid_config_t vid_config_secam_l = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 	
 	.am_mono_carrier = 6500000, /* Hz */
 	
@@ -447,10 +451,10 @@ const vid_config_t vid_config_secam_dk = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	.fm_audio_preemph   = 0.000050, /* Seconds */
@@ -497,10 +501,10 @@ const vid_config_t vid_config_secam_fm = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 	
 	.fm_mono_carrier    = 6500000, /* Hz */
 	//.fm_left_carrier    = 7020000, /* Hz */
@@ -516,6 +520,8 @@ const vid_config_t vid_config_secam = {
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
+	
+	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -543,10 +549,10 @@ const vid_config_t vid_config_secam = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = -2.000,
+	.iu_co          = 2.000,
 	.iv_co          = 0.000,
 	.qu_co          = 0.000,
-	.qv_co          = 2.000,
+	.qv_co          = -2.000,
 };
 
 const vid_config_t vid_config_ntsc_m = {
@@ -724,6 +730,8 @@ const vid_config_t vid_config_ntsc = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
+	.video_bw       = 6.0e6,
+	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
 	.frame_rate_den = 1001,
@@ -843,6 +851,8 @@ const vid_config_t vid_config_d2mac = {
 	/* D2-MAC */
 	.output_type    = HACKTV_INT16_REAL,
 	
+	.video_bw       = 6.0e6,
+	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
@@ -954,6 +964,8 @@ const vid_config_t vid_config_dmac = {
 	/* D-MAC */
 	.output_type    = HACKTV_INT16_REAL,
 	
+	.video_bw       = 8.4e6,
+	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate_num = 25,
@@ -1029,6 +1041,8 @@ const vid_config_t vid_config_819 = {
 	/* 819 line video, French variant */
 	.output_type    = HACKTV_INT16_REAL,
 	
+	.video_bw       = 10.4e6,
+	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
@@ -1102,6 +1116,8 @@ const vid_config_t vid_config_405 = {
 	
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
+	
+	.video_bw       = 3.0e6,
 	
 	.type           = VID_RASTER_405,
 	.frame_rate_num = 25,
@@ -1603,8 +1619,23 @@ const vid_configs_t vid_configs[] = {
 	{ NULL,            NULL },
 };
 
+/* Video filter process */
+typedef struct {
+	
+	int lines;
+	int offset;
+	
+	fir_int16_t fir;
+	
+} _vid_filter_process_t;
+
+/* Test taps for a CCIR-405 625 line video pre-emphasis filter at 28 MHz */
+const int16_t fm_625_28_taps[] = {
+	-1,-6,-4,8,19,6,-31,-47,-2,73,79,-35,-167,-135,88,264,115,-302,-537,-221,386,510,-277,-1362,-1545,-446,647,-226,-3473,-6776,-6617,-1514,6078,11329,10904,5674,-213,-2937,-1902,512,1641,842,-541,-1003,-351,469,601,104,-357,-336,9,242,168,-46,-146,-72,44,76,24,-29,-32,-4,14,10,0,-4,-1
+};
+
 /* Test taps for a CCIR-405 625 line video pre-emphasis filter at 20.25 MHz */
-const int16_t fm_625_taps[] = {
+const int16_t fm_625_2025_taps[] = {
 	-5,3,12,-11,-20,29,26,-59,-24,104,1,-161,49,218,-147,-273,284,271,-516,-267,704,-5,-1212,-1,1051,-1396,-2808,204,-319,-8341,-10028,4147,17888,12980,-921,-4238,1253,2195,-1265,-1186,1141,579,-951,-200,736,-25,-528,139,346,-178,-203,169,101,-136,-37,96,3,-60,11,32,-12,-14,9,5,-4,-1
 };
 
@@ -2530,17 +2561,24 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 
 static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
-	vid_line_t *l = lines[0];
-	fir_int16_t *fir = arg;
-	fir_int16_process(fir, l->output, l->output, s->width);
+	_vid_filter_process_t *p = arg;
+	vid_line_t *src = lines[nlines - 1];
+	int x1, x2;
+	
+	x1 = p->offset;
+	x2 = s->width - x1;
+	fir_int16_process(&p->fir, &lines[0]->output[x1 * 2], &src->output[0], x2);
+	fir_int16_process(&p->fir, &lines[1]->output[0], &src->output[x2 * 2], x1);
+	
 	return(1);
 }
 
 static void _vid_filter_free(vid_t *s, void *arg)
 {
-	fir_int16_t *fir = arg;
-	fir_int16_free(fir);
-	free(fir);
+	_vid_filter_process_t *p = arg;
+	
+	fir_int16_free(&p->fir);
+	free(p);
 }
 
 static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
@@ -2760,11 +2798,11 @@ static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, v
 
 static int _init_vfilter(vid_t *s)
 {
-	fir_int16_t *fir;
+	_vid_filter_process_t *p;
 	int ntaps;
 	
-	fir = calloc(1, sizeof(fir_int16_t));
-	if(!fir)
+	p = calloc(1, sizeof(_vid_filter_process_t));
+	if(!p)
 	{
 		return(VID_OUT_OF_MEMORY);
 	}
@@ -2778,12 +2816,12 @@ static int _init_vfilter(vid_t *s)
 		taps = calloc(ntaps, sizeof(int16_t) * 2);
 		if(!taps)
 		{
-			free(fir);
+			free(p);
 			return(VID_OUT_OF_MEMORY);
 		}
 		
 		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_scomplex_init(fir, taps, ntaps);
+		fir_int16_scomplex_init(&p->fir, taps, ntaps);
 		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)
@@ -2817,6 +2855,11 @@ static int _init_vfilter(vid_t *s)
 				taps = fm_625_14_taps;
 				ntaps = sizeof(fm_625_14_taps) / sizeof(int16_t);
 			}
+			else if(s->sample_rate == 28000000)
+			{
+				taps = fm_625_28_taps;
+				ntaps = sizeof(fm_625_28_taps) / sizeof(int16_t);
+			}
 			else
 			{
 				if(s->sample_rate != 20250000)
@@ -2824,22 +2867,43 @@ static int _init_vfilter(vid_t *s)
 					fprintf(stderr, "Warning: The 625-line FM video pre-emphasis filter is designed to run at 20.25 MHz.\n");
 				}
 				
-				taps = fm_625_taps;
-				ntaps = sizeof(fm_625_taps) / sizeof(int16_t);
+				taps = fm_625_2025_taps;
+				ntaps = sizeof(fm_625_2025_taps) / sizeof(int16_t);
 			}
 		}
 		
-		fir_int16_init(fir, taps, ntaps);	
+		fir_int16_init(&p->fir, taps, ntaps);	
+	}
+	else if(s->conf.modulation == VID_AM ||
+	        s->conf.modulation == VID_NONE)
+	{
+		int16_t *taps;
+		
+		ntaps = 51;
+		
+		taps = calloc(ntaps, sizeof(int16_t));
+		if(!taps)
+		{
+			free(p);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		fir_int16_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
+		fir_int16_init(&p->fir, taps, ntaps);
+		free(taps);
 	}
 	
-	if(fir->type == 0)
+	if(p->fir.type == 0)
 	{
 		/* No filter has been created */
-		free(fir);
+		free(p);
 		return(VID_OK);
 	}
 	
-	_add_lineprocess(s, "vfilter", 1, fir, _vid_filter_process, _vid_filter_free);
+	p->lines = 1 + p->fir.ntaps / 2 / s->width;
+	p->offset = s->width - ((p->fir.ntaps / 2) % s->width);
+	
+	_add_lineprocess(s, "vfilter", 1 + p->lines, p, _vid_filter_process, _vid_filter_free);
 	
 	return(VID_OK);
 }
