@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
 	int c;
 	int option_index;
 	static struct option long_options[] = {
-		{ "output",         required_argument, 0, '0' },
+		{ "output",         required_argument, 0, 'o' },
 		{ "mode",           required_argument, 0, 'm' },
 		{ "samplerate",     required_argument, 0, 's' },
 		{ "level",          required_argument, 0, 'l' },
@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "frequency",      required_argument, 0, 'f' },
 		{ "amp",            no_argument,       0, 'a' },
-		{ "gain",           required_argument, 0, 'x' },
+		{ "gain",           required_argument, 0, 'g' },
 		{ "antenna",        required_argument, 0, 'A' },
 		{ "type",           required_argument, 0, 't' },
 		{ 0,                0,                 0,  0  }
