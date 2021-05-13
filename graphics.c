@@ -35,13 +35,14 @@ const pngs_t png_logos[] = {
 	{ "mtv",            _png_mtv,            sizeof(_png_mtv) },
 	{ "tac",            _png_tac,            sizeof(_png_tac) },
 	{ "filmnet",        _png_filmnet,        sizeof(_png_filmnet) },
+	{ "multichoice",    _png_multichoice,    sizeof(_png_multichoice) },
 	{ NULL,             NULL,                0 }
 };
 
 const pngs_t png_tests[] = {
 	{ "pm5544",         _png_test_pm5544,    sizeof(_png_test_pm5544) },
 	{ "fubk",           _png_test_fubk,      sizeof(_png_test_fubk) },
-	{ "ueitm",           _png_test_ueitm,      sizeof(_png_test_ueitm) },
+	{ "ueitm",          _png_test_ueitm,     sizeof(_png_test_ueitm) },
 	{ NULL,             NULL,                0 }
 };
 
