@@ -25,41 +25,42 @@
 #define ECM  0
 #define HASH 1
 
-#define EC_M 0
-#define EC_S 3
-#define EC_3DES 4
+#define EC_M    0x20
+#define EC_S    0x30
+#define EC_3DES 0x31
 
-#define ROTATE_LEFT 1
+#define ROTATE_LEFT  1
 #define ROTATE_RIGHT 2
 
-#define IP_DIM 64
+#define IP_DIM  64
 #define IPP_DIM 64
-#define E_DIM 48
-#define S_BOXES 8
-#define S_DIM 64
-#define P_DIM 32
+#define E_DIM   48
+#define S_BOXES  8
+#define S_DIM   64
+#define P_DIM   32
 #define PC2_DIM 48
-#define LS_DIM 16
+#define LS_DIM  16
 
 /* Data for EC controlled-access decoding */
 const static ec_mode_t _ec_modes[] = {
-	{ "rdv",      EC_S, { 0xFE, 0x6D, 0x9A, 0xBB, 0xEB, 0x97, 0xFB }, { 0x00, 0x2D, 0x93 }, { "01/11/1995" }, { 0xFF, 0x00 }, "RDV (S2)" },
-	{ "tvs",      EC_S, { 0x5C, 0x8B, 0x11, 0x2F, 0x99, 0xA8, 0x2C }, { 0x00, 0x2B, 0x50 }, { "01/11/1995" }, { 0x00, 0x01 }, "TV-S (S2)" },
-	{ "ctvs",     EC_S, { 0x17, 0x38, 0xFA, 0x8A, 0x84, 0x5A, 0x5E }, { 0x00, 0x2B, 0x20 }, { "01/11/1995" }, { 0x00, 0x01 }, "CTV (S)" },
-	{ "ctv",      EC_M, { 0x84, 0x66, 0x30, 0xE4, 0xDA, 0xFA, 0x23 }, { 0x00, 0x04, 0x38 }, { "01/11/1995" }, { 0xFF, 0x00 }, "CTV (M)" },
-	{ "tvplus",   EC_M, { 0x12, 0x06, 0x28, 0x3A, 0x4B, 0x1D, 0xE2 }, { 0x00, 0x2C, 0x08 }, { "01/11/1995" }, { 0x04, 0x00 }, "TV Plus (M)" },
-	{ "tv1000",   EC_M, { 0x48, 0x63, 0xC5, 0xB3, 0xDA, 0xE3, 0x29 }, { 0x00, 0x04, 0x18 }, { "01/11/1995" }, { 0x05, 0x04 }, "TV1000 (M)" },
-	{ "tv3update",EC_M, { 0xE9, 0xF3, 0x34, 0x36, 0xB0, 0xBB, 0xF8 }, { 0x00, 0x04, 0x0C }, { "01/11/1995" }, { 0x05, 0x04 }, "TV3 (AU - M)" },
-	{ "filmnet",  EC_M, { 0x21, 0x12, 0x31, 0x35, 0x8A, 0xC3, 0x4F }, { 0x00, 0x28, 0x08 }, { "01/08/1994" }, { 0x05, 0x00 }, "FilmNet (M)" },
-	{ "nrk",      EC_S, { 0xE7, 0x19, 0x5B, 0x7C, 0x47, 0xF4, 0x66 }, { 0x47, 0x52, 0x00 }, { "01/11/1995" }, { 0x00, 0x02 }, "NRK (S)" },
-	{ "cplus", EC_3DES, { 0x34, 0x51, 0x85, 0xCE, 0x42, 0x07, 0x4B, 
-	                      0xB4, 0xA0, 0xD9, 0x3B, 0x94, 0x28, 0xC9 }, { 0x00, 0x2B, 0x1C }, { "01/11/1995" }, { 0x00, 0x01 }, "Canal+ (3DES)" },
+	{ "rdv",      EC_S,    EC_S, { 0xFE, 0x6D, 0x9A, 0xBB, 0xEB, 0x97, 0xFB }, { 0x00, 0x2D, 0x93 }, { "01/11/1995" }, { 0xFF, 0x00 }, "RDV (S2)" },
+	{ "tvs",      EC_S,    EC_S, { 0x5C, 0x8B, 0x11, 0x2F, 0x99, 0xA8, 0x2C }, { 0x00, 0x2B, 0x50 }, { "01/11/1995" }, { 0x00, 0x01 }, "TV-S (S2)" },
+	{ "ctvs1",    EC_S,    EC_S, { 0x17, 0x38, 0xFA, 0x8A, 0x84, 0x5A, 0x5E }, { 0x00, 0x2B, 0x20 }, { "01/11/1995" }, { 0x00, 0x01 }, "CTV (S2)" },
+	{ "ctvs2",    EC_S,    EC_S, { 0x9B, 0x16, 0x8D, 0xF3, 0x80, 0xE2, 0x85 }, { 0x00, 0x2B, 0x40 }, { "01/11/1995" }, { 0x00, 0x01 }, "CTV (S2)" },
+	{ "ctv",      EC_M,    EC_M, { 0x84, 0x66, 0x30, 0xE4, 0xDA, 0xFA, 0x23 }, { 0x00, 0x04, 0x38 }, { "01/11/1995" }, { 0xFF, 0x00 }, "CTV (M)" },
+	{ "tvplus",   EC_M,    EC_M, { 0x12, 0x06, 0x28, 0x3A, 0x4B, 0x1D, 0xE2 }, { 0x00, 0x2C, 0x08 }, { "01/11/1995" }, { 0x04, 0x00 }, "TV Plus (M)" },
+	{ "tv1000",   EC_M,    EC_M, { 0x48, 0x63, 0xC5, 0xB3, 0xDA, 0xE3, 0x29 }, { 0x00, 0x04, 0x18 }, { "01/11/1995" }, { 0x05, 0x04 }, "TV1000 (M)" },
+	{ "tv3update",EC_M,    EC_M, { 0xE9, 0xF3, 0x34, 0x36, 0xB0, 0xBB, 0xF8 }, { 0x00, 0x04, 0x0C }, { "01/11/1995" }, { 0x05, 0x04 }, "TV3 (AU - M)" },
+	{ "filmnet",  EC_M,    EC_M, { 0x21, 0x12, 0x31, 0x35, 0x8A, 0xC3, 0x4F }, { 0x00, 0x28, 0x08 }, { "01/08/1994" }, { 0x05, 0x00 }, "FilmNet (M)" },
+	{ "nrk",      EC_S,    EC_M, { 0xE7, 0x19, 0x5B, 0x7C, 0x47, 0xF4, 0x66 }, { 0x47, 0x52, 0x00 }, { "01/11/1995" }, { 0x00, 0x02 }, "NRK (S2)" },
+	{ "cplus", EC_3DES, EC_3DES, { 0x34, 0x51, 0x85, 0xCE, 0x42, 0x07, 0x4B,   /* Key 00 and key 01 - index key C */
+	                               0xB4, 0xA0, 0xD9, 0x3B, 0x94, 0x28, 0xC9 }, { 0x00, 0x2B, 0x1C }, { "01/11/1995" }, { 0x00, 0x01 }, "Canal+ (3DES)" },
 	{ NULL } 
 };
 
 /* Data for EC controlled-access EMMs */
 const static em_mode_t _em_modes[] = {
-	{ "tv3update",EC_M, { 0x99, 0xCF, 0xCA, 0x13, 0x7A, 0x53, 0x6D }, { 0x00, 0x04, 0x04 }, { 0x70, 0x31, 0x12 }, { 0, 0, 0, 0 }, EMMS },
+	{ "tv3update", EC_M, EC_M, { 0x99, 0xCF, 0xCA, 0x13, 0x7A, 0x53, 0x6D }, { 0x00, 0x04, 0x04 }, { 0x70, 0x31, 0x12 }, { 0, 0, 0, 0 }, EMMS },
 	{ NULL } 
 };
 
@@ -343,7 +344,7 @@ static void _eurocrypt(uint8_t *data, const uint8_t *key, int desmode, int emode
 	  ^ ((uint64_t) key[6] << 0);
 	
 	/* Initial permutation for Eurocrypt S2/3DES  - always do this */
-	if(emode)
+	if(emode != EC_M)
 	{
 		_permute_ec(data, _ip, 64);
 	}
@@ -406,7 +407,6 @@ static void _eurocrypt(uint8_t *data, const uint8_t *key, int desmode, int emode
 					
 					/* One DES round */
 					s = _ec_des_f(r, k2);
-					
 				}
 				break;
 
@@ -447,7 +447,7 @@ static void _eurocrypt(uint8_t *data, const uint8_t *key, int desmode, int emode
 	}
 	
 	/* Final permutation for Eurocrypt S2/3DES */
-	if(emode)
+	if(emode != EC_M)
 	{
 		_permute_ec(data, _ipp, 64);
 	}
@@ -492,7 +492,7 @@ static void _build_ecm_hash_data(uint8_t *hash, const eurocrypt_t *e, int x)
 	msglen = 0;
 	
 	/* EC-S2 and EC-3DES */
-	if(e->mode->emode)
+	if(e->mode->emode != EC_M)
 	{
 		/* Copy PPID */
 		memcpy(msg, e->ecm_pkt + 5, 3);
@@ -605,9 +605,9 @@ static uint8_t _update_ecm_packet(eurocrypt_t *e, int t)
 	pkt[x++] = ECM;
 	
 	/* Command Identifier, CI */
-	b  = 0x20 << 2;		/* Crypto-algo type - always 0x20 for Eurocrypt PC2 implementation */
-	b |= 1 << 1;		/* Format bit - always 1 */
-	b |= t << 0;		/* Toggle bit */
+	b  = (e->mode->cmode & 0x30) << 2; /* Crypto-algo type */
+	b |= 1 << 1;                       /* Format bit - always 1 */
+	b |= t << 0;                       /* Toggle bit */
 	pkt[x++] = b;
 	
 	/* Command Length Indicator, CLI -- updated later */
@@ -665,9 +665,9 @@ static void _update_emms_packet(eurocrypt_t *e)
 	memcpy(&pkt[x], e->emmode->sa, 3); x += 3;
 	
 	/* Command Identifier, CI */
-	b  = 0x20 << 2;		/* Crypto-algo type - always 0x20 for Eurocrypt PC2 implementation */
-	b |= 0 << 1;		/* Format bit - 0: fixed, 1: variable */
-	b |= 0 << 0;		/* ADF - clear */
+	b  = (e->emmode->cmode & 0x30) << 2; /* Crypto-algo type */
+	b |= 0 << 1;                         /* Format bit - 0: fixed, 1: variable */
+	b |= 0 << 0;                         /* ADF - clear */
 	pkt[x++] = b;
 	
 	/* Command Length Indicator, CLI */
@@ -696,9 +696,9 @@ static uint8_t _update_emmg_packet(eurocrypt_t *e, int t)
 	pkt[x++] = EMMG;
 	
 	/* Command Identifier, CI */
-	b  = 0x20 << 2;		/* Crypto-algo type - always 0x20 for Eurocrypt PC2 implementation */
-	b |= 1 << 1;		/* Format bit - 0: fixed, 1: variable */
-	b |= t << 0;		/* Toggle */
+	b  = (e->emmode->cmode & 0x30) << 2; /* Crypto-algo type */
+	b |= 1 << 1;                         /* Format bit - 0: fixed, 1: variable */
+	b |= t << 0;                         /* Toggle */
 	pkt[x++] = b;
 	
 	/* Command Length Indicator, CLI -- updated later */
@@ -742,9 +742,9 @@ static uint8_t _update_emmu_packet(eurocrypt_t *e, int t)
 	memcpy(&pkt[x], e->emmode->ua, 4); x += 4;
 	
 	/* Command Identifier, CI */
-	b  = 0x20 << 2;     /* Crypto-algo type - always 0x20 for Eurocrypt PC2 implementation */
-	b |= 1 << 1;        /* Format bit - 0: fixed, 1: variable */
-	b |= t << 0;        /* Toggle */
+	b  = (e->emmode->cmode & 0x30) << 2; /* Crypto-algo type */
+	b |= 1 << 1;                         /* Format bit - 0: fixed, 1: variable */
+	b |= t << 0;                         /* Toggle */
 	pkt[x++] = b;
 	
 	/* Command Length Indicator, CLI -- updated later */

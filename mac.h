@@ -53,7 +53,7 @@
 /* Number of bits and bytes in a packet payload */
 #define MAC_PAYLOAD_BITS  728
 #define MAC_PAYLOAD_BYTES 91
-#define MAC_DG_BYTES ((MAC_PAYLOAD_BYTES - 1) / 2)
+#define MAC_DG_BYTES 45
 
 /* Number of packets in the transmit queue */
 #define MAC_QUEUE_LEN 12

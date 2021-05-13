@@ -699,7 +699,7 @@ static int _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	{
 		/* Parameter ACCM */
 		pkt[x++] = 0x88;
-		pkt[x++] = 0x03;        /* Packet length = 3 */
+		pkt[x++] = 0x04;        /* Packet length = 3 */
 		b  = 1 << 15;           /* 0: Absence of ECM, 1: Presence of ECM */
 		b |= 0 << 14;           /* 0: CW derived 'by other means', 1: CW derived from CAFCNT */
 		b |= 1 << 10;           /* Subframe related location - TDMCID 01 */
@@ -707,6 +707,8 @@ static int _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 		pkt[x++] = (b & 0x00FF) >> 0;
 		pkt[x++] = (b & 0xFF00) >> 8;
 		pkt[x++] = 0x40;        /* Eurocrypt */
+		pkt[x++] = (s->ec.mode->cmode & 0x30);
+		                        /* Eurocrypt algo (M or S2) */
 	}
 	
 	/* Parameter VCONF */
@@ -714,13 +716,10 @@ static int _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	pkt[x++] = 1;		/* LI Length (1 byte) */
 	
 	b  = 1 << 5;		/* Always 001 */
-	//b |= 0 << 4;		/* Aspect ratio: 0: 4:3, 1: 16:9 -- note: inverse of line 625 flag */
-	b |= s->ratio << 4;
+	b |= s->ratio << 4;	/* Aspect ratio: 0: 4:3, 1: 16:9 -- note: inverse of line 625 flag */
 	b |= 0 << 3;		/* Compression ratio: always 0 for Cy = 3:2, Cu = 3:1 */
+	
 	/* VSAM Vision scrambling and access mode (3 bits) */
-	//b |= 0 << 2;		/* Access type: 0: Free access, 1: Controlled access */
-	//b |= 0 << 1;		/* Scramble type: 0: Double-cut rotation, 1: single-cut line rotation */
-	//b |= 1 << 0;		/* Scrambled: 0: Scrambled, 1: Unscrambled */
 	b |= s->vsam << 0;
 	pkt[x++] = b;
 	
@@ -809,12 +808,14 @@ static int _create_si_dg4_packet(mac_t *s, uint8_t *pkt, int golay)
 	if(s->eurocrypt && s->ec.emmode->id != NULL)
 	{
 		pkt[x++] = 0x78;
-		pkt[x++] = 0x03;        /* Packet length = 3 */
+		pkt[x++] = 0x04;        /* Packet length = 4 */
 		b  = 1 << 10;           /* Subframe related location - TDMCID 01 */
 		b |= s->ec.emm_addr;    /* Address 347 */
 		pkt[x++] = (b & 0x00FF) >> 0;
 		pkt[x++] = (b & 0xFF00) >> 8;
 		pkt[x++] = 0x40;        /* Eurocrypt */
+		pkt[x++] = (s->ec.emmode->cmode & 0x30);
+		                        /* Eurocrypt algo (M or S2) */
 	}
 	
 	/* Update the CI command length */
