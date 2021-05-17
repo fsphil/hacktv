@@ -143,26 +143,28 @@ int av_test_open(vid_t *s, char *test_screen)
 		}
 	}
 	
+	if(test_screen == NULL) test_screen = "pm5544";
+	
+	float img_ratio = (strcmp(test_screen, "pm5644") == 0) ? 16.0 / 9.0 : 4.0 / 3.0;
+	
 	/* Initialise default fonts */
 	
 	/* Clock */
-	font_init(s, 56, 4.0/3.0);
+	font_init(s, 56, img_ratio);
 	av->font[0] = s->av_font;
 	av->font[0]->x_loc = 50;
 	av->font[0]->y_loc = 50;
 	
 	/* HACKTV text*/
-	font_init(s, 72, 4.0/3.0);
+	font_init(s, 72, img_ratio);
 	av->font[1] = s->av_font;
 	av->font[1]->x_loc = 50;
 	av->font[1]->y_loc = 25;
 	
-	if(test_screen == NULL) test_screen = "pm5544";
-	
 	/* Overlay test screen */
 	if(av->vid_height == 576 && strcmp(test_screen, "colourbars") != 0)
 	{
-		if(load_png(&av->image, av->vid_width, av->vid_height, test_screen, 1.0, 4.0 / 3.0, IMG_TEST) == HACKTV_OK)
+		if(load_png(&av->image, av->vid_width, av->vid_height, test_screen, 1.0, img_ratio, IMG_TEST) == HACKTV_OK)
 		{	
 			overlay_image(av->video, &av->image, av->vid_width, av->vid_height, IMG_POS_FULL);
 			
@@ -170,10 +172,14 @@ int av_test_open(vid_t *s, char *test_screen)
 			{
 				av->font[0]->y_loc = 82.3;
 			}
+			else if(strcmp(test_screen, "pm5644") == 0)
+			{
+				av->font[0]->y_loc = 82;
+			}
 			else if(strcmp(test_screen, "fubk") == 0)
 			{
 				/* Reinit font with new size */
-				font_init(s, 44, 4.0/3.0);
+				font_init(s, 44, img_ratio);
 				av->font[0] = s->av_font;
 				av->font[0]->x_loc = 52;
 				av->font[0]->y_loc = 55.5;
