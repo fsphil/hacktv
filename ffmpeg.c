@@ -733,7 +733,7 @@ static void *_video_scaler_thread(void *arg)
 			{
 				/* best_effort_timestamp is very flaky - not really a good measure of current position and doesn't work some of the time */
 				char fmt[256];
-				sprintf(fmt,"%s", get_text_subtitle(av->s->av_sub, frame->best_effort_timestamp));
+				sprintf(fmt,"%s", get_text_subtitle(av->s->av_sub, frame->best_effort_timestamp / (av->video_stream->time_base.den / 1000)));
 				
 				if(av->s->conf.subtitles) print_subtitle(av->font[0], (uint32_t *) oframe->data[0], fmt);
 				
