@@ -41,6 +41,7 @@ const pngs_t png_logos[] = {
 
 const pngs_t png_tests[] = {
 	{ "pm5544",         _png_test_pm5544,    sizeof(_png_test_pm5544) },
+	{ "pm5644",         _png_test_pm5644,    sizeof(_png_test_pm5644) },
 	{ "fubk",           _png_test_fubk,      sizeof(_png_test_fubk) },
 	{ "ueitm",          _png_test_ueitm,     sizeof(_png_test_ueitm) },
 	{ NULL,             NULL,                0 }

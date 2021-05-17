@@ -31,7 +31,7 @@
 #define IMG_TEST 0
 #define IMG_LOGO 1
 
-#define MAX_PNG_SIZE 50
+#define MAX_PNG_SIZE 128
 
 typedef struct {
 	char *name;
