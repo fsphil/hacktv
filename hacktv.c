@@ -332,6 +332,7 @@ enum {
 	_OPT_CHID,
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
+	_OPT_FMAUDIOTEST,
 };
 
 int main(int argc, char *argv[])
@@ -369,6 +370,7 @@ int main(int argc, char *argv[])
 		{ "chid",           required_argument, 0, _OPT_CHID },
 		{ "offset",         required_argument, 0, _OPT_OFFSET },
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
+		{ "fmaudiotest",    no_argument,       0, _OPT_FMAUDIOTEST },
 		{ "frequency",      required_argument, 0, 'f' },
 		{ "amp",            no_argument,       0, 'a' },
 		{ "gain",           required_argument, 0, 'g' },
@@ -603,6 +605,10 @@ int main(int argc, char *argv[])
 			s.passthru = strdup(optarg);
 			break;
 		
+		case _OPT_FMAUDIOTEST: /* --fmaudiotest (undocumented, for testing only) */
+			s.fmaudiotest = 1;
+			break;
+		
 		case 'f': /* -f, --frequency <value> */
 			s.frequency = (uint64_t) strtod(optarg, NULL);
 			break;
@@ -718,7 +724,9 @@ int main(int argc, char *argv[])
 	if(s.noaudio > 0)
 	{
 		/* Disable all audio sub-carriers */
-		vid_conf.fm_audio_level = 0;
+		vid_conf.fm_mono_level = 0;
+		vid_conf.fm_left_level = 0;
+		vid_conf.fm_right_level = 0;
 		vid_conf.am_audio_level = 0;
 		vid_conf.nicam_level = 0;
 		vid_conf.dance_level = 0;
@@ -886,6 +894,7 @@ int main(int argc, char *argv[])
 	
 	vid_conf.offset = s.offset;
 	vid_conf.passthru = s.passthru;
+	vid_conf.fmaudiotest = s.fmaudiotest;
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, &vid_conf);
