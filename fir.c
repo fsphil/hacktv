@@ -437,29 +437,40 @@ void fir_int32_free(fir_int32_t *s)
 
 void limiter_free(limiter_t *s)
 {
-	fir_int32_free(&s->ifir);
+	fir_int32_free(&s->vfir);
+	fir_int32_free(&s->ffir);
 	free(s->shape);
-	free(s->app);
-	free(s->inv);
-	free(s->win);
+	free(s->att);
+	free(s->fix);
+	free(s->var);
 }
 
-int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *taps, int ntaps)
+int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *vtaps, const int32_t *ftaps, int ntaps)
 {
-	int i, w;
-	double *f, t;
-	int16_t *fi;
+	int i;
 	
 	memset(s, 0, sizeof(limiter_t));
 	
-	if(taps && ntaps > 0)
+	if(ntaps > 0)
 	{
-		/* Initialise input FIR filter */
-		i = fir_int32_init(&s->ifir, taps, ntaps);
-		if(i != 0)
+		if(vtaps)
 		{
-			limiter_free(s);
-			return(-1);
+			i = fir_int32_init(&s->vfir, vtaps, ntaps);
+			if(i != 0)
+			{
+				limiter_free(s);
+				return(-1);
+			}
+		}
+		
+		if(ftaps)
+		{
+			i = fir_int32_init(&s->ffir, ftaps, ntaps);
+			if(i != 0)
+			{
+				limiter_free(s);
+				return(-1);
+			}
 		}
 	}
 	
@@ -472,123 +483,80 @@ int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *taps, in
 		return(-1);
 	}
 	
-	f = malloc(sizeof(double) * s->width);
-	if(!f)
+	for(i = 0; i < s->width; i++)
 	{
-		limiter_free(s);
-		return(-1);
+		s->shape[i] = lround((1.0 - cos(2.0 * M_PI / (s->width + 1) * (i + 1))) * 0.5 * INT16_MAX);
 	}
-	
-	t = 0;
-	for(t = i = 0; i < s->width; i++)
-	{
-		t += f[i] = (1.0 - cos(2.0 * M_PI / (s->width + 1) * (i + 1))) * 0.5;
-		s->shape[i] = lround(f[i] * INT16_MAX);
-	}
-	
-	/* Generate the taps for the response filter */
-	w = s->width; // (s->width / 2) | 1;
-	
-	fi = malloc(sizeof(int16_t) * w);
-	if(!fi)
-	{
-		free(f);
-		limiter_free(s);
-		return(-1);
-	}
-	
-	//for(t = i = 0; i < w; i++)
-	//{
-	//	t += f[i] = (1.0 - cos(2.0 * M_PI / (w + 1) * (i + 1))) * 0.5;
-	//}
-	
-	for(i = 0; i < w; i++)
-	{
-		fi[i] = lround(f[i] / t * INT16_MAX);
-	}
-	fir_int16_init(&s->lfir, fi, w);
-	
-	free(f);
-	free(fi);
-	
-	s->length = s->width + (w / 2);
 	
 	/* Initial state */
 	s->level = level;
-	s->app = calloc(sizeof(int16_t), s->length);
-	s->inv = calloc(sizeof(int16_t), s->length);
-	s->win = calloc(sizeof(int32_t), s->length);
-	if(!s->app)
+	s->att = calloc(sizeof(int16_t), s->width);
+	s->fix = calloc(sizeof(int32_t), s->width);
+	s->var = calloc(sizeof(int32_t), s->width);
+	if(!s->att || !s->fix || !s->var)
 	{
 		limiter_free(s);
 		return(-1);
 	}
 	
 	s->p = 0;
-	s->h = s->length - (s->width / 2);
+	s->h = s->width / 2;
 	
 	return(0);
 }
 
-void limiter_process(limiter_t *s, int16_t *out, const int16_t *in, const int16_t *inv, int samples, int step)
+void limiter_process(limiter_t *s, int16_t *out, const int16_t *vin, const int16_t *fin, int samples, int step)
 {
 	int i, j;
-	int a, b;
-	int p;
-	int16_t fo = 0;
+	int32_t a, b;
 	
 	for(i = 0; i < samples; i++)
 	{
-		s->win[s->p] = *in;
-		s->inv[s->p] = (inv ? *inv : 0);
-		s->app[s->p] = 0;
+		s->var[s->p] = *vin;
+		s->fix[s->p] = (fin ? *fin : 0);
+		s->att[s->p] = 0;
 		
-		if(s->ifir.type)
-		{
-			fir_int32_process(&s->ifir, &s->win[s->p], &s->win[s->p], 1);
-		}
+		/* Apply input filters */
+		if(s->vfir.type) fir_int32_process(&s->vfir, &s->var[s->p], &s->var[s->p], 1);
+		if(s->ffir.type) fir_int32_process(&s->ffir, &s->fix[s->p], &s->fix[s->p], 1);
 		
-		/* Hard limit the invariable input */
-		if(s->inv[s->h] < -s->level) s->inv[s->h] = -s->level;
-		else if(s->inv[s->h] > s->level) s->inv[s->h] = s->level;
+		/* Hard limit the fixed input */
+		if(s->fix[s->p] < -s->level) s->fix[s->p] = -s->level;
+		else if(s->fix[s->p] > s->level) s->fix[s->p] = s->level;
 		
-		/* Soft limit the main input */
-		b = s->win[s->h];
-		a = abs(b + s->inv[s->h]);
+		/* The variable signal is the difference between vin and fin */
+		s->var[s->p] -= s->fix[s->p];
+		
+		if(++s->p == s->width) s->p = 0;
+		if(++s->h == s->width) s->h = 0;
+		
+		/* Soft limit the variable input */
+		a = abs(s->var[s->h] + s->fix[s->h]);
 		if(a > s->level)
 		{
-			a = 32767 - (s->level + abs(b) - a) * 32767 / abs(b);
+			a = INT16_MAX - (s->level + abs(s->var[s->h]) - a) * INT16_MAX / abs(s->var[s->h]);
 			
-			p = s->p;
 			for(j = 0; j < s->width; j++)
 			{
 				b = (a * s->shape[j]) >> 15;
-				if(b > s->app[p]) s->app[p] = b;
-				if(p-- == 0) p = s->length - 1;
+				if(b > INT16_MAX) b = INT16_MAX;
+				if(b > s->att[s->p]) s->att[s->p] = b;
+				if(++s->p == s->width) s->p = 0;
 			}
 		}
 		
-		if(++s->p == s->length) s->p = 0;
-		if(++s->h == s->length) s->h = 0;
+		a  = s->fix[s->p];
+		a += ((int64_t) s->var[s->p] * (INT16_MAX - s->att[s->p])) >> 15;
 		
-		p = s->p - s->width;
-		if(p < 0) p += s->length;
-		
-		fir_int16_process(&s->lfir, &fo, &s->app[p], 1);
-		if(fo > s->app[s->p]) s->app[s->p] = fo;
-		
-		a  = s->inv[s->p];
-		a += ((int32_t) s->win[s->p] * (32767 - s->app[s->p])) >> 15;
-		
-		/* Hard limit to catch errors */
+		/* Hard limit to catch rounding errors */
 		if(a < -s->level) a = -s->level;
 		else if(a > s->level) a = s->level;
 		
 		*out = a;
 		
-		in += step;
+		vin += step;
 		out += step;
-		if(inv) inv += step;
+		if(fin) fin += step;
 	}
 }
 

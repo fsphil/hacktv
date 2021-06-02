@@ -1674,7 +1674,11 @@ const int16_t fm_mac_taps[] = {
 	-2,5,-8,10,-11,8,1,-16,38,-65,93,-115,124,-111,69,5,-112,239,-382,498,-596,585,-543,267,-54,-622,837,-2115,1741,-4241,1702,-7544,-1383,32606,4417,-4102,3619,-3012,2335,-1645,995,-429,-21,342,-531,603,-580,490,-363,225,-98,-5,75,-114,124,-113,90,-62,35,-14,-1,9,-11,10,-7,4,-2
 };
 
-/* 32khz 50us and 75us audio pre-emphasis taps */
+/* 32khz low pass filter taps, with no, 50us and 75us pre-emphasis taps */
+const int32_t fm_audio_flat_taps[65] = {
+	0, 1, -4, 8, -14, 21, -28, 34, -36, 31, -16, -10, 49, -99, 158, -220, 275, -314, 323, -292, 208, -63, -147, 421, -751, 1123, -1520, 1917, -2290, 2612, -2861, 3018, 29695, 3018, -2861, 2612, -2290, 1917, -1520, 1123, -751, 421, -147, -63, 208, -292, 323, -314, 275, -220, 158, -99, 49, -10, -16, 31, -36, 34, -28, 21, -14, 8, -4, 1, 0
+};
+
 const int32_t fm_audio_50us_taps[65] = {
 	-84, 104, -118, 114, -76, -17, 186, -448, 812, -1269, 1790, -2321, 2781, -3064, 3049, -2610, 1636, -51, -2161, 4936, -8110, 11401, -14403, 16587, -17302, 15790, -11200, 2590, 11061, -30873, 58092, -94151, 62881, 50994, -43868, 36151, -28284, 20686, -13723, 7677, -2737, -1015, 3592, -5091, 5674, -5539, 4903, -3972, 2927, -1913, 1029, -334, -155, 448, -577, 584, -514, 405, -288, 184, -104, 50, -18, 4, 0
 };
@@ -2663,7 +2667,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				s->fm_mono.sample = (audio[0] + audio[1]) / 2;
 				if(s->fm_mono.limiter.width)
 				{
-					limiter_process(&s->fm_mono.limiter, &s->fm_mono.sample, &s->fm_mono.sample, NULL, 1, 1);
+					limiter_process(&s->fm_mono.limiter, &s->fm_mono.sample, &s->fm_mono.sample, &s->fm_mono.sample, 1, 1);
 				}
 			}
 			
@@ -2672,7 +2676,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				s->fm_left.sample = audio[0];
 				if(s->fm_left.limiter.width)
 				{
-					limiter_process(&s->fm_left.limiter, &s->fm_left.sample, &s->fm_left.sample, NULL, 1, 1);
+					limiter_process(&s->fm_left.limiter, &s->fm_left.sample, &s->fm_left.sample, &s->fm_left.sample, 1, 1);
 				}
 			}
 			
@@ -2681,7 +2685,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				s->fm_right.sample = audio[1];
 				if(s->fm_right.limiter.width)
 				{
-					limiter_process(&s->fm_right.limiter, &s->fm_right.sample, &s->fm_right.sample, NULL, 1, 1);
+					limiter_process(&s->fm_right.limiter, &s->fm_right.sample, &s->fm_right.sample, &s->fm_right.sample, 1, 1);
 				}
 			}
 			
@@ -3277,7 +3281,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 				break;
 			}
 			
-			r = limiter_init(&s->fm_mono.limiter, INT16_MAX, 41, taps, ntaps);
+			r = limiter_init(&s->fm_mono.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
 			if(r != 0)
 			{
 				vid_free(s);
@@ -3314,7 +3318,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 				break;
 			}
 			
-			r = limiter_init(&s->fm_left.limiter, INT16_MAX, 41, taps, ntaps);
+			r = limiter_init(&s->fm_left.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
 			if(r != 0)
 			{
 				vid_free(s);
@@ -3351,7 +3355,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 				break;
 			}
 			
-			r = limiter_init(&s->fm_right.limiter, INT16_MAX, 41, taps, ntaps);
+			r = limiter_init(&s->fm_right.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
 			if(r != 0)
 			{
 				vid_free(s);

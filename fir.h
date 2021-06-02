@@ -68,30 +68,27 @@ extern void iir_fm_preemphasis(double *dtaps, const double *taps, size_t ntaps, 
 
 typedef struct {
 	
-	/* Input FIR filter */
-	fir_int32_t ifir;
+	/* Input fir filters */
+	fir_int32_t vfir;
+	fir_int32_t ffir;
 	
 	/* Limiter shape */
 	int width;
 	int16_t *shape;
 	
-	/* Limiter filter */
-	fir_int16_t lfir;
-	
 	/* Limiter state */
-	int length;
 	int16_t level;
-	int16_t *app;
-	int16_t *inv;
-	int32_t *win;
+	int32_t *fix;
+	int32_t *var;
+	int16_t *att;
 	int p;
 	int h;
 	
 } limiter_t;
 
 extern void limiter_free(limiter_t *s);
-extern int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *taps, int ntaps);
-extern void limiter_process(limiter_t *s, int16_t *out, const int16_t *in, const int16_t *inv, int samples, int step);
+extern int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *vtaps, const int32_t *ftaps, int ntaps);
+extern void limiter_process(limiter_t *s, int16_t *out, const int16_t *vin, const int16_t *fin, int samples, int step);
 
 #endif
 
