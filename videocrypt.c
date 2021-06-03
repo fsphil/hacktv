@@ -200,6 +200,21 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		_vc_seed_p03(&s->blocks[0]);
 		_vc_seed_p03(&s->blocks[1]);
 	}
+	else if(strcmp(mode, "skymovies05") == 0)
+	{
+		s->blocks    = _sky05_blocks_sky_movies;
+		s->block_len = 2;
+	}
+	else if(strcmp(mode, "skysports05") == 0)
+	{
+		s->blocks    = _sky05_blocks_sky_sports;
+		s->block_len = 2;
+	}
+	else if(strcmp(mode, "sky05") == 0)
+	{
+		s->blocks    = _sky05_blocks;
+		s->block_len = 2;
+	}
 	else if(strcmp(mode, "sky07") == 0)
 	{
 		s->blocks    = _sky07_blocks;
@@ -552,7 +567,7 @@ int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 				fprintf(stderr, "\n\nVC1 ECM In:  ");
 				for(i = 0; i < 31; i++) fprintf(stderr, "%02X ", v->blocks[v->block].messages[strcmp(mode,"ppv") == 0 ? 0 : 5][i]);
 				fprintf(stderr,"\nVC1 ECM Out: ");
-				for(i = 0; i < 8; i++) fprintf(stderr, "%02" PRIx64 " ", v->cw >> (8 * i) & 0xFF);
+				for(i = 0; i < 8; i++) fprintf(stderr, "%02" PRIX64 " ", v->cw >> (8 * i) & 0xFF);
 				
 				if(s->conf.enableemm || s->conf.disableemm)
 				{
