@@ -210,6 +210,11 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 		s->blocks    = _sky05_blocks_sky_sports;
 		s->block_len = 2;
 	}
+	else if(strcmp(mode, "comedychannel05") == 0)
+	{
+		s->blocks    = _sky05_blocks_comedy_channel;
+		s->block_len = 2;
+	}
 	else if(strcmp(mode, "sky05") == 0)
 	{
 		s->blocks    = _sky05_blocks;
