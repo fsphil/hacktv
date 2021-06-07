@@ -26,7 +26,6 @@ It also supports:
 
 WHAT'S IT NOT DO (yet)
 
-+ There are no filters. Needed for proper audio and VSB modulation
 + An optional notch filter for the colour subcarrier would be nice
 
 
