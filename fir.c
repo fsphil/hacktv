@@ -539,7 +539,6 @@ void limiter_process(limiter_t *s, int16_t *out, const int16_t *vin, const int16
 			for(j = 0; j < s->width; j++)
 			{
 				b = (a * s->shape[j]) >> 15;
-				if(b > INT16_MAX) b = INT16_MAX;
 				if(b > s->att[s->p]) s->att[s->p] = b;
 				if(++s->p == s->width) s->p = 0;
 			}
