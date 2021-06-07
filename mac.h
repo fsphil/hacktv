@@ -42,6 +42,8 @@
 #define MAC_VSAM_CONTROLLED_ACCESS_DOUBLE_CUT 4 /* 100: controlled access, double-cut component rotation scrambling */
 #define MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT 6 /* 110: controlled access, single-cut line rotation scrambling */
 
+#define MAC_OVERLAP 3
+
 /* Video aspect ratios */
 #define MAC_RATIO_4_3  0
 #define MAC_RATIO_16_9 1
