@@ -206,9 +206,6 @@ typedef struct {
 	double qu_co;
 	double qv_co;
 	
-	/* FM audio options */
-	int fmaudiotest;
-	
 	/* FM audio (Mono) */
 	double fm_mono_carrier;
 	double fm_mono_deviation;

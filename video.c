@@ -3266,7 +3266,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			return(r);
 		}
 		
-		if(s->conf.fm_mono_preemph && s->conf.fmaudiotest)
+		if(s->conf.fm_mono_preemph)
 		{
 			const int32_t *taps = NULL;
 			int ntaps = 0;
@@ -3303,7 +3303,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			return(r);
 		}
 		
-		if(s->conf.fm_left_preemph && s->conf.fmaudiotest)
+		if(s->conf.fm_left_preemph)
 		{
 			const int32_t *taps = NULL;
 			int ntaps = 0;
@@ -3340,7 +3340,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			return(r);
 		}
 		
-		if(s->conf.fm_right_preemph && s->conf.fmaudiotest)
+		if(s->conf.fm_right_preemph)
 		{
 			const int32_t *taps = NULL;
 			int ntaps = 0;
