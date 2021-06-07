@@ -103,6 +103,7 @@ typedef struct {
 	char *passthru;
 	float volume;
 	int downmix;
+	int fmaudiotest;
 	
 	/* Video encoder state */
 	vid_t vid;

@@ -53,7 +53,7 @@ const vid_config_t vid_config_pal_i = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.71, /* Power level of video */
-	.fm_audio_level = 0.22, /* FM audio carrier power level */
+	.fm_mono_level  = 0.22, /* FM audio carrier power level */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
@@ -91,9 +91,9 @@ const vid_config_t vid_config_pal_i = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	.fm_mono_carrier    = 6000000 - 400, /* Hz */
-	.fm_audio_preemph   = 0.000050, /* Seconds */
-	.fm_audio_deviation = 50000, /* +/- Hz */
+	.fm_mono_carrier   = 6000000 - 400, /* Hz */
+	.fm_mono_deviation = 50000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US,
 	
 	.nicam_carrier  = 6552000, /* Hz */
 	.nicam_beta     = 1.0,
@@ -111,7 +111,7 @@ const vid_config_t vid_config_pal_bg = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.71, /* Power level of video */
-	.fm_audio_level = 0.22, /* FM audio carrier power level */
+	.fm_mono_level  = 0.22, /* FM audio carrier power level */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
@@ -149,9 +149,9 @@ const vid_config_t vid_config_pal_bg = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	.fm_mono_carrier    = 5500000, /* Hz */
-	.fm_audio_preemph   = 0.000050, /* Seconds */
-	.fm_audio_deviation = 50000, /* +/- Hz */
+	.fm_mono_carrier   = 5500000, /* Hz */
+	.fm_mono_deviation = 50000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
 	
 	.nicam_carrier  = 5850000, /* Hz */
 	.nicam_beta     = 0.4,
@@ -169,7 +169,9 @@ const vid_config_t vid_config_pal_fm = {
 	.level          = 0.8, /* Overall signal level */
 	
 	.video_level    = 1.00, /* Power level of video */
-	.fm_audio_level = 0.05, /* FM audio carrier power level */
+	.fm_mono_level  = 0.06, /* FM audio carrier power level */
+	//.fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
+	//.fm_right_level = 0.04, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -206,11 +208,17 @@ const vid_config_t vid_config_pal_fm = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7020000, /* Hz */
+	.fm_mono_carrier   = 6500000, /* Hz */
+	.fm_mono_deviation = 85000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
+	
+	//.fm_left_carrier   = 7020000, /* Hz */
+	//.fm_left_deviation = 50000, /* +/- Hz */
+	//.fm_left_preemph   = VID_75US, /* Seconds */
+	
 	//.fm_right_carrier   = 7200000, /* Hz */
-	.fm_audio_preemph   = 0.000050, /* Seconds */
-	.fm_audio_deviation = 85000, /* +/- Hz */
+	//.fm_right_deviation = 50000, /* +/- Hz */
+	//.fm_right_preemph   = VID_75US, /* Seconds */
 };
 
 const vid_config_t vid_config_pal = {
@@ -271,7 +279,7 @@ const vid_config_t vid_config_pal_m = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.83, /* Power level of video */
-	.fm_audio_level = 0.17, /* FM audio carrier power level */
+	.fm_mono_level  = 0.17, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
@@ -308,9 +316,9 @@ const vid_config_t vid_config_pal_m = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	.fm_mono_carrier    = 4500000, /* Hz */
-	.fm_audio_preemph   = 0.000075, /* Seconds */
-	.fm_audio_deviation = 25000, /* +/- Hz */
+	.fm_mono_carrier   = 4500000, /* Hz */
+	.fm_mono_deviation = 25000, /* +/- Hz */
+	.fm_mono_preemph   = VID_75US, /* Seconds */
 };
 
 const vid_config_t vid_config_525pal = {
@@ -423,7 +431,7 @@ const vid_config_t vid_config_secam_dk = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.70, /* Power level of video */
-	.fm_audio_level = 0.20, /* FM audio carrier power level */
+	.fm_mono_level  = 0.20, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -456,9 +464,9 @@ const vid_config_t vid_config_secam_dk = {
 	.qu_co          = 0.000,
 	.qv_co          = -2.000,
 	
-	.fm_mono_carrier    = 6500000, /* Hz */
-	.fm_audio_preemph   = 0.000050, /* Seconds */
-	.fm_audio_deviation = 50000, /* +/- Hz */
+	.fm_mono_carrier   = 6500000, /* Hz */
+	.fm_mono_deviation = 50000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
 };
 
 const vid_config_t vid_config_secam_fm = {
@@ -473,7 +481,9 @@ const vid_config_t vid_config_secam_fm = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 1.00, /* Power level of video */
-	.fm_audio_level = 0.05, /* FM audio carrier power level */
+	.fm_mono_level  = 0.05, /* FM audio carrier power level */
+	//.fm_left_level  = 0.025, /* FM stereo left audio carrier power level */
+	//.fm_right_level = 0.025, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -506,11 +516,17 @@ const vid_config_t vid_config_secam_fm = {
 	.qu_co          = 0.000,
 	.qv_co          = -2.000,
 	
-	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7020000, /* Hz */
+	.fm_mono_carrier   = 6500000, /* Hz */
+	.fm_mono_deviation = 85000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
+	
+	//.fm_left_carrier   = 7020000, /* Hz */
+	//.fm_left_deviation = 50000, /* +/- Hz */
+	//.fm_left_preemph   = VID_50US, /* Seconds */
+	
 	//.fm_right_carrier   = 7200000, /* Hz */
-	.fm_audio_preemph   = 0.000050, /* Seconds */
-	.fm_audio_deviation = 85000, /* +/- Hz */
+	//.fm_right_deviation = 50000, /* +/- Hz */
+	//.fm_right_preemph   = VID_50US, /* Seconds */
 };
 
 const vid_config_t vid_config_secam = {
@@ -567,7 +583,7 @@ const vid_config_t vid_config_ntsc_m = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.83, /* Power level of video */
-	.fm_audio_level = 0.17, /* FM audio carrier power level */
+	.fm_mono_level  = 0.17, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
@@ -604,13 +620,9 @@ const vid_config_t vid_config_ntsc_m = {
 	.qu_co          =  0.493,
 	.qv_co          =  0.000,
 	
-	// .fm_mono_carrier    = 4500000, /* Hz */
-	// .fm_audio_preemph   = 0.000075, /* Seconds */
-	// .fm_audio_deviation = 25000, /* +/- Hz */
-	
-	.fm_mono_carrier    = 6000000 - 400, /* Hz */
-	.fm_audio_preemph   = 0.000050, /* Seconds */
-	.fm_audio_deviation = 50000, /* +/- Hz */
+	.fm_mono_carrier   = 4500000, /* Hz */
+	.fm_mono_deviation = 25000, /* +/- Hz */
+	.fm_mono_preemph   = VID_75US,
 };
 
 const vid_config_t vid_config_ntsc_fm = {
@@ -625,7 +637,9 @@ const vid_config_t vid_config_ntsc_fm = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 1.00, /* Power level of video */
-	.fm_audio_level = 0.05, /* FM audio carrier power level */
+	.fm_mono_level  = 0.05, /* FM audio carrier power level */
+	//.fm_left_level  = 0.025, /* FM stereo left audio carrier power level */
+	//.fm_right_level = 0.025, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate_num = 30000,
@@ -662,11 +676,17 @@ const vid_config_t vid_config_ntsc_fm = {
 	.qu_co          =  0.493,
 	.qv_co          =  0.000,
 	
-	.fm_mono_carrier    = 6500000, /* Hz */
-	//.fm_left_carrier    = 7020000, /* Hz */
+	.fm_mono_carrier   = 6500000, /* Hz */
+	.fm_mono_deviation = 85000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
+	
+	//.fm_left_carrier   = 7020000, /* Hz */
+	//.fm_left_deviation = 50000, /* +/- Hz */
+	//.fm_left_preemph   = VID_50US, /* Seconds */
+	
 	//.fm_right_carrier   = 7200000, /* Hz */
-	.fm_audio_preemph   = 0.000050, /* Seconds */
-	.fm_audio_deviation = 85000, /* +/- Hz */
+	//.fm_right_deviation = 50000, /* +/- Hz */
+	//.fm_right_preemph   = VID_50US, /* Seconds */
 };
 
 const vid_config_t vid_config_ntsc_bs_fm = {
@@ -1327,7 +1347,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	
 	.level          = 1.000, /* Overall signal level */
 	.video_level    = 1.000, /* Power level of video */
-	.fm_audio_level = 0.150, /* Power level of audio */
+	.fm_mono_level  = 0.150, /* Power level of audio */
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
@@ -1366,8 +1386,9 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	 * to 750kHz (Apollo 10 to 14) or cancelled out
 	 * in post-processing (Apollo 15-17). */
 	
-	.fm_mono_carrier    = 1250000, /* Hz */
-	.fm_audio_deviation = 25000, /* +/- Hz */
+	.fm_mono_carrier   = 1250000, /* Hz */
+	.fm_mono_deviation = 25000, /* +/- Hz */
+	.fm_mono_preemph   = VID_NONE,
 };
 
 const vid_config_t vid_config_apollo_colour = {
@@ -1414,7 +1435,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	
 	.level          = 1.000, /* Overall signal level */
 	.video_level    = 1.000, /* Power level of video */
-	.fm_audio_level = 0.150, /* Power level of audio */
+	.fm_mono_level  = 0.150, /* Power level of audio */
 	
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
@@ -1451,8 +1472,9 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
 	
-	.fm_mono_carrier    = 1250000, /* Hz */
-	.fm_audio_deviation = 25000, /* +/- Hz */
+	.fm_mono_carrier   = 1250000, /* Hz */
+	.fm_mono_deviation = 25000, /* +/- Hz */
+	.fm_mono_preemph   = VID_NONE,
 };
 
 const vid_config_t vid_config_apollo_mono = {
@@ -1507,7 +1529,7 @@ const vid_config_t vid_config_cbs405_m = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.83, /* Power level of video */
-	.fm_audio_level = 0.17, /* FM audio carrier power level */
+	.fm_mono_level  = 0.17, /* FM audio carrier power level */
 	
 	.type           = VID_CBS_405,
 	.frame_rate_num = 72,
@@ -1536,9 +1558,9 @@ const vid_config_t vid_config_cbs405_m = {
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
 	
-	.fm_mono_carrier    = 4500000, /* Hz */
-	.fm_audio_preemph   = 0.000075, /* Seconds */
-	.fm_audio_deviation = 25000, /* +/- Hz */
+	.fm_mono_carrier   = 4500000, /* Hz */
+	.fm_mono_deviation = 25000, /* +/- Hz */
+	.fm_mono_preemph   = 0.000075, /* Seconds */
 };
 
 const vid_config_t vid_config_cbs405 = {
@@ -1652,6 +1674,19 @@ const int16_t fm_525_taps[] = {
 /* Test taps for D/D2-MAC pre-emphasis at 20.25 MHz */
 const int16_t fm_mac_taps[] = {
 	-2,5,-8,10,-11,8,1,-16,38,-65,93,-115,124,-111,69,5,-112,239,-382,498,-596,585,-543,267,-54,-622,837,-2115,1741,-4241,1702,-7544,-1383,32606,4417,-4102,3619,-3012,2335,-1645,995,-429,-21,342,-531,603,-580,490,-363,225,-98,-5,75,-114,124,-113,90,-62,35,-14,-1,9,-11,10,-7,4,-2
+};
+
+/* 32khz low pass filter taps, with no, 50us and 75us pre-emphasis taps */
+const int32_t fm_audio_flat_taps[65] = {
+	0, 1, -4, 8, -14, 21, -28, 34, -36, 31, -16, -10, 49, -99, 158, -220, 275, -314, 323, -292, 208, -63, -147, 421, -751, 1123, -1520, 1917, -2290, 2612, -2861, 3018, 29695, 3018, -2861, 2612, -2290, 1917, -1520, 1123, -751, 421, -147, -63, 208, -292, 323, -314, 275, -220, 158, -99, 49, -10, -16, 31, -36, 34, -28, 21, -14, 8, -4, 1, 0
+};
+
+const int32_t fm_audio_50us_taps[65] = {
+	66, -84, 104, -118, 114, -76, -17, 186, -448, 812, -1269, 1790, -2321, 2781, -3064, 3049, -2610, 1636, -51, -2161, 4936, -8110, 11401, -14403, 16587, -17302, 15790, -11200, 2590, 11061, -30873, 58092, -94151, 62881, 50994, -43868, 36151, -28284, 20686, -13723, 7677, -2737, -1015, 3592, -5091, 5674, -5539, 4903, -3972, 2927, -1913, 1029, -334, -155, 448, -577, 584, -514, 405, -288, 184, -104, 50, -18, 4
+};
+
+const int32_t fm_audio_75us_taps[65] = {
+	102, -130, 160, -180, 172, -110, -38, 304, -713, 1277, -1982, 2782, -3591, 4282, -4693, 4637, -3923, 2383, 93, -3525, 7808, -12679, 17698, -22234, 25467, -26393, 23847, -16517, 2960, 18394, -49266, 91575, -147527, 81111, 77348, -66394, 54574, -42563, 30997, -20426, 11278, -3828, -1804, 5646, -7854, 8676, -8422, 7419, -5981, 4384, -2843, 1507, -462, -267, 699, -885, 888, -776, 608, -431, 274, -154, 73, -27, 6
 };
 
 static double _dlimit(double v, double min, double max)
@@ -2567,6 +2602,7 @@ static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lin
 	
 	x1 = p->offset;
 	x2 = s->width - x1;
+	
 	fir_int16_process(&p->fir, &lines[0]->output[x1 * 2], &src->output[0], x2);
 	fir_int16_process(&p->fir, &lines[1]->output[0], &src->output[x2 * 2], x1);
 	
@@ -2584,7 +2620,7 @@ static void _vid_filter_free(vid_t *s, void *arg)
 static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vid_line_t *l = lines[0];
-	static int16_t audio[2] = { 0, 0 };
+	int16_t audio[2] = { 0, 0 };
 	static int interp = 0;
 	int x;
 	
@@ -2623,6 +2659,38 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				audio[1] = 0;
 			}
 			
+			if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
+			{
+				s->am_mono.sample = (audio[0] + audio[1]) / 2;
+			}
+			
+			if(s->conf.fm_mono_level > 0 && s->conf.fm_mono_carrier != 0)
+			{
+				s->fm_mono.sample = (audio[0] + audio[1]) / 2;
+				if(s->fm_mono.limiter.width)
+				{
+					limiter_process(&s->fm_mono.limiter, &s->fm_mono.sample, &s->fm_mono.sample, &s->fm_mono.sample, 1, 1);
+				}
+			}
+			
+			if(s->conf.fm_left_level > 0 && s->conf.fm_left_carrier != 0)
+			{
+				s->fm_left.sample = audio[0];
+				if(s->fm_left.limiter.width)
+				{
+					limiter_process(&s->fm_left.limiter, &s->fm_left.sample, &s->fm_left.sample, &s->fm_left.sample, 1, 1);
+				}
+			}
+			
+			if(s->conf.fm_right_level > 0 && s->conf.fm_right_carrier != 0)
+			{
+				s->fm_right.sample = audio[1];
+				if(s->fm_right.limiter.width)
+				{
+					limiter_process(&s->fm_right.limiter, &s->fm_right.sample, &s->fm_right.sample, &s->fm_right.sample, 1, 1);
+				}
+			}
+			
 			if((s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0) ||
 			   s->conf.type == VID_MAC)
 			{
@@ -2658,24 +2726,24 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 			}
 		}
 		
-		if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
+		if(s->conf.fm_mono_level > 0 && s->conf.fm_mono_carrier != 0)
 		{
-			_fm_modulator_add(&s->fm_mono, add, (audio[0] + audio[1]) / 2);
+			_fm_modulator_add(&s->fm_mono, add, s->fm_mono.sample);
 		}
 		
-		if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
+		if(s->conf.fm_left_level > 0 && s->conf.fm_left_carrier != 0)
 		{
-			_fm_modulator_add(&s->fm_left, add, audio[0]);
+			_fm_modulator_add(&s->fm_left, add, s->fm_left.sample);
 		}
 		
-		if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
+		if(s->conf.fm_right_level > 0 && s->conf.fm_right_carrier != 0)
 		{
-			_fm_modulator_add(&s->fm_right, add, audio[1]);
+			_fm_modulator_add(&s->fm_right, add, s->fm_right.sample);
 		}
 		
 		if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
 		{
-			_am_modulator_add(&s->am_mono, add, (audio[0] + audio[1]) / 2);
+			_am_modulator_add(&s->am_mono, add, s->am_mono.sample);
 		}
 		
 		l->output[x * 2 + 0] += add[0];
@@ -2872,7 +2940,7 @@ static int _init_vfilter(vid_t *s)
 			}
 		}
 		
-		fir_int16_init(&p->fir, taps, ntaps);	
+		fir_int16_init(&p->fir, taps, ntaps);
 	}
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
@@ -3201,37 +3269,112 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	}
 	
 	/* FM audio */
-	if(s->conf.fm_audio_level > 0 && s->conf.fm_mono_carrier != 0)
+	if(s->conf.fm_mono_level > 0 && s->conf.fm_mono_carrier != 0)
 	{
-		r = _init_fm_modulator(&s->fm_mono, s->sample_rate, s->conf.fm_mono_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
+		r = _init_fm_modulator(&s->fm_mono, s->sample_rate, s->conf.fm_mono_carrier, s->conf.fm_mono_deviation, s->conf.fm_mono_level * slevel);
 		if(r != VID_OK)
 		{
 			vid_free(s);
 			return(r);
 		}
 		
+		if(s->conf.fm_mono_preemph && s->conf.fmaudiotest)
+		{
+			const int32_t *taps = NULL;
+			int ntaps = 0;
+			
+			switch(s->conf.fm_mono_preemph)
+			{
+			case VID_50US:
+				taps = fm_audio_50us_taps;
+				ntaps = sizeof(fm_audio_50us_taps) / sizeof(int32_t);
+				break;
+			case VID_75US:
+				taps = fm_audio_75us_taps;
+				ntaps = sizeof(fm_audio_75us_taps) / sizeof(int32_t);
+				break;
+			}
+			
+			r = limiter_init(&s->fm_mono.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
+			if(r != 0)
+			{
+				vid_free(s);
+				return(VID_OUT_OF_MEMORY);
+			}
+		}
+		
 		s->audio = 1;
 	}
 	
-	if(s->conf.fm_audio_level > 0 && s->conf.fm_left_carrier != 0)
+	if(s->conf.fm_left_level > 0 && s->conf.fm_left_carrier != 0)
 	{
-		r = _init_fm_modulator(&s->fm_left, s->sample_rate, s->conf.fm_left_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
+		r = _init_fm_modulator(&s->fm_left, s->sample_rate, s->conf.fm_left_carrier, s->conf.fm_left_deviation, s->conf.fm_left_level * slevel);
 		if(r != VID_OK)
 		{
 			vid_free(s);
 			return(r);
 		}
 		
+		if(s->conf.fm_left_preemph && s->conf.fmaudiotest)
+		{
+			const int32_t *taps = NULL;
+			int ntaps = 0;
+			
+			switch(s->conf.fm_left_preemph)
+			{
+			case VID_50US:
+				taps = fm_audio_50us_taps;
+				ntaps = sizeof(fm_audio_50us_taps) / sizeof(int32_t);
+				break;
+			case VID_75US:
+				taps = fm_audio_75us_taps;
+				ntaps = sizeof(fm_audio_75us_taps) / sizeof(int32_t);
+				break;
+			}
+			
+			r = limiter_init(&s->fm_left.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
+			if(r != 0)
+			{
+				vid_free(s);
+				return(VID_OUT_OF_MEMORY);
+			}
+		}
+		
 		s->audio = 1;
 	}
 	
-	if(s->conf.fm_audio_level > 0 && s->conf.fm_right_carrier != 0)
+	if(s->conf.fm_right_level > 0 && s->conf.fm_right_carrier != 0)
 	{
-		r = _init_fm_modulator(&s->fm_right, s->sample_rate, s->conf.fm_right_carrier, s->conf.fm_audio_deviation, s->conf.fm_audio_level * slevel);
+		r = _init_fm_modulator(&s->fm_right, s->sample_rate, s->conf.fm_right_carrier, s->conf.fm_right_deviation, s->conf.fm_right_level * slevel);
 		if(r != VID_OK)
 		{
 			vid_free(s);
 			return(r);
+		}
+		
+		if(s->conf.fm_right_preemph && s->conf.fmaudiotest)
+		{
+			const int32_t *taps = NULL;
+			int ntaps = 0;
+			
+			switch(s->conf.fm_right_preemph)
+			{
+			case VID_50US:
+				taps = fm_audio_50us_taps;
+				ntaps = sizeof(fm_audio_50us_taps) / sizeof(int32_t);
+				break;
+			case VID_75US:
+				taps = fm_audio_75us_taps;
+				ntaps = sizeof(fm_audio_75us_taps) / sizeof(int32_t);
+				break;
+			}
+			
+			r = limiter_init(&s->fm_right.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
+			if(r != 0)
+			{
+				vid_free(s);
+				return(VID_OUT_OF_MEMORY);
+			}
 		}
 		
 		s->audio = 1;
@@ -3468,6 +3611,9 @@ void vid_free(vid_t *s)
 	_free_fm_modulator(&s->fm_mono);
 	_free_fm_modulator(&s->fm_left);
 	_free_fm_modulator(&s->fm_right);
+	limiter_free(&s->fm_mono.limiter);
+	limiter_free(&s->fm_left.limiter);
+	limiter_free(&s->fm_right.limiter);
 	dance_mod_free(&s->dance);
 	nicam_mod_free(&s->nicam);
 	_free_am_modulator(&s->am_mono);

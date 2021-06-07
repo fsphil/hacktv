@@ -215,7 +215,6 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t
 	return(samples);
 }
 
-
 void fir_int16_free(fir_int16_t *s)
 {
 	free(s->win);
@@ -356,5 +355,208 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *i
 	}
 	
 	return(samples);
+}
+
+
+
+/* int32_t */
+
+
+
+int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps)
+{
+	int i;
+	
+	s->type  = 1;
+	s->ntaps = ntaps;
+	s->itaps = malloc(s->ntaps * sizeof(int32_t));
+	s->qtaps = NULL;
+	
+	for(i = 0; i < ntaps; i++)
+	{
+		s->itaps[i] = taps[i];
+	}
+	
+	s->win = calloc(s->ntaps * 2, sizeof(int32_t));
+	s->owin = 0;
+	
+	return(0);
+}
+
+size_t fir_int32_process(fir_int32_t *s, int32_t *out, const int32_t *in, size_t samples)
+{
+	int64_t a;
+	int x;
+	int y;
+	int p;
+	
+	if(s->type == 0) return(0);
+	//else if(s->type == 2) return(fir_int32_complex_process(s, out, in, samples));
+	//else if(s->type == 3) return(fir_int32_scomplex_process(s, out, in, samples));
+	
+	for(x = 0; x < samples; x++)
+	{
+		/* Append the next input sample to the round buffer */
+		s->win[s->owin] = s->win[s->owin + s->ntaps] = *in;
+		if(++s->owin == s->ntaps) s->owin = 0;
+		
+		/* Calculate the next output sample */
+		a = 0;
+		p = s->owin;
+		
+		for(y = 0; y < s->ntaps; y++, p++)
+		{
+			a += (int64_t) s->win[p] * (int64_t) s->itaps[y];
+		}
+		
+		a >>= 15;
+		if(a > INT32_MAX) a = INT32_MAX;
+		else if(a < INT32_MIN) a = INT32_MIN;
+		
+		*out = a;
+		out += 2;
+		in += 2;
+	}
+	
+	return(samples);
+}
+
+void fir_int32_free(fir_int32_t *s)
+{
+	free(s->win);
+	free(s->itaps);
+	free(s->qtaps);
+	memset(s, 0, sizeof(fir_int32_t));
+}
+
+
+
+/* Soft Limiter */
+
+
+
+void limiter_free(limiter_t *s)
+{
+	fir_int32_free(&s->vfir);
+	fir_int32_free(&s->ffir);
+	free(s->shape);
+	free(s->att);
+	free(s->fix);
+	free(s->var);
+}
+
+int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *vtaps, const int32_t *ftaps, int ntaps)
+{
+	int i;
+	
+	memset(s, 0, sizeof(limiter_t));
+	
+	if(ntaps > 0)
+	{
+		if(vtaps)
+		{
+			i = fir_int32_init(&s->vfir, vtaps, ntaps);
+			if(i != 0)
+			{
+				limiter_free(s);
+				return(-1);
+			}
+		}
+		
+		if(ftaps)
+		{
+			i = fir_int32_init(&s->ffir, ftaps, ntaps);
+			if(i != 0)
+			{
+				limiter_free(s);
+				return(-1);
+			}
+		}
+	}
+	
+	/* Generate the limiter response shape */
+	s->width = width | 1;
+	s->shape = malloc(sizeof(int16_t) * s->width);
+	if(!s->shape)
+	{
+		limiter_free(s);
+		return(-1);
+	}
+	
+	for(i = 0; i < s->width; i++)
+	{
+		s->shape[i] = lround((1.0 - cos(2.0 * M_PI / (s->width + 1) * (i + 1))) * 0.5 * INT16_MAX);
+	}
+	
+	/* Initial state */
+	s->level = level;
+	s->att = calloc(sizeof(int16_t), s->width);
+	s->fix = calloc(sizeof(int32_t), s->width);
+	s->var = calloc(sizeof(int32_t), s->width);
+	if(!s->att || !s->fix || !s->var)
+	{
+		limiter_free(s);
+		return(-1);
+	}
+	
+	s->p = 0;
+	s->h = s->width / 2;
+	
+	return(0);
+}
+
+void limiter_process(limiter_t *s, int16_t *out, const int16_t *vin, const int16_t *fin, int samples, int step)
+{
+	int i, j;
+	int32_t a, b;
+	
+	for(i = 0; i < samples; i++)
+	{
+		s->var[s->p] = *vin;
+		s->fix[s->p] = (fin ? *fin : 0);
+		s->att[s->p] = 0;
+		
+		/* Apply input filters */
+		if(s->vfir.type) fir_int32_process(&s->vfir, &s->var[s->p], &s->var[s->p], 1);
+		if(s->ffir.type) fir_int32_process(&s->ffir, &s->fix[s->p], &s->fix[s->p], 1);
+		
+		/* Hard limit the fixed input */
+		if(s->fix[s->p] < -s->level) s->fix[s->p] = -s->level;
+		else if(s->fix[s->p] > s->level) s->fix[s->p] = s->level;
+		
+		/* The variable signal is the difference between vin and fin */
+		s->var[s->p] -= s->fix[s->p];
+		
+		if(++s->p == s->width) s->p = 0;
+		if(++s->h == s->width) s->h = 0;
+		
+		/* Soft limit the variable input */
+		a = abs(s->var[s->h] + s->fix[s->h]);
+		if(a > s->level)
+		{
+			a = INT16_MAX - (s->level + abs(s->var[s->h]) - a) * INT16_MAX / abs(s->var[s->h]);
+			
+			for(j = 0; j < s->width; j++)
+			{
+				b = (a * s->shape[j]) >> 15;
+				if(b > INT16_MAX) b = INT16_MAX;
+				if(b > s->att[s->p]) s->att[s->p] = b;
+				if(++s->p == s->width) s->p = 0;
+			}
+		}
+		
+		a  = s->fix[s->p];
+		a += ((int64_t) s->var[s->p] * (INT16_MAX - s->att[s->p])) >> 15;
+		
+		/* Hard limit to catch rounding errors */
+		if(a < -s->level) a = -s->level;
+		else if(a > s->level) a = s->level;
+		
+		*out = a;
+		
+		vin += step;
+		out += step;
+		if(fin) fin += step;
+	}
 }
 

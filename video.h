@@ -77,6 +77,11 @@ typedef struct vid_t vid_t;
 #define VID_APOLLO_FSC 4
 #define VID_CBS_FSC    5
 
+/* Audio pre-emphasis modes */
+//#define VID_NONE 0
+#define VID_50US 1
+#define VID_75US 2
+
 /* AV source function prototypes */
 typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
 typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
@@ -92,6 +97,10 @@ typedef struct {
 	int32_t counter;
 	cint32_t phase;
 	cint32_t *lut;
+	
+	limiter_t limiter;
+	int16_t sample;
+	
 } _mod_fm_t;
 
 typedef struct {
@@ -99,6 +108,9 @@ typedef struct {
 	int32_t counter;
 	cint32_t phase;
 	cint32_t delta;
+	
+	int16_t sample;
+	
 } _mod_am_t;
 
 typedef struct {
@@ -135,9 +147,11 @@ typedef struct {
 	int64_t offset;
 	char *passthru;
 	
-	/* Level of each component. The total sum should be exactly 1.0 */
+	/* Level of each component */
 	double video_level;
-	double fm_audio_level;
+	double fm_mono_level;
+	double fm_left_level;
+	double fm_right_level;
 	double am_audio_level;
 	double nicam_level;
 	double dance_level;
@@ -220,12 +234,23 @@ typedef struct {
 	double qu_co;
 	double qv_co;
 	
-	/* FM audio */
+	/* FM audio options */
+	int fmaudiotest;
+	
+	/* FM audio (Mono) */
 	double fm_mono_carrier;
+	double fm_mono_deviation;
+	int fm_mono_preemph;
+	
+	/* FM audio (Stereo Left) */
 	double fm_left_carrier;
+	double fm_left_deviation;
+	int fm_left_preemph;
+	
+	/* FM audio (Stereo Right) */
 	double fm_right_carrier;
-	double fm_audio_preemph;
-	double fm_audio_deviation;
+	double fm_right_deviation;
+	int fm_right_preemph;
 	
 	/* Stereo NICAM audio */
 	double nicam_carrier;
