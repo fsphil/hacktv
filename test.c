@@ -66,7 +66,7 @@ static int _av_test_close(void *private)
 	return(HACKTV_OK);
 }
 
-int av_test_open(vid_t *s)
+int av_test_open(vid_t *s, char *sub)
 {
 	uint32_t const bars[8] = {
 		0x000000,
@@ -151,6 +151,23 @@ int av_test_open(vid_t *s)
 		}
 	}
 	
+	/* Draw checkerboard */
+	if(sub != NULL && strncmp(sub, "checkerboard", l) == 0)
+	{
+		for(x = 0; x < 200; ++x)
+		{
+			for(y = 0; y < 200; ++y)
+			{
+				c = 0x000000;
+				if((x / 20 % 2 == 0 && y / 20 % 2 == 0) || (x / 20 % 2 != 0 && y / 20 % 2 != 0))
+				{
+					c = 0xffffff;
+				}
+				av->video[(s->conf.active_lines / 4 + y) * s->active_width + ((s->active_width - 200) / 2) + x] = c;
+			}
+		}
+	}
+
 	/* Generate the 1khz test tones (BBC 1 style) */
 	d = 1000.0 * 2 * M_PI / HACKTV_AUDIO_SAMPLE_RATE;
 	y = HACKTV_AUDIO_SAMPLE_RATE * 64 / 100; /* 640ms */

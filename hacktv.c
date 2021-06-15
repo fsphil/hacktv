@@ -958,7 +958,7 @@ int main(int argc, char *argv[])
 			
 			if(strncmp(pre, "test", l) == 0)
 			{
-				r = av_test_open(&s.vid);
+				r = av_test_open(&s.vid, sub);
 			}
 			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{
