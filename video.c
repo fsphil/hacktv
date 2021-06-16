@@ -2621,7 +2621,6 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 {
 	vid_line_t *l = lines[0];
 	int16_t audio[2] = { 0, 0 };
-	static int interp = 0;
 	int x;
 	
 	for(x = 0; x < s->width; x++)
@@ -2629,10 +2628,10 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 		int16_t add[2] = { 0, 0 };
 		
 		/* TODO: Replace this with a real FIR filter... */
-		interp += HACKTV_AUDIO_SAMPLE_RATE;
-		if(interp >= s->sample_rate)
+		s->interp += HACKTV_AUDIO_SAMPLE_RATE;
+		if(s->interp >= s->sample_rate)
 		{
-			interp -= s->sample_rate;
+			s->interp -= s->sample_rate;
 			
 			if(s->audiobuffer_samples == 0)
 			{

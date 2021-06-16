@@ -376,6 +376,7 @@ struct vid_t {
 	int audio;
 	int16_t *audiobuffer;
 	size_t audiobuffer_samples;
+	int interp;
 	
 	/* FM Mono/Stereo audio state */
 	_mod_fm_t fm_mono;
