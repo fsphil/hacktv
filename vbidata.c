@@ -91,7 +91,7 @@ static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwid
 
 int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int16_t level, int filter, double beta)
 {
-	size_t l = _vbidata_init(NULL, swidth, dwidth, level, filter, beta);
+	size_t l;
 	int16_t *s;
 	
 	/* Calculate the length of the lookup-table and allocate memory */
