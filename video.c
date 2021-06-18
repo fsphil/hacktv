@@ -1906,10 +1906,10 @@ static void inline _am_modulator_add(_mod_am_t *am, int16_t *dst, int16_t sample
 {
 	cint32_mul(&am->phase, &am->phase, &am->delta);
 	
-	sample = ((int32_t) sample + INT16_MIN) / 2;
+	sample = ((int32_t) sample - INT16_MIN) / 2;
 	
-	dst[0] += ((((am->phase.i >> 16) * sample) >> 16) * am->level) >> 15;
-	dst[1] += ((((am->phase.q >> 16) * sample) >> 16) * am->level) >> 15;
+	dst[0] += ((((am->phase.i >> 16) * sample) >> 15) * am->level) >> 15;
+	dst[1] += ((((am->phase.q >> 16) * sample) >> 15) * am->level) >> 15;
 	
 	/* Correct the amplitude after INT16_MAX samples */
 	if(--am->counter == 0)
