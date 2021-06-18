@@ -1892,7 +1892,7 @@ static int _init_am_modulator(_mod_am_t *am, int sample_rate, double frequency, 
 	
 	am->level   = round(INT16_MAX * level);
 	am->counter = INT16_MAX;
-	am->phase.i = INT16_MAX;
+	am->phase.i = INT32_MAX;
 	am->phase.q = 0;
 	
 	d = 2.0 * M_PI / sample_rate * frequency;
