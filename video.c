@@ -1822,7 +1822,7 @@ static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, 
 	
 	fm->level   = round(INT16_MAX * level);
 	fm->counter = INT16_MAX;
-	fm->phase.i = INT16_MAX;
+	fm->phase.i = INT32_MAX;
 	fm->phase.q = 0;
 	fm->lut     = malloc(sizeof(cint32_t) * (UINT16_MAX + 1));
 	
