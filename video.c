@@ -111,7 +111,7 @@ const vid_config_t vid_config_pal_bg = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.71, /* Power level of video */
-	.fm_mono_level  = 0.22, /* FM audio carrier power level */
+	.fm_mono_level  = 0.15, /* FM audio carrier power level */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
@@ -2670,6 +2670,10 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				{
 					limiter_process(&s->fm_mono.limiter, &s->fm_mono.sample, &s->fm_mono.sample, &s->fm_mono.sample, 1, 1);
 				}
+				
+				/* Reduce volume of audio in A2 Stereo mode to
+				 * leave room for the pilot/mode signal */
+				if(s->conf.a2stereo) s->fm_mono.sample *= 0.95;
 			}
 			
 			if(s->conf.fm_left_level > 0 && s->conf.fm_left_carrier != 0)
@@ -2688,6 +2692,10 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				{
 					limiter_process(&s->fm_right.limiter, &s->fm_right.sample, &s->fm_right.sample, &s->fm_right.sample, 1, 1);
 				}
+				
+				/* Reduce volume of audio in A2 Stereo mode to
+				 * leave room for the pilot/mode signal */
+				if(s->conf.a2stereo) s->fm_right.sample *= 0.95;
 			}
 			
 			if((s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0) ||
@@ -2737,7 +2745,19 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 		
 		if(s->conf.fm_right_level > 0 && s->conf.fm_right_carrier != 0)
 		{
-			_fm_modulator_add(&s->fm_right, add, s->fm_right.sample);
+			int16_t a2 = 0;
+			
+			if(s->conf.a2stereo)
+			{
+				int16_t s1[2] = { 0, 0 };
+				int16_t s2[2] = { 0, 0 };
+				
+				_am_modulator_add(&s->a2stereo_signal, s1, 0);
+				_am_modulator_add(&s->a2stereo_pilot, s2, s1[0]);
+				a2 = s2[0];
+			}
+			
+			_fm_modulator_add(&s->fm_right, add, s->fm_right.sample + a2);
 		}
 		
 		if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
@@ -3255,6 +3275,29 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		_init_vfilter(s);
 	}
 	
+	if(s->conf.a2stereo)
+	{
+		/* Enable Zweikanalton / A2 Stereo */
+		s->conf.fm_right_level = s->conf.fm_mono_level * 0.446684; /* -7 dB */
+		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + 242000;
+		s->conf.fm_right_deviation = s->conf.fm_mono_deviation;
+		s->conf.fm_right_preemph = s->conf.fm_mono_preemph;
+		
+		r = _init_am_modulator(&s->a2stereo_pilot, s->sample_rate, 54.6875e3, 0.05);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		/* 117.5 Hz == Stereo */
+		r = _init_am_modulator(&s->a2stereo_signal, s->sample_rate, 117.5, 1.0);
+		if(r != VID_OK)
+		{
+			vid_free(s);
+		}
+	}
+	
 	/* FM audio */
 	if(s->conf.fm_mono_level > 0 && s->conf.fm_mono_carrier != 0)
 	{
@@ -3598,6 +3641,8 @@ void vid_free(vid_t *s)
 	_free_fm_modulator(&s->fm_mono);
 	_free_fm_modulator(&s->fm_left);
 	_free_fm_modulator(&s->fm_right);
+	_free_am_modulator(&s->a2stereo_pilot);
+	_free_am_modulator(&s->a2stereo_signal);
 	limiter_free(&s->fm_mono.limiter);
 	limiter_free(&s->fm_left.limiter);
 	limiter_free(&s->fm_right.limiter);
