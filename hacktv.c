@@ -97,7 +97,7 @@ static void print_usage(void)
 		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
-		"      --a2stereo                 Enable Zweikanalton / A2 Stereo.\n"
+		"      --a2stereo                 Enable Zweikanalton / A2 Stereo, disables NICAM.\n"
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"

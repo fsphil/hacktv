@@ -3296,6 +3296,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		{
 			vid_free(s);
 		}
+		
+		/* Disable NICAM */
+		s->conf.nicam_level = 0;
+		s->conf.nicam_carrier = 0;
 	}
 	
 	/* FM audio */
