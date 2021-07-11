@@ -1689,6 +1689,10 @@ const int32_t fm_audio_75us_taps[65] = {
 	65,-123,147,-227,270,-385,440,-580,619,-752,726,-799,641,-588,231,6,-616,1073,-1956,2632,-3763,4603,-5910,6798,-8169,8898,-10227,10324,-11683,9020,-11904,-32509,116205,-32509,-11904,9020,-11683,10324,-10227,8898,-8169,6798,-5910,4603,-3763,2632,-1956,1073,-616,6,231,-588,641,-799,726,-752,619,-580,440,-385,270,-227,147,-123,65
 };
 
+const int32_t fm_audio_j17_taps[65] = {
+	-1,-2,-2,-3,-3,-3,-3,-5,-5,-6,-7,-9,-10,-13,-14,-18,-21,-27,-32,-42,-51,-69,-86,-120,-159,-233,-332,-524,-814,-1402,-2372,-4502,25590,-4502,-2372,-1402,-814,-524,-332,-233,-159,-120,-86,-69,-51,-42,-32,-27,-21,-18,-14,-13,-10,-9,-7,-6,-5,-5,-3,-3,-3,-3,-2,-2,-1
+};
+
 static double _dlimit(double v, double min, double max)
 {
 	if(v < min) return(min);
@@ -3327,6 +3331,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 				taps = fm_audio_75us_taps;
 				ntaps = sizeof(fm_audio_75us_taps) / sizeof(int32_t);
 				break;
+			case VID_J17:
+				taps = fm_audio_j17_taps;
+				ntaps = sizeof(fm_audio_j17_taps) / sizeof(int32_t);
+				break;
 			}
 			
 			r = limiter_init(&s->fm_mono.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
@@ -3364,6 +3372,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 				taps = fm_audio_75us_taps;
 				ntaps = sizeof(fm_audio_75us_taps) / sizeof(int32_t);
 				break;
+			case VID_J17:
+				taps = fm_audio_j17_taps;
+				ntaps = sizeof(fm_audio_j17_taps) / sizeof(int32_t);
+				break;
 			}
 			
 			r = limiter_init(&s->fm_left.limiter, INT16_MAX, 21, taps, fm_audio_flat_taps, ntaps);
@@ -3400,6 +3412,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			case VID_75US:
 				taps = fm_audio_75us_taps;
 				ntaps = sizeof(fm_audio_75us_taps) / sizeof(int32_t);
+				break;
+			case VID_J17:
+				taps = fm_audio_j17_taps;
+				ntaps = sizeof(fm_audio_j17_taps) / sizeof(int32_t);
 				break;
 			}
 			

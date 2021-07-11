@@ -70,6 +70,7 @@ typedef struct vid_t vid_t;
 //#define VID_NONE 0
 #define VID_50US 1
 #define VID_75US 2
+#define VID_J17  3
 
 /* AV source function prototypes */
 typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
