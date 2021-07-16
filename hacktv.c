@@ -386,6 +386,12 @@ int main(int argc, char *argv[])
 	int l;
 	int r;
 	
+	/* Disable console output buffer in Windows */
+	#ifdef WIN32
+	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
+	#endif
+	
 	/* Initialise the state */
 	memset(&s, 0, sizeof(hacktv_t));
 	
