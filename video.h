@@ -336,8 +336,10 @@ struct vid_t {
 	int burst_width;
 	int16_t *burst_win;
 	
-	_mod_fm_t fm_secam_cr;
-	_mod_fm_t fm_secam_cb;
+	_mod_fm_t fm_secam;
+	iir_int16_t fm_secam_iir;
+	fir_int16_t fm_secam_fir;
+	cint16_t *fm_secam_bell;
 	
 	int fsc_flag_left;
 	int fsc_flag_width;

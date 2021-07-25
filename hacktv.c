@@ -174,6 +174,7 @@ static void print_usage(void)
 		"                  audio\n"
 		"  d, k          = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz FM\n"
 		"                  audio\n"
+		"  secam-i       = SECAM colour, 25 fps, 625 lines, AM (complex), 6.0 MHz FM audio\n"
 		"  secam-fm      = SECAM colour, 25 fps, 625 lines, FM (complex), 6.5 MHz FM audio\n"
 		"  secam         = SECAM colour, 25 fps, 625 lines, unmodulated (real)\n"
 		"  d2mac-fm      = D2-MAC, 25 fps, 625 lines, FM (complex)\n"

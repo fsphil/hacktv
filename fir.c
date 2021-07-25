@@ -431,6 +431,41 @@ void fir_int32_free(fir_int32_t *s)
 
 
 
+/* IIR filter */
+int iir_int16_init(iir_int16_t *s, const double *a, const double *b)
+{
+	s->a[0] = a[0];
+	s->a[1] = a[1];
+	s->b[0] = b[0];
+	s->b[1] = b[1];
+	s->ix = 0;
+	s->iy = 0;
+	return(0);
+}
+
+size_t iir_int16_process(iir_int16_t *s, int16_t *out, const int16_t *in, size_t samples, size_t step)
+{
+	size_t i;
+	
+	for(i = 0; i < samples; i++)
+	{
+		s->iy = (double) *in * s->b[0] + s->ix * s->b[1] - s->iy * s->a[1];
+		s->ix = (double) *in;
+		*out = lround(s->iy);
+		in += step;
+		out += step;
+	}
+	
+	return(samples);
+}
+
+void iir_int16_free(iir_int16_t *s)
+{
+	memset(s, 0, sizeof(iir_int16_t));
+}
+
+
+
 /* Soft Limiter */
 
 

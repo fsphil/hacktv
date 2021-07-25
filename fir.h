@@ -64,7 +64,16 @@ extern int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntap
 extern size_t fir_int32_process(fir_int32_t *s, int32_t *out, const int32_t *in, size_t samples);
 extern void fir_int32_free(fir_int32_t *s);
 
-extern void iir_fm_preemphasis(double *dtaps, const double *taps, size_t ntaps, double fs, double tau, double fh);
+typedef struct {
+	double a[2];
+	double b[2];
+	double ix;
+	double iy;
+} iir_int16_t;
+
+extern int iir_int16_init(iir_int16_t *s, const double *a, const double *b);
+extern size_t iir_int16_process(iir_int16_t *s, int16_t *out, const int16_t *in, size_t samples, size_t step);
+extern void iir_int16_free(iir_int16_t *s);
 
 typedef struct {
 	
