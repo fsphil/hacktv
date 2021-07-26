@@ -2660,7 +2660,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	   (seq[2] == 'a' || seq[3] == 'a'))
 	{
 		const cint16_t *g;
-		int16_t cs;
 		
 		for(x = 0; x < s->width; x++)
 		{
