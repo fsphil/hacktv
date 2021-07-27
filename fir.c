@@ -109,6 +109,49 @@ void fir_low_pass(double *taps, size_t ntaps, double sample_rate, double cutoff,
 	}
 }
 
+void fir_band_reject(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
+{
+	int n;
+	int M = (ntaps - 1) / 2;
+	double fmax;
+	double fwT0 = 2 * M_PI * low_cutoff / sample_rate;
+	double fwT1 = 2 * M_PI * high_cutoff / sample_rate;
+	
+	/* Create the window */
+	kaiser(taps, ntaps, 7.0);
+	
+	/* Generate the filter taps */
+	for(n = -M; n <= M; n++)
+	{
+		if(n == 0)
+		{
+			taps[n + M] *= 1.0 + (fwT0 - fwT1) / M_PI;
+		}
+		else
+		{
+			taps[n + M] *= (sin(n * fwT0) - sin(n * fwT1)) / (n * M_PI);
+		}
+	}
+	
+	/* find the factor to normalize the gain, fmax.
+	 * For band-reject, gain @ zero freq = 1.0 */
+	
+	fmax = taps[0 + M];
+	
+	for(n = 1; n <= M; n++)
+	{
+		fmax += 2 * taps[n + M];
+	}
+	
+	/* Normalise */
+	gain /= fmax;
+	
+	for(n = 0; n < ntaps; n++)
+	{
+		taps[n] *= gain;
+	}
+}
+
 void fir_complex_band_pass(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
 {
 	double *lptaps;
@@ -151,6 +194,25 @@ void fir_int16_low_pass(int16_t *taps, size_t ntaps, double sample_rate, double 
 	dtaps = calloc(ntaps, sizeof(double));
 	
 	fir_low_pass(dtaps, ntaps, sample_rate, cutoff, width, gain);
+	
+	for(a = i = 0; i < ntaps; i++)
+	{
+		taps[i] = round(dtaps[i] * 32767.0);
+		a += taps[i];
+	}
+	
+	free(dtaps);
+}
+
+void fir_int16_band_reject(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
+{
+	double *dtaps;
+	int i;
+	int a;
+	
+	dtaps = calloc(ntaps, sizeof(double));
+	
+	fir_band_reject(dtaps, ntaps, sample_rate, low_cutoff, high_cutoff, width, gain);
 	
 	for(a = i = 0; i < ntaps; i++)
 	{
