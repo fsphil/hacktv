@@ -2660,6 +2660,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	   (seq[2] == 'a' || seq[3] == 'a'))
 	{
 		const cint16_t *g;
+		int16_t dmin, dmax;
 		
 		for(x = 0; x < s->width; x++)
 		{
@@ -2683,6 +2684,16 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		x = s->fm_secam_fir.ntaps / 2;
 		fir_int16_process(&s->fm_secam_fir, l->output + 1, l->output + 1 + x * 2, s->width - x);
 		iir_int16_process(&s->fm_secam_iir, l->output + 1, l->output + 1, s->width, 2);
+		
+		/* Limit the FM deviation */
+		dmin = s->fm_secam_dmin[((l->frame * s->conf.lines) + l->line) & 1];
+		dmax = s->fm_secam_dmax[((l->frame * s->conf.lines) + l->line) & 1];
+		
+		for(x = 0; x < s->width; x++)
+		{
+			if(l->output[x * 2 + 1] < dmin) l->output[x * 2 + 1] = dmin;
+			else if(l->output[x * 2 + 1] > dmax) l->output[x * 2 + 1] = dmax;
+		}
 		
 		x = s->active_left;
 		w = x + s->active_width;
@@ -3283,6 +3294,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		
 		fir_int16_low_pass(taps, 51, s->sample_rate, 1.50e6, 0.50e6, 1.0);
 		fir_int16_init(&s->fm_secam_fir, taps, 51);
+		
+		/* FM deviation limits */
+		s->fm_secam_dmin[0] = lround((SECAM_CB_FREQ - SECAM_FM_FREQ - 350e3) / SECAM_FM_DEV * INT16_MAX);
+		s->fm_secam_dmax[0] = lround((SECAM_CB_FREQ - SECAM_FM_FREQ + 506e3) / SECAM_FM_DEV * INT16_MAX);
+		s->fm_secam_dmin[1] = lround((SECAM_CR_FREQ - SECAM_FM_FREQ - 506e3) / SECAM_FM_DEV * INT16_MAX);
+		s->fm_secam_dmax[1] = lround((SECAM_CR_FREQ - SECAM_FM_FREQ + 350e3) / SECAM_FM_DEV * INT16_MAX);
 		
 		s->fm_secam_bell = malloc(sizeof(cint16_t) * UINT16_MAX);
 		if(!s->fm_secam_bell)
