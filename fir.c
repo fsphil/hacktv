@@ -513,7 +513,7 @@ size_t iir_int16_process(iir_int16_t *s, int16_t *out, const int16_t *in, size_t
 	{
 		s->iy = (double) *in * s->b[0] + s->ix * s->b[1] - s->iy * s->a[1];
 		s->ix = (double) *in;
-		*out = lround(s->iy);
+		*out = lround(s->iy < INT16_MIN ? INT16_MIN : (s->iy > INT16_MAX ? INT16_MAX : s->iy));
 		in += step;
 		out += step;
 	}
