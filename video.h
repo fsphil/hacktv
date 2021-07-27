@@ -341,6 +341,7 @@ struct vid_t {
 	fir_int16_t fm_secam_fir;
 	int16_t fm_secam_dmin[2];
 	int16_t fm_secam_dmax[2];
+	fir_int16_t secam_l_fir;
 	cint16_t *fm_secam_bell;
 	
 	int fsc_flag_left;
