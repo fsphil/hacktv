@@ -189,16 +189,14 @@ void fir_int16_low_pass(int16_t *taps, size_t ntaps, double sample_rate, double 
 {
 	double *dtaps;
 	int i;
-	int a;
 	
 	dtaps = calloc(ntaps, sizeof(double));
 	
 	fir_low_pass(dtaps, ntaps, sample_rate, cutoff, width, gain);
 	
-	for(a = i = 0; i < ntaps; i++)
+	for(i = 0; i < ntaps; i++)
 	{
 		taps[i] = round(dtaps[i] * 32767.0);
-		a += taps[i];
 	}
 	
 	free(dtaps);
@@ -208,16 +206,14 @@ void fir_int16_band_reject(int16_t *taps, size_t ntaps, double sample_rate, doub
 {
 	double *dtaps;
 	int i;
-	int a;
 	
 	dtaps = calloc(ntaps, sizeof(double));
 	
 	fir_band_reject(dtaps, ntaps, sample_rate, low_cutoff, high_cutoff, width, gain);
 	
-	for(a = i = 0; i < ntaps; i++)
+	for(i = 0; i < ntaps; i++)
 	{
 		taps[i] = round(dtaps[i] * 32767.0);
-		a += taps[i];
 	}
 	
 	free(dtaps);
@@ -295,16 +291,14 @@ void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate
 {
 	double *dtaps;
 	int i;
-	int a;
 	
 	dtaps = calloc(ntaps, sizeof(double) * 2);
 	
 	fir_complex_band_pass(dtaps, ntaps, sample_rate, low_cutoff, high_cutoff, width, gain);
 	
-	for(a = i = 0; i < ntaps * 2; i++)
+	for(i = 0; i < ntaps * 2; i++)
 	{
 		taps[i] = round(dtaps[i] * 32767.0);
-		a += taps[i];
 	}
 	
 	free(dtaps);
