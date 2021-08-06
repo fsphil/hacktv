@@ -212,7 +212,7 @@ void fir_int16_low_pass(int16_t *taps, size_t ntaps, double sample_rate, double 
 	
 	for(i = 0; i < ntaps; i++)
 	{
-		taps[i] = round(dtaps[i] * 32767.0);
+		taps[i] = lround(dtaps[i] * 32767.0);
 	}
 	
 	free(dtaps);
@@ -229,7 +229,7 @@ void fir_int16_band_reject(int16_t *taps, size_t ntaps, double sample_rate, doub
 	
 	for(i = 0; i < ntaps; i++)
 	{
-		taps[i] = round(dtaps[i] * 32767.0);
+		taps[i] = lround(dtaps[i] * 32767.0);
 	}
 	
 	free(dtaps);
@@ -246,7 +246,7 @@ int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps)
 	
 	for(i = 0; i < ntaps; i++)
 	{
-		s->itaps[i] = taps[i];
+		s->itaps[i] = taps[s->ntaps - 1 - i];
 	}
 	
 	s->win = calloc(s->ntaps * 2, sizeof(int16_t));
@@ -314,7 +314,7 @@ void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate
 	
 	for(i = 0; i < ntaps * 2; i++)
 	{
-		taps[i] = round(dtaps[i] * 32767.0);
+		taps[i] = lround(dtaps[i] * 32767.0);
 	}
 	
 	free(dtaps);
@@ -332,10 +332,10 @@ int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int nta
 	/* Copy the taps in the order and format they are to be used */
 	for(i = 0; i < ntaps; i++)
 	{
-		s->itaps[i * 2 + 0] =  taps[i * 2 + 0];
-		s->itaps[i * 2 + 1] = -taps[i * 2 + 1];
-		s->qtaps[i * 2 + 0] =  taps[i * 2 + 1];
-		s->qtaps[i * 2 + 1] =  taps[i * 2 + 0];
+		s->itaps[i * 2 + 0] =  taps[(s->ntaps - 1 - i) * 2 + 0];
+		s->itaps[i * 2 + 1] = -taps[(s->ntaps - 1 - i) * 2 + 1];
+		s->qtaps[i * 2 + 0] =  taps[(s->ntaps - 1 - i) * 2 + 1];
+		s->qtaps[i * 2 + 1] =  taps[(s->ntaps - 1 - i) * 2 + 0];
 	}
 	
 	s->win = calloc(s->ntaps * 2, sizeof(int16_t) * 2);
@@ -367,8 +367,8 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in
 			aq += s->win[p] * s->qtaps[y];
 		}
 		
-		out[0] = aq >> 15;
-		out[1] = ai >> 15;
+		out[0] = ai >> 15;
+		out[1] = aq >> 15;
 		out += 2;
 		in += 2;
 	}
@@ -388,8 +388,8 @@ int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int nt
 	/* Copy the taps in the order and format they are to be used */
 	for(i = 0; i < ntaps; i++)
 	{
-		s->itaps[i] = taps[i * 2 + 0];
-		s->qtaps[i] = taps[i * 2 + 1];
+		s->itaps[i] = taps[(s->ntaps - 1 - i) * 2 + 0];
+		s->qtaps[i] = taps[(s->ntaps - 1 - i) * 2 + 1];
 	}
 	
 	s->win = calloc(s->ntaps * 2, sizeof(int16_t));
@@ -420,8 +420,8 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *i
 			aq += s->win[p] * s->qtaps[y];
 		}
 		
-		out[0] = aq >> 15;
-		out[1] = ai >> 15;
+		out[0] = ai >> 15;
+		out[1] = aq >> 15;
 		out += 2;
 		in += 2;
 	}
@@ -446,7 +446,7 @@ int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps)
 	
 	for(i = 0; i < ntaps; i++)
 	{
-		s->itaps[i] = taps[i];
+		s->itaps[i] = taps[s->ntaps - 1 - i];
 	}
 	
 	s->win = calloc(s->ntaps * 2, sizeof(int32_t));
