@@ -69,15 +69,23 @@ static void kaiser(double *taps, size_t ntaps, double beta)
 
 void fir_low_pass(double *taps, size_t ntaps, double sample_rate, double cutoff, double width, double gain)
 {
-	int n;
-	int M = (ntaps - 1) / 2;
-	double fmax;
-	double fwT0 = 2 * M_PI * cutoff / sample_rate;
+	int n, M;
+	double fmax, fwT0;
+	
+	/* Ensure an odd number of taps */
+	if((ntaps & 1) == 0)
+	{
+		ntaps -= 1;
+		taps[ntaps] = 0;
+	}
 	
 	/* Create the window */
 	kaiser(taps, ntaps, 7.0);
 	
 	/* Generate the filter taps */
+	M = (ntaps - 1) / 2;
+	fwT0 = 2.0 * M_PI * cutoff / sample_rate;
+	
 	for(n = -M; n <= M; n++)
 	{
 		if(n == 0)
@@ -111,16 +119,24 @@ void fir_low_pass(double *taps, size_t ntaps, double sample_rate, double cutoff,
 
 void fir_band_reject(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
 {
-	int n;
-	int M = (ntaps - 1) / 2;
-	double fmax;
-	double fwT0 = 2 * M_PI * low_cutoff / sample_rate;
-	double fwT1 = 2 * M_PI * high_cutoff / sample_rate;
+	int n, M;
+	double fmax, fwT0, fwT1;
+	
+	/* Ensure an odd number of taps */
+	if((ntaps & 1) == 0)
+	{
+		ntaps -= 1;
+		taps[ntaps] = 0;
+	}
 	
 	/* Create the window */
 	kaiser(taps, ntaps, 7.0);
 	
 	/* Generate the filter taps */
+	M = (ntaps - 1) / 2;
+	fwT0 = 2.0 * M_PI * low_cutoff / sample_rate;
+	fwT1 = 2.0 * M_PI * high_cutoff / sample_rate;
+	
 	for(n = -M; n <= M; n++)
 	{
 		if(n == 0)
@@ -155,7 +171,7 @@ void fir_band_reject(double *taps, size_t ntaps, double sample_rate, double low_
 void fir_complex_band_pass(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
 {
 	double *lptaps;
-	double freq =  M_PI * (high_cutoff + low_cutoff) / sample_rate;
+	double freq = M_PI * (high_cutoff + low_cutoff) / sample_rate;
 	double phase;
 	int i;
 	
