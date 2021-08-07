@@ -22,12 +22,18 @@ typedef struct {
 	
 	int type;
 	
+	int interpolation;
+	int decimation;
+	
 	unsigned int ntaps;
+	unsigned int ataps;
 	int16_t *itaps;
 	int16_t *qtaps;
 	
 	unsigned int owin;
 	int16_t *win;
+	int d;
+	int t;
 	
 } fir_int16_t;
 
@@ -35,12 +41,17 @@ typedef struct {
 	
 	int type;
 	
+	int interpolation;
+	int decimation;
+	
 	unsigned int ntaps;
+	unsigned int ataps;
 	int32_t *itaps;
 	int32_t *qtaps;
 	
 	unsigned int owin;
 	int32_t *win;
+	int d;
 	
 } fir_int32_t;
 
@@ -52,17 +63,17 @@ extern void fir_int16_low_pass(int16_t *taps, size_t ntaps, double sample_rate, 
 extern void fir_int16_band_reject(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
 extern void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
 
-extern int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps);
+extern int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation);
 extern size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
 extern void fir_int16_free(fir_int16_t *s);
 
-extern int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps);
+extern int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation);
 extern size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
 
-extern int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps);
+extern int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation);
 extern size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
 
-extern int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps);
+extern int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps, int interpolation, int decimation);
 extern size_t fir_int32_process(fir_int32_t *s, int32_t *out, const int32_t *in, size_t samples);
 extern void fir_int32_free(fir_int32_t *s);
 

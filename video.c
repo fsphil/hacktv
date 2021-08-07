@@ -3034,7 +3034,7 @@ static int _init_vfilter(vid_t *s)
 		}
 		
 		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_scomplex_init(&p->fir, taps, ntaps);
+		fir_int16_scomplex_init(&p->fir, taps, ntaps, 1, 1);
 		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)
@@ -3085,7 +3085,7 @@ static int _init_vfilter(vid_t *s)
 			}
 		}
 		
-		fir_int16_init(&p->fir, taps, ntaps);
+		fir_int16_init(&p->fir, taps, ntaps, 1, 1);
 	}
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
@@ -3102,7 +3102,7 @@ static int _init_vfilter(vid_t *s)
 		}
 		
 		fir_int16_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
-		fir_int16_init(&p->fir, taps, ntaps);
+		fir_int16_init(&p->fir, taps, ntaps, 1, 1);
 		free(taps);
 	}
 	
@@ -3294,10 +3294,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 		
 		fir_int16_low_pass(taps, 51, s->sample_rate, 1.50e6, 0.50e6, 1.0);
-		fir_int16_init(&s->fm_secam_fir, taps, 51);
+		fir_int16_init(&s->fm_secam_fir, taps, 51, 1, 1);
 		
 		fir_int16_band_reject(taps, 51, s->sample_rate, SECAM_FM_FREQ - 1.0e6, SECAM_FM_FREQ + 1e6, 1e6, 1.0);
-		fir_int16_init(&s->secam_l_fir, taps, 51);
+		fir_int16_init(&s->secam_l_fir, taps, 51, 1, 1);
 		
 		/* FM deviation limits */
 		s->fm_secam_dmin[0] = lround((SECAM_CB_FREQ - SECAM_FM_FREQ - 350e3) / SECAM_FM_DEV * INT16_MAX);
