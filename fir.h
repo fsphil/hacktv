@@ -33,7 +33,6 @@ typedef struct {
 	unsigned int owin;
 	int16_t *win;
 	int d;
-	int t;
 	
 } fir_int16_t;
 

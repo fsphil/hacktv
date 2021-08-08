@@ -263,7 +263,6 @@ int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int 
 	s->win = calloc(s->ataps * 2, sizeof(int16_t));
 	s->owin = 0;
 	s->d = 0;
-	s->t = 0;
 	
 	return(0);
 }
