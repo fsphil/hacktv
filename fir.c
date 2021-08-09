@@ -583,7 +583,7 @@ size_t fir_int32_process(fir_int32_t *s, int32_t *out, const int32_t *in, size_t
 			/* Calculate the next output sample */
 			for(a = y = 0; y < s->ataps; y++)
 			{
-				a += *(win++) * *(taps++);
+				a += (int64_t) *(win++) * (int64_t) *(taps++);
 			}
 			
 			a >>= 15;
