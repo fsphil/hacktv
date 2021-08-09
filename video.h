@@ -263,6 +263,7 @@ struct vid_line_t {
 	
 	/* The output line buffer */
 	int16_t *output;
+	int width;
 	
 	/* Frame and line number */
 	int frame;
@@ -309,9 +310,10 @@ struct vid_t {
 	
 	/* Signal configuration */
 	vid_config_t conf;
+	int sample_rate;
 	
 	/* Video setup */
-	int sample_rate;
+	int pixel_rate;
 	
 	int width;
 	int half_width;
@@ -425,6 +427,7 @@ struct vid_t {
 	/* Output line(s) buffer */
 	int olines;
 	vid_line_t *oline;
+	int max_width;
 	
 	/* Line processes */
 	int nprocesses;
@@ -434,7 +437,7 @@ struct vid_t {
 
 extern const vid_configs_t vid_configs[];
 
-extern int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf);
+extern int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const vid_config_t * const conf);
 extern void vid_free(vid_t *s);
 extern void vid_get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq);
 extern int vid_av_close(vid_t *s);

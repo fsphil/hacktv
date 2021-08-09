@@ -50,13 +50,13 @@ int acp_init(acp_t *s, vid_t *vid)
 	s->pagc_level  = vid->sync_level + round((vid->white_level - vid->sync_level) * 1.10);
 	
 	/* Calculate the width of each pulse */
-	s->psync_width = round(vid->sample_rate * psync_width);
-	s->pagc_width  = round(vid->sample_rate * 2.7e-6);
+	s->psync_width = round(vid->pixel_rate * psync_width);
+	s->pagc_width  = round(vid->pixel_rate * 2.7e-6);
 	
 	/* Left position of each pulse */
 	for(i = 0; i < 6; i++)
 	{
-		s->left[i] = round(vid->sample_rate * (left + spacing * i));
+		s->left[i] = round(vid->pixel_rate * (left + spacing * i));
 	}
 	
 	return(VID_OK);

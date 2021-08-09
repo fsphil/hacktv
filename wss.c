@@ -121,7 +121,7 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	o = _group_bits(s->vbi, 0x00, o, 3);
 	
 	/* Calculate width of line to blank */
-	s->blank_width = round(s->vid->sample_rate * 42.5e-6);
+	s->blank_width = round(s->vid->pixel_rate * 42.5e-6);
 	
 	return(VID_OK);
 }

@@ -20,6 +20,7 @@
 #include <string.h>
 #include <math.h>
 #include "fir.h"
+#include "common.h"
 
 
 
@@ -314,6 +315,45 @@ void fir_int16_free(fir_int16_t *s)
 	memset(s, 0, sizeof(fir_int16_t));
 }
 
+/* Initialise int16 FIR filter rational resampler */
+int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
+{
+	int ntaps;
+	int16_t *taps;
+	int d;
+	
+	/* Simplify ratio */
+	d = gcd(interpolation, decimation);
+	interpolation /= d;
+	decimation /= d;
+	
+	/* Generate the filter taps */
+	ntaps = 21 * interpolation;
+	ntaps += (ntaps % interpolation ? interpolation - (ntaps % interpolation) : 0);
+	if((ntaps & 1) == 0) ntaps--;
+	
+	taps = calloc(ntaps, sizeof(int16_t));
+	if(!taps)
+	{
+		return(-1);
+	}
+	
+	if(interpolation > decimation)
+	{
+		fir_int16_low_pass(taps, ntaps, interpolation, 0.45, 0.1, interpolation);
+	}
+	else
+	{
+		fir_int16_low_pass(taps, ntaps, interpolation, 0.45 * interpolation / decimation, 0.1 * interpolation / decimation, interpolation);
+	}
+	
+	/* Create the FIR filter */
+	d = fir_int16_init(s, taps, ntaps, interpolation, decimation);
+	free(taps);
+	
+	return(d);
+}
+
 
 
 /* complex int16_t */
@@ -573,6 +613,9 @@ void fir_int32_free(fir_int32_t *s)
 
 
 /* IIR filter */
+
+
+
 int iir_int16_init(iir_int16_t *s, const double *a, const double *b)
 {
 	s->a[0] = a[0];

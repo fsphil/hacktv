@@ -2112,6 +2112,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	int16_t *lut_q = NULL;
 	vid_line_t *l = lines[0];
 	
+	l->width    = s->width;
 	l->frame    = s->bframe;
 	l->line     = s->bline;
 	l->vbialloc = 0;
@@ -2712,10 +2713,21 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	}
 	
 	/* Clear the Q channel */
-	for(x = 0; x < s->width; x++)
+	for(x = 0; x < s->max_width; x++)
 	{
 		l->output[x * 2 + 1] = 0;
 	}
+	
+	return(1);
+}
+
+static int _vid_resampler_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	_vid_filter_process_t *p = arg;
+	vid_line_t *dst = lines[0];
+	vid_line_t *src = lines[nlines - 1];
+	
+	dst->width = fir_int16_process(&p->fir, dst->output, src->output, src->width);
 	
 	return(1);
 }
@@ -2749,7 +2761,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 	int16_t audio[2] = { 0, 0 };
 	int x;
 	
-	for(x = 0; x < s->width; x++)
+	for(x = 0; x < l->width; x++)
 	{
 		int16_t add[2] = { 0, 0 };
 		
@@ -2897,12 +2909,12 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 	
 	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
 	{
-		nicam_mod_output(&s->nicam, l->output, s->width);
+		nicam_mod_output(&s->nicam, l->output, l->width);
 	}
 	
 	if(s->conf.dance_level > 0 && s->conf.dance_carrier != 0)
 	{
-		dance_mod_output(&s->dance, l->output, s->width);
+		dance_mod_output(&s->dance, l->output, l->width);
 	}
 	
 	return(1);
@@ -2914,7 +2926,7 @@ static int _vid_fmmod_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 	int x;
 	
 	/* FM modulate the video and audio if requested */
-	for(x = 0; x < s->width; x++)
+	for(x = 0; x < l->width; x++)
 	{
 		_fm_modulator(&s->fm_video, &l->output[x * 2], l->output[x * 2]);
 	}
@@ -2927,7 +2939,7 @@ static int _vid_offset_process(vid_t *s, void *arg, int nlines, vid_line_t **lin
 	vid_line_t *l = lines[0];
 	int x;
 	
-	for(x = 0; x < s->width; x++)
+	for(x = 0; x < l->width; x++)
 	{
 		cint16_t a, b;
 		
@@ -2967,9 +2979,9 @@ static int _vid_passthru_process(vid_t *s, void *arg, int nlines, vid_line_t **l
 		return(1);
 	}
 	
-	fread(s->passline, sizeof(int16_t) * 2, s->width, s->passthru);
+	fread(s->passline, sizeof(int16_t) * 2, l->width, s->passthru);
 	
-	for(x = 0; x < s->width * 2; x++)
+	for(x = 0; x < l->width * 2; x++)
 	{
 		l->output[x] += s->passline[x];
 	}
@@ -3008,6 +3020,28 @@ static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, v
 	
 	return(VID_OK);
 }
+
+static int _init_vresampler(vid_t *s)
+{
+	_vid_filter_process_t *p;
+	int width;
+	
+	p = calloc(1, sizeof(_vid_filter_process_t));
+	if(!p)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
+	fir_int16_resampler_init(&p->fir, s->sample_rate, s->pixel_rate);
+	
+	/* Update maximum line width */
+	width = (s->width * p->fir.interpolation + p->fir.decimation - 1) / p->fir.decimation;
+	if(width > s->max_width) s->max_width = width;
+	
+	_add_lineprocess(s, "vresampler", 2, p, _vid_resampler_process, _vid_filter_free);
+	
+	return(VID_OK);
+}	
 
 static int _init_vfilter(vid_t *s)
 {
@@ -3121,7 +3155,7 @@ static int _init_vfilter(vid_t *s)
 	return(VID_OK);
 }
 
-int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf)
+int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const vid_config_t * const conf)
 {
 	int r, x;
 	int64_t c;
@@ -3139,19 +3173,21 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* Calculate the number of samples per line */
 	_test_sample_rate(&s->conf, sample_rate);
 	
-	s->width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
-	s->half_width = round((double) sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
-	
 	s->sample_rate = sample_rate;
+	s->pixel_rate = pixel_rate ? pixel_rate : s->sample_rate;
+	
+	s->width = round((double) s->pixel_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
+	s->half_width = round((double) s->pixel_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
+	s->max_width = s->width;
 	
 	/* Calculate the active video width and offset */
-	s->active_left = round(s->sample_rate * s->conf.active_left);
-	s->active_width = ceil(s->sample_rate * s->conf.active_width);
+	s->active_left = round(s->pixel_rate * s->conf.active_left);
+	s->active_width = ceil(s->pixel_rate * s->conf.active_width);
 	if(s->active_width > s->width) s->active_width = s->width;
 	
-	s->hsync_width       = round(s->sample_rate * s->conf.hsync_width);
-	s->vsync_short_width = round(s->sample_rate * s->conf.vsync_short_width);
-	s->vsync_long_width  = round(s->sample_rate * s->conf.vsync_long_width);
+	s->hsync_width       = round(s->pixel_rate * s->conf.hsync_width);
+	s->vsync_short_width = round(s->pixel_rate * s->conf.vsync_short_width);
+	s->vsync_long_width  = round(s->pixel_rate * s->conf.vsync_long_width);
 	
 	/* Calculate signal levels */
 	/* slevel is the the sub-carrier level. When FM modulating
@@ -3232,7 +3268,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		/* Generate the colour subcarrier lookup table */
 		/* This carrier is in phase with the U (B-Y) component */
 		s->colour_lookup_width = s->width * s->conf.colour_lookup_lines;
-		d = 2.0 * M_PI * s->conf.colour_carrier / s->sample_rate;
+		d = 2.0 * M_PI * s->conf.colour_carrier / s->pixel_rate;
 		
 		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(int16_t));
 		if(!s->colour_lookup)
@@ -3253,9 +3289,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	if(s->conf.burst_level > 0)
 	{
 		/* Generate the colour burst envelope */
-		s->burst_left  = round(s->sample_rate * (s->conf.burst_left - s->conf.burst_rise / 2));
+		s->burst_left  = round(s->pixel_rate * (s->conf.burst_left - s->conf.burst_rise / 2));
 		s->burst_win   = _burstwin(
-			s->sample_rate,
+			s->pixel_rate,
 			s->conf.burst_width,
 			s->conf.burst_rise,
 			s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level,
@@ -3268,8 +3304,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		}
 	}
 	
-	s->fsc_flag_left  = round(s->sample_rate * s->conf.fsc_flag_left);
-	s->fsc_flag_width = round(s->sample_rate * s->conf.fsc_flag_width);
+	s->fsc_flag_left  = round(s->pixel_rate * s->conf.fsc_flag_left);
+	s->fsc_flag_width = round(s->pixel_rate * s->conf.fsc_flag_width);
 	s->fsc_flag_level = round(s->conf.fsc_flag_level * (s->conf.white_level - s->conf.blanking_level) * level * INT16_MAX);
 	
 	if(s->conf.colour_mode == VID_SECAM)
@@ -3279,7 +3315,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		const double b[2] = { 2.90456054, -2.80912108 };
 		int16_t taps[51];
 		
-		r = _init_fm_modulator(&s->fm_secam, s->sample_rate, SECAM_FM_FREQ, SECAM_FM_DEV, secam_level);
+		r = _init_fm_modulator(&s->fm_secam, s->pixel_rate, SECAM_FM_FREQ, SECAM_FM_DEV, secam_level);
 		if(r != VID_OK)
 		{
 			vid_free(s);
@@ -3293,10 +3329,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			return(r);
 		}
 		
-		fir_int16_low_pass(taps, 51, s->sample_rate, 1.50e6, 0.50e6, 1.0);
+		fir_int16_low_pass(taps, 51, s->pixel_rate, 1.50e6, 0.50e6, 1.0);
 		fir_int16_init(&s->fm_secam_fir, taps, 51, 1, 1);
 		
-		fir_int16_band_reject(taps, 51, s->sample_rate, SECAM_FM_FREQ - 1.0e6, SECAM_FM_FREQ + 1e6, 1e6, 1.0);
+		fir_int16_band_reject(taps, 51, s->pixel_rate, SECAM_FM_FREQ - 1.0e6, SECAM_FM_FREQ + 1e6, 1e6, 1.0);
 		fir_int16_init(&s->secam_l_fir, taps, 51, 1, 1);
 		
 		/* FM deviation limits */
@@ -3350,7 +3386,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	/* Initalise VITS inserter */
 	if(s->conf.vits)
 	{
-		if((r = vits_init(&s->vits, s->sample_rate, s->width, s->conf.lines, s->white_level - s->blanking_level)) != VID_OK)
+		if((r = vits_init(&s->vits, s->pixel_rate, s->width, s->conf.lines, s->white_level - s->blanking_level)) != VID_OK)
 		{
 			vid_free(s);
 			return(r);
@@ -3433,6 +3469,11 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 		{
 			_add_lineprocess(s, "teletext", 1, &s->tt, tt_render_line, NULL);
 		}
+	}
+	
+	if(s->pixel_rate != s->sample_rate)
+	{
+		_init_vresampler(s);
 	}
 	
 	if(s->conf.vfilter)
@@ -3712,7 +3753,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 	
 	for(r = 0; r < s->olines; r++)
 	{
-		s->oline[r].output = malloc(sizeof(int16_t) * 2 * s->width);
+		s->oline[r].output = malloc(sizeof(int16_t) * 2 * s->max_width);
 		if(!s->oline[r].output)
 		{
 			vid_free(s);
@@ -3725,6 +3766,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, const vid_config_t * const conf
 			s->oline[r].output[x * 2] = s->blanking_level;
 		}
 		
+		s->oline[r].width = 0;
 		s->oline[r].frame = 1;
 		s->oline[r].line = 0;
 		s->oline[r].vbialloc = 0;
@@ -3855,6 +3897,11 @@ void vid_info(vid_t *s)
 		s->width, s->conf.lines
 	);
 	
+	if(s->sample_rate != s->pixel_rate)
+	{
+		fprintf(stderr, "Pixel rate: %d\n", s->pixel_rate);
+	}
+	
 	fprintf(stderr, "Sample rate: %d\n", s->sample_rate);
 }
 
@@ -3905,7 +3952,7 @@ static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
 	/* Return a pointer to the output buffer */
 	if(samples)
 	{
-		*samples = s->width;
+		*samples = l->width;
 	}
 	
 	return(l);

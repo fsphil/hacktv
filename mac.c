@@ -914,10 +914,10 @@ int mac_init(vid_t *s)
 	/* Set the video properties */
 	s->active_width &= ~1;	/* Ensure the active width is an even number */
 	mac->chrominance_width = s->active_width / 2;
-	mac->chrominance_left  = round(s->sample_rate * (233.5 / MAC_CLOCK_RATE));
-	mac->white_ref_left    = round(s->sample_rate * (371.0 / MAC_CLOCK_RATE));
-	mac->black_ref_left    = round(s->sample_rate * (533.0 / MAC_CLOCK_RATE));
-	mac->black_ref_right   = round(s->sample_rate * (695.0 / MAC_CLOCK_RATE));
+	mac->chrominance_left  = round(s->pixel_rate * (233.5 / MAC_CLOCK_RATE));
+	mac->white_ref_left    = round(s->pixel_rate * (371.0 / MAC_CLOCK_RATE));
+	mac->black_ref_left    = round(s->pixel_rate * (533.0 / MAC_CLOCK_RATE));
+	mac->black_ref_right   = round(s->pixel_rate * (695.0 / MAC_CLOCK_RATE));
 	
 	/* Setup PRBS */
 	mac->cw = MAC_PRBS_CW_FA;
@@ -1247,6 +1247,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	vid_line_t *l = lines[1];
 	int x, y;
 	
+	l->width    = s->width;
 	l->frame    = s->bframe;
 	l->line     = s->bline;
 	l->vbialloc = 0;

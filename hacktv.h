@@ -58,6 +58,7 @@ typedef struct {
 	char *output;
 	char *mode;
 	int samplerate;
+	int pixelrate;
 	float level;
 	float deviation;
 	float gamma;

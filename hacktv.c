@@ -78,6 +78,7 @@ static void print_usage(void)
 		"  -o, --output <target>          Set the output device or file, Default: hackrf\n"
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
 		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
+		"      --pixelrate <value>        Set the video pixel rate in Hz. Default: Sample rate\n"
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
 		"  -D, --deviation <value>        Override the mode's FM peak deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
@@ -335,6 +336,7 @@ enum {
 	_OPT_CHID,
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
+	_OPT_PIXELRATE,
 };
 
 int main(int argc, char *argv[])
@@ -345,6 +347,7 @@ int main(int argc, char *argv[])
 		{ "output",         required_argument, 0, 'o' },
 		{ "mode",           required_argument, 0, 'm' },
 		{ "samplerate",     required_argument, 0, 's' },
+		{ "pixelrate",      required_argument, 0, _OPT_PIXELRATE },
 		{ "level",          required_argument, 0, 'l' },
 		{ "deviation",      required_argument, 0, 'D' },
 		{ "gamma",          required_argument, 0, 'G' },
@@ -401,6 +404,7 @@ int main(int argc, char *argv[])
 	s.output = NULL;
 	s.mode = "i";
 	s.samplerate = 16000000;
+	s.pixelrate = 0;
 	s.level = 1.0;
 	s.deviation = -1;
 	s.gamma = -1;
@@ -501,6 +505,10 @@ int main(int argc, char *argv[])
 		
 		case 's': /* -s, --samplerate <value> */
 			s.samplerate = atoi(optarg);
+			break;
+		
+		case _OPT_PIXELRATE: /* --pixelrate <value> */
+			s.pixelrate = atoi(optarg);
 			break;
 		
 		case 'l': /* -l, --level <value> */
@@ -910,7 +918,7 @@ int main(int argc, char *argv[])
 	vid_conf.passthru = s.passthru;
 	
 	/* Setup video encoder */
-	r = vid_init(&s.vid, s.samplerate, &vid_conf);
+	r = vid_init(&s.vid, s.samplerate, s.pixelrate, &vid_conf);
 	if(r != VID_OK)
 	{
 		fprintf(stderr, "Unable to initialise video encoder.\n");
