@@ -2739,7 +2739,7 @@ static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lin
 	int x1, x2;
 	
 	x1 = p->offset;
-	x2 = s->width - x1;
+	x2 = src->width - x1;
 	
 	fir_int16_process(&p->fir, &lines[0]->output[x1 * 2], &src->output[0], x2);
 	fir_int16_process(&p->fir, &lines[1]->output[0], &src->output[x2 * 2], x1);
