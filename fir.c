@@ -236,7 +236,7 @@ void fir_int16_band_reject(int16_t *taps, size_t ntaps, double sample_rate, doub
 	free(dtaps);
 }
 
-int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation)
+int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -261,7 +261,8 @@ int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int 
 		if(j < 0) j += s->ntaps + 1;
 	}
 	
-	s->win = calloc(s->ataps * 2, sizeof(int16_t));
+	s->lwin = s->ataps + delay;
+	s->win = calloc(s->ataps * 2 + delay, sizeof(int16_t));
 	s->owin = 0;
 	s->d = 0;
 	
@@ -281,8 +282,9 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t
 	for(x = 0; samples; samples--)
 	{
 		/* Append the next input sample to the round buffer */
-		s->win[s->owin] = s->win[s->owin + s->ataps] = *in;
-		if(++s->owin == s->ataps) s->owin = 0;
+		s->win[s->owin] = *in;
+		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *in;
+		if(++s->owin == s->lwin) s->owin = 0;
 		
 		for(; s->d < s->interpolation; s->d += s->decimation)
 		{
@@ -348,7 +350,7 @@ int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
 	}
 	
 	/* Create the FIR filter */
-	d = fir_int16_init(s, taps, ntaps, interpolation, decimation);
+	d = fir_int16_init(s, taps, ntaps, interpolation, decimation, 0);
 	free(taps);
 	
 	return(d);
@@ -377,7 +379,7 @@ void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate
 	free(dtaps);
 }
 
-int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation)
+int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -405,7 +407,8 @@ int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int nta
 		if(j < 0) j += s->ntaps + 1;
 	}
 	
-	s->win = calloc(s->ataps * 2, sizeof(int16_t) * 2);
+	s->lwin = s->ataps + delay;
+	s->win = calloc(s->ataps * 2 + delay, sizeof(int16_t) * 2);
 	s->owin = 0;
 	s->d = 0;
 	
@@ -421,9 +424,14 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in
 	for(x = 0; samples; samples--)
 	{
 		/* Append the next input sample to the round buffer */
-		s->win[s->owin * 2 + 0] = s->win[(s->owin + s->ataps) * 2 + 0] = in[0];
-		s->win[s->owin * 2 + 1] = s->win[(s->owin + s->ataps) * 2 + 1] = in[1];
-		if(++s->owin == s->ataps) s->owin = 0;
+		s->win[s->owin * 2 + 0] = in[0];
+		s->win[s->owin * 2 + 1] = in[1];
+		if(s->owin < s->ataps)
+		{
+			s->win[(s->owin + s->lwin) * 2 + 0] = in[0];
+			s->win[(s->owin + s->lwin) * 2 + 1] = in[1];
+		}
+		if(++s->owin == s->lwin) s->owin = 0;
 		
 		for(; s->d < s->interpolation; s->d += s->decimation)
 		{
@@ -451,7 +459,7 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in
 	return(x);
 }
 
-int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation)
+int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -477,7 +485,8 @@ int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int nt
 		if(j < 0) j += s->ntaps + 1;
 	}
 	
-	s->win = calloc(s->ataps * 2, sizeof(int16_t));
+	s->lwin = s->ataps + delay;
+	s->win = calloc(s->ataps * 2 + delay, sizeof(int16_t));
 	s->owin = 0;
 	s->d = 0;
 	
@@ -493,8 +502,9 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *i
 	for(x = 0; samples; samples--)
 	{
 		/* Append the next input sample to the round buffer */
-		s->win[s->owin] = s->win[s->owin + s->ataps] = *in;
-		if(++s->owin == s->ataps) s->owin = 0;
+		s->win[s->owin] = *in;
+		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *in;
+		if(++s->owin == s->lwin) s->owin = 0;
 		
 		for(; s->d < s->interpolation; s->d += s->decimation)
 		{
@@ -528,7 +538,7 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *i
 
 
 
-int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps, int interpolation, int decimation)
+int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -552,7 +562,8 @@ int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps, int 
 		if(j < 0) j += s->ntaps + 1;
 	}
 	
-	s->win = calloc(s->ataps * 2, sizeof(int32_t));
+	s->lwin = s->ataps + delay;
+	s->win = calloc(s->ataps * 2 + delay, sizeof(int32_t));
 	s->owin = 0;
 	s->d = 0;
 	
@@ -572,8 +583,9 @@ size_t fir_int32_process(fir_int32_t *s, int32_t *out, const int32_t *in, size_t
 	for(x = 0; samples; samples--)
 	{
 		/* Append the next input sample to the round buffer */
-		s->win[s->owin] = s->win[s->owin + s->ataps] = *in;
-		if(++s->owin == s->ataps) s->owin = 0;
+		s->win[s->owin] = *in;
+		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *in;
+		if(++s->owin == s->lwin) s->owin = 0;
 		
 		for(; s->d < s->interpolation; s->d += s->decimation)
 		{
@@ -674,7 +686,7 @@ int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *vtaps, c
 	{
 		if(vtaps)
 		{
-			i = fir_int32_init(&s->vfir, vtaps, ntaps, 1, 1);
+			i = fir_int32_init(&s->vfir, vtaps, ntaps, 1, 1, 0);
 			if(i != 0)
 			{
 				limiter_free(s);
@@ -684,7 +696,7 @@ int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *vtaps, c
 		
 		if(ftaps)
 		{
-			i = fir_int32_init(&s->ffir, ftaps, ntaps, 1, 1);
+			i = fir_int32_init(&s->ffir, ftaps, ntaps, 1, 1, 0);
 			if(i != 0)
 			{
 				limiter_free(s);

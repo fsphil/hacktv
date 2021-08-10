@@ -1701,12 +1701,7 @@ const vid_configs_t vid_configs[] = {
 
 /* Video filter process */
 typedef struct {
-	
-	int lines;
-	int offset;
-	
 	fir_int16_t fir;
-	
 } _vid_filter_process_t;
 
 /* Test taps for a CCIR-405 625 line video pre-emphasis filter at 28 MHz */
@@ -2721,28 +2716,13 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	return(1);
 }
 
-static int _vid_resampler_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	_vid_filter_process_t *p = arg;
 	vid_line_t *dst = lines[0];
 	vid_line_t *src = lines[nlines - 1];
 	
 	dst->width = fir_int16_process(&p->fir, dst->output, src->output, src->width);
-	
-	return(1);
-}
-
-static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
-{
-	_vid_filter_process_t *p = arg;
-	vid_line_t *src = lines[nlines - 1];
-	int x1, x2;
-	
-	x1 = p->offset;
-	x2 = src->width - x1;
-	
-	fir_int16_process(&p->fir, &lines[0]->output[x1 * 2], &src->output[0], x2);
-	fir_int16_process(&p->fir, &lines[1]->output[0], &src->output[x2 * 2], x1);
 	
 	return(1);
 }
@@ -3021,6 +3001,20 @@ static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, v
 	return(VID_OK);
 }
 
+static int _calc_filter_delay(int width, int ntaps)
+{
+	int delay;
+	
+	/* Calculate the number of samples delay needed
+	 * to make filter delay exactly N lines */
+	ntaps /= 2;
+	
+	delay = (ntaps + width - 1) / width;
+	delay = width * delay - ntaps;
+	
+	return(delay);
+}
+
 static int _init_vresampler(vid_t *s)
 {
 	_vid_filter_process_t *p;
@@ -3038,7 +3032,7 @@ static int _init_vresampler(vid_t *s)
 	width = (s->width * p->fir.interpolation + p->fir.decimation - 1) / p->fir.decimation;
 	if(width > s->max_width) s->max_width = width;
 	
-	_add_lineprocess(s, "vresampler", 2, p, _vid_resampler_process, _vid_filter_free);
+	_add_lineprocess(s, "vresampler", 2, p, _vid_filter_process, _vid_filter_free);
 	
 	return(VID_OK);
 }	
@@ -3046,7 +3040,11 @@ static int _init_vresampler(vid_t *s)
 static int _init_vfilter(vid_t *s)
 {
 	_vid_filter_process_t *p;
-	int ntaps;
+	int ntaps = 0;
+	int width;
+	int delay;
+	
+	width = round((double) s->sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	
 	p = calloc(1, sizeof(_vid_filter_process_t));
 	if(!p)
@@ -3068,7 +3066,7 @@ static int _init_vfilter(vid_t *s)
 		}
 		
 		fir_int16_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_scomplex_init(&p->fir, taps, ntaps, 1, 1);
+		fir_int16_scomplex_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)
@@ -3119,7 +3117,7 @@ static int _init_vfilter(vid_t *s)
 			}
 		}
 		
-		fir_int16_init(&p->fir, taps, ntaps, 1, 1);
+		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
@@ -3136,7 +3134,7 @@ static int _init_vfilter(vid_t *s)
 		}
 		
 		fir_int16_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
-		fir_int16_init(&p->fir, taps, ntaps, 1, 1);
+		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 		free(taps);
 	}
 	
@@ -3147,10 +3145,9 @@ static int _init_vfilter(vid_t *s)
 		return(VID_OK);
 	}
 	
-	p->lines = 1 + p->fir.ntaps / 2 / s->width;
-	p->offset = s->width - ((p->fir.ntaps / 2) % s->width);
+	delay = (ntaps / 2 + width - 1) / width;
 	
-	_add_lineprocess(s, "vfilter", 1 + p->lines, p, _vid_filter_process, _vid_filter_free);
+	_add_lineprocess(s, "vfilter", 1 + delay, p, _vid_filter_process, _vid_filter_free);
 	
 	return(VID_OK);
 }
@@ -3330,10 +3327,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		fir_int16_low_pass(taps, 51, s->pixel_rate, 1.50e6, 0.50e6, 1.0);
-		fir_int16_init(&s->fm_secam_fir, taps, 51, 1, 1);
+		fir_int16_init(&s->fm_secam_fir, taps, 51, 1, 1, 0);
 		
 		fir_int16_band_reject(taps, 51, s->pixel_rate, SECAM_FM_FREQ - 1.0e6, SECAM_FM_FREQ + 1e6, 1e6, 1.0);
-		fir_int16_init(&s->secam_l_fir, taps, 51, 1, 1);
+		fir_int16_init(&s->secam_l_fir, taps, 51, 1, 1, 0);
 		
 		/* FM deviation limits */
 		s->fm_secam_dmin[0] = lround((SECAM_CB_FREQ - SECAM_FM_FREQ - 350e3) / SECAM_FM_DEV * INT16_MAX);
