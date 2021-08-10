@@ -3726,7 +3726,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		/* Allocate memory for the temporary passthru buffer */
-		s->passline = calloc(sizeof(int16_t) * 2, s->width);
+		s->passline = calloc(sizeof(int16_t) * 2, s->max_width);
 		if(!s->passline)
 		{
 			vid_free(s);
