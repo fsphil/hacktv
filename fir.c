@@ -202,41 +202,7 @@ void fir_complex_band_pass(double *taps, size_t ntaps, double sample_rate, doubl
 
 
 
-void fir_int16_low_pass(int16_t *taps, size_t ntaps, double sample_rate, double cutoff, double width, double gain)
-{
-	double *dtaps;
-	int i;
-	
-	dtaps = calloc(ntaps, sizeof(double));
-	
-	fir_low_pass(dtaps, ntaps, sample_rate, cutoff, width, gain);
-	
-	for(i = 0; i < ntaps; i++)
-	{
-		taps[i] = lround(dtaps[i] * 32767.0);
-	}
-	
-	free(dtaps);
-}
-
-void fir_int16_band_reject(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
-{
-	double *dtaps;
-	int i;
-	
-	dtaps = calloc(ntaps, sizeof(double));
-	
-	fir_band_reject(dtaps, ntaps, sample_rate, low_cutoff, high_cutoff, width, gain);
-	
-	for(i = 0; i < ntaps; i++)
-	{
-		taps[i] = lround(dtaps[i] * 32767.0);
-	}
-	
-	free(dtaps);
-}
-
-int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int16_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -256,7 +222,7 @@ int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int 
 	j = s->ntaps - s->ataps;
 	for(i = ntaps - 1; i >= 0; i--)
 	{
-		s->itaps[j] = taps[i];
+		s->itaps[j] = lround(taps[i] * 32767.0);
 		j -= s->ataps;
 		if(j < 0) j += s->ntaps + 1;
 	}
@@ -321,7 +287,7 @@ void fir_int16_free(fir_int16_t *s)
 int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
 {
 	int ntaps;
-	int16_t *taps;
+	double *taps;
 	int d;
 	
 	/* Simplify ratio */
@@ -334,7 +300,7 @@ int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
 	ntaps += (ntaps % interpolation ? interpolation - (ntaps % interpolation) : 0);
 	if((ntaps & 1) == 0) ntaps--;
 	
-	taps = calloc(ntaps, sizeof(int16_t));
+	taps = calloc(ntaps, sizeof(double));
 	if(!taps)
 	{
 		return(-1);
@@ -342,11 +308,11 @@ int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
 	
 	if(interpolation > decimation)
 	{
-		fir_int16_low_pass(taps, ntaps, interpolation, 0.45, 0.1, interpolation);
+		fir_low_pass(taps, ntaps, interpolation, 0.45, 0.1, interpolation);
 	}
 	else
 	{
-		fir_int16_low_pass(taps, ntaps, interpolation, 0.45 * interpolation / decimation, 0.1 * interpolation / decimation, interpolation);
+		fir_low_pass(taps, ntaps, interpolation, 0.45 * interpolation / decimation, 0.1 * interpolation / decimation, interpolation);
 	}
 	
 	/* Create the FIR filter */
@@ -379,7 +345,7 @@ void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate
 	free(dtaps);
 }
 
-int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int16_complex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -399,10 +365,10 @@ int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int nta
 	j = s->ntaps - s->ataps;
 	for(i = ntaps - 1; i >= 0; i--)
 	{
-		s->itaps[j * 2 + 0] =  taps[i * 2 + 0];
-		s->itaps[j * 2 + 1] = -taps[i * 2 + 1];
-		s->qtaps[j * 2 + 0] =  taps[i * 2 + 1];
-		s->qtaps[j * 2 + 1] =  taps[i * 2 + 0];
+		s->itaps[j * 2 + 0] = lround( taps[i * 2 + 0] * 32767.0);
+		s->itaps[j * 2 + 1] = lround(-taps[i * 2 + 1] * 32767.0);
+		s->qtaps[j * 2 + 0] = lround( taps[i * 2 + 1] * 32767.0);
+		s->qtaps[j * 2 + 1] = lround( taps[i * 2 + 0] * 32767.0);
 		j -= s->ataps;
 		if(j < 0) j += s->ntaps + 1;
 	}
@@ -459,7 +425,7 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in
 	return(x);
 }
 
-int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int16_scomplex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -479,8 +445,8 @@ int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int nt
 	j = s->ntaps - s->ataps;
 	for(i = ntaps - 1; i >= 0; i--)
 	{
-		s->itaps[j] = taps[i * 2 + 0];
-		s->qtaps[j] = taps[i * 2 + 1];
+		s->itaps[j] = lround(taps[i * 2 + 0] * 32767.0);
+		s->qtaps[j] = lround(taps[i * 2 + 1] * 32767.0);
 		j -= s->ataps;
 		if(j < 0) j += s->ntaps + 1;
 	}
@@ -538,7 +504,7 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *i
 
 
 
-int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int32_init(fir_int32_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -557,7 +523,7 @@ int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps, int 
 	j = s->ntaps - s->ataps;
 	for(i = ntaps - 1; i >= 0; i--)
 	{
-		s->itaps[j] = taps[i];
+		s->itaps[j] = lround(taps[i] * 32767.0);
 		j -= s->ataps;
 		if(j < 0) j += s->ntaps + 1;
 	}
@@ -676,7 +642,7 @@ void limiter_free(limiter_t *s)
 	free(s->var);
 }
 
-int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *vtaps, const int32_t *ftaps, int ntaps)
+int limiter_init(limiter_t *s, int16_t level, int width, const double *vtaps, const double *ftaps, int ntaps)
 {
 	int i;
 	

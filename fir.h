@@ -60,23 +60,19 @@ extern void fir_low_pass(double *taps, size_t ntaps, double sample_rate, double 
 extern void fir_band_reject(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
 extern void fir_complex_band_pass(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
 
-extern void fir_int16_low_pass(int16_t *taps, size_t ntaps, double sample_rate, double cutoff, double width, double gain);
-extern void fir_int16_band_reject(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
-extern void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
-
-extern int fir_int16_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
+extern int fir_int16_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
 extern size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
 extern void fir_int16_free(fir_int16_t *s);
 
 extern int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation);
 
-extern int fir_int16_complex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
+extern int fir_int16_complex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
 extern size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
 
-extern int fir_int16_scomplex_init(fir_int16_t *s, const int16_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
+extern int fir_int16_scomplex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
 extern size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);
 
-extern int fir_int32_init(fir_int32_t *s, const int32_t *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
+extern int fir_int32_init(fir_int32_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
 extern size_t fir_int32_process(fir_int32_t *s, int32_t *out, const int32_t *in, size_t samples);
 extern void fir_int32_free(fir_int32_t *s);
 
@@ -112,7 +108,7 @@ typedef struct {
 } limiter_t;
 
 extern void limiter_free(limiter_t *s);
-extern int limiter_init(limiter_t *s, int16_t level, int width, const int32_t *vtaps, const int32_t *ftaps, int ntaps);
+extern int limiter_init(limiter_t *s, int16_t level, int width, const double *vtaps, const double *ftaps, int ntaps);
 extern void limiter_process(limiter_t *s, int16_t *out, const int16_t *vin, const int16_t *fin, int samples, int step);
 
 #endif
