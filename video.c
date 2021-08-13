@@ -2199,8 +2199,8 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 	
 	/* Not really. Suggest some good sample rates */
 	r = sample_rate / m;
-	fprintf(stderr, "Warning: Sample rate %u may not work well with this mode.\n", sample_rate);
-	fprintf(stderr, "Next valid sample rates: %u, %u\n", m * r, m * (r + 1));
+	fprintf(stderr, "Warning: Pixel rate %u may not work well with this mode.\n", sample_rate);
+	fprintf(stderr, "Next valid pixel rates: %u, %u\n", m * r, m * (r + 1));
 }
 
 static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **lines)
@@ -3290,12 +3290,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	memset(s, 0, sizeof(vid_t));
 	memcpy(&s->conf, conf, sizeof(vid_config_t));
 	
-	/* Calculate the number of samples per line */
-	_test_sample_rate(&s->conf, sample_rate);
-	
 	s->sample_rate = sample_rate;
-	s->pixel_rate = pixel_rate ? pixel_rate : s->sample_rate;
+	s->pixel_rate = pixel_rate ? pixel_rate : sample_rate;
 	
+	_test_sample_rate(&s->conf, s->pixel_rate);
+	
+	/* Calculate the number of samples per line */
 	s->width = round((double) s->pixel_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
 	s->half_width = round((double) s->pixel_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
 	s->max_width = s->width;
