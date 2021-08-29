@@ -263,7 +263,8 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t
 				a += *(win++) * *(taps++);
 			}
 			
-			*out = a >> 15;
+			a >>= 15;
+			*out = a < INT16_MIN ? INT16_MIN : (a > INT16_MAX ? INT16_MAX : a);
 			out += 2;
 			x++;
 		}
@@ -431,8 +432,10 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in
 				aq += *(win++) * *(qtaps++);
 			}
 			
-			out[0] = ai >> 15;
-			out[1] = aq >> 15;
+			ai >>= 15;
+			aq >>= 15;
+			out[0] = ai < INT16_MIN ? INT16_MIN : (ai > INT16_MAX ? INT16_MAX : ai);
+			out[1] = aq < INT16_MIN ? INT16_MIN : (aq > INT16_MAX ? INT16_MAX : aq);
 			out += 2;
 			x++;
 		}
@@ -504,8 +507,10 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, const int16_t *i
 				aq += *(win++) * *(qtaps++);
 			}
 			
-			out[0] = ai >> 15;
-			out[1] = aq >> 15;
+			ai >>= 15;
+			aq >>= 15;
+			out[0] = ai < INT16_MIN ? INT16_MIN : (ai > INT16_MAX ? INT16_MAX : ai);
+			out[1] = aq < INT16_MIN ? INT16_MIN : (aq > INT16_MAX ? INT16_MAX : aq);
 			out += 2;
 			x++;
 		}
@@ -584,10 +589,7 @@ size_t fir_int32_process(fir_int32_t *s, int32_t *out, const int32_t *in, size_t
 			}
 			
 			a >>= 15;
-			if(a > INT32_MAX) a = INT32_MAX;
-			else if(a < INT32_MIN) a = INT32_MIN;
-			
-			*out = a;
+			*out = a < INT32_MIN ? INT32_MIN : (a > INT32_MAX ? INT32_MAX : a);
 			out += 2;
 			x++;
 		}
