@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <SoapySDR/Device.h>
 #include <SoapySDR/Formats.h>
+#include <SoapySDR/Version.h>
 #include "hacktv.h"
 
 typedef struct {
@@ -132,7 +133,12 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 		return(HACKTV_ERROR);
 	}
 	
+#if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00080000)
+	rf->s = SoapySDRDevice_setupStream(rf->d, SOAPY_SDR_TX, "CS16", NULL, 0, NULL);
+	if(rf->s == NULL)
+#else
 	if(SoapySDRDevice_setupStream(rf->d, &rf->s, SOAPY_SDR_TX, SOAPY_SDR_CS16, NULL, 0, NULL) != 0)
+#endif
 	{
 		fprintf(stderr, "SoapySDRDevice_setupStream() failed: %s\n", SoapySDRDevice_lastError());
 		free(rf);
