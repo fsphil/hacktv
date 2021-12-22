@@ -15,7 +15,16 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-/* DANCE audio encoder */
+/* DANCE(-ish) audio encoder
+ * 
+ * Despite the name of this file, it does not yet contain a DANCE encoder.
+ * For now it only encodes a closely related codec from the digital
+ * sub-carrier/NTSC system (Recommendation ITU-R BO.650). This was used
+ * by analogue satellite services in Japan.
+ * 
+ * DANCE is a reduced bitrate version of this codec used by the analogue high
+ * definition video standard MUSE and will be added later.
+*/
 
 #include <stdio.h>
 
