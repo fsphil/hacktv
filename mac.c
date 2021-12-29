@@ -844,7 +844,7 @@ int mac_init(vid_t *s)
 	
 	mac->vsam = MAC_VSAM_FREE_ACCESS;
 	
-	/* Initalise Eurocrypt, if required */
+	/* Initialise Eurocrypt, if required */
 	if(s->conf.eurocrypt)
 	{
 		mac->vsam = MAC_VSAM_CONTROLLED_ACCESS;
@@ -1118,7 +1118,7 @@ static int _line_625(vid_t *s, int frame, int line, uint8_t *data, int x)
 	dx = _bits(df, dx, b, 8);
 	
 	dx = _bits(df, dx, (frame >> 8) & 0xFFFFF, 20);    /* CAFCNT Conditional access frame count */
-	dx = _bits(df, dx, 1, 1);                          /* Rp Repacement */
+	dx = _bits(df, dx, 1, 1);                          /* Rp Replacement */
 	dx = _bits(df, dx, 1, 1);                          /* Fp Fingerprint */
 	dx = _bits(df, dx, 3, 2);                          /* Unallocated, both bits set to 1 */
 	dx = _bits(df, dx, 0, 1);                          /* SIFT Service identification channel format */

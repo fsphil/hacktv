@@ -3485,7 +3485,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	s->olines = 1;
 	s->audio = 0;
 	
-	/* Initalise D/D2-MAC state */
+	/* Initialise D/D2-MAC state */
 	if(s->conf.type == VID_MAC)
 	{
 		r = mac_init(s);
@@ -3502,7 +3502,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "raster", 1, NULL, _vid_next_line_raster, NULL);
 	}
 	
-	/* Initalise VITS inserter */
+	/* Initialise VITS inserter */
 	if(s->conf.vits)
 	{
 		if((r = vits_init(&s->vits, s->pixel_rate, s->width, s->conf.lines, s->white_level - s->blanking_level)) != VID_OK)
@@ -3514,7 +3514,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "vits", 1, &s->vits, vits_render, NULL);
 	}
 	
-	/* Initalise the WSS system */
+	/* Initialise the WSS system */
 	if(s->conf.wss)
 	{
 		if((r = wss_init(&s->wss, s, s->conf.wss)) != VID_OK)
@@ -3550,7 +3550,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "videocrypts", VCS_DELAY_LINES, &s->vcs, vcs_render_line, NULL);
 	}
 	
-	/* Initalise syster encoder */
+	/* Initialise syster encoder */
 	if(s->conf.syster)
 	{
 		if((r = ng_init(&s->ng, s)) != VID_OK)
@@ -3562,7 +3562,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "syster", NG_DELAY_LINES, &s->ng, ng_render_line, NULL);
 	}
 	
-	/* Initalise ACP renderer */
+	/* Initialise ACP renderer */
 	if(s->conf.acp)
 	{
 		if((r = acp_init(&s->acp, s)) != VID_OK)
@@ -3574,7 +3574,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "acp", 1, &s->acp, acp_render_line, NULL);
 	}
 	
-	/* Initalise the teletext system */
+	/* Initialise the teletext system */
 	if(s->conf.teletext)
 	{
 		if((r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)

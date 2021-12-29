@@ -256,7 +256,7 @@ static void print_usage(void)
 		"  free        = Free-access, no subscription card is required to decode.\n"
 		"  conditional = A valid Sky card is required to decode. Sample data from MTV.\n"
 		"\n"
-		"Videocrypt is only compatiable with 625 line PAL modes. This version\n"
+		"Videocrypt is only compatible with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
 		"\n"
 		"Videocrypt II\n"
