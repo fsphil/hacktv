@@ -19,7 +19,7 @@
  * 
  * This is untested on real hardware and should be considered just a
  * simulation. The VBI data *may* be valid but the shuffling sequence
- * is definitly not. There may also be colour distortion due to hacktv
+ * is definitely not. There may also be colour distortion due to hacktv
  * not operating at the specified sample rate of FPAL * 4.
 */
 

@@ -396,7 +396,7 @@ static void _ecm_hash(uint8_t *hash, const uint8_t *src, const ec_mode_t *mode)
 		}
 	}
 	
-	/* Final interation - EC M only */
+	/* Final iteration - EC M only */
 	if(mode->emode == EC_M)
 	{
 		_eurocrypt(hash, hash, mode->key, HASH, mode->emode);
