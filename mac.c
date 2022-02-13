@@ -26,7 +26,7 @@
 
 /* MAC sync codes */
 #define MAC_CLAMP 0xEAF3927FUL
-#define MAC_LSW   0x0BUL
+#define MAC_LSW   0x0B
 #define MAC_CRI   0x55555555UL
 #define MAC_FSW   0x65AEF3153F41C246ULL
 
