@@ -1617,7 +1617,7 @@ const vid_config_t vid_config_cbs405_m = {
 	
 	.fm_mono_carrier   = 4500000, /* Hz */
 	.fm_mono_deviation = 25000, /* +/- Hz */
-	.fm_mono_preemph   = 0.000075, /* Seconds */
+	.fm_mono_preemph   = VID_75US,
 };
 
 const vid_config_t vid_config_cbs405 = {
