@@ -167,9 +167,6 @@ static int _packet_queue_init(av_ffmpeg_t *av, _packet_queue_t *q)
 	q->eof = 0;
 	q->abort = 0;
 	
-	pthread_mutex_init(&av->mutex, NULL);
-	pthread_cond_init(&av->cond, NULL);
-	
 	return(0);
 }
 
@@ -198,9 +195,6 @@ static int _packet_queue_flush(av_ffmpeg_t *av, _packet_queue_t *q)
 static void _packet_queue_free(av_ffmpeg_t *av, _packet_queue_t *q)
 {
 	_packet_queue_flush(av, q);
-	
-	pthread_cond_destroy(&av->cond);
-	pthread_mutex_destroy(&av->mutex);
 }
 
 static void _packet_queue_abort(av_ffmpeg_t *av, _packet_queue_t *q)
@@ -877,6 +871,9 @@ static int _av_ffmpeg_close(void *private)
 	
 	avformat_close_input(&av->format_ctx);
 	
+	pthread_cond_destroy(&av->cond);
+	pthread_mutex_destroy(&av->mutex);
+	
 	free(av);
 	
 	return(HACKTV_OK);
@@ -1120,6 +1117,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 	
 	/* Start the threads */
 	av->thread_abort = 0;
+	pthread_mutex_init(&av->mutex, NULL);
+	pthread_cond_init(&av->cond, NULL);
 	_packet_queue_init(av, &av->video_queue);
 	_packet_queue_init(av, &av->audio_queue);
 	
