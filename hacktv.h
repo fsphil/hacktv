@@ -90,6 +90,8 @@ typedef struct {
 	int chid;
 	int64_t offset;
 	char *passthru;
+	char *ffmt;
+	char *fopts;
 	
 	/* Video encoder state */
 	vid_t vid;
