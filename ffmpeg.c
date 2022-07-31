@@ -879,9 +879,11 @@ static int _av_ffmpeg_close(void *private)
 	return(HACKTV_OK);
 }
 
-int av_ffmpeg_open(vid_t *s, char *input_url)
+int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 {
 	av_ffmpeg_t *av;
+	AVInputFormat *fmt = NULL;
+	AVDictionary *opts = NULL;
 	AVCodec *codec;
 	AVRational time_base;
 	int64_t start_time = 0;
@@ -900,8 +902,18 @@ int av_ffmpeg_open(vid_t *s, char *input_url)
 		input_url = "pipe:";
 	}
 	
+	if(format != NULL)
+	{
+		fmt = av_find_input_format(format);
+	}
+	
+	if(options)
+	{
+		av_dict_parse_string(&opts, options, "=", ":", 0);
+	}
+	
 	/* Open the video */
-	if((r = avformat_open_input(&av->format_ctx, input_url, NULL, NULL)) < 0)
+	if((r = avformat_open_input(&av->format_ctx, input_url, fmt, &opts)) < 0)
 	{
 		fprintf(stderr, "Error opening file '%s'\n", input_url);
 		_print_ffmpeg_error(r);
