@@ -536,28 +536,23 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_TELETEXT: /* --teletext <path> */
-			free(s.teletext);
-			s.teletext = strdup(optarg);
+			s.teletext = optarg;
 			break;
 		
 		case _OPT_WSS: /* --wss <mode> */
-			free(s.wss);
-			s.wss = strdup(optarg);
+			s.wss = optarg;
 			break;
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
-			free(s.videocrypt);
-			s.videocrypt = strdup(optarg);
+			s.videocrypt = optarg;
 			break;
 		
 		case _OPT_VIDEOCRYPT2: /* --videocrypt2 */
-			free(s.videocrypt2);
-			s.videocrypt2 = strdup(optarg);
+			s.videocrypt2 = optarg;
 			break;
 		
 		case _OPT_VIDEOCRYPTS: /* --videocrypts */
-			free(s.videocrypts);
-			s.videocrypts = strdup(optarg);
+			s.videocrypts = optarg;
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
@@ -605,8 +600,7 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_EUROCRYPT: /* --eurocrypt */
-			free(s.eurocrypt);
-			s.eurocrypt = strdup(optarg);
+			s.eurocrypt = optarg;
 			break;
 		
 		case _OPT_SCRAMBLE_AUDIO: /* --scramble-audio */
@@ -622,8 +616,7 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_PASSTHRU: /* --passthru <path> */
-			free(s.passthru);
-			s.passthru = strdup(optarg);
+			s.passthru = optarg;
 			break;
 		
 		case 'f': /* -f, --frequency <value> */
@@ -639,8 +632,7 @@ int main(int argc, char *argv[])
 			break;
 		
 		case 'A': /* -A, --antenna <name> */
-			free(s.antenna);
-			s.antenna = strdup(optarg);
+			s.antenna = optarg;
 			break;
 		
 		case 't': /* -t, --type <type> */
