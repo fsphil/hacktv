@@ -882,9 +882,9 @@ static int _av_ffmpeg_close(void *private)
 int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 {
 	av_ffmpeg_t *av;
-	AVInputFormat *fmt = NULL;
+	const AVInputFormat *fmt = NULL;
 	AVDictionary *opts = NULL;
-	AVCodec *codec;
+	const AVCodec *codec;
 	AVRational time_base;
 	int64_t start_time = 0;
 	int r;
