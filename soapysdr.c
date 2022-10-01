@@ -33,10 +33,24 @@ typedef struct {
 static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 {
 	soapysdr_t *rf = private;
-	const void *buffs[] = { iq_data };
+	const void *buffs[1];
 	int flags = 0;
+	int r;
 	
-	SoapySDRDevice_writeStream(rf->d, rf->s, buffs, samples, &flags, 0, 100000);
+	while(samples > 0)
+	{
+		buffs[0] = iq_data;
+		
+		r = SoapySDRDevice_writeStream(rf->d, rf->s, buffs, samples, &flags, 0, 100000);
+		
+		if(r <= 0)
+		{
+			return(HACKTV_ERROR);
+		}
+		
+		samples -= r;
+		iq_data += r * 2;
+	}
 	
 	return(HACKTV_OK);
 }
