@@ -73,7 +73,7 @@ const vid_config_t vid_config_pal_i = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -131,7 +131,7 @@ const vid_config_t vid_config_pal_bg = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -190,7 +190,7 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.20,
@@ -248,7 +248,7 @@ const vid_config_t vid_config_pal = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -399,7 +399,7 @@ const vid_config_t vid_config_secam_l = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3µs */
 	
 	.white_level    = 1.00,
 	.black_level    = 0.30,
@@ -450,7 +450,7 @@ const vid_config_t vid_config_secam_dk = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -501,7 +501,7 @@ const vid_config_t vid_config_secam_i = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -556,7 +556,7 @@ const vid_config_t vid_config_secam_fm = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3µs */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.20,
@@ -610,7 +610,7 @@ const vid_config_t vid_config_secam = {
 	
 	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
 	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 2.73 ±0.20µs */
+	.vsync_long_width  = 0.00002730, /* 27.3µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
