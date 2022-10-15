@@ -162,6 +162,65 @@ const vid_config_t vid_config_pal_bg = {
 	.nicam_beta     = 0.4,
 };
 
+const vid_config_t vid_config_pal_dk = {
+	
+	/* System D/K (PAL) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 6000000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.70, /* Power level of video */
+	.fm_mono_level  = 0.20, /* FM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
+	
+	.type           = VID_RASTER_625,
+	.frame_rate_num = 25,
+	.frame_rate_den = 1,
+	.lines          = 625,
+	.hline          = 313,
+	
+	.active_lines   = 576,
+	.active_width   = 0.00005195, /* 51.95µs */
+	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	
+	.white_level    = 0.20,
+	.black_level    = 0.76,
+	.blanking_level = 0.76,
+	.sync_level     = 1.00,
+	
+	.colour_mode    = VID_PAL,
+	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
+	.colour_carrier = 4433618.75,
+	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = 0.877,
+	.qu_co          = 0.493,
+	.qv_co          = 0.000,
+	
+	.fm_mono_carrier   = 6500000, /* Hz */
+	.fm_mono_deviation = 50000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US,
+
+	/* Chinese standard GY/T 129-1997, similar to French standard. */
+	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_beta     = 0.4,
+};
+
 const vid_config_t vid_config_pal_fm = {
 	
 	/* PAL FM (satellite) */
@@ -1701,6 +1760,8 @@ const vid_configs_t vid_configs[] = {
 	{ "i",             &vid_config_pal_i            },
 	{ "b",             &vid_config_pal_bg           },
 	{ "g",             &vid_config_pal_bg           },
+	{ "pal-d",         &vid_config_pal_dk           },
+	{ "pal-k",         &vid_config_pal_dk           },
 	{ "pal-fm",        &vid_config_pal_fm           },
 	{ "pal",           &vid_config_pal              },
 	{ "pal-m",         &vid_config_pal_m            },
