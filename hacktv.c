@@ -169,6 +169,7 @@ static void print_usage(void)
 		"\n"
 		"  i             = PAL colour, 25 fps, 625 lines, AM (complex), 6.0 MHz FM audio\n"
 		"  b, g          = PAL colour, 25 fps, 625 lines, AM (complex), 5.5 MHz FM audio\n"
+		"  pal-d, pal-k  = PAL colour, 25 fps, 625 lines, AM (complex), 6.5 MHz FM audio\n"
 		"  pal-fm        = PAL colour, 25 fps, 625 lines, FM (complex), 6.5 MHz FM audio\n"
 		"  pal           = PAL colour, 25 fps, 625 lines, unmodulated (real)\n"
 		"  pal-m         = PAL colour, 30/1.001 fps, 525 lines, AM (complex), 4.5 MHz FM audio\n"
