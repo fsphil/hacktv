@@ -17,16 +17,22 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <SoapySDR/Device.h>
 #include <SoapySDR/Formats.h>
 #include <SoapySDR/Version.h>
 #include "hacktv.h"
+
+#define BUF_LEN 4096
 
 typedef struct {
 	
 	/* SoapySDR device and stream */
 	SoapySDRDevice *d;
 	SoapySDRStream *s;
+	
+	int scale;
+	int16_t txbuf[BUF_LEN * 2];
 	
 } soapysdr_t;
 
@@ -35,21 +41,42 @@ static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 	soapysdr_t *rf = private;
 	const void *buffs[1];
 	int flags = 0;
+	int l;
 	int r;
 	
 	while(samples > 0)
 	{
-		buffs[0] = iq_data;
-		
-		r = SoapySDRDevice_writeStream(rf->d, rf->s, buffs, samples, &flags, 0, 100000);
-		
-		if(r <= 0)
+		if(rf->scale)
 		{
-			return(HACKTV_ERROR);
+			buffs[0] = rf->txbuf;
+			l = (samples > BUF_LEN ? BUF_LEN : samples);
+			
+			for(r = 0; r < 2 * l; r++)
+			{
+				rf->txbuf[r] = iq_data[r] * rf->scale / INT16_MAX;
+			}
+		}
+		else
+		{
+			buffs[0] = iq_data;
+			l = samples;
 		}
 		
-		samples -= r;
-		iq_data += r * 2;
+		samples -= l;
+		iq_data += l * 2;
+		
+		while(l > 0)
+		{
+			r = SoapySDRDevice_writeStream(rf->d, rf->s, buffs, l, &flags, 0, 100000);
+			
+			if(r <= 0)
+			{
+				return(HACKTV_ERROR);
+			}
+			
+			l -= r;
+			buffs[0] += r * 2;
+		}
 	}
 	
 	return(HACKTV_OK);
@@ -72,6 +99,8 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 	soapysdr_t *rf;
 	SoapySDRKwargs *results;
 	size_t length;
+	char *sn;
+	double fullscale;
 	
 	if(s->vid.conf.output_type != HACKTV_INT16_COMPLEX)
 	{
@@ -145,6 +174,25 @@ int rf_soapysdr_open(hacktv_t *s, const char *device, unsigned int frequency_hz,
 		fprintf(stderr, "SoapySDRDevice_setAntenna() failed: %s\n", SoapySDRDevice_lastError());
 		free(rf);
 		return(HACKTV_ERROR);
+	}
+	
+	/* Query the native stream format, see if we need to scale the output */
+	sn = SoapySDRDevice_getNativeStreamFormat(rf->d, SOAPY_SDR_TX, 0, &fullscale);
+	if(sn && strcmp(sn, "CS16") == 0)
+	{
+		rf->scale = fullscale;
+		
+		/* Always use an odd value (eg. 2048 gets adjusted to 2047) */
+		if((rf->scale & 1) == 0)
+		{
+			rf->scale--;
+		}
+		
+		/* No scaling necessary if the full scale is accepted */
+		if(rf->scale < 0 || rf->scale >= INT16_MAX)
+		{
+			rf->scale = 0;
+		}
 	}
 	
 #if defined(SOAPY_SDR_API_VERSION) && (SOAPY_SDR_API_VERSION >= 0x00080000)
