@@ -2312,7 +2312,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	int x;
 	int vy;
 	int w;
-	uint32_t rgb;
 	int pal = 0;
 	int fsc = 0;
 	int16_t *lut_b = NULL;
@@ -2753,17 +2752,33 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		l->output[x * 2] = s->sync_level;
 	}
 	
-	/* Render left side of active video if required */
-	if(seq[2] == 'a' && vy != -1)
+	/* Render the active video if required */
+	if(seq[2] == 'a' || seq[3] == 'a')
 	{
-		for(; x < s->active_left; x++)
+		uint32_t rgb;
+		uint32_t *prgb;
+		int16_t *o;
+		
+		/* Calculate active video portion of this line */
+		int al = (seq[2] == 'a' ? s->active_left : (seq[3] == 'a' ? s->half_width : -1));
+		int ar = (seq[3] == 'a' ? s->active_left + s->active_width : (seq[2] == 'a' ? s->half_width : -1));
+		
+		/* Blank the line up until the start of active video */
+		for(; x < al; x++)
 		{
 			l->output[x * 2] = s->blanking_level;
 		}
 		
-		for(; x < s->half_width; x++)
+		/* Render the active video */
+		prgb = (s->framebuffer != NULL && vy != -1 ? &s->framebuffer[vy * s->active_width + al - s->active_left] : NULL);
+		rgb = 0x000000;
+		
+		for(o = &l->output[x * 2]; x < ar; x++, o += 2)
 		{
-			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
+			if(prgb)
+			{
+				rgb = *(prgb++) & 0xFFFFFF;
+			}
 			
 			if(s->conf.colour_mode == VID_APOLLO_FSC ||
 			   s->conf.colour_mode == VID_CBS_FSC)
@@ -2772,51 +2787,30 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				rgb |= (rgb << 8) | (rgb << 16);
 			}
 			
-			l->output[x * 2] = s->yiq_level_lookup[rgb].y;
+			*o = s->yiq_level_lookup[rgb].y;
 			
 			if(pal)
 			{
-				l->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
-				l->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
+				*o += (s->yiq_level_lookup[rgb].i * lut_i[x] +
+				       s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
 			}
-		}
-	}
-	else
-	{
-		for(; x < s->half_width; x++)
-		{
-			l->output[x * 2] = s->blanking_level;
 		}
 	}
 	
-	if(seq[3] == 'a' && vy != -1)
+	/* Render the middle sync pulse if required */
+	if(seq[3] == 'v') w = s->vsync_short_width;
+	else if(seq[3] == 'V') w = s->vsync_long_width;
+	else w = 0;
+	
+	if(w)
 	{
-		for(; x < s->active_left + s->active_width; x++)
+		/* Blank the line up until the start of the pulse */
+		for(; x < s->half_width; x++)
 		{
-			rgb = s->framebuffer != NULL ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-			
-			if(s->conf.colour_mode == VID_APOLLO_FSC ||
-			   s->conf.colour_mode == VID_CBS_FSC)
-			{
-				rgb  = (rgb >> (8 * fsc)) & 0xFF;
-				rgb |= (rgb << 8) | (rgb << 16);
-			}
-			
-			l->output[x * 2] = s->yiq_level_lookup[rgb].y;
-			
-			if(pal)
-			{
-				l->output[x * 2] += (s->yiq_level_lookup[rgb].i * lut_i[x]) >> 15;
-				l->output[x * 2] += (s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
-			}
+			l->output[x * 2] = s->blanking_level;
 		}
-	}
-	else
-	{
-		if(seq[3] == 'v') w = s->vsync_short_width;
-		else if(seq[3] == 'V') w = s->vsync_long_width;
-		else w = 0;
 		
+		/* Render the pulse */
 		for(; x < s->half_width + w && x < s->width; x++)
 		{
 			l->output[x * 2] = s->sync_level;
@@ -2870,6 +2864,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		const cint16_t *g;
 		int16_t dmin, dmax;
+		uint32_t rgb;
 		
 		for(x = 0; x < s->width; x++)
 		{
