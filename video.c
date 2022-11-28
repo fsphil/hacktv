@@ -3261,20 +3261,12 @@ static int _init_vfilter(vid_t *s)
 	
 	if(s->conf.modulation == VID_VSB)
 	{
-		double *taps;
+		double taps[51 * 2];
 		
 		ntaps = 51;
 		
-		taps = calloc(ntaps, sizeof(double) * 2);
-		if(!taps)
-		{
-			free(p);
-			return(VID_OUT_OF_MEMORY);
-		}
-		
 		fir_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
 		fir_int16_scomplex_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
-		free(taps);
 	}
 	else if(s->conf.modulation == VID_FM)
 	{
@@ -3342,20 +3334,12 @@ static int _init_vfilter(vid_t *s)
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
 	{
-		double *taps;
+		double taps[51];
 		
 		ntaps = 51;
 		
-		taps = calloc(ntaps, sizeof(double));
-		if(!taps)
-		{
-			free(p);
-			return(VID_OUT_OF_MEMORY);
-		}
-		
 		fir_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
 		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
-		free(taps);
 	}
 	
 	if(p->fir.type == 0)
