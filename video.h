@@ -161,6 +161,7 @@ typedef struct {
 	double vsync_short_width;
 	double vsync_long_width;
 	
+	int invert_video;
 	double white_level;
 	double black_level;
 	double blanking_level;
