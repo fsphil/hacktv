@@ -90,6 +90,7 @@ typedef struct {
 	int chid;
 	int64_t offset;
 	char *passthru;
+	int invert_video;
 	char *ffmt;
 	char *fopts;
 	

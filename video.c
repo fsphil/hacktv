@@ -3397,6 +3397,21 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	
 	level = s->conf.video_level * slevel;
 	
+	/* Invert the video levels if requested */
+	if(s->conf.invert_video)
+	{
+		double t;
+		
+		/* Swap sync and white levels */
+		t = s->conf.white_level;
+		s->conf.white_level = s->conf.sync_level;
+		s->conf.sync_level = t;
+		
+		/* Adjust black and blanking levels */
+		s->conf.blanking_level = s->conf.sync_level - (s->conf.blanking_level - s->conf.white_level);
+		s->conf.black_level = s->conf.sync_level - (s->conf.black_level - s->conf.white_level);
+	}
+	
 	/* Calculate 16-bit blank and sync levels */
 	s->white_level    = round(s->conf.white_level    * level * INT16_MAX);
 	s->black_level    = round(s->conf.black_level    * level * INT16_MAX);
