@@ -235,7 +235,7 @@ int fir_int16_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int i
 	return(0);
 }
 
-size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples)
+size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples, int step)
 {
 	int a;
 	int x, y;
@@ -265,18 +265,18 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t
 			
 			a >>= 15;
 			*out = a < INT16_MIN ? INT16_MIN : (a > INT16_MAX ? INT16_MAX : a);
-			out += 2;
+			out += step;
 			x++;
 		}
 		s->d -= s->interpolation;
 		
-		in += 2;
+		in += step;
 	}
 	
 	return(x);
 }
 
-size_t fir_int16_process_block(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples)
+size_t fir_int16_process_block(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples, int step)
 {
 	int x;
 	
@@ -290,7 +290,7 @@ size_t fir_int16_process_block(fir_int16_t *s, int16_t *out, const int16_t *in, 
 		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *in;
 	}
 	
-	x = fir_int16_process(s, out, in, samples);
+	x = fir_int16_process(s, out, in, samples, step);
 	
 	return(x);
 }
