@@ -3038,7 +3038,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 					
 					if(s->conf.type == VID_MAC)
 					{
-						mac_write_audio(s, s->nicam_buf);
+						mac_write_audio(s, &s->mac.audio, 0, s->nicam_buf, NICAM_AUDIO_LEN * 2);
 					}
 					
 					s->nicam_buf_len = 0;
