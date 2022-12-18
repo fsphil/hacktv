@@ -104,6 +104,17 @@ static void print_usage(void)
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
 		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
+		"      --mac-audio-stereo         Use stereo audio (D/D2-MAC). (Default)\n"
+		"      --mac-audio-mono           Use mono audio (D/D2-MAC).\n"
+		"      --mac-audio-high-quality   Use high quality 32 kHz audio (D/D2-MAC).\n"
+		"                                 (Default)\n"
+		"      --mac-audio-medium-quality Use medium quality 16 kHz audio (D/D2-MAC).\n"
+		"      --mac-audio-companded      Use companded audio compression (D/D2-MAC).\n"
+		"                                 (Default)\n"
+		"      --mac-audio-linear         Use linear audio. (D/D2-MAC).\n"
+		"      --mac-audio-l1-protection  Use first level protection (D/D2-MAC).\n"
+		"                                 (Default)\n"
+		"      --mac-audio-l2-protection  Use second level protection (D/D2-MAC).\n"
 		"      --offset <value>           Add a frequency offset in Hz (Complex modes only).\n"
 		"      --passthru <file>          Read and add an int16 complex signal.\n"
 		"      --invert-video             Invert the composite video signal sync and\n"
@@ -343,6 +354,14 @@ enum {
 	_OPT_DOUBLE_CUT,
 	_OPT_SCRAMBLE_AUDIO,
 	_OPT_CHID,
+	_OPT_MAC_AUDIO_STEREO,
+	_OPT_MAC_AUDIO_MONO,
+	_OPT_MAC_AUDIO_HIGH_QUALITY,
+	_OPT_MAC_AUDIO_MEDIUM_QUALITY,
+	_OPT_MAC_AUDIO_COMPANDED,
+	_OPT_MAC_AUDIO_LINEAR,
+	_OPT_MAC_AUDIO_L1_PROTECTION,
+	_OPT_MAC_AUDIO_L2_PROTECTION,
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
 	_OPT_INVERT_VIDEO,
@@ -386,6 +405,14 @@ int main(int argc, char *argv[])
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
 		{ "chid",           required_argument, 0, _OPT_CHID },
+		{ "mac-audio-stereo", no_argument,     0, _OPT_MAC_AUDIO_STEREO },
+		{ "mac-audio-mono", no_argument,       0, _OPT_MAC_AUDIO_MONO },
+		{ "mac-audio-high-quality", no_argument, 0, _OPT_MAC_AUDIO_HIGH_QUALITY },
+		{ "mac-audio-medium-quality", no_argument, 0, _OPT_MAC_AUDIO_MEDIUM_QUALITY },
+		{ "mac-audio-companded", no_argument,  0, _OPT_MAC_AUDIO_COMPANDED },
+		{ "mac-audio-linear", no_argument,     0, _OPT_MAC_AUDIO_LINEAR },
+		{ "mac-audio-l1-protection", no_argument, 0, _OPT_MAC_AUDIO_L1_PROTECTION },
+		{ "mac-audio-l2-protection", no_argument, 0, _OPT_MAC_AUDIO_L2_PROTECTION },
 		{ "offset",         required_argument, 0, _OPT_OFFSET },
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
@@ -443,6 +470,10 @@ int main(int argc, char *argv[])
 	s.scramble_video = 0;
 	s.scramble_audio = 0;
 	s.chid = -1;
+	s.mac_audio_stereo = MAC_STEREO;
+	s.mac_audio_quality = MAC_HIGH_QUALITY;
+	s.mac_audio_companded = MAC_COMPANDED;
+	s.mac_audio_protection = MAC_FIRST_LEVEL_PROTECTION;
 	s.frequency = 0;
 	s.amp = 0;
 	s.gain = 0;
@@ -626,6 +657,38 @@ int main(int argc, char *argv[])
 			s.chid = strtol(optarg, NULL, 0);
 			break;
 		
+		case _OPT_MAC_AUDIO_STEREO: /* --mac-audio-stereo */
+			s.mac_audio_stereo = MAC_STEREO;
+			break;
+		
+		case _OPT_MAC_AUDIO_MONO: /* --mac-audio-mono */
+			s.mac_audio_stereo = MAC_MONO;
+			break;
+		
+		case _OPT_MAC_AUDIO_HIGH_QUALITY: /* --mac-audio-high-quality */
+			s.mac_audio_quality = MAC_HIGH_QUALITY;
+			break;
+		
+		case _OPT_MAC_AUDIO_MEDIUM_QUALITY: /* --mac-audio-medium-quality */
+			s.mac_audio_quality = MAC_MEDIUM_QUALITY;
+			break;
+		
+		case _OPT_MAC_AUDIO_COMPANDED: /* --mac-audio-companded */
+			s.mac_audio_companded = MAC_COMPANDED;
+			break;
+		
+		case _OPT_MAC_AUDIO_LINEAR: /* --mac-audio-linear */
+			s.mac_audio_companded = MAC_LINEAR;
+			break;
+		
+		case _OPT_MAC_AUDIO_L1_PROTECTION: /* --mac-audio-l1-protection */
+			s.mac_audio_protection = MAC_FIRST_LEVEL_PROTECTION;
+			break;
+		
+		case _OPT_MAC_AUDIO_L2_PROTECTION: /* --mac-audio-l2-protection */
+			s.mac_audio_protection = MAC_SECOND_LEVEL_PROTECTION;
+			break;
+
 		case _OPT_OFFSET: /* --offset <value Hz> */
 			s.offset = (int64_t) strtod(optarg, NULL);
 			break;
@@ -923,9 +986,17 @@ int main(int argc, char *argv[])
 		vid_conf.vits = 1;
 	}
 	
-	if(vid_conf.type == VID_MAC && s.chid >= 0)
+	if(vid_conf.type == VID_MAC)
 	{
-		vid_conf.chid = (uint16_t) s.chid;
+		if(s.chid >= 0)
+		{
+			vid_conf.chid = (uint16_t) s.chid;
+		}
+		
+		vid_conf.mac_audio_stereo = s.mac_audio_stereo;
+		vid_conf.mac_audio_quality = s.mac_audio_quality;
+		vid_conf.mac_audio_protection = s.mac_audio_protection;
+		vid_conf.mac_audio_companded = s.mac_audio_companded;
 	}
 	
 	if(s.filter)

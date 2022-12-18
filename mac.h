@@ -115,10 +115,59 @@ typedef struct {
 
 typedef struct {
 	
+	/* Input audio */
+	const int16_t *audio;
+	size_t audio_len;
+	
+	/* Output audio / data */
+	int samples_per_block;
+	int src_samples_per_block;
+	int bits_per_sample;
+	int block_len;
+	int16_t j17[64 * 2];
+	uint8_t block[120];
+	uint8_t pkt[MAC_PACKET_BYTES];
+	
+	int x;
+	int pktx;
+	int j17x;
+	
+	/* Channel configuration */
+	int high_quality;
+	int stereo;
+	int linear;
+	int protection;
+	
+	/* Packet details */
+	int address;
+	int continuity;
+	int scramble;
+	int conditional;
+	
+	/* Encoder settings */
+	struct {
+		fir_int16_t fir;
+		int offset;
+		int len;
+		int src_offset;
+		int src_len;
+		int sf_offset;
+		int sf_len;
+	} channel[2];
+	
+	/* SI packets */
+	uint8_t si_pkt[MAC_PACKET_BYTES];
+	int si_timer;
+	
+} mac_audioenc_t;
+
+typedef struct {
+	
 	uint8_t vsam; /* VSAM Vision scrambling and access mode */
 	uint8_t ratio; /* 0: 4:3, 1: 16:9 */
-	uint16_t audio_channel;
-	int scramble_audio;
+	
+	/* Main TV audio */
+	mac_audioenc_t audio;
 	
 	/* 1 = Teletext enabled */
 	int teletext;
@@ -139,9 +188,6 @@ typedef struct {
 	int polarity;
 	int16_t *lut;
 	int width;
-	
-	/* NICAM encoder */
-	nicam_enc_t nicam;
 	
 	/* Video properties */
 	int chrominance_width;
@@ -170,7 +216,12 @@ extern int mac_init(vid_t *s);
 extern void mac_free(vid_t *s);
 
 extern int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const uint8_t *data, int scramble);
-extern int mac_write_audio(vid_t *s, const int16_t *audio);
+extern int mac_write_audio(vid_t *s, mac_audioenc_t *enc, int subframe, const int16_t *audio, int samples);
+
+extern int mac_audioenc_init(mac_audioenc_t *enc, int high_quality, int stereo, int protection, int companded, int scramble, int conditional);
+extern int mac_audioenc_free(mac_audioenc_t *enc);
+extern const uint8_t *mac_audioenc_read(mac_audioenc_t *enc);
+extern int mac_audioenc_write(mac_audioenc_t *enc, const int16_t *audio, size_t samples);
 
 extern int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 

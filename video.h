@@ -241,6 +241,10 @@ typedef struct {
 	/* D/D2-MAC options */
 	int mac_mode;
 	uint16_t chid;
+	int mac_audio_stereo;
+	int mac_audio_quality;
+	int mac_audio_protection;
+	int mac_audio_companded;
 	int scramble_video;
 	int scramble_audio;
 	

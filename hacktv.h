@@ -88,6 +88,10 @@ typedef struct {
 	char *antenna;
 	int file_type;
 	int chid;
+	int mac_audio_stereo;
+	int mac_audio_quality;
+	int mac_audio_protection;
+	int mac_audio_companded;
 	int64_t offset;
 	char *passthru;
 	int invert_video;

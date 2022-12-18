@@ -1,6 +1,6 @@
 /* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
-/* Copyright 2018 Philip Heron <phil@sanslogic.co.uk>                    */
+/* Copyright 2022 Philip Heron <phil@sanslogic.co.uk>                    */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
 /* it under the terms of the GNU General Public License as published by  */
@@ -21,7 +21,6 @@
 #include <string.h>
 #include <math.h>
 #include "video.h"
-#include "nicam728.h"
 #include "mac.h"
 
 /* MAC sync codes */
@@ -74,6 +73,79 @@ static _rdf_t _rdf_d[] = {
 	{ 0x11,  22, 309,  334,  621, 589, 1285, 0 }, /* LUM luminance signal */
 	{ 0x20,   0,  21,  312,  333, 229, 1292, 0 }, /* FF Fixed Format teletext */
 	{ 0x00, }, /* End of sequence */
+};
+
+/* Pre-calculated J.17 pre-emphasis filter taps, 32kHz no low pass (high quality) */
+static const double _j17_hq_taps[] = {
+	-4.0638183114837725e-05, -6.0025586949698855e-05,
+	-5.564043110245245e-05, -7.947984626961884e-05, -7.647905950877803e-05,
+	-0.00010634219837159823, -0.00010573530630851049,
+	-0.0001439262656801037, -0.0001473418005545947, -0.00019733025737867933,
+	-0.00020744600452448253, -0.00027462470991584573,
+	-0.0002959626579938912, -0.00038903864897297304,
+	-0.00042951430210921436, -0.0005632229082537514, -0.0006373725671138244,
+	-0.0008381833027058537, -0.0009744643521200177, -0.0012937307193290994,
+	-0.001552751532064818, -0.0021004781086707324, -0.002625860940471562,
+	-0.003668275121553212, -0.004845513644185225, -0.007121819711885047,
+	-0.010127737762890622, -0.01599147906480894, -0.024853521327126284,
+	-0.04278009416709207, -0.07239348501988721, -0.13738444727018054,
+	0.7809561590505447, -0.1373844472702732, -0.07239348501983206,
+	-0.04278009416712298, -0.02485352132710135, -0.01599147906482651,
+	-0.010127737762873385, -0.007121819711900977, -0.0048455136441711835,
+	-0.0036682751215641306, -0.0026258609404633286, -0.0021004781086770207,
+	-0.0015527515320562413, -0.0012937307193406264, -0.0009744643521089602,
+	-0.0008381833027124772, -0.0006373725671163757, -0.000563222908240734,
+	-0.00042951430212660697, -0.00038903864895887066,
+	-0.0002959626579998339, -0.0002746247099202026, -0.00020744600451413447,
+	-0.00019733025738687381, -0.00014734180055051493,
+	-0.0001439262656806838, -0.0001057353063093944, -0.00010634219837524443,
+	-7.647905950078356e-05, -7.947984627567915e-05, -5.564043109916536e-05,
+	-6.0025586949491874e-05, -4.063818311961655e-05
+};
+
+/* Pre-calculated J.17 pre-emphasis filter taps, 32kHz with 8kHz low pass (medium quality) */
+static const double _j17_mq_taps[] = {
+-0.0023983764740491817, 0.0005372369031780615, 0.0029088459406962433,
+	-0.0006808310346680438, -0.0038400522316643093, 0.0003905164235471325,
+	0.004598081791062745, -0.0003030199522471644, -0.005996593890780044,
+	-0.0006099393949867584, 0.006900939227982249, 0.0011126454561315397,
+	-0.008845190642068847, -0.0031512342941305426, 0.009594941549957162,
+	0.0042182070235715335, -0.012261809244109948, -0.008289287373445343,
+	0.012146295526980532, 0.009903710389951048, -0.016223088515771884,
+	-0.018241246604564477, 0.013268559591784575, 0.019670208896615235,
+	-0.02196471821546391, -0.040897915745289205, 0.007376815392497354,
+	0.03632945551391454, -0.04261000237464269, -0.13505868867468723,
+	-0.05987965058731034, 0.164415182169897, 0.29045946882740054,
+	0.16441518216987408, -0.059879650587328914, -0.13505868867468418,
+	-0.04261000237463042, 0.03632945551391707, 0.007376815392491072,
+	-0.04089791574529129, -0.02196471821545942, 0.019670208896617532,
+	0.013268559591781671, -0.01824124660456619, -0.016223088515769372,
+	0.009903710389952778, 0.01214629552697836, -0.00828928737344731,
+	-0.01226180924410831, 0.004218207023573651, 0.009594941549956208,
+	-0.003151234294132517, -0.008845190642068512, 0.0011126454561330129,
+	0.006900939227982167, -0.0006099393949875143, -0.005996593890779387,
+	-0.00030301995224640626, 0.004598081791061394, 0.0003905164235454991,
+	-0.0038400522316629185, -0.0006808310346651593, 0.002908845940695833,
+	0.0005372369031742542, -0.0023983764740508006
+};
+
+/* MAC audio scaling factors */
+typedef struct {
+	int factor;
+	int shift;
+	int coding_range;
+	int protection_range;
+} _scale_factor_t;
+
+static const _scale_factor_t _scale_factors[8] = {
+	{ 0, 2, 5, 7 }, /* 0b000 */
+	{ 1, 2, 5, 7 }, /* 0b001 */
+	{ 2, 2, 5, 6 }, /* 0b010 */
+	{ 4, 2, 5, 5 }, /* 0b100 */
+	{ 3, 3, 4, 4 }, /* 0b011 */
+	{ 5, 4, 3, 3 }, /* 0b101 */
+	{ 6, 5, 2, 2 }, /* 0b110 */
+	{ 7, 6, 1, 1 }, /* 0b111 */
 };
 
 static double _rrc(double x)
@@ -627,7 +699,7 @@ static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
 	
 	b  = 3 << 12;			/* TV, detailed description = DG3 */
 	b |= 1 << 10;			/* Subframe identification, TDMCID = 01 */
-	b |= s->audio_channel;		/* Packet address of the main TV sound */
+	b |= s->audio.address;		/* Packet address of the main TV sound */
 	pkt[x++] = (b & 0x00FF) >> 0;	/* TV config LSB */
 	pkt[x++] = (b & 0xFF00) >> 8;	/* TV config MSB */
 	
@@ -726,7 +798,7 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	pkt[x++] = 3;		/* LI Length (3 bytes */
 	pkt[x++] = 0x09;	/* Language (see page 188) = English */
 	
-	b = 0x0400 | s->audio_channel;  /* 0 0 0 0 01 audio_channel */
+	b = 0x0400 | s->audio.address;  /* 0 0 0 0 01 audio_channel */
 	pkt[x++] = (b & 0x00FF) >> 0;
 	pkt[x++] = (b & 0xFF00) >> 8;
 	
@@ -766,44 +838,6 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	b = _crc16(&pkt[1], x - 3);
 	pkt[x - 2] = (b & 0x00FF) >> 0;
 	pkt[x - 1] = (b & 0xFF00) >> 8;
-}
-
-static void _create_audio_si_packet(mac_t *s, uint8_t *pkt)
-{
-	uint16_t b;
-	int x;
-	
-	memset(pkt, 0, MAC_PAYLOAD_BYTES);
-	
-	pkt[0] = 0x00;          /* PT == BI1 */
-	pkt[1] = _hamming[0];   /* S1 Number of packets MSB */
-	pkt[2] = _hamming[1];   /* S2 Number of packets LSB */
-	pkt[3] = _hamming[0];   /* F1 Number of bytes in last packet MSB */
-	pkt[4] = _hamming[12];  /* F2 Number of bytes in last packet LSB */
-	
-	pkt[5] = _hamming[1];   /* CI */
-	pkt[6] = _hamming[10];  /* LI Length (10 bytes) */
-	
-	b  = 0 << 15; /* State (0: Signal Present, 1: interrupted) */
-	b |= 0 << 13; /* CIB (0: music/speech ON, 1: cross-fade sound ON, 2+3 undefined) */
-	b |= 0 << 12; /* Timing (0: Continuous, 1: intermittent) */
-	b |= 1 << 11; /* ID of sound coding blocks (0: BC2, 1: BC1) */
-	b |= 0 << 10; /* News flash (0: no, 1: yes) */
-	b |= 0 <<  9; /* SDFSCR flag (0: store, 1: don't store) */
-	
-	b |= 0 <<  7; /* Level of error protection (0: first level, 1: second level) */
-	b |= 1 <<  6; /* Coding law (0: linear, 1: companded) */
-	b |= ((s->vsam & MAC_VSAM_CONTROLLED_ACCESS ? 1 : 0) & s->scramble_audio) << 5; /* Controlled access (0: no, 1: yes) */
-	b |= s->scramble_audio << 4; /* Scrambling (0: no, 1: yes) */
-	b |= 0 <<  3; /* Automatic mixing (0: mixing not intended, 1: mixing intended) */
-	b |= 4 <<  0; /* Audio config (0: 15 kHz mono, 2: 7 kHz mono, 4: 15 kHz stereo) */
-	b |= _parity(b) << 8; /* Parity bit */
-	
-	for(x = 0; x < 5; x++)
-	{
-		pkt[7 + x * 2] = (b & 0xFF00) >> 8;
-		pkt[8 + x * 2] = (b & 0x00FF) >> 0;
-	}
 }
 
 static int _calculate_audio_address(int channels, int quality, int protection, int mode, int index)
@@ -865,22 +899,21 @@ int mac_init(vid_t *s)
 	case 2:  mac->vsam |= MAC_VSAM_DOUBLE_CUT; break;
 	}
 	
-	mac->scramble_audio = s->conf.scramble_audio;
+	/* Initialise main TV audio */
+	mac_audioenc_init(&mac->audio,
+		s->conf.mac_audio_quality,
+		s->conf.mac_audio_stereo,
+		s->conf.mac_audio_protection,
+		s->conf.mac_audio_companded,
+		s->conf.scramble_audio,
+		(s->mac.vsam & MAC_VSAM_CONTROLLED_ACCESS ? 1 : 0)
+	);
 	
 	if(s->conf.mac_mode == MAC_MODE_D)
 	{
-		/* BSB receivers are ignoring the SI packets,
-		 * and expect audio at packet address 128. */
-		mac->audio_channel = 128; /* Stereo NICAM 32kHz, level 1 protection */
-	}
-	else
-	{
-		mac->audio_channel = _calculate_audio_address(
-			MAC_STEREO,
-			MAC_HIGH_QUALITY,
-			MAC_FIRST_LEVEL_PROTECTION,
-			MAC_COMPANDED,
-		0);
+		/* BSB receivers ignore the SI packets and
+		 * always expect audio at packet address 128. */
+		mac->audio.address = 128; /* Stereo NICAM 32kHz, level 1 protection */
 	}
 	
 	mac->teletext = (s->conf.teletext ? 1 : 0);
@@ -901,9 +934,6 @@ int mac_init(vid_t *s)
 			_prbs(&mac->prbs[i]);
 		}
 	}
-	
-	/* Init NICAM encoder */
-	nicam_encode_init(&mac->nicam, NICAM_MODE_STEREO, 0);
 	
 	mac->subframes[0].pkt_bits = MAC_PACKET_BITS;
 	mac->subframes[1].pkt_bits = MAC_PACKET_BITS;
@@ -935,7 +965,34 @@ void mac_free(vid_t *s)
 {
 	mac_t *mac = &s->mac;
 	
-        free(mac->lut);
+	free(mac->lut);
+	mac_audioenc_free(&mac->audio);
+}
+
+static const _scale_factor_t *_scale_factor(const int16_t *pcm, int len, int step)
+{
+	int i, b;
+	int16_t s;
+	
+	/* Calculate the optimal scale factor for this audio block */
+	b = 1;
+	
+	/* Test each sample if it requires a larger range */
+	for(i = 0; b < 7 && i < len; i++)
+	{
+		/* Negative values use the same scales */
+		s = (*pcm < 0) ? ~*pcm : *pcm;
+		
+		/* Test if the scale factor needs to be increased */
+		while(b < 7 && s >> (b + 8))
+		{
+			b++;
+		}
+		
+		pcm += step;
+	}
+	
+	return(&_scale_factors[b]);
 }
 
 int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const uint8_t *data, int scramble)
@@ -963,22 +1020,320 @@ int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const 
 	return(0);
 }
 
-int mac_write_audio(vid_t *s, const int16_t *audio)
+int mac_write_audio(vid_t *s, mac_audioenc_t *enc, int subframe, const int16_t *audio, int len)
 {
-	uint8_t data[MAC_PAYLOAD_BYTES];
+	const uint8_t *pkt;
 	
-	if(s->mac.subframes[0].audio_continuity % 80 == 0)
+	if(enc->si_timer <= 0)
 	{
-		/* Write out an SI Sound Interpretation
-		 * packet at least once per two frames */
-		_create_audio_si_packet(&s->mac, data);
-		mac_write_packet(s, 0, s->mac.audio_channel, s->mac.subframes[0].audio_continuity - 2, data, 0);
+		/* Write out a Sound Interpretation (SI) packet */
+		mac_write_packet(s, subframe, enc->address, enc->continuity - 2, enc->si_pkt, 0);
+		
+		/* Set the timer for the next SI packet in about 1/3 of a second */
+		enc->si_timer = (enc->high_quality ? 32000 : 16000) / 3;
 	}
 	
-	/* Encode and write the audio packet */
-	nicam_encode_mac_packet(&s->mac.nicam, data, audio);
-	mac_write_packet(s, 0, s->mac.audio_channel, s->mac.subframes[0].audio_continuity++, data, s->mac.scramble_audio);
+	mac_audioenc_write(enc, audio, len);
 	
+	while((pkt = mac_audioenc_read(enc)) != NULL)
+	{
+		mac_write_packet(s, subframe, enc->address, enc->continuity++, pkt, enc->scramble);
+	}
+	
+	return(0);
+}
+
+static void _audioenc_si_packet(mac_audioenc_t *enc, uint8_t *pkt)
+{
+	uint16_t b;
+	int x;
+	
+	memset(pkt, 0, MAC_PAYLOAD_BYTES);
+	
+	pkt[0] = 0x00;          /* PT == BI1 */
+	pkt[1] = _hamming[0];   /* S1 Number of packets MSB */
+	pkt[2] = _hamming[1];   /* S2 Number of packets LSB */
+	pkt[3] = _hamming[0];   /* F1 Number of bytes in last packet MSB */
+	pkt[4] = _hamming[12];  /* F2 Number of bytes in last packet LSB */
+	
+	pkt[5] = _hamming[1];   /* CI */
+	pkt[6] = _hamming[10];  /* LI Length (10 bytes) */
+	
+	b  = 0 << 15; /* State (0: Signal Present, 1: interrupted) */
+	b |= 0 << 13; /* CIB (0: music/speech ON, 1: cross-fade sound ON, 2+3 undefined) */
+	b |= 0 << 12; /* Timing (0: Continuous, 1: intermittent) */
+	b |= 1 << 11; /* ID of sound coding blocks (0: BC2, 1: BC1) */
+	b |= 0 << 10; /* News flash (0: no, 1: yes) */
+	b |= 0 <<  9; /* SDFSCR flag (0: store, 1: don't store) */
+	
+	b |= (enc->protection ? 1 : 0) << 7; /* Level of error protection (0: first level, 1: second level) */
+	b |= (enc->linear ? 0 : 1) << 6; /* Coding law (0: linear, 1: companded) */
+	b |= enc->conditional << 5; /* Controlled access (0: no, 1: yes) */
+	b |= enc->scramble << 4; /* Scrambling (0: no, 1: yes) */
+	b |= 0 << 3; /* Automatic mixing (0: mixing not intended, 1: mixing intended) */
+	b |= (enc->stereo ? 1 : 0) << 2; /* Channels (0: Mono, 1: Stereo) */
+	b |= (enc->high_quality ? 0 : 1) << 1; /* Sample rate (0: 32kHz, 1: 16kHz) */
+	b |= 0 << 0; /* Reserved */
+	b |= _parity(b) << 8; /* Parity bit */
+	
+	for(x = 0; x < 5; x++)
+	{
+		pkt[7 + x * 2] = (b & 0xFF00) >> 8;
+		pkt[8 + x * 2] = (b & 0x00FF) >> 0;
+	}
+}
+
+int mac_audioenc_init(mac_audioenc_t *enc, int high_quality, int stereo, int protection, int linear, int scramble, int conditional)
+{
+	int i;
+	
+	memset(enc, 0, sizeof(mac_audioenc_t));
+	
+	/* Channel configuration */
+	enc->high_quality = high_quality ? 1 : 0;
+	enc->stereo = stereo ? 1 : 0;
+	enc->linear = linear ? 1 : 0;
+	enc->protection = protection ? 1 : 0;
+	enc->scramble = scramble ? 1 : 0;
+	enc->conditional = (conditional ? 1 : 0) & enc->scramble;
+	
+	/* Packet details */
+	enc->address = _calculate_audio_address(
+		enc->stereo,
+		enc->high_quality,
+		enc->protection,
+		enc->linear,
+		0);
+	enc->continuity = 0;
+	
+	/* Initalise J.17 FIR filters */
+	if(enc->high_quality)
+	{
+		fir_int16_init(&enc->channel[0].fir, _j17_hq_taps, sizeof(_j17_hq_taps) / sizeof(double), 1, 1, 0);
+		fir_int16_init(&enc->channel[1].fir, _j17_hq_taps, sizeof(_j17_hq_taps) / sizeof(double), 1, 1, 0);
+	}
+	else
+	{
+		/* Medium quality applies an 8 kHz low pass filter, for x2 decimation (32kHz > 16kHz) */
+		fir_int16_init(&enc->channel[0].fir, _j17_mq_taps, sizeof(_j17_mq_taps) / sizeof(double), 1, 2, 0);
+		fir_int16_init(&enc->channel[1].fir, _j17_mq_taps, sizeof(_j17_mq_taps) / sizeof(double), 1, 2, 0);
+	}
+	
+	/* Linear + L2 protection mode has 36 samples per coding block,
+	 * all others are 64 */
+	enc->samples_per_block = enc->linear && enc->protection ? 36 : 64;
+	
+	/* Medium Quality requires twice the number of source samples
+	 * due to the 2x decimation in the FIR filter stage */
+	enc->src_samples_per_block = enc->samples_per_block * (enc->high_quality ? 1 : 2);
+	
+	/* Per channel encoder settings */
+	for(i = 0; i < 2; i++)
+	{
+		enc->channel[i].len = enc->samples_per_block / 2;
+		enc->channel[i].offset = (i ? (enc->stereo ? 1 : enc->channel[i].len) : 0);
+		enc->channel[i].src_len = enc->channel[i].len * (enc->high_quality ? 1 : 2);
+		enc->channel[i].src_offset = (i ? (enc->stereo ? 1 : enc->channel[i].src_len) : 0);
+		enc->channel[i].sf_len = (enc->linear && enc->protection ? 18 : 27);
+		enc->channel[i].sf_offset = (i ? (enc->stereo ? 1 : enc->channel[i].sf_len) : 0);
+	}
+	
+	/* Bits per coded sample */
+	enc->bits_per_sample  = enc->linear ? 14 : 10;
+	enc->bits_per_sample += enc->protection ? 5 : 1;
+	
+	/* Sound coding block length (bytes) */
+	enc->block_len = enc->linear ^ enc->protection ? 120 : 90;
+	enc->x = enc->block_len;
+	
+	/* PT Packet Type */
+	enc->pkt[0] = 0xC7; /* Sound Coding Block (BC1) */
+	
+	enc->j17x = 0;
+	enc->pktx = 1;
+	
+	/* Initalise SI packet */
+	_audioenc_si_packet(enc, enc->si_pkt);
+	enc->si_timer = 0;
+	
+	return(0);
+}
+
+int mac_audioenc_free(mac_audioenc_t *enc)
+{
+	fir_int16_free(&enc->channel[0].fir);
+	fir_int16_free(&enc->channel[1].fir);
+	return(0);
+}
+
+static uint8_t _l2_hamming(uint16_t b)
+{
+	uint8_t p;
+	
+	p  = (((b >> 0) ^ (b >> 3) ^ (b >> 4) ^ (b >> 6) ^ (b >> 7) ^ (b >> 8) ^ (b >> 10)) & 1) << 0;
+	p |= (((b >> 0) ^ (b >> 1) ^ (b >> 3) ^ (b >> 5) ^ (b >> 6) ^ (b >> 8) ^ (b >>  9)) & 1) << 1;
+	p |= (((b >> 0) ^ (b >> 1) ^ (b >> 2) ^ (b >> 4) ^ (b >> 6) ^ (b >> 7) ^ (b >>  9)) & 1) << 2;
+	p |= (((b >> 1) ^ (b >> 2) ^ (b >> 4) ^ (b >> 5) ^ (b >> 6) ^ (b >> 8) ^ (b >> 10)) & 1) << 3;
+	p |= (((b >> 2) ^ (b >> 3) ^ (b >> 5) ^ (b >> 6) ^ (b >> 7) ^ (b >> 9) ^ (b >> 10)) & 1) << 4;
+	
+	return(p);
+}
+
+const uint8_t *mac_audioenc_read(mac_audioenc_t *enc)
+{
+	const _scale_factor_t *sf;
+	uint32_t s[64];
+	int bx = 0;
+	int step;
+	int i, a, b;
+	uint32_t sfc = 0;
+	
+	/* Copy excess data from previous run into start of packet */
+	for(; enc->pktx < MAC_PAYLOAD_BYTES && enc->x < enc->block_len; enc->pktx++, enc->x++)
+	{
+		enc->pkt[enc->pktx] = enc->block[enc->x];
+	}
+	
+	/* Return the packet if it's full */
+	if(enc->pktx == MAC_PAYLOAD_BYTES)
+	{
+		enc->pktx = 1;
+		return(enc->pkt);
+	}
+	
+	/* Copy the audio into the filter buffer */
+	if(enc->stereo)
+	{
+		for(; enc->j17x < enc->src_samples_per_block && enc->audio_len > 0; enc->j17x++, enc->audio_len--)
+		{
+			enc->j17[enc->j17x] = *(enc->audio++);
+		}
+	}
+	else
+	{
+		for(; enc->j17x < enc->src_samples_per_block && enc->audio_len > 0; enc->j17x++, enc->audio_len -= 2)
+		{
+			/* Downmix stereo input to mono */
+			enc->j17[enc->j17x] = (enc->audio[0] + enc->audio[1]) / 2;
+			enc->audio += 2;
+		}
+	}
+	
+	if(enc->j17x != enc->src_samples_per_block)
+	{
+		/* Didn't get enough audio, request more */
+		return(NULL);
+	}
+	
+	enc->j17x = 0;
+	
+	/* The step between each sample for this block */
+	step = enc->stereo ? 2 : 1;
+	
+	/* Process each block or channel */
+	for(b = 0; b < 2; b++)
+	{
+		/* Apply J.17 pre-emphasis filter */
+		fir_int16_process(
+			&enc->channel[enc->stereo ? b : 0].fir,
+			enc->j17 + enc->channel[b].offset,
+			enc->j17 + enc->channel[b].src_offset,
+			enc->channel[b].src_len,
+			step
+		);
+		
+		/* Calculate scale factors */
+		sf = _scale_factor(
+			enc->j17 + enc->channel[b].offset,
+			enc->channel[b].len,
+			step
+		);
+		sfc = (sfc << 9) | (sf->factor << 6) | (sf->factor << 3) | sf->factor;
+		
+		/* Encode the samples */
+		a = enc->channel[b].offset;
+		
+		if(enc->linear)
+		{
+			/* Linear */
+			for(i = 0; i < enc->channel[b].len; i++, a += step)
+			{
+				/* Shift 16-bit sample to 14-bit */
+				s[a] = (enc->j17[a] >> 2) & 0x3FFF;
+			}
+		}
+		else
+		{
+			/* Companded */
+			for(i = 0; i < enc->channel[b].len; i++, a += step)
+			{
+				/* Shift 16-bit sample to 10-bit companded */
+				s[a] = (enc->j17[a] >> sf->shift) & 0x3FF;
+			}
+		}
+		
+		/* Apply protection */
+		a = enc->channel[b].offset;
+		
+		if(enc->protection)
+		{
+			/* Second level */
+			for(i = 0; i < enc->channel[b].len; i++, a += step)
+			{
+				s[a] |= _l2_hamming(enc->linear ? s[a] >> 3 : (s[a] << 1) & 0x7E0) << (enc->bits_per_sample - 5);
+			}
+		}
+		else
+		{
+			/* First level */
+			for(i = 0; i < enc->channel[b].len; i++, a += step)
+			{
+				s[a] |= _parity(s[a] >> (enc->linear ? 3 : 4)) << (enc->bits_per_sample - 1);
+			}
+		}
+		
+		/* Apply scale factor code */
+		a = enc->channel[b].sf_offset;
+		for(i = 0; i < enc->channel[b].sf_len; i++, a += step)
+		{
+			s[a] ^= ((sf->factor >> (2 - (i % 3))) & 1) << (enc->bits_per_sample - 1);
+		}
+	}
+	
+	/* L1 companded blocks start with two reserved bytes */
+	if(!enc->linear && !enc->protection) bx = _bits(enc->block, bx, 0, 16);
+	
+	/* L2 linear blocks have a 36-bit header */
+	if(enc->linear && enc->protection)
+	{
+		bx = _bits(enc->block, bx, 0, 8); /* Reserved */
+		bx = _bits(enc->block, bx, 0, 10);
+		bx = _rbits(enc->block, bx, sfc, 18);
+	}
+	
+	/* Pack the samples into the sound coding block */
+	for(i = 0; i < enc->samples_per_block; i++)
+	{
+		bx = _bits(enc->block, bx, s[i], enc->bits_per_sample);
+	}
+	
+	enc->x = 0;
+	enc->si_timer -= enc->stereo ? enc->samples_per_block : enc->samples_per_block / 2;
+	
+	for(; enc->pktx < MAC_PAYLOAD_BYTES && enc->x < enc->block_len; enc->pktx++, enc->x++)
+	{
+		enc->pkt[enc->pktx] = enc->block[enc->x];
+	}
+	
+	enc->pktx = 1;
+	
+	return(enc->pkt);
+}
+
+int mac_audioenc_write(mac_audioenc_t *enc, const int16_t *audio, size_t len)
+{
+	enc->audio = audio;
+	enc->audio_len = len;
 	return(0);
 }
 
