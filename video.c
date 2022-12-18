@@ -2885,8 +2885,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			}
 		}
 		
-		fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width);
-		fir_int16_process_block(&s->fm_secam_fir, l->output + 1, l->output + 1, s->width);
+		fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width, 2);
+		fir_int16_process_block(&s->fm_secam_fir, l->output + 1, l->output + 1, s->width, 2);
 		iir_int16_process(&s->fm_secam_iir, l->output + 1, l->output + 1, s->width, 2);
 		
 		/* Limit the FM deviation */
@@ -2929,7 +2929,7 @@ static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lin
 	vid_line_t *dst = lines[0];
 	vid_line_t *src = lines[nlines - 1];
 	
-	dst->width = fir_int16_process(&p->fir, dst->output, src->output, src->width);
+	dst->width = fir_int16_process(&p->fir, dst->output, src->output, src->width, 2);
 	
 	return(1);
 }
