@@ -764,7 +764,7 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	{
 		/* PG */
 		pkt[x++] = 0x80;
-		pkt[x++] = 0x0E;
+		pkt[x++] = 0x0D;
 		
 		/* Parameter ACCM */
 		pkt[x++] = 0x88;
