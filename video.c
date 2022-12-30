@@ -743,6 +743,64 @@ const vid_config_t vid_config_ntsc_m = {
 	.fm_mono_preemph   = VID_75US,
 };
 
+const vid_config_t vid_config_ntsc_i = {
+	
+	/* System I (NTSC) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 5500000, /* Hz */
+	.vsb_lower_bw   = 1250000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.71, /* Power level of video */
+	.fm_mono_level  = 0.22, /* FM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
+	
+	.type           = VID_RASTER_525,
+	.frame_rate_num = 30000,
+	.frame_rate_den = 1001,
+	.lines          = 525,
+	.hline          = 263,
+	
+	.active_lines   = 480,
+	.active_width   = 0.00005290, /* 52.90µs */
+	.active_left    = 0.00000920, /* |-->| 9.20µs */
+	
+	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
+	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	
+	.white_level    = 0.200000,
+	.black_level    = 0.728571,
+	.blanking_level = 0.771428,
+	.sync_level     = 1.000000,
+	
+	.colour_mode    = VID_NTSC,
+	.burst_width    = 0.00000250, /* 2.5 ±0.28µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
+	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
+	.colour_carrier = 5000000.0 * 63 / 88,
+	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	.iu_co          =  0.000,
+	.iv_co          =  0.877,
+	.qu_co          =  0.493,
+	.qv_co          =  0.000,
+	
+	.fm_mono_carrier   = 6000000 - 400, /* Hz */
+	.fm_mono_deviation = 50000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US,
+	
+	.nicam_carrier  = 6552000, /* Hz */
+	.nicam_beta     = 1.0,
+};
+
 const vid_config_t vid_config_ntsc_fm = {
 	
 	/* NTSC FM (satellite) */
@@ -1773,6 +1831,7 @@ const vid_configs_t vid_configs[] = {
 	{ "secam-fm",      &vid_config_secam_fm         },
 	{ "secam",         &vid_config_secam            },
 	{ "m",             &vid_config_ntsc_m           },
+	{ "ntsc-i",        &vid_config_ntsc_i           },
 	{ "ntsc-fm",       &vid_config_ntsc_fm          },
 	{ "ntsc-bs",       &vid_config_ntsc_bs_fm       },
 	{ "ntsc",          &vid_config_ntsc             },
