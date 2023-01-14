@@ -75,6 +75,7 @@ typedef struct {
 	char *eurocrypt;
 	int acp;
 	int vits;
+	int vitc;
 	int filter;
 	int nocolour;
 	int noaudio;

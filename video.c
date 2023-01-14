@@ -3730,6 +3730,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "acp", 1, &s->acp, acp_render_line, NULL);
 	}
 	
+	/* Initialise VITC timestamp */
+	if(s->conf.vitc)
+	{
+		if((r = vitc_init(&s->vitc, s)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "vitc", 1, &s->vitc, vitc_render, NULL);
+	}
+	
 	/* Initialise the teletext system */
 	if(s->conf.teletext)
 	{
@@ -4093,6 +4105,11 @@ void vid_free(vid_t *s)
 	if(s->conf.teletext)
 	{
 		tt_free(&s->tt);
+	}
+	
+	if(s->conf.vitc)
+	{
+		vitc_free(&s->vitc);
 	}
 	
 	if(s->conf.vits)

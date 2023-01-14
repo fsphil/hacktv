@@ -94,6 +94,7 @@ static void print_usage(void)
 		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
+		"      --vitc                     Enable VITC time code.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
@@ -345,6 +346,7 @@ enum {
 	_OPT_EUROCRYPT,
 	_OPT_ACP,
 	_OPT_VITS,
+	_OPT_VITC,
 	_OPT_FILTER,
 	_OPT_NOCOLOUR,
 	_OPT_NOAUDIO,
@@ -394,6 +396,7 @@ int main(int argc, char *argv[])
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "vits",           no_argument,       0, _OPT_VITS },
+		{ "vitc",           no_argument,       0, _OPT_VITC },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
 		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
 		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
@@ -462,6 +465,7 @@ int main(int argc, char *argv[])
 	s.systeraudio = 0;
 	s.acp = 0;
 	s.vits = 0;
+	s.vitc = 0;
 	s.filter = 0;
 	s.nocolour = 0;
 	s.noaudio = 0;
@@ -615,6 +619,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_VITS: /* --vits */
 			s.vits = 1;
+			break;
+		
+		case _OPT_VITC: /* --vitc */
+			s.vitc = 1;
 			break;
 		
 		case _OPT_FILTER: /* --filter */
@@ -984,6 +992,18 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.vits = 1;
+	}
+	
+	if(s.vitc)
+	{
+		if(vid_conf.type != VID_RASTER_625 &&
+		   vid_conf.type != VID_RASTER_525)
+		{
+			fprintf(stderr, "VITC is only currently supported for 625 and 525 line raster modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.vitc = 1;
 	}
 	
 	if(vid_conf.type == VID_MAC)

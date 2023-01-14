@@ -1,6 +1,6 @@
 /* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
-/* Copyright 2018 Philip Heron <phil@sanslogic.co.uk>                    */
+/* Copyright 2023 Philip Heron <phil@sanslogic.co.uk>                    */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
 /* it under the terms of the GNU General Public License as published by  */
@@ -15,17 +15,23 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VBIDATA_H
-#define _VBIDATA_H
+#ifndef _VITC_H
+#define _VITC_H
 
-#define VBIDATA_FILTER_RC (0)
+#include <stdint.h>
+#include "video.h"
 
-#define VBIDATA_LSB_FIRST (0)
-#define VBIDATA_MSB_FIRST (1)
+typedef struct {
+	int lines[2];
+	int fps;
+	int frame_drop;
+	int16_t *lut;
+} vitc_t;
 
-extern int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int16_t level, int filter, double beta);
-extern int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double rise);
-extern void     vbidata_render_nrz(const int16_t *lut, const uint8_t *src, int offset, size_t length, int order, int16_t *dst, size_t step);
+extern int vitc_init(vitc_t *s, vid_t *vid);
+extern void vitc_free(vitc_t *s);
+
+extern int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines);
 
 #endif
 
