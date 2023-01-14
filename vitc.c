@@ -130,16 +130,22 @@ int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	}
 	
 	/* Build the timecode data */
-	timecode  = ((fn % v->fps) % 10) << 0; /* Frame number, units */
-	timecode |= (((fn % v->fps) / 10) % 3) << 4; /* Frame number, tens */
+	timecode  = (fn % v->fps % 10) << 0; /* Frame number, units */
+	timecode |= (fn % v->fps / 10) << 4; /* Frame number, tens */
 	timecode |= (v->frame_drop ? 1 : 0) << 6; /* 1 == drop frame mode */
 	timecode |= 0 << 7; /* 1 == colour framing */
-	timecode |= ((fn / v->fps) % 10) << 8; /* Seconds, units */
-	timecode |= (((fn / v->fps) / 10) % 6) << 12; /* Seconds, tens */
-	timecode |= (((fn / v->fps) / 60) % 10) << 16; /* Minutes, units */
-	timecode |= (((fn / v->fps) / 600) % 6) << 20; /* Minutes, tens */
-	timecode |= (((fn / v->fps) / 3600) % 10) << 24; /* Hours, units */
-	timecode |= (((fn / v->fps) / 36000) % 3) << 28; /* Hours, tens */
+	
+	fn /= v->fps;
+	timecode |= (fn % 10) << 8; /* Seconds, units */
+	timecode |= (fn / 10 % 6) << 12; /* Seconds, tens */
+	
+	fn /= 60;
+	timecode |= (fn % 10) << 16; /* Minutes, units */
+	timecode |= (fn / 10 % 6) << 20; /* Minutes, tens */
+	
+	fn /= 60;
+	timecode |= (fn % 24 % 10) << 24; /* Hours, units */
+	timecode |= (fn % 24 / 10) << 28; /* Hours, tens */
 	timecode |= (l->line == v->lines[1] ? 1 : 0) << 31; /* Field flag, 0: first/odd field, 1: second/even field */
 	
 	/* User bits, not used here */
