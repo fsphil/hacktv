@@ -32,6 +32,39 @@ static double _raised_cosine(double x, double b, double t)
         return(_sinc(x / t) * (cos(M_PI * b * x / t) / (1.0 - (4.0 * b * b * x * x / (t * t)))));
 }
 
+static double _win(double t, double left, double width, double rise, double amplitude)
+{
+	double r, a;
+	
+	width -= rise;
+	t -= left - rise / 2;
+	
+	if(t <= 0)
+	{
+		r = 0.0;
+	}
+	else if(t < rise)
+	{
+		a = t / rise * M_PI / 2;
+		r = pow(sin(a), 2);
+	}
+	else if(t < rise + width)
+	{
+		r = 1.0;
+	}
+	else if(t < rise + width + rise)
+	{
+		a = (t - width) / rise * M_PI / 2;
+		r = pow(sin(a), 2);
+	}
+	else
+	{
+		r = 0.0;
+	}
+	
+	return(r * amplitude);
+}
+
 static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwidth, int16_t level, int filter, double beta)
 {
 	size_t l;
@@ -109,11 +142,91 @@ int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int16_t level, i
 	return(s);
 }
 
+static size_t _vbidata_init_step(int16_t *lut, unsigned int swidth, unsigned int dwidth, int level, double rise)
+{
+	size_t l;
+	int b, x, lb;
+	
+	l = 0;
+	
+	for(lb = b = 0; b < swidth; b++)
+	{
+		for(x = 0; x < dwidth; x++)
+		{
+			double h = _win((double) x, (double) dwidth / swidth * b, (double) dwidth / swidth, rise, level);
+			int w = (int16_t) round(h);
+			
+			if(w != 0)
+			{
+				if(lb != b)
+				{
+					if(lut)
+					{
+						*(lut++) = b;
+						*(lut++) = 0;
+					}
+					
+					l += sizeof(int16_t) * 2;
+					
+					lb = b;
+				}
+				
+				if(lut)
+				{
+					*(lut++) = x;
+					*(lut++) = w;
+				}
+				
+				l += sizeof(int16_t) * 2;
+			}
+		}
+		
+		//l += sizeof(int16_t) * 2;
+	}
+	
+	if(lut)
+	{
+		*(lut++) = 0;
+		*(lut++) = 0;
+	}
+	
+	l += sizeof(int16_t) * 2;
+	
+	return(l);
+}
+
+int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double rise)
+{
+	size_t l;
+	int16_t *s;
+	
+	/* Calculate the length of the lookup-table and allocate memory */
+	l = _vbidata_init_step(NULL, swidth, dwidth, level, rise);
+	
+	s = malloc(l);
+	if(!s)
+	{
+		return(NULL);
+	}
+	
+	/* Generate the lookup-table and return */
+	_vbidata_init_step(s, swidth, dwidth, level, rise);
+	
+	return(s);
+}
+
 void vbidata_render_nrz(const int16_t *lut, const uint8_t *src, int offset, size_t length, int order, int16_t *dst, size_t step)
 {
 	int b = offset;
 	int x = 0;
 	int bit;
+	
+	/* LUT format:
+	 * 
+	 * [x][v] = [x offset][value]
+	 * [x][0] = [x offset][end of bit]
+	 * [0][0] = End of LUT
+	*/
 	
 	bit = (b < 0 || b >= length ? 0 : (src[b >> 3] >> (order == VBIDATA_LSB_FIRST ? (b & 7) : 7 - (b & 7))) & 1);
 	
