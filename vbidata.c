@@ -65,7 +65,7 @@ static double _win(double t, double left, double width, double rise, double ampl
 	return(r * amplitude);
 }
 
-static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwidth, int16_t level, int filter, double beta)
+static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double beta)
 {
 	size_t l;
 	int b, x, lb;
@@ -122,7 +122,7 @@ static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwid
 	return(l);
 }
 
-int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int16_t level, int filter, double beta)
+int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double beta)
 {
 	size_t l;
 	int16_t *s;
