@@ -23,6 +23,7 @@
 
 typedef struct {
 	int lines[2];
+	int type;
 	int fps;
 	int frame_drop;
 	int16_t *lut;

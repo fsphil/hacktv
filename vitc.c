@@ -45,7 +45,9 @@ int vitc_init(vitc_t *s, vid_t *vid)
 	
 	memset(s, 0, sizeof(vitc_t));
 	
-	if(vid->conf.type == VID_RASTER_625)
+	s->type = vid->conf.type;
+	
+	if(s->type == VID_RASTER_625)
 	{
 		s->lines[0] = 19;
 		s->lines[1] = 332;
@@ -59,7 +61,7 @@ int vitc_init(vitc_t *s, vid_t *vid)
 		 * for all cases.
 		*/
 	}
-	else if(vid->conf.type == VID_RASTER_525)
+	else if(s->type == VID_RASTER_525)
 	{
 		s->lines[0] = 14;
 		s->lines[1] = 277;
@@ -146,6 +148,10 @@ int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	fn /= v->fps;
 	timecode |= (fn % 10) << 8; /* Seconds, units */
 	timecode |= (fn / 10 % 6) << 12; /* Seconds, tens */
+	if(v->type != VID_RASTER_625)
+	{
+		timecode |= (l->line >= v->lines[1] ? 1 : 0) << 15; /* Field flag, 0: first/odd field, 1: second/even field */
+	}
 	
 	fn /= 60;
 	timecode |= (fn % 10) << 16; /* Minutes, units */
@@ -154,7 +160,10 @@ int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	fn /= 60;
 	timecode |= (fn % 24 % 10) << 24; /* Hours, units */
 	timecode |= (fn % 24 / 10) << 28; /* Hours, tens */
-	timecode |= (l->line >= v->lines[1] ? 1 : 0) << 31; /* Field flag, 0: first/odd field, 1: second/even field */
+	if(v->type == VID_RASTER_625)
+	{
+		timecode |= (l->line >= v->lines[1] ? 1 : 0) << 31; /* Field flag, 0: first/odd field, 1: second/even field */
+	}
 	
 	/* User bits, not used here */
 	userdata = 0x00;
