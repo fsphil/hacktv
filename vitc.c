@@ -114,8 +114,8 @@ int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	uint8_t crc;
 	int fn;
 	
-	if(l->line != v->lines[0] &&
-	   l->line != v->lines[1])
+	if(l->line != v->lines[0] && l->line != (v->lines[0] + 2) &&
+	   l->line != v->lines[1] && l->line != (v->lines[1] + 2))
 	{
 		return(1);
 	}
@@ -146,7 +146,7 @@ int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	fn /= 60;
 	timecode |= (fn % 24 % 10) << 24; /* Hours, units */
 	timecode |= (fn % 24 / 10) << 28; /* Hours, tens */
-	timecode |= (l->line == v->lines[1] ? 1 : 0) << 31; /* Field flag, 0: first/odd field, 1: second/even field */
+	timecode |= (l->line >= v->lines[1] ? 1 : 0) << 31; /* Field flag, 0: first/odd field, 1: second/even field */
 	
 	/* User bits, not used here */
 	userdata = 0x00;
