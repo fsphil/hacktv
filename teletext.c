@@ -1057,7 +1057,7 @@ static void _free_service(tt_service_t *s)
 
 int tt_init(tt_t *s, vid_t *vid, char *path)
 {
-	int16_t level;
+	int level;
 	struct stat fs;
 	
 	memset(s, 0, sizeof(tt_t));
