@@ -50,6 +50,14 @@ int vitc_init(vitc_t *s, vid_t *vid)
 		s->lines[0] = 19;
 		s->lines[1] = 332;
 		hr = 116;
+		
+		/* Fh x 116 is specified for 625-line VITC in "EBU Tech 3097
+		 * EBU Time-And-Control Code For Television Tape-Recordings",
+		 * but other specs use 115 for both 525 and 625-line modes.
+		 * 
+		 * The error margin is 115 ±2%, so 116 should be a safe value
+		 * for all cases.
+		*/
 	}
 	else if(vid->conf.type == VID_RASTER_525)
 	{
