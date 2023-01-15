@@ -62,7 +62,7 @@ static size_t _group_bits(uint8_t *vbi, uint8_t code, size_t offset, size_t leng
 
 int wss_init(wss_t *s, vid_t *vid, char *mode)
 {
-	int16_t level;
+	int level;
 	size_t o;
 	
 	memset(s, 0, sizeof(wss_t));
