@@ -101,7 +101,7 @@ static double _pulse(double t, double position, double width, double amplitude)
 	return(pow(sin(a), 2) * amplitude);
 }
 
-static int _init_625(vits_t *s, unsigned int sample_rate, int width, int16_t level)
+static int _init_625(vits_t *s, unsigned int sample_rate, int width, int level)
 {
 	int i, x, b;
 	double r, c, t;
@@ -190,7 +190,7 @@ static int _init_625(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 	return(0);
 }
 
-static int _init_525(vits_t *s, unsigned int sample_rate, int width, int16_t level)
+static int _init_525(vits_t *s, unsigned int sample_rate, int width, int level)
 {
 	int i, x, b;
 	double r, c, t;
@@ -269,7 +269,7 @@ static int _init_525(vits_t *s, unsigned int sample_rate, int width, int16_t lev
 	return(0);
 }
 
-int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int16_t level)
+int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int level)
 {
 	memset(s, 0, sizeof(vits_t));
 	
