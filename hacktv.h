@@ -96,6 +96,7 @@ typedef struct {
 	int64_t offset;
 	char *passthru;
 	int invert_video;
+	int secam_field_id;
 	char *ffmt;
 	char *fopts;
 	

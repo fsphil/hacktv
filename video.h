@@ -210,6 +210,8 @@ typedef struct {
 	double qu_co;
 	double qv_co;
 	
+	int secam_field_id;
+	
 	/* FM audio (Mono) */
 	double fm_mono_carrier;
 	double fm_mono_deviation;
@@ -352,6 +354,7 @@ struct vid_t {
 	int16_t fm_secam_dmax[2];
 	fir_int16_t secam_l_fir;
 	cint16_t *fm_secam_bell;
+	int16_t secam_fsync_level;
 	
 	int fsc_flag_left;
 	int fsc_flag_width;
