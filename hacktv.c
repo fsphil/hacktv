@@ -120,6 +120,7 @@ static void print_usage(void)
 		"      --passthru <file>          Read and add an int16 complex signal.\n"
 		"      --invert-video             Invert the composite video signal sync and\n"
 		"                                 white levels.\n"
+		"      --secam-field-id           Enable SECAM field identification.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -367,6 +368,7 @@ enum {
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
 	_OPT_INVERT_VIDEO,
+	_OPT_SECAM_FIELD_ID,
 	_OPT_FFMT,
 	_OPT_FOPTS,
 	_OPT_PIXELRATE,
@@ -419,6 +421,7 @@ int main(int argc, char *argv[])
 		{ "offset",         required_argument, 0, _OPT_OFFSET },
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
+		{ "secam-field-id", no_argument,       0, _OPT_SECAM_FIELD_ID },
 		{ "ffmt",           required_argument, 0, _OPT_FFMT },
 		{ "fopts",          required_argument, 0, _OPT_FOPTS },
 		{ "frequency",      required_argument, 0, 'f' },
@@ -707,6 +710,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_INVERT_VIDEO: /* --invert-video */
 			s.invert_video = 1;
+			break;
+		
+		case _OPT_SECAM_FIELD_ID: /* --secam-field-id */
+			s.secam_field_id = 1;
 			break;
 		
 		case _OPT_FFMT: /* --ffmt <format> */
@@ -1027,6 +1034,7 @@ int main(int argc, char *argv[])
 	vid_conf.offset = s.offset;
 	vid_conf.passthru = s.passthru;
 	vid_conf.invert_video = s.invert_video;
+	vid_conf.secam_field_id = s.secam_field_id;
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, s.pixelrate, &vid_conf);
