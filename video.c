@@ -2949,13 +2949,13 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			{
 				double t = (double) (x - s->active_left) / s->pixel_rate / rw;
 				
-				if(t < 0 || x >= s->active_left + s->active_width) t = 0;
+				if(t < 0) t = 0;
 				else if(t > 1) t = 1;
 				
 				l->output[x * 2 + 1] = level + dev * t;
 			}
 			
-			sl = s->burst_left;
+			sl = s->active_left;
 			sr = s->active_left + s->active_width;
 			
 			l->vbialloc = 1;
