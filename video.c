@@ -2136,7 +2136,7 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int frame, int line, int phas
 	return(&s->colour_lookup[p]);
 }
 
-void vid_get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq)
+static void _get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq)
 {
 	int16_t *b = NULL;
 	int16_t *i = NULL;
@@ -2373,15 +2373,15 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	int w;
 	int pal = 0;
 	int fsc = 0;
-	int16_t *lut_b = NULL;
-	int16_t *lut_i = NULL;
-	int16_t *lut_q = NULL;
 	vid_line_t *l = lines[0];
 	
 	l->width    = s->width;
 	l->frame    = s->bframe;
 	l->line     = s->bline;
 	l->vbialloc = 0;
+	l->lut_b    = NULL;
+	l->lut_i    = NULL;
+	l->lut_q    = NULL;
 	
 	/* Sequence codes: abcd
 	 * 
@@ -2785,7 +2785,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		pal |= seq[1] == '2' && (l->frame & 1) == 0;
 		
 		/* Calculate colour sub-carrier lookup-positions for the start of this line */
-		vid_get_colour_subcarrier(s, l->frame, l->line, &lut_b, &lut_i, &lut_q);
+		_get_colour_subcarrier(s, l->frame, l->line, &l->lut_b, &l->lut_i, &l->lut_q);
 	}
 	if(s->conf.colour_mode == VID_APOLLO_FSC)
 	{
@@ -2850,8 +2850,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			
 			if(pal)
 			{
-				*o += (s->yiq_level_lookup[rgb].i * lut_i[x] +
-				       s->yiq_level_lookup[rgb].q * lut_q[x]) >> 15;
+				*o += (s->yiq_level_lookup[rgb].i * l->lut_i[x] +
+				       s->yiq_level_lookup[rgb].q * l->lut_q[x]) >> 15;
 			}
 		}
 	}
@@ -2887,7 +2887,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
-			l->output[x * 2] += (lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
+			l->output[x * 2] += (l->lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
 		}
 	}
 	

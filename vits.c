@@ -295,7 +295,6 @@ int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vits_t *v = arg;
 	int x, i = -1;
-	int16_t *lut_i;
 	vid_line_t *l = lines[0];
 	
 	if(v->lines == 625)
@@ -312,12 +311,10 @@ int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	if(i < 0) return(0);
 	if(!v->line[i]) return(0);
 	
-	vid_get_colour_subcarrier(s, l->frame, l->line, NULL, &lut_i, NULL);
-	
 	for(x = 0; x < s->width; x++)
 	{
 		l->output[x * 2] += v->line[i][x * 2 + 0];
-		if(lut_i) l->output[x * 2] += (lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
+		if(l->lut_i) l->output[x * 2] += (l->lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
 	}
 	
 	l->vbialloc = 1;
