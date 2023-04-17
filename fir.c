@@ -348,23 +348,6 @@ int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
 
 
 
-void fir_int16_complex_band_pass(int16_t *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
-{
-	double *dtaps;
-	int i;
-	
-	dtaps = calloc(ntaps, sizeof(double) * 2);
-	
-	fir_complex_band_pass(dtaps, ntaps, sample_rate, low_cutoff, high_cutoff, width, gain);
-	
-	for(i = 0; i < ntaps * 2; i++)
-	{
-		taps[i] = lround(dtaps[i] * 32767.0);
-	}
-	
-	free(dtaps);
-}
-
 int fir_int16_complex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
