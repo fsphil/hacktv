@@ -35,17 +35,12 @@
 #endif
 
 volatile int _abort = 0;
+volatile int _signal = 0;
 
 static void _sigint_callback_handler(int signum)
 {
-	fprintf(stderr, "Caught signal %d\n", signum);
-	
-	if(_abort > 0)
-	{
-		exit(-1);
-	}
-	
 	_abort = 1;
+	_signal = signum;
 }
 
 /* RF sink callback handlers */
@@ -1130,6 +1125,12 @@ int main(int argc, char *argv[])
 				if(data == NULL) break;
 				
 				if(_hacktv_rf_write(&s, data, samples) != HACKTV_OK) break;
+			}
+			
+			if(_signal)
+			{
+				fprintf(stderr, "Caught signal %d\n", _signal);
+				_signal = 0;
 			}
 			
 			vid_av_close(&s.vid);
