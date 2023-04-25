@@ -52,39 +52,6 @@ static const double _bursts_525[6] = {
 	4.20e6,
 };
 
-static double _win(double t, double left, double width, double rise, double amplitude)
-{
-	double r, a;
-	
-	width -= rise;
-	t -= left - rise / 2;
-	
-	if(t <= 0)
-	{
-		r = 0.0;
-	}
-	else if(t < rise)
-	{
-		a = t / rise * M_PI / 2;
-		r = pow(sin(a), 2);
-	}
-	else if(t < rise + width)
-	{
-		r = 1.0;
-	}
-	else if(t < rise + width + rise)
-	{
-		a = (t - width) / rise * M_PI / 2;
-		r = pow(sin(a), 2);
-	}
-	else
-	{
-		r = 0.0;
-	}
-	
-	return(r * amplitude);
-}
-
 static double _pulse(double t, double position, double width, double amplitude)
 {
 	double a;
@@ -140,45 +107,45 @@ static int _init_625(vits_t *s, unsigned int sample_rate, int width, int level)
 			switch(i)
 			{
 			case 0: /* Line 17 */
-				r += _win(t, 6 * h, 5 * h, 200e-9, 0.70);
+				r += rc_window(t, 6 * h, 5 * h, 200e-9) * 0.70;
 				r += _pulse(t, 13 * h, 200e-9, 0.70);
 				r += _pulse(t, 16 * h, 2000e-9, 0.70 / 2);
 				c += _pulse(t, 16 * h, 2000e-9, 0.70 / 2);
-				r += _win(t, 20 * h, 2 * h, 200e-9, 0.14);
-				r += _win(t, 22 * h, 2 * h, 200e-9, 0.28);
-				r += _win(t, 24 * h, 2 * h, 200e-9, 0.42);
-				r += _win(t, 26 * h, 2 * h, 200e-9, 0.56);
-				r += _win(t, 28 * h, 3 * h, 200e-9, 0.70);
+				r += rc_window(t, 20 * h, 2 * h, 200e-9) * 0.14;
+				r += rc_window(t, 22 * h, 2 * h, 200e-9) * 0.28;
+				r += rc_window(t, 24 * h, 2 * h, 200e-9) * 0.42;
+				r += rc_window(t, 26 * h, 2 * h, 200e-9) * 0.56;
+				r += rc_window(t, 28 * h, 3 * h, 200e-9) * 0.70;
 				break;
 			
 			case 1: /* Line 18 */
-				r += _win(t, 6 * h, 25 * h, 200e-9,  0.35);
-				r += _win(t, 6 * h,  2 * h, 200e-9,  0.21);
-				r += _win(t, 8 * h,  2 * h, 200e-9, -0.21);
+				r += rc_window(t, 6 * h, 25 * h, 200e-9) *  0.35;
+				r += rc_window(t, 6 * h,  2 * h, 200e-9) *  0.21;
+				r += rc_window(t, 8 * h,  2 * h, 200e-9) * -0.21;
 				
 				for(b = 0; b < 6; b++)
 				{
-					r += _win(t, (12 + 3 * b) * h, 2 * h, 200e-9, 0.21)
+					r += rc_window(t, (12 + 3 * b) * h, 2 * h, 200e-9) * 0.21
 					   * sin((t - (12 + 3 * b) * h) * bs[b]);
 				}
 				
 				break;
 			
 			case 2: /* Line 330 */
-				r += _win(t, 6 * h, 5 * h, 200e-9, 0.70);
+				r += rc_window(t, 6 * h, 5 * h, 200e-9) * 0.70;
 				r += _pulse(t, 13 * h, 200e-9, 0.70);
-				c += _win(t, 15 * h, 15 * h, 1e-6, 0.28 / 2);
-				r += _win(t, 20 * h, 2 * h, 200e-9, 0.14);
-				r += _win(t, 22 * h, 2 * h, 200e-9, 0.28);
-				r += _win(t, 24 * h, 2 * h, 200e-9, 0.42);
-				r += _win(t, 26 * h, 2 * h, 200e-9, 0.56);
-				r += _win(t, 28 * h, 3 * h, 200e-9, 0.70);
+				c += rc_window(t, 15 * h, 15 * h, 1e-6) * 0.28 / 2;
+				r += rc_window(t, 20 * h, 2 * h, 200e-9) * 0.14;
+				r += rc_window(t, 22 * h, 2 * h, 200e-9) * 0.28;
+				r += rc_window(t, 24 * h, 2 * h, 200e-9) * 0.42;
+				r += rc_window(t, 26 * h, 2 * h, 200e-9) * 0.56;
+				r += rc_window(t, 28 * h, 3 * h, 200e-9) * 0.70;
 				break;
 			
 			case 3: /* Line 331 */
-				r += _win(t, 6 * h, 25 * h, 200e-9, 0.35);
-				c += _win(t, 7 * h, 7 * h, 1e-6, 0.70 / 2);
-				c += _win(t, 17 * h, 13 * h, 1e-6, 0.42 / 2);
+				r += rc_window(t, 6 * h, 25 * h, 200e-9) * 0.35;
+				c += rc_window(t, 7 * h, 7 * h, 1e-6) * 0.70 / 2;
+				c += rc_window(t, 17 * h, 13 * h, 1e-6) * 0.42 / 2;
 				break;
 			}
 			
@@ -229,34 +196,34 @@ static int _init_525(vits_t *s, unsigned int sample_rate, int width, int level)
 			switch(i)
 			{
 			case 0: /* Line 17 */
-				r += _win(t, 24 * h, 36 * h, 125e-9, 100);
+				r += rc_window(t, 24 * h, 36 * h, 125e-9) * 100;
 				r += _pulse(t, 68 * h, 250e-9, 100);
 				r += _pulse(t, 75 * h, 1570e-9, 100 / 2);
 				c += _pulse(t, 75 * h, 1570e-9, 100 / 2);
-				r += _win(t,  92 * h,  6 * h, 250e-9, 18);
-				r += _win(t,  98 * h,  6 * h, 250e-9, 36);
-				r += _win(t, 104 * h,  6 * h, 250e-9, 54);
-				r += _win(t, 110 * h,  6 * h, 250e-9, 72);
-				r += _win(t, 116 * h,  8 * h, 250e-9, 90);
-				c += _win(t,  84 * h, 38 * h, 400e-9, 40 / 2);
+				r += rc_window(t,  92 * h,  6 * h, 250e-9) * 18;
+				r += rc_window(t,  98 * h,  6 * h, 250e-9) * 36;
+				r += rc_window(t, 104 * h,  6 * h, 250e-9) * 54;
+				r += rc_window(t, 110 * h,  6 * h, 250e-9) * 72;
+				r += rc_window(t, 116 * h,  8 * h, 250e-9) * 90;
+				c += rc_window(t,  84 * h, 38 * h, 400e-9) * 40 / 2;
 				break;
 			
 			case 1: /* Line 280 */
-				r += _win(t, 24 * h, 8 * h, 125e-9, 100);
-				r += _win(t, 32 * h, 92 * h, 125e-9, 50);
+				r += rc_window(t, 24 * h, 8 * h, 125e-9) * 100;
+				r += rc_window(t, 32 * h, 92 * h, 125e-9) * 50;
 				
-				r += _win(t, 36 * h, 12 * h, 250e-9, 50 / 2)
+				r += rc_window(t, 36 * h, 12 * h, 250e-9) * 50 / 2
 				   * sin((t - 36 * h) * bs[0]);
 				
 				for(b = 1; b < 6; b++)
 				{
-					r += _win(t, (40 + 8 * b) * h, 8 * h, 250e-9, 50 / 2)
+					r += rc_window(t, (40 + 8 * b) * h, 8 * h, 250e-9) * 50 / 2
 					   * sin((t - (40 + 8 * b) * h) * bs[b]);
 				}
 				
-				c += _win(t,  92 * h,  8 * h, 400e-9, 20 / 2);
-				c += _win(t, 100 * h,  8 * h, 400e-9, 40 / 2);
-				c += _win(t, 108 * h, 12 * h, 400e-9, 80 / 2);
+				c += rc_window(t,  92 * h,  8 * h, 400e-9) * 20 / 2;
+				c += rc_window(t, 100 * h,  8 * h, 400e-9) * 40 / 2;
+				c += rc_window(t, 108 * h, 12 * h, 400e-9) * 80 / 2;
 				
 				break;
 			}

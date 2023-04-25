@@ -78,5 +78,7 @@ extern int gcd(int a, int b);
 
 extern cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level);
 
+extern double rc_window(double t, double left, double width, double rise);
+
 #endif
 
