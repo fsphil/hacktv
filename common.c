@@ -55,3 +55,26 @@ cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level)
 	return(lut);
 }
 
+double rc_window(double t, double left, double width, double rise)
+{
+	double r;
+	
+	t -= left + width / 2;
+	t = fabs(t) - (width - rise) / 2;
+	
+	if(t <= 0)
+	{
+		r = 1.0;
+	}
+	else if(t < rise)
+	{
+		r = 0.5 + cos(t / rise * M_PI) / 2;
+	}
+	else
+	{
+		r = 0.0;
+	}
+	
+	return(r);
+}
+
