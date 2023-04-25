@@ -2060,20 +2060,7 @@ static int16_t *_burstwin(unsigned int sample_rate, double width, double rise, d
 	for(i = 0; i < *len; i++)
 	{
 		t = 1.0 / sample_rate * i;
-		
-		if(t < rise)
-		{
-			win[i] = round((0.5 - cos(t / rise * M_PI) / 2) * level * INT16_MAX);
-		}
-		else if(t >= width)
-		{
-			t -= width;
-			win[i] = round((0.5 + cos(t / rise * M_PI) / 2) * level * INT16_MAX);
-		}
-		else
-		{
-			win[i] = round(level * INT16_MAX);
-		}
+		win[i] = round(rc_window(t, rise / 2, width, rise) * level * INT16_MAX);
 	}
 	
 	return(win);
