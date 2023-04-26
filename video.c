@@ -2976,7 +2976,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			}
 			
 			sl = s->burst_left;
-			sr = sl + s->burst_width;
+			sr = seq[3] == 'a' ? sl + s->burst_width : s->half_width;
 		}
 		
 		if(sr > sl)
