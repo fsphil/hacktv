@@ -466,7 +466,8 @@ const vid_config_t vid_config_secam_l = {
 	.sync_level     = 0.00,
 	
 	.colour_mode    = VID_SECAM,
-	.burst_level    = 0.23,
+	.burst_width    = 0.00005690, /* 56.9μs */
+	.burst_rise     = 0.00000100, /* 1.00µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          =  0.299, /* R weight */
@@ -517,7 +518,8 @@ const vid_config_t vid_config_secam_dk = {
 	.sync_level     = 1.00,
 	
 	.colour_mode    = VID_SECAM,
-	.burst_level    = 0.23,
+	.burst_width    = 0.00005690, /* 56.9μs */
+	.burst_rise     = 0.00000100, /* 1.00µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          =  0.299, /* R weight */
@@ -568,7 +570,8 @@ const vid_config_t vid_config_secam_i = {
 	.sync_level     = 1.00,
 	
 	.colour_mode    = VID_SECAM,
-	.burst_level    = 0.23,
+	.burst_width    = 0.00005690, /* 56.9μs */
+	.burst_rise     = 0.00000100, /* 1.00µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          =  0.299, /* R weight */
@@ -623,7 +626,8 @@ const vid_config_t vid_config_secam_fm = {
 	.sync_level     = -0.50,
 	
 	.colour_mode    = VID_SECAM,
-	.burst_level    = 0.23,
+	.burst_width    = 0.00005690, /* 56.9μs */
+	.burst_rise     = 0.00000100, /* 1.00µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          =  0.299, /* R weight */
@@ -677,7 +681,8 @@ const vid_config_t vid_config_secam = {
 	.sync_level     = -0.30,
 	
 	.colour_mode    = VID_SECAM,
-	.burst_level    = 0.23,
+	.burst_width    = 0.00005690, /* 56.9μs */
+	.burst_rise     = 0.00000100, /* 1.00µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	
 	.rw_co          =  0.299, /* R weight */
@@ -2196,14 +2201,14 @@ static void inline _fm_modulator_add(_mod_fm_t *fm, int16_t *dst, int16_t sample
 	}
 }
 
-static void inline _fm_modulator_add_cgain(_mod_fm_t *fm, int16_t *dst, int16_t sample, const cint16_t *g)
+static void inline _fm_modulator_cgain(_mod_fm_t *fm, int16_t *dst, int16_t sample, const cint16_t *g)
 {
 	/* Only used by SECAM */
 	
 	cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
 	
-	dst[0] += (((((fm->phase.i >> 16) * fm->level) >> 15) * g->i) >> 15)
-	        - (((((fm->phase.q >> 16) * fm->level) >> 15) * g->q) >> 15);
+	dst[0] = (((((fm->phase.i >> 16) * fm->level) >> 15) * g->i) >> 15)
+	       - (((((fm->phase.q >> 16) * fm->level) >> 15) * g->q) >> 15);
 	
 	/* Correct the amplitude after INT16_MAX samples */
 	if(--fm->counter == 0)
@@ -2942,8 +2947,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				l->output[x * 2 + 1] = level + dev * t;
 			}
 			
-			sl = s->active_left;
-			sr = s->active_left + s->active_width;
+			sl = s->burst_left;
+			sr = sl + s->burst_width;
 			
 			l->vbialloc = 1;
 		}
@@ -2970,8 +2975,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				}
 			}
 			
-			sl = seq[2] == 'a' ? s->burst_left : s->half_width;
-			sr = seq[3] == 'a' ? s->active_left + s->active_width : s->half_width;
+			sl = s->burst_left;
+			sr = sl + s->burst_width;
 		}
 		
 		if(sr > sl)
@@ -2990,7 +2995,9 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				else if(l->output[x * 2 + 1] > dmax) l->output[x * 2 + 1] = dmax;
 				
 				g = &s->fm_secam_bell[(uint16_t) l->output[x * 2 + 1]];
-				_fm_modulator_add_cgain(&s->fm_secam, &l->output[x * 2], l->output[x * 2 + 1], g);
+				_fm_modulator_cgain(&s->fm_secam, &l->output[x * 2 + 1], l->output[x * 2 + 1], g);
+				
+				l->output[x * 2] += (l->output[x * 2 + 1] * s->burst_win[x - s->burst_left]) >> 15;
 			}
 		}
 	}
@@ -3656,6 +3663,21 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		
 		/* Field sync levels (optional) */
 		s->secam_fsync_level = round(350e3 / SECAM_FM_DEV * INT16_MAX);
+		
+		/* Generate the colour subcarrier envelope */
+		s->burst_left  = round(s->pixel_rate * (s->conf.burst_left - s->conf.burst_rise / 2));
+		s->burst_win   = _burstwin(
+			s->pixel_rate,
+			s->conf.burst_width,
+			s->conf.burst_rise,
+			1.0,
+			&s->burst_width
+		);
+		if(!s->burst_win)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
 	}
 	
 	/* Set the next line/frame counter */
