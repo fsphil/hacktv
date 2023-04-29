@@ -442,7 +442,7 @@ const vid_config_t vid_config_secam_l = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.80, /* Power level of video */
+	.video_level    = 0.80 * (100.0 / 124.0), /* Power level of video (allowing for white + chrominance) */
 	.am_audio_level = 0.20, /* AM audio carrier power level */
 	.nicam_level    = 0.04, /* NICAM audio carrier power level */
 	
@@ -463,7 +463,7 @@ const vid_config_t vid_config_secam_l = {
 	.white_level    = 1.00,
 	.black_level    = 0.30,
 	.blanking_level = 0.30,
-	.sync_level     = 0.00,
+	.sync_level     = 0.05, /* leave a residual radiated carrier level of 5 ±2% */
 	
 	.colour_mode    = VID_SECAM,
 	.burst_width    = 0.00005690, /* 56.9μs */
