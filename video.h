@@ -161,6 +161,7 @@ typedef struct {
 	double hsync_width;
 	double vsync_short_width;
 	double vsync_long_width;
+	double sync_rise; /* The 10% - 90% rise time */
 	
 	int invert_video;
 	double white_level;
