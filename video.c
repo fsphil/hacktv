@@ -71,9 +71,10 @@ const vid_config_t vid_config_pal_i = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000025, /*  0.25 +0.05µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -129,9 +130,10 @@ const vid_config_t vid_config_pal_bg = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -187,9 +189,10 @@ const vid_config_t vid_config_pal_dk = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -247,9 +250,10 @@ const vid_config_t vid_config_pal_fm = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.20,
@@ -305,9 +309,10 @@ const vid_config_t vid_config_pal = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -355,9 +360,10 @@ const vid_config_t vid_config_pal_m = {
 	.active_width   = 0.00005280, /* 52.80µs */
 	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.10µs */
-	.vsync_short_width = 0.00000230, /* 2.30 ±0.10μs */
-	.vsync_long_width  = 0.00002710, /* 27.1μs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.10µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10μs */
+	.vsync_long_width  = 0.00002710, /* 27.10μs */
+	.sync_rise         = 0.00000020, /*  0.25µs */
 	
 	.white_level    = 0.2000,
 	.black_level    = 0.7280,
@@ -405,9 +411,10 @@ const vid_config_t vid_config_525pal = {
 	.active_width   = 0.00005280, /* 52.80µs */
 	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.10µs */
-	.vsync_short_width = 0.00000230, /* 2.3 ± 0.10μs */
-	.vsync_long_width  = 0.00002710, /* 27.1μs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.10µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10μs */
+	.vsync_long_width  = 0.00002710, /* 27.10μs */
+	.sync_rise         = 0.00000020, /*  0.25µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -456,9 +463,10 @@ const vid_config_t vid_config_secam_l = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30µs */
+	.sync_rise         = 0.00000020, /*  0.20 ±0.10µs */
 	
 	.white_level    = 1.00,
 	.black_level    = 0.30,
@@ -490,13 +498,14 @@ const vid_config_t vid_config_secam_dk = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
-	.vsb_upper_bw   = 6000000, /* Hz */
+	.vsb_upper_bw   = 5500000, /* Hz */
 	.vsb_lower_bw   =  750000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.70, /* Power level of video */
 	.fm_mono_level  = 0.20, /* FM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -508,9 +517,10 @@ const vid_config_t vid_config_secam_dk = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 µs */
+	.sync_rise         = 0.00000020, /*  0.20 ±0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -533,6 +543,9 @@ const vid_config_t vid_config_secam_dk = {
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US, /* Seconds */
+	
+	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_beta     = 0.4,
 };
 
 const vid_config_t vid_config_secam_i = {
@@ -560,9 +573,10 @@ const vid_config_t vid_config_secam_i = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000025, /*  0.25 +0.05µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -616,9 +630,10 @@ const vid_config_t vid_config_secam_fm = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.20,
@@ -671,9 +686,10 @@ const vid_config_t vid_config_secam = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -720,7 +736,8 @@ const vid_config_t vid_config_ntsc_m = {
 	
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.vsync_long_width  = 0.00002710, /* 27.10µs */
+	.sync_rise         = 0.00000025, /*  0.25µs */
 	
 	.white_level    = 0.125000,
 	.black_level    = 0.703125,
@@ -776,6 +793,7 @@ const vid_config_t vid_config_ntsc_i = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    = 0.200000,
 	.black_level    = 0.728571,
@@ -835,6 +853,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.5000,
 	.black_level    = -0.1607,
@@ -897,6 +916,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25µs */
 	
 	.white_level    =  0.5000,
 	.black_level    = -0.2143,
@@ -946,6 +966,7 @@ const vid_config_t vid_config_ntsc = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  100.0 / 140,
 	.black_level    =    7.5 / 140,
@@ -1291,8 +1312,9 @@ const vid_config_t vid_config_405_a = {
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
-	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
-	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00 µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    = 1.00,
 	.black_level    = 0.30,
@@ -1332,8 +1354,9 @@ const vid_config_t vid_config_405_i = {
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
-	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
-	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00 µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -1369,8 +1392,9 @@ const vid_config_t vid_config_405 = {
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
-	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
-	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -1586,6 +1610,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.5000,
 	.black_level    = -0.1475,
@@ -1632,6 +1657,7 @@ const vid_config_t vid_config_apollo_colour = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.0525,
