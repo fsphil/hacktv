@@ -168,7 +168,7 @@ const vid_config_t vid_config_pal_dk = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
-	.vsb_upper_bw   = 6000000, /* Hz */
+	.vsb_upper_bw   = 5500000, /* Hz */
 	.vsb_lower_bw   =  750000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
@@ -215,7 +215,7 @@ const vid_config_t vid_config_pal_dk = {
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US,
-
+	
 	/* Chinese standard GY/T 129-1997, similar to French standard. */
 	.nicam_carrier  = 5850000, /* Hz */
 	.nicam_beta     = 0.4,
