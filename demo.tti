@@ -1,7 +1,8 @@
-PN,10000
 DE,edit-tf
 PS,8000
+PN,1007F
 SC,3F7F
+RE,0
 OL,1,D ]G                                  \ 
 OL,2,T oooooooooooooooooo  
 OL,3,TZ9)9)9)9)9)9)9)9)9)9)9)9)9)9)9)9)9)9)  
@@ -23,5 +24,5 @@ OL,18,D ]G                                  \
 OL,19,D ]G                                  \ 
 OL,20,D ]G                                  \ 
 OL,21,D ]G                                  \ 
-OL,22,D ]Ghttps://github.com/fsphil/hacktv  \ 
+OL,22,D ]G https://sanslogic.co.uk/hacktv   \ 
 OL,23,D ]G                                  \ 
