@@ -230,6 +230,7 @@ typedef struct {
 	
 	/* A2 Stereo / Zweikanalton */
 	int a2stereo;
+	double a2stereo_carrier;
 	
 	/* Stereo NICAM audio */
 	double nicam_carrier;

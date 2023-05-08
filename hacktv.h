@@ -81,6 +81,7 @@ typedef struct {
 	int noaudio;
 	int nonicam;
 	int a2stereo;
+	double a2stereo_freq;
 	int scramble_video;
 	int scramble_audio;
 	uint64_t frequency;

@@ -160,6 +160,8 @@ const vid_config_t vid_config_pal_bg = {
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US, /* Seconds */
 	
+	.a2stereo_carrier  = 5742000, /* Hz */
+	
 	.nicam_carrier  = 5850000, /* Hz */
 	.nicam_beta     = 0.4,
 };
@@ -175,8 +177,8 @@ const vid_config_t vid_config_pal_dk = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.70, /* Power level of video */
-	.fm_mono_level  = 0.20, /* FM audio carrier power level */
+	.video_level    = 0.71, /* Power level of video */
+	.fm_mono_level  = 0.22, /* FM audio carrier power level */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
@@ -218,6 +220,9 @@ const vid_config_t vid_config_pal_dk = {
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US,
+	
+	/* Czechoslovak state standard CSN 367523:1988 */
+	.a2stereo_carrier  = 6258000, /* Hz */
 	
 	/* Chinese standard GY/T 129-1997, similar to French standard. */
 	.nicam_carrier  = 5850000, /* Hz */
@@ -543,6 +548,9 @@ const vid_config_t vid_config_secam_dk = {
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US, /* Seconds */
+	
+	/* Czechoslovak state standard CSN 367523:1988 */
+	.a2stereo_carrier  = 6258000, /* Hz */
 	
 	.nicam_carrier  = 5850000, /* Hz */
 	.nicam_beta     = 0.4,
@@ -3845,8 +3853,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	if(s->conf.a2stereo)
 	{
 		/* Enable Zweikanalton / A2 Stereo */
-		s->conf.fm_right_level = s->conf.fm_mono_level * 0.446684; /* -7 dB */
-		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + 242000;
+		s->conf.fm_right_level = s->conf.fm_mono_carrier ? s->conf.video_level * 0.1 : 0; /* -20 dB */
+		/* Set first audio carrier power level to -13 dB */
+		s->conf.fm_mono_level = s->conf.fm_right_level * 2.238721; /* 7 dB */
+		s->conf.fm_right_carrier = s->conf.a2stereo_carrier ? s->conf.a2stereo_carrier : s->conf.fm_mono_carrier + 242000;
 		s->conf.fm_right_deviation = s->conf.fm_mono_deviation;
 		s->conf.fm_right_preemph = s->conf.fm_mono_preemph;
 		

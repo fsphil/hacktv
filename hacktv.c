@@ -95,6 +95,8 @@ static void print_usage(void)
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --a2stereo                 Enable Zweikanalton / A2 Stereo, disables NICAM.\n"
+		"      --a2stereo-freq <value>    Override the mode's frequency offset of A2 Stereo subcarrier\n"
+		"                                 to vision carrier in Hz.\n"
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
@@ -348,6 +350,7 @@ enum {
 	_OPT_NOAUDIO,
 	_OPT_NONICAM,
 	_OPT_A2STEREO,
+	_OPT_A2STEREO_FREQ,
 	_OPT_SINGLE_CUT,
 	_OPT_DOUBLE_CUT,
 	_OPT_SCRAMBLE_AUDIO,
@@ -400,6 +403,7 @@ int main(int argc, char *argv[])
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
 		{ "nonicam",        no_argument,       0, _OPT_NONICAM },
 		{ "a2stereo",       no_argument,       0, _OPT_A2STEREO },
+		{ "a2stereo-freq",  required_argument, 0, _OPT_A2STEREO_FREQ },
 		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
 		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
@@ -432,6 +436,7 @@ int main(int argc, char *argv[])
 	char *pre, *sub;
 	int l;
 	int r;
+	int a2carrier_interval;
 	
 	/* Disable console output buffer in Windows */
 	#ifdef WIN32
@@ -469,6 +474,7 @@ int main(int argc, char *argv[])
 	s.noaudio = 0;
 	s.nonicam = 0;
 	s.a2stereo = 0;
+	s.a2stereo_freq = 0.0;
 	s.scramble_video = 0;
 	s.scramble_audio = 0;
 	s.chid = -1;
@@ -641,6 +647,17 @@ int main(int argc, char *argv[])
 		
 		case _OPT_A2STEREO: /* --a2stereo */
 			s.a2stereo = 1;
+			break;
+		
+		case _OPT_A2STEREO_FREQ: /* --a2stereo-freq <value> */
+			s.a2stereo_freq = atof(optarg);
+			
+			if (s.a2stereo_freq == 0)
+			{
+				fprintf(stderr, "A2 Stereo subcarrier frequency invalid.\n");
+				return(-1);
+			}
+			
 			break;
 		
 		case _OPT_SINGLE_CUT: /* --single-cut */
@@ -830,6 +847,36 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+	if(s.a2stereo > 0)
+	{
+		if(vid_conf.modulation != VID_VSB || vid_conf.fm_mono_carrier == 0 ||
+		   vid_conf.video_level > 0.75)
+		{
+			fprintf(stderr, "Current mode don't support A2 Stereo.\n");
+			return(-1);
+		}
+		
+		vid_conf.a2stereo = 1;
+		
+		if(s.a2stereo_freq != 0)
+		{
+			a2carrier_interval = vid_conf.fm_mono_deviation + 15000;
+			
+			if((s.a2stereo_freq >= vid_conf.vsb_upper_bw + a2carrier_interval &&
+			    s.a2stereo_freq <= vid_conf.fm_mono_carrier - 2 * a2carrier_interval) ||
+			   (s.a2stereo_freq >= vid_conf.fm_mono_carrier + 2 * a2carrier_interval &&
+			    s.a2stereo_freq <= s.samplerate / 2 - vid_conf.vsb_lower_bw - a2carrier_interval))
+			{
+				vid_conf.a2stereo_carrier = s.a2stereo_freq;
+			}
+			else
+			{
+				fprintf(stderr, "A2 Stereo subcarrier frequency is out of range.\n");
+				return(-1);
+			}
+		}
+	}
+	
 	if(s.noaudio > 0)
 	{
 		/* Disable all audio sub-carriers */
@@ -852,11 +899,6 @@ int main(int argc, char *argv[])
 		/* Disable the NICAM sub-carrier */
 		vid_conf.nicam_level = 0;
 		vid_conf.nicam_carrier = 0;
-	}
-	
-	if(s.a2stereo > 0)
-	{
-		vid_conf.a2stereo = 1;
 	}
 	
 	vid_conf.scramble_video = s.scramble_video;
