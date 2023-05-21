@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 
+/* These factors where calculated with: f = M_PI / 2.0 / asin(0.9 - 0.1); */
 #define RT1090 1.6939549523182869 /* Factor to convert 10-90% rise time to 0-100% */
 #define RT2080 2.4410157268268087 /* Factor to convert 20-80% rise time to 0-100% */
 
