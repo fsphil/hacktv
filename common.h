@@ -20,6 +20,9 @@
 
 #include <stdint.h>
 
+#define RT1090 1.6939549523182869 /* Factor to convert 10-90% rise time to 0-100% */
+#define RT2080 2.4410157268268087 /* Factor to convert 20-80% rise time to 0-100% */
+
 typedef struct {
 	int16_t i;
 	int16_t q;

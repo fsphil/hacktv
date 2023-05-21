@@ -28,6 +28,7 @@
 #include <string.h>
 #include <math.h>
 #include "video.h"
+#include "vbidata.h"
 
 #include "videocrypts-sequence.h"
 
@@ -185,6 +186,21 @@ int vcs_init(vcs_t *s, vid_t *vid, const char *mode)
 	
 	memset(s, 0, sizeof(vcs_t));
 	
+	/* Generate the VBI data symbols */
+	s->lut = vbidata_init_step(
+		40,
+		vid->width,
+		round((vid->white_level - vid->black_level) * 1.00),
+		(double) vid->pixel_rate / VCS_SAMPLE_RATE * VCS_VBI_SAMPLES_PER_BIT,
+		vid->pixel_rate * 125e-9 * RT1090,
+		vid->pixel_rate * 11.90e-6
+	);
+	
+	if(!s->lut)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
 	s->counter  = 0;
 	
 	if(strcmp(mode, "free") == 0)
@@ -219,7 +235,7 @@ int vcs_init(vcs_t *s, vid_t *vid, const char *mode)
 
 void vcs_free(vcs_t *s)
 {
-	/* Nothing */
+	free(s->lut);
 }
 
 int vcs_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
@@ -347,26 +363,13 @@ int vcs_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	if(bline)
 	{
-		int b, c;
-		
 		/* Videocrypt S's VBI data sits in the active video area. Clear it first */
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
 			l->output[x * 2] = s->black_level;
 		}
 		
-		x = v->video_scale[VCS_VBI_LEFT];
-		
-		for(b = 0; b < VCS_VBI_BITS_PER_LINE; b++)
-		{
-			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? s->white_level : s->black_level;
-			
-			for(; x < v->video_scale[VCS_VBI_LEFT + VCS_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
-			{
-				l->output[x * 2] = c;
-			}
-		}
+		vbidata_render_nrz(v->lut, bline, 0, 40, VBIDATA_LSB_FIRST, l->output, 2);
 		
 		l->vbialloc = 1;
 	}
