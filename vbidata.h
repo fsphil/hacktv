@@ -24,7 +24,7 @@
 #define VBIDATA_MSB_FIRST (1)
 
 extern int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double beta);
-extern int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double rise);
+extern int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset);
 extern void     vbidata_render_nrz(const int16_t *lut, const uint8_t *src, int offset, size_t length, int order, int16_t *dst, size_t step);
 
 #endif

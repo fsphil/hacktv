@@ -43,6 +43,7 @@
 #include <string.h>
 #include <math.h>
 #include "video.h"
+#include "vbidata.h"
 
 /* Packet header sequences */
 static const uint8_t _sequence[8] = {
@@ -204,6 +205,21 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 	
 	memset(s, 0, sizeof(vc_t));
 	
+	/* Generate the VBI data symbols */
+	s->lut = vbidata_init_step(
+		40,
+		vid->width,
+		round((vid->white_level - vid->black_level) * 1.00),
+		(double) vid->pixel_rate / VC_SAMPLE_RATE * VC_VBI_SAMPLES_PER_BIT,
+		vid->pixel_rate * 375e-9,
+		vid->pixel_rate * 10.86e-6
+	);
+	
+	if(!s->lut)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
+	
 	s->counter  = 0;
 	s->cw       = VC_PRBS_CW_FA;
 	
@@ -267,7 +283,7 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 
 void vc_free(vc_t *s)
 {
-	/* Nothing */
+	free(s->lut);
 }
 
 int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
@@ -425,21 +441,7 @@ int vc_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	/* Render the VBI line if necessary */
 	if(bline)
 	{
-		int b, c;
-		
-		x = v->video_scale[VC_VBI_LEFT];
-		
-		for(b = 0; b < VC_VBI_BITS_PER_LINE; b++)
-		{
-			c = (bline[b / 8] >> (b % 8)) & 1;
-			c = c ? s->white_level : s->black_level;
-			
-			for(; x < v->video_scale[VC_VBI_LEFT + VC_VBI_SAMPLES_PER_BIT * (b + 1)]; x++)
-			{
-				l->output[x * 2] = c;
-			}
-		}
-		
+		vbidata_render_nrz(v->lut, bline, 0, 40, VBIDATA_LSB_FIRST, l->output, 2);
 		l->vbialloc = 1;
 	}
 	

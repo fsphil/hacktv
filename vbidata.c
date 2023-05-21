@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "vbidata.h"
+#include "common.h"
 
 static double _sinc(double x)
 {
@@ -30,39 +31,6 @@ static double _raised_cosine(double x, double b, double t)
 {
 	if(x == 0) return(1.0);
         return(_sinc(x / t) * (cos(M_PI * b * x / t) / (1.0 - (4.0 * b * b * x * x / (t * t)))));
-}
-
-static double _win(double t, double left, double width, double rise, double amplitude)
-{
-	double r, a;
-	
-	width -= rise;
-	t -= left - rise / 2;
-	
-	if(t <= 0)
-	{
-		r = 0.0;
-	}
-	else if(t < rise)
-	{
-		a = t / rise * M_PI / 2;
-		r = pow(sin(a), 2);
-	}
-	else if(t < rise + width)
-	{
-		r = 1.0;
-	}
-	else if(t < rise + width + rise)
-	{
-		a = (t - width) / rise * M_PI / 2;
-		r = pow(sin(a), 2);
-	}
-	else
-	{
-		r = 0.0;
-	}
-	
-	return(r * amplitude);
 }
 
 static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double beta)
@@ -142,7 +110,7 @@ int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int f
 	return(s);
 }
 
-static size_t _vbidata_init_step(int16_t *lut, unsigned int swidth, unsigned int dwidth, int level, double rise)
+static size_t _vbidata_init_step(int16_t *lut, unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
 {
 	size_t l;
 	int b, x, lb;
@@ -153,7 +121,7 @@ static size_t _vbidata_init_step(int16_t *lut, unsigned int swidth, unsigned int
 	{
 		for(x = 0; x < dwidth; x++)
 		{
-			double h = _win((double) x, (double) dwidth / swidth * b, (double) dwidth / swidth, rise, level);
+			double h = rc_window((double) x - offset, width * b, width, rise) * level;
 			int w = (int16_t) round(h);
 			
 			if(w != 0)
@@ -195,13 +163,13 @@ static size_t _vbidata_init_step(int16_t *lut, unsigned int swidth, unsigned int
 	return(l);
 }
 
-int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double rise)
+int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
 {
 	size_t l;
 	int16_t *s;
 	
 	/* Calculate the length of the lookup-table and allocate memory */
-	l = _vbidata_init_step(NULL, swidth, dwidth, level, rise);
+	l = _vbidata_init_step(NULL, swidth, dwidth, level, width, rise, offset);
 	
 	s = malloc(l);
 	if(!s)
@@ -210,7 +178,7 @@ int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, 
 	}
 	
 	/* Generate the lookup-table and return */
-	_vbidata_init_step(s, swidth, dwidth, level, rise);
+	_vbidata_init_step(s, swidth, dwidth, level, width, rise, offset);
 	
 	return(s);
 }

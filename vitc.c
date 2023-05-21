@@ -97,7 +97,7 @@ int vitc_init(vitc_t *s, vid_t *vid)
 	
 	/* Calculate the high level for the VBI data, 78.5% of the white level */
 	i = round((vid->white_level - vid->black_level) * 0.785);
-	s->lut = vbidata_init_step(hr, vid->width, i, vid->pixel_rate * 200e-9);
+	s->lut = vbidata_init_step(hr, vid->width, i, (double) vid->width / hr, vid->pixel_rate * 200e-9, 0);
 	
 	if(!s->lut)
 	{
