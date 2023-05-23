@@ -190,7 +190,7 @@ int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	x = _bits(data, x, crc, 8);
 	
 	/* Render the line */
-	vbidata_render_nrz(v->lut, data, -21, x, VBIDATA_LSB_FIRST, l->output, 2);
+	vbidata_render(v->lut, data, -21, x, VBIDATA_LSB_FIRST, l);
 	
 	l->vbialloc = 1;
 	

@@ -183,7 +183,7 @@ int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, 
 	return(s);
 }
 
-void vbidata_render_nrz(const int16_t *lut, const uint8_t *src, int offset, size_t length, int order, int16_t *dst, size_t step)
+void vbidata_render(const int16_t *lut, const uint8_t *src, int offset, size_t length, int order, vid_line_t *line)
 {
 	int b = offset;
 	int x = 0;
@@ -208,7 +208,7 @@ void vbidata_render_nrz(const int16_t *lut, const uint8_t *src, int offset, size
 		else if(bit)
 		{
 			x = lut[0];
-			dst[x * step] += lut[1];
+			line->output[x * 2] += lut[1];
 		}
 	}
 }

@@ -161,7 +161,7 @@ int wss_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		l->output[x * 2] = s->black_level;
 	}
 	
-	vbidata_render_nrz(w->lut, w->vbi, -55, 137, VBIDATA_MSB_FIRST, l->output, 2);
+	vbidata_render(w->lut, w->vbi, -55, 137, VBIDATA_MSB_FIRST, l);
 	
 	l->vbialloc = 1;
 	

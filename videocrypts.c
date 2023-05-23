@@ -369,7 +369,7 @@ int vcs_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 			l->output[x * 2] = s->black_level;
 		}
 		
-		vbidata_render_nrz(v->lut, bline, 0, 40, VBIDATA_LSB_FIRST, l->output, 2);
+		vbidata_render(v->lut, bline, 0, 40, VBIDATA_LSB_FIRST, l);
 		
 		l->vbialloc = 1;
 	}

@@ -564,7 +564,7 @@ int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		}
 		
 		/* Render the line */
-		vbidata_render_nrz(n->lut, n->vbi[n->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l->output, 2);
+		vbidata_render(n->lut, n->vbi[n->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l);
 		l->vbialloc = 1;
 		
 		if(n->vbi_seq == 10)
