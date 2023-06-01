@@ -150,8 +150,7 @@ typedef struct {
 	/* Video */
 	int type;
 	
-	int frame_rate_num;
-	int frame_rate_den;
+	rational_t frame_rate;
 	
 	int lines;
 	int hline;

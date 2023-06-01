@@ -73,14 +73,14 @@ int vitc_init(vitc_t *s, vid_t *vid)
 		return(VID_ERROR);
 	}
 	
-	if(vid->conf.frame_rate_num <= 30 &&
-	   vid->conf.frame_rate_den == 1)
+	if(vid->conf.frame_rate.num <= 30 &&
+	   vid->conf.frame_rate.den == 1)
 	{
-		s->fps = vid->conf.frame_rate_num;
+		s->fps = vid->conf.frame_rate.num;
 		s->frame_drop = 0;
 	}
-	else if(vid->conf.frame_rate_num == 30000 &&
-	        vid->conf.frame_rate_den == 1001)
+	else if(vid->conf.frame_rate.num == 30000 &&
+	        vid->conf.frame_rate.den == 1001)
 	{
 		s->fps = 30;
 		s->frame_drop = 1;
@@ -88,8 +88,8 @@ int vitc_init(vitc_t *s, vid_t *vid)
 	else
 	{
 		fprintf(stderr, "vitc: Unsupported frame rate %d/%d\n",
-			vid->conf.frame_rate_num,
-			vid->conf.frame_rate_den
+			vid->conf.frame_rate.num,
+			vid->conf.frame_rate.den
 		);
 		
 		return(VID_ERROR);

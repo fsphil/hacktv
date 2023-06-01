@@ -980,8 +980,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 		
 		/* Create the video's time_base using the current TV mode's frames per second.
 		 * Numerator and denominator are swapped as ffmpeg uses seconds per frame. */
-		av->video_time_base.num = s->conf.frame_rate_den;
-		av->video_time_base.den = s->conf.frame_rate_num;
+		av->video_time_base.num = s->conf.frame_rate.den;
+		av->video_time_base.den = s->conf.frame_rate.num;
 		if(s->conf.interlace) av->video_time_base.den *= 2;
 		
 		/* Use the video's start time as the reference */

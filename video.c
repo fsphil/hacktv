@@ -62,8 +62,7 @@ const vid_config_t vid_config_pal_i = {
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -121,8 +120,7 @@ const vid_config_t vid_config_pal_bg = {
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -180,8 +178,7 @@ const vid_config_t vid_config_pal_dk = {
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -241,8 +238,7 @@ const vid_config_t vid_config_pal_fm = {
 	//.fm_right_level = 0.04, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -300,8 +296,7 @@ const vid_config_t vid_config_pal = {
 	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -351,8 +346,7 @@ const vid_config_t vid_config_pal_m = {
 	.fm_mono_level  = 0.17, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001, },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -402,8 +396,7 @@ const vid_config_t vid_config_525pal = {
 	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -454,8 +447,7 @@ const vid_config_t vid_config_secam_l = {
 	.nicam_level    = 0.04, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -508,8 +500,7 @@ const vid_config_t vid_config_secam_dk = {
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -564,8 +555,7 @@ const vid_config_t vid_config_secam_i = {
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -621,8 +611,7 @@ const vid_config_t vid_config_secam_fm = {
 	//.fm_right_level = 0.025, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -677,8 +666,7 @@ const vid_config_t vid_config_secam = {
 	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_625,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -725,8 +713,7 @@ const vid_config_t vid_config_ntsc_m = {
 	.fm_mono_level  = 0.17, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -781,8 +768,7 @@ const vid_config_t vid_config_ntsc_i = {
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -841,8 +827,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	//.fm_right_level = 0.025, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -904,8 +889,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.dance_level    = 0.19, /* DANCE audio carrier power level */
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -954,8 +938,7 @@ const vid_config_t vid_config_ntsc = {
 	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -999,8 +982,7 @@ const vid_config_t vid_config_d2mac_am = {
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1038,8 +1020,7 @@ const vid_config_t vid_config_d2mac_fm = {
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1075,8 +1056,7 @@ const vid_config_t vid_config_d2mac = {
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1112,8 +1092,7 @@ const vid_config_t vid_config_dmac_am = {
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1151,8 +1130,7 @@ const vid_config_t vid_config_dmac_fm = {
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1188,8 +1166,7 @@ const vid_config_t vid_config_dmac = {
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1230,8 +1207,7 @@ const vid_config_t vid_config_819_e = {
 	.am_audio_level = 0.2, /* Power level of audio */
 	
 	.type           = VID_RASTER_819,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 819,
 	.hline          = 409,
 	
@@ -1267,8 +1243,7 @@ const vid_config_t vid_config_819 = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_RASTER_819,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 819,
 	.hline          = 409,
 	
@@ -1303,8 +1278,7 @@ const vid_config_t vid_config_405_a = {
 	.am_audio_level = 0.2, /* Power level of audio */
 	
 	.type           = VID_RASTER_405,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1345,8 +1319,7 @@ const vid_config_t vid_config_405_i = {
 	.fm_mono_level  = 0.19, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_405,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1383,8 +1356,7 @@ const vid_config_t vid_config_405 = {
 	.video_bw       = 3.0e6,
 	
 	.type           = VID_RASTER_405,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1417,8 +1389,7 @@ const vid_config_t vid_config_baird_240_am = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_BAIRD_240,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 240,
 	
 	.active_lines   = 220,
@@ -1447,8 +1418,7 @@ const vid_config_t vid_config_baird_240 = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_BAIRD_240,
-	.frame_rate_num = 25,
-	.frame_rate_den = 1,
+	.frame_rate     = { 25, 1 },
 	.lines          = 240,
 	
 	.active_lines   = 220,
@@ -1479,8 +1449,7 @@ const vid_config_t vid_config_baird_30_am = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_BAIRD_30,
-	.frame_rate_num = 25,
-	.frame_rate_den = 2,
+	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
 	.lines          = 30,
 	
 	.active_lines   = 30,
@@ -1506,8 +1475,7 @@ const vid_config_t vid_config_baird_30 = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_BAIRD_30,
-	.frame_rate_num = 25,
-	.frame_rate_den = 2,
+	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
 	.lines          = 30,
 	
 	.active_lines   = 30,
@@ -1535,8 +1503,7 @@ const vid_config_t vid_config_nbtv_32_am = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_NBTV_32,
-	.frame_rate_num = 25,
-	.frame_rate_den = 2,
+	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
 	.lines          = 32,
 	
 	.active_lines   = 32,
@@ -1564,8 +1531,7 @@ const vid_config_t vid_config_nbtv_32 = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_NBTV_32,
-	.frame_rate_num = 25,
-	.frame_rate_den = 2,
+	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
 	.lines          = 32,
 	
 	.active_lines   = 32,
@@ -1598,8 +1564,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.fm_deviation   = 2e6, /* 2 MHz/V */
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -1645,8 +1610,7 @@ const vid_config_t vid_config_apollo_colour = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_RASTER_525,
-	.frame_rate_num = 30000,
-	.frame_rate_den = 1001,
+	.frame_rate     = { 30000, 1001 },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -1688,8 +1652,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	.fm_deviation   = 2e6, /* 2 MHz/V */
 	
 	.type           = VID_APOLLO_320,
-	.frame_rate_num = 10,
-	.frame_rate_den = 1,
+	.frame_rate     = { 10, 1 },
 	.lines          = 320,
 	.active_lines   = 312,
 	.active_width   = 0.00028250, /* 282.5µs */
@@ -1732,8 +1695,7 @@ const vid_config_t vid_config_apollo_mono = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_APOLLO_320,
-	.frame_rate_num = 10,
-	.frame_rate_den = 1,
+	.frame_rate     = { 10, 1 },
 	.lines          = 320,
 	.active_lines   = 312,
 	.active_width   = 0.00028250, /* 282.5µs */
@@ -1778,8 +1740,7 @@ const vid_config_t vid_config_cbs405_m = {
 	.fm_mono_level  = 0.17, /* FM audio carrier power level */
 	
 	.type           = VID_CBS_405,
-	.frame_rate_num = 72,
-	.frame_rate_den = 1,
+	.frame_rate     = { 72, 1 },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1818,8 +1779,7 @@ const vid_config_t vid_config_cbs405 = {
 	.video_level    = 1.0, /* Power level of video */
 	
 	.type           = VID_CBS_405,
-	.frame_rate_num = 72,
-	.frame_rate_den = 1,
+	.frame_rate     = { 72, 1 },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -2370,9 +2330,9 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 	 * previous and next valid sample rates. */
 	
 	/* Calculate lowest valid sample rate */
-	m = conf->lines * conf->frame_rate_num;
-	m /= r = gcd(m, conf->frame_rate_den);
-	if(conf->frame_rate_den / r & 1) m *= 2;
+	m = conf->lines * conf->frame_rate.num;
+	m /= r = gcd(m, conf->frame_rate.den);
+	if(conf->frame_rate.den / r & 1) m *= 2;
 	
 	/* Is the chosen sample rate good? */
 	if(sample_rate % m == 0) return;
@@ -3365,7 +3325,7 @@ static int _init_vfilter(vid_t *s)
 	int width;
 	int delay;
 	
-	width = round((double) s->sample_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
+	width = round((double) s->sample_rate / ((double) s->conf.frame_rate.num / s->conf.frame_rate.den) / s->conf.lines);
 	
 	p = calloc(1, sizeof(_vid_filter_process_t));
 	if(!p)
@@ -3491,8 +3451,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	_test_sample_rate(&s->conf, s->pixel_rate);
 	
 	/* Calculate the number of samples per line */
-	s->width = round((double) s->pixel_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines);
-	s->half_width = round((double) s->pixel_rate / ((double) s->conf.frame_rate_num / s->conf.frame_rate_den) / s->conf.lines / 2);
+	s->width = round((double) s->pixel_rate / ((double) s->conf.frame_rate.num / s->conf.frame_rate.den) / s->conf.lines);
+	s->half_width = round((double) s->pixel_rate / ((double) s->conf.frame_rate.num / s->conf.frame_rate.den) / s->conf.lines / 2);
 	s->max_width = s->width;
 	
 	/* Calculate the active video width and offset */
@@ -4259,7 +4219,7 @@ void vid_info(vid_t *s)
 {
 	fprintf(stderr, "Video: %dx%d %.2f fps (full frame %dx%d)\n",
 		s->active_width, s->conf.active_lines,
-		(double) s->conf.frame_rate_num / s->conf.frame_rate_den,
+		(double) s->conf.frame_rate.num / s->conf.frame_rate.den,
 		s->width, s->conf.lines
 	);
 	
