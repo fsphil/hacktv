@@ -193,8 +193,7 @@ typedef struct {
 	double bw_co;
 	
 	int colour_mode;
-	double colour_carrier;
-	int colour_lookup_lines;
+	rational_t colour_carrier;
 	
 	double burst_width;
 	double burst_left;
@@ -345,7 +344,8 @@ struct vid_t {
 	
 	_yiq16_t *yiq_level_lookup;
 	
-	int colour_lookup_width;
+	unsigned int colour_lookup_width;
+	unsigned int colour_lookup_offset;
 	int16_t *colour_lookup;
 	
 	int burst_left;

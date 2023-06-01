@@ -85,8 +85,7 @@ const vid_config_t vid_config_pal_i = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
-	.colour_carrier = 4433618.75,
-	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -143,8 +142,7 @@ const vid_config_t vid_config_pal_bg = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
-	.colour_carrier = 4433618.75,
-	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -201,8 +199,7 @@ const vid_config_t vid_config_pal_dk = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
-	.colour_carrier = 4433618.75,
-	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -261,8 +258,7 @@ const vid_config_t vid_config_pal_fm = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
-	.colour_carrier = 4433618.75,
-	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -319,8 +315,7 @@ const vid_config_t vid_config_pal = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
-	.colour_carrier = 4433618.75,
-	.colour_lookup_lines = 625 * 4, /* The carrier repeats after 4 frames */
+	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -369,8 +364,7 @@ const vid_config_t vid_config_pal_m = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
 	.burst_level    = 33.0 / 73.0, /* Approximation */
-	.colour_carrier = 227.25 * 525 * (30.0 / 1.001),
-	.colour_lookup_lines = 4, /* The carrier repeats after 4 lines */
+	.colour_carrier = { 511312500, 143 }, /* 3575611.888... Hz */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -419,8 +413,7 @@ const vid_config_t vid_config_525pal = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
 	.burst_level    = 33.0 / 73.0, /* Approximation */
-	.colour_carrier = 227.25 * 525 * (30.0 / 1.001),
-	.colour_lookup_lines = 4, /* The carrier repeats after 4 lines */
+	.colour_carrier = { 511312500, 143 }, /* 3575611.888... Hz */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -736,8 +729,7 @@ const vid_config_t vid_config_ntsc_m = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
-	.colour_carrier = 5000000.0 * 63 / 88,
-	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -791,8 +783,7 @@ const vid_config_t vid_config_ntsc_i = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
-	.colour_carrier = 5000000.0 * 63 / 88,
-	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -850,8 +841,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
-	.colour_carrier = 5000000.0 * 63 / 88,
-	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -912,8 +902,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
-	.colour_carrier = 5000000.0 * 63 / 88,
-	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -961,8 +950,7 @@ const vid_config_t vid_config_ntsc = {
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
-	.colour_carrier = 5000000.0 * 63 / 88,
-	.colour_lookup_lines = 2, /* The carrier repeats after 2 lines */
+	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -2057,12 +2045,9 @@ static int16_t *_burstwin(unsigned int sample_rate, double width, double rise, d
 	return(win);
 }
 
-static int16_t *_colour_subcarrier_phase(vid_t *s, int frame, int line, int phase)
+static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
 {
-	int p;
-	
-	frame = (frame - 1) & 3;
-	line = line - 1;
+	unsigned int p;
 	
 	/* Limit phase offset to 0 > 359 */
 	if((phase %= 360) < 0)
@@ -2070,8 +2055,7 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int frame, int line, int phas
 		phase += 360;
 	}
 	
-	/* Find the position in the table for 0 degrees at the start of this line */
-	p = (s->conf.lines * frame + line) * s->width;
+	p = s->colour_lookup_offset;
 	
 	/* And apply the offset for the required phase */
 	if(phase == 0)
@@ -2123,20 +2107,24 @@ static void _get_colour_subcarrier(vid_t *s, int frame, int line, const int16_t 
 	
 	if(s->conf.colour_mode == VID_PAL)
 	{
-		b = _colour_subcarrier_phase(s, frame, line, odd ? -135 : 135);
-		i = _colour_subcarrier_phase(s, frame, line, odd ? -90 : 90);
-		q = _colour_subcarrier_phase(s, frame, line, 0);
+		b = _colour_subcarrier_phase(s, odd ? -135 : 135);
+		i = _colour_subcarrier_phase(s, odd ? -90 : 90);
+		q = _colour_subcarrier_phase(s, 0);
 	}
 	else if(s->conf.colour_mode == VID_NTSC)
 	{
-		b = _colour_subcarrier_phase(s, frame, line, 180);
-		i = _colour_subcarrier_phase(s, frame, line, 90);
-		q = _colour_subcarrier_phase(s, frame, line, 0);
+		b = _colour_subcarrier_phase(s, 180);
+		i = _colour_subcarrier_phase(s, 90);
+		q = _colour_subcarrier_phase(s, 0);
 	}
 	
 	if(pb) *pb = b;
 	if(pi) *pi = i;
 	if(pq) *pq = q;
+	
+	/* Update offset for the next line */
+	s->colour_lookup_offset += s->width;
+	s->colour_lookup_offset %= s->colour_lookup_width;
 }
 
 /* FM modulator
@@ -3553,13 +3541,17 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->yiq_level_lookup[c].q = round(_dlimit(q, -1, 1) * INT16_MAX);
 	}
 	
-	if(s->conf.colour_lookup_lines > 0)
+	if(s->conf.colour_mode == VID_PAL ||
+	   s->conf.colour_mode == VID_NTSC)
 	{
+		rational_t a = rational_div((rational_t) { s->pixel_rate, 1 }, s->conf.colour_carrier);
+		
 		/* Generate the colour subcarrier lookup table */
 		/* This carrier is in phase with the U (B-Y) component */
-		s->colour_lookup_width = s->width * s->conf.colour_lookup_lines;
-		d = 2.0 * M_PI * s->conf.colour_carrier / s->pixel_rate;
+		s->colour_lookup_width = a.num;
+		d = 2.0 * M_PI * ((double) s->conf.colour_carrier.num / s->conf.colour_carrier.den) / s->pixel_rate;
 		
+		/*  To make overflow easier to handle the length of the table is extended by one line */
 		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(int16_t));
 		if(!s->colour_lookup)
 		{
@@ -3567,13 +3559,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(VID_OUT_OF_MEMORY);
 		}
 		
-		for(c = 0; c < s->colour_lookup_width; c++)
+		for(c = 0; c < s->colour_lookup_width + s->width; c++)
 		{
 			s->colour_lookup[c] = round(-sin(d * c) * INT16_MAX);
 		}
 		
-		/* To make overflow easier to handle, we repeat the first line at the end */
-		memcpy(&s->colour_lookup[s->colour_lookup_width], s->colour_lookup, s->width * sizeof(int16_t));
+		s->colour_lookup_offset = 0;
 	}
 	
 	if(s->conf.burst_level > 0)
