@@ -379,6 +379,58 @@ const vid_config_t vid_config_pal_m = {
 	.fm_mono_preemph   = VID_75US, /* Seconds */
 };
 
+const vid_config_t vid_config_pal_n = {
+	
+	/* System N (625 PAL) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 4200000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.83, /* Power level of video */
+	.fm_mono_level  = 0.16, /* FM audio carrier power level */
+	
+	.type           = VID_RASTER_625,
+	.frame_rate     = { 25, 1 },
+	.lines          = 625,
+	.hline          = 313,
+	
+	.active_lines   = 576,
+	.active_width   = 0.00005195, /* 51.95µs */
+	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	
+	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	
+	.white_level    = 0.2000,
+	.black_level    = 0.7280,
+	.blanking_level = 0.7712,
+	.sync_level     = 1.0000,
+	
+	.colour_mode    = VID_PAL,
+	.burst_width    = 0.00000252, /* 2.52 ±0.28 μs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
+	.burst_level    = 33.0 / 73.0, /* Approximation */
+	.colour_carrier = { 14328225, 4 }, /* 3582056.25 Hz */
+	
+	.rw_co          = 0.299, /* R weight */
+	.gw_co          = 0.587, /* G weight */
+	.bw_co          = 0.114, /* B weight */
+	.iu_co          = 0.000,
+	.iv_co          = -0.877,
+	.qu_co          = -0.493,
+	.qv_co          = 0.000,
+	
+	.fm_mono_carrier   = 4500000, /* Hz */
+	.fm_mono_deviation = 25000, /* +/- Hz */
+	.fm_mono_preemph   = VID_75US,
+};
+
 const vid_config_t vid_config_525pal = {
 	
 	/* Composite 525PAL */
@@ -1903,6 +1955,7 @@ const vid_configs_t vid_configs[] = {
 	{ "pal-fm",        &vid_config_pal_fm           },
 	{ "pal",           &vid_config_pal              },
 	{ "pal-m",         &vid_config_pal_m            },
+	{ "pal-n",         &vid_config_pal_n            },
 	{ "525pal",        &vid_config_525pal           },
 	{ "l",             &vid_config_secam_l          },
 	{ "d",             &vid_config_secam_dk         },
