@@ -279,9 +279,9 @@ struct vid_line_t {
 	int line;
 	
 	/* Colour subcarrier pointers */
-	int16_t *lut_b;	/* Burst */
-	int16_t *lut_i;	/* I/V phase */
-	int16_t *lut_q;	/* Q/U phase */
+	const int16_t *lut_b;	/* Burst */
+	const int16_t *lut_i;	/* I/V phase */
+	const int16_t *lut_q;	/* Q/U phase */
 	
 	/* Status */
 	int vbialloc;

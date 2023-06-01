@@ -2114,7 +2114,7 @@ static int16_t *_colour_subcarrier_phase(vid_t *s, int frame, int line, int phas
 	return(&s->colour_lookup[p]);
 }
 
-static void _get_colour_subcarrier(vid_t *s, int frame, int line, int16_t **pb, int16_t **pi, int16_t **pq)
+static void _get_colour_subcarrier(vid_t *s, int frame, int line, const int16_t **pb, const int16_t **pi, const int16_t **pq)
 {
 	int16_t *b = NULL;
 	int16_t *i = NULL;
