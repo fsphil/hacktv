@@ -20,9 +20,9 @@
 #include <math.h>
 #include "common.h"
 
-int gcd(int a, int b)
+int64_t gcd(int64_t a, int64_t b)
 {
-	int c;
+	int64_t c;
 	
 	while((c = a % b))
 	{
@@ -31,6 +31,24 @@ int gcd(int a, int b)
 	}
 	
 	return(b);
+}
+
+rational_t rational_mul(rational_t a, rational_t b)
+{
+	int64_t c, d, e;
+	c = (int64_t) a.num * b.num;
+	d = (int64_t) a.den * b.den;
+	e = gcd(c, d);
+	return((rational_t) { c / e, d / e });
+}
+
+rational_t rational_div(rational_t a, rational_t b)
+{
+	int64_t c, d, e;
+	c = (int64_t) a.num * b.den;
+	d = (int64_t) a.den * b.num;
+	e = gcd(c, d);
+	return((rational_t) { c / e, d / e });
 }
 
 cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level)

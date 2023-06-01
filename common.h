@@ -25,6 +25,11 @@
 #define RT2080 2.4410157268268087 /* Factor to convert 20-80% rise time to 0-100% */
 
 typedef struct {
+	int num;
+	int den;
+} rational_t;
+
+typedef struct {
 	int16_t i;
 	int16_t q;
 } cint16_t;
@@ -33,6 +38,12 @@ typedef struct {
 	int32_t i;
 	int32_t q;
 } cint32_t;
+
+extern int64_t gcd(int64_t a, int64_t b);
+extern rational_t rational_mul(rational_t a, rational_t b);
+extern rational_t rational_div(rational_t a, rational_t b);
+extern cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level);
+extern double rc_window(double t, double left, double width, double rise);
 
 static inline void cint16_mul(cint16_t *r, const cint16_t *a, const cint16_t *b)
 {
@@ -77,12 +88,6 @@ static inline void cint32_mula(cint32_t *r, const cint32_t *a, const cint32_t *b
 	r->i += i >> 31;
 	r->q += q >> 31;
 }
-
-extern int gcd(int a, int b);
-
-extern cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level);
-
-extern double rc_window(double t, double left, double width, double rise);
 
 #endif
 
