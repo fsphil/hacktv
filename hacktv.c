@@ -189,6 +189,8 @@ static void print_usage(void)
 		"  ntsc-fm       = NTSC colour, 30/1.001 fps, 525 lines, FM (complex), 6.5 MHz FM audio\n"
 		"  ntsc-bs       = NTSC colour, 30/1.001 fps, 525 lines, FM (complex), BS digital audio\n"
 		"  ntsc          = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
+		"  pal60-i       = PAL colour, 30/1.001 fps, 525 lines, AM (complex), 6.0 MHz FM audio\n"
+		"  pal60         = PAL colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
 		"  l             = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz AM\n"
 		"                  audio\n"
 		"  d, k          = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz FM\n"
