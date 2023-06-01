@@ -18,7 +18,7 @@
 #ifndef _TEST_H
 #define _TEST_H
 
-extern int av_test_open(vid_t *s);
+extern int av_test_open(vid_t *s, char *sub);
 
 #endif
 
