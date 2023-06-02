@@ -20,11 +20,12 @@
 
 #include <stdint.h>
 #include "video.h"
+#include "vbidata.h"
 
 typedef struct {
 	vid_t *vid;
 	uint8_t code;
-	int16_t *lut;
+	vbidata_lut_t *lut;
 	uint8_t vbi[18];
 	int blank_width;
 } wss_t;

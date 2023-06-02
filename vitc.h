@@ -20,13 +20,14 @@
 
 #include <stdint.h>
 #include "video.h"
+#include "vbidata.h"
 
 typedef struct {
 	int lines[2];
 	int type;
 	int fps;
 	int frame_drop;
-	int16_t *lut;
+	vbidata_lut_t *lut;
 } vitc_t;
 
 extern int vitc_init(vitc_t *s, vid_t *vid);

@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include "video.h"
+#include "vbidata.h"
 
 #define NG_VBI_WIDTH 284
 #define NG_VBI_BYTES 28
@@ -46,7 +47,7 @@ typedef struct {
 typedef struct {
 	
 	/* VBI */
-	int16_t *lut;
+	vbidata_lut_t *lut;
 	uint8_t vbi[10][NG_VBI_BYTES];
 	int vbi_seq;
 	int block_seq;

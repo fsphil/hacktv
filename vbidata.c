@@ -33,92 +33,105 @@ static double _raised_cosine(double x, double b, double t)
         return(_sinc(x / t) * (cos(M_PI * b * x / t) / (1.0 - (4.0 * b * b * x * x / (t * t)))));
 }
 
-static size_t _vbidata_init(int16_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double beta)
+static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double beta, double offset)
 {
-	size_t l;
-	int b, x, lb;
+	int l;
+	int b, x;
 	
 	l = 0;
 	
-	for(lb = b = 0; b < swidth; b++)
+	for(b = 0; b < swidth; b++)
 	{
+		int len = 0;
+		int off = 0;
 		double tt = (1.0 / swidth) * (0.5 + b);
 		
 		for(x = 0; x < dwidth; x++)
 		{
-			double tv = (1.0 / dwidth) * (0.5 + x);
+			double tv = (1.0 / dwidth) * (0.5 + x - offset);
 			double tr = (tv - tt) * swidth;
 			double h = _raised_cosine(tr, beta, 1);
 			int16_t w = (int16_t) round(h * level);
 			
 			if(w != 0)
 			{
-				if(lb != b)
+				if(len == 0)
+				{
+					off = x;
+				}
+				
+				while((x - off) != len)
 				{
 					if(lut)
 					{
-						*(lut++) = b;
-						*(lut++) = 0;
+						lut->value[len] = 0;
 					}
 					
-					l += sizeof(int16_t) * 2;
-					
-					lb = b;
+					len++;
 				}
 				
 				if(lut)
 				{
-					*(lut++) = x;
-					*(lut++) = w;
+					lut->value[len] = w;
 				}
 				
-				l += sizeof(int16_t) * 2;
+				len++;
 			}
 		}
 		
-		l += sizeof(int16_t) * 2;
+		l += 2 + len;
+		
+		if(lut)
+		{
+			lut->length = len;
+			lut->offset = off;
+			lut = (vbidata_lut_t *) &lut->value[lut->length];
+		}
 	}
 	
+	/* End of LUT marker */
 	if(lut)
 	{
-		*(lut++) = 0;
-		*(lut++) = 0;
+		lut->length = -1;
 	}
 	
-	l += sizeof(int16_t) * 2;
+	l++;
 	
-	return(l);
+	return(l * sizeof(int16_t));
 }
 
-int16_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double beta)
+vbidata_lut_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double beta, double offset)
 {
-	size_t l;
-	int16_t *s;
+	int l;
+	vbidata_lut_t *lut;
 	
 	/* Calculate the length of the lookup-table and allocate memory */
-	l = _vbidata_init(NULL, swidth, dwidth, level, filter, beta);
+	l = _vbidata_init(NULL, swidth, dwidth, level, filter, beta, offset);
 	
-	s = malloc(l);
-	if(!s)
+	lut = malloc(l);
+	if(!lut)
 	{
 		return(NULL);
 	}
 	
 	/* Generate the lookup-table and return */
-	_vbidata_init(s, swidth, dwidth, level, filter, beta);
+	_vbidata_init(lut, swidth, dwidth, level, filter, beta, offset);
 	
-	return(s);
+	return(lut);
 }
 
-static size_t _vbidata_init_step(int16_t *lut, unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
+static int _vbidata_init_step(vbidata_lut_t *lut, unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
 {
-	size_t l;
-	int b, x, lb;
+	int l;
+	int b, x;
 	
 	l = 0;
 	
-	for(lb = b = 0; b < swidth; b++)
+	for(b = 0; b < swidth; b++)
 	{
+		int len = 0;
+		int off = 0;
+		
 		for(x = 0; x < dwidth; x++)
 		{
 			double h = rc_window((double) x - offset, width * b, width, rise) * level;
@@ -126,89 +139,92 @@ static size_t _vbidata_init_step(int16_t *lut, unsigned int swidth, unsigned int
 			
 			if(w != 0)
 			{
-				if(lb != b)
+				if(len == 0)
+				{
+					off = x;
+				}
+				
+				while((x - off) != len)
 				{
 					if(lut)
 					{
-						*(lut++) = b;
-						*(lut++) = 0;
+						lut->value[len] = 0;
 					}
 					
-					l += sizeof(int16_t) * 2;
-					
-					lb = b;
+					len++;
 				}
 				
 				if(lut)
 				{
-					*(lut++) = x;
-					*(lut++) = w;
+					lut->value[len] = w;
 				}
 				
-				l += sizeof(int16_t) * 2;
+				len++;
 			}
 		}
 		
-		//l += sizeof(int16_t) * 2;
+		l += 2 + len;
+		
+		if(lut)
+		{
+			lut->length = len;
+			lut->offset = off;
+			lut = (vbidata_lut_t *) &lut->value[lut->length];
+		}
 	}
 	
+	/* End of LUT marker */
 	if(lut)
 	{
-		*(lut++) = 0;
-		*(lut++) = 0;
+		lut->length = -1;
 	}
 	
-	l += sizeof(int16_t) * 2;
+	l++;
 	
-	return(l);
+	return(l * sizeof(int16_t));
 }
 
-int16_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
+vbidata_lut_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
 {
-	size_t l;
-	int16_t *s;
+	int l;
+	vbidata_lut_t *lut;
 	
 	/* Calculate the length of the lookup-table and allocate memory */
 	l = _vbidata_init_step(NULL, swidth, dwidth, level, width, rise, offset);
-	
-	s = malloc(l);
-	if(!s)
+	lut = malloc(l);
+	if(!lut)
 	{
 		return(NULL);
 	}
 	
 	/* Generate the lookup-table and return */
-	_vbidata_init_step(s, swidth, dwidth, level, width, rise, offset);
+	_vbidata_init_step(lut, swidth, dwidth, level, width, rise, offset);
 	
-	return(s);
+	return(lut);
 }
 
-void vbidata_render(const int16_t *lut, const uint8_t *src, int offset, size_t length, int order, vid_line_t *line)
+void vbidata_render(const vbidata_lut_t *lut, const uint8_t *src, int offset, int length, int order, vid_line_t *line)
 {
-	int b = offset;
-	int x = 0;
+	int b = -offset;
+	int x;
 	int bit;
 	
 	/* LUT format:
 	 * 
-	 * [x][v] = [x offset][value]
-	 * [x][0] = [x offset][end of bit]
-	 * [0][0] = End of LUT
+	 * [l][x][[v]...] = [length][x offset][[value]...]
+	 * [-1]           = End of LUT
 	*/
 	
-	bit = (b < 0 || b >= length ? 0 : (src[b >> 3] >> (order == VBIDATA_LSB_FIRST ? (b & 7) : 7 - (b & 7))) & 1);
-	
-	for(; !(lut[0] == 0 && lut[1] == 0); lut += 2)
+	for(; b < length && lut->length != -1; b++, lut = (vbidata_lut_t *) &lut->value[lut->length])
 	{
-		if(lut[1] == 0)
+		bit = (b < 0 ? 0 : (src[b >> 3] >> (order == VBIDATA_LSB_FIRST ? (b & 7) : 7 - (b & 7))) & 1);
+		
+		if(bit)
 		{
-			b = lut[0] + offset;
-			bit = (b < 0 || b >= length ? 0 : (src[b >> 3] >> (order == VBIDATA_LSB_FIRST ? (b & 7) : 7 - (b & 7))) & 1);
-		}
-		else if(bit)
-		{
-			x = lut[0];
-			line->output[x * 2] += lut[1];
+			for(x = 0; x < lut->length; x++)
+			{
+				line->output[(lut->offset + x) * 2] += lut->value[x];
+			}
 		}
 	}
 }

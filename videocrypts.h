@@ -53,7 +53,7 @@ typedef struct {
 	uint8_t counter;
 	
 	/* VBI symbols */
-	int16_t *lut;
+	vbidata_lut_t *lut;
 	
 	/* VCS blocks */
 	const _vcs_block_t *blocks;

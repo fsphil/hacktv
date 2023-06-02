@@ -341,7 +341,8 @@ int ng_init(ng_t *s, vid_t *vid)
 	s->lut = vbidata_init(
 		NG_VBI_WIDTH, vid->width,
 		i,
-		VBIDATA_FILTER_RC, 0.7
+		VBIDATA_FILTER_RC, 0.7,
+		0
 	);
 	
 	if(!s->lut)
@@ -564,7 +565,7 @@ int ng_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		}
 		
 		/* Render the line */
-		vbidata_render(n->lut, n->vbi[n->vbi_seq++], -45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l);
+		vbidata_render(n->lut, n->vbi[n->vbi_seq++], 45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l);
 		l->vbialloc = 1;
 		
 		if(n->vbi_seq == 10)

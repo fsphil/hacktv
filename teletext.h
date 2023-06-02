@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "video.h"
+#include "vbidata.h"
 
 #define TT_OK            0
 #define TT_ERROR         1
@@ -127,7 +128,7 @@ typedef struct {
 
 typedef struct {
 	vid_t *vid;
-	int16_t *lut;
+	vbidata_lut_t *lut;
 	FILE *raw;
 	tt_service_t service;
 	unsigned int timecode;
