@@ -341,7 +341,7 @@ int ng_init(ng_t *s, vid_t *vid)
 	s->lut = vbidata_init(
 		NG_VBI_WIDTH, vid->width,
 		i,
-		VBIDATA_FILTER_RC, 0.7,
+		VBIDATA_FILTER_RC, (double) vid->width / NG_VBI_WIDTH, 0.7,
 		0
 	);
 	

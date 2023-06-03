@@ -91,7 +91,7 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	s->lut = vbidata_init(
 		320, s->vid->width,
 		level,
-		VBIDATA_FILTER_RC, 0.7,
+		VBIDATA_FILTER_RC, 0.7, (double) s->vid->width / 320,
 		0
 	);
 	

@@ -33,7 +33,7 @@ static double _raised_cosine(double x, double b, double t)
         return(_sinc(x / t) * (cos(M_PI * b * x / t) / (1.0 - (4.0 * b * b * x * x / (t * t)))));
 }
 
-static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double beta, double offset)
+static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
 {
 	int l;
 	int b, x;
@@ -44,13 +44,11 @@ static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int d
 	{
 		int len = 0;
 		int off = 0;
-		double tt = (1.0 / swidth) * (0.5 + b);
+		double t = -bwidth * b - offset;
 		
 		for(x = 0; x < dwidth; x++)
 		{
-			double tv = (1.0 / dwidth) * (0.5 + x - offset);
-			double tr = (tv - tt) * swidth;
-			double h = _raised_cosine(tr, beta, 1);
+			double h = _raised_cosine((t + x) / bwidth, beta, 1);
 			int16_t w = (int16_t) round(h * level);
 			
 			if(w != 0)
@@ -100,13 +98,13 @@ static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int d
 	return(l * sizeof(int16_t));
 }
 
-vbidata_lut_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double beta, double offset)
+vbidata_lut_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
 {
 	int l;
 	vbidata_lut_t *lut;
 	
 	/* Calculate the length of the lookup-table and allocate memory */
-	l = _vbidata_init(NULL, swidth, dwidth, level, filter, beta, offset);
+	l = _vbidata_init(NULL, swidth, dwidth, level, filter, bwidth, beta, offset);
 	
 	lut = malloc(l);
 	if(!lut)
@@ -115,7 +113,7 @@ vbidata_lut_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level,
 	}
 	
 	/* Generate the lookup-table and return */
-	_vbidata_init(lut, swidth, dwidth, level, filter, beta, offset);
+	_vbidata_init(lut, swidth, dwidth, level, filter, bwidth, beta, offset);
 	
 	return(lut);
 }
