@@ -33,64 +33,65 @@ static double _raised_cosine(double x, double b, double t)
         return(_sinc(x / t) * (cos(M_PI * b * x / t) / (1.0 - (4.0 * b * b * x * x / (t * t)))));
 }
 
+void vbidata_update(vbidata_lut_t *lut, int render, int offset, int value)
+{
+	if(value != 0)
+	{
+		if(lut->length == 0)
+		{
+			lut->offset = offset;
+		}
+		
+		for(; lut->length < (offset - lut->offset); lut->length++)
+		{
+			if(render)
+			{
+				lut->value[lut->length] = 0;
+			}
+		}
+		
+		if(render)
+		{
+			lut->value[lut->length] = value;
+		}
+		
+		lut->length++;
+	}
+}
+
 static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
 {
 	int l;
 	int b, x;
+	vbidata_lut_t lc;
+	vbidata_lut_t *lptr = (lut ? lut : &lc);
 	
 	l = 0;
 	
 	for(b = 0; b < swidth; b++)
 	{
-		int len = 0;
-		int off = 0;
 		double t = -bwidth * b - offset;
+		
+		lptr->offset = lptr->length = 0;
 		
 		for(x = 0; x < dwidth; x++)
 		{
-			double h = _raised_cosine((t + x) / bwidth, beta, 1);
-			int16_t w = (int16_t) round(h * level);
-			
-			if(w != 0)
-			{
-				if(len == 0)
-				{
-					off = x;
-				}
-				
-				while((x - off) != len)
-				{
-					if(lut)
-					{
-						lut->value[len] = 0;
-					}
-					
-					len++;
-				}
-				
-				if(lut)
-				{
-					lut->value[len] = w;
-				}
-				
-				len++;
-			}
+			double h = _raised_cosine((t + x) / bwidth, beta, 1) * level;
+			vbidata_update(lptr, lut ? 1 : 0, x, round(h));
 		}
 		
-		l += 2 + len;
+		l += 2 + lptr->length;
 		
 		if(lut)
 		{
-			lut->length = len;
-			lut->offset = off;
-			lut = (vbidata_lut_t *) &lut->value[lut->length];
+			lptr = (vbidata_lut_t *) &lptr->value[lptr->length];
 		}
 	}
 	
 	/* End of LUT marker */
 	if(lut)
 	{
-		lut->length = -1;
+		lptr->length = -1;
 	}
 	
 	l++;
@@ -122,59 +123,33 @@ static int _vbidata_init_step(vbidata_lut_t *lut, unsigned int swidth, unsigned 
 {
 	int l;
 	int b, x;
+	vbidata_lut_t lc;
+	vbidata_lut_t *lptr = (lut ? lut : &lc);
 	
 	l = 0;
 	
 	for(b = 0; b < swidth; b++)
 	{
-		int len = 0;
-		int off = 0;
+		lptr->offset = lptr->length = 0;
 		
 		for(x = 0; x < dwidth; x++)
 		{
 			double h = rc_window((double) x - offset, width * b, width, rise) * level;
-			int w = (int16_t) round(h);
-			
-			if(w != 0)
-			{
-				if(len == 0)
-				{
-					off = x;
-				}
-				
-				while((x - off) != len)
-				{
-					if(lut)
-					{
-						lut->value[len] = 0;
-					}
-					
-					len++;
-				}
-				
-				if(lut)
-				{
-					lut->value[len] = w;
-				}
-				
-				len++;
-			}
+			vbidata_update(lptr, lut ? 1 : 0, x, round(h));
 		}
 		
-		l += 2 + len;
+		l += 2 + lptr->length;
 		
 		if(lut)
 		{
-			lut->length = len;
-			lut->offset = off;
-			lut = (vbidata_lut_t *) &lut->value[lut->length];
+			lptr = (vbidata_lut_t *) &lptr->value[lptr->length];
 		}
 	}
 	
 	/* End of LUT marker */
 	if(lut)
 	{
-		lut->length = -1;
+		lptr->length = -1;
 	}
 	
 	l++;

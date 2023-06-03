@@ -31,6 +31,7 @@ typedef struct {
 	int16_t value[];
 } vbidata_lut_t;
 
+extern void vbidata_update(vbidata_lut_t *lut, int render, int offset, int value);
 extern vbidata_lut_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset);
 extern vbidata_lut_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset);
 extern void vbidata_render(const vbidata_lut_t *lut, const uint8_t *src, int offset, int length, int order, vid_line_t *line);
