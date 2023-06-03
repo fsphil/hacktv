@@ -59,7 +59,7 @@ void vbidata_update(vbidata_lut_t *lut, int render, int offset, int value)
 	}
 }
 
-static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
+static int _vbidata_init(vbidata_lut_t *lut, unsigned int nsymbols, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
 {
 	int l;
 	int b, x;
@@ -68,7 +68,7 @@ static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int d
 	
 	l = 0;
 	
-	for(b = 0; b < swidth; b++)
+	for(b = 0; b < nsymbols; b++)
 	{
 		double t = -bwidth * b - offset;
 		
@@ -99,13 +99,13 @@ static int _vbidata_init(vbidata_lut_t *lut, unsigned int swidth, unsigned int d
 	return(l * sizeof(int16_t));
 }
 
-vbidata_lut_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
+vbidata_lut_t *vbidata_init(unsigned int nsymbols, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
 {
 	int l;
 	vbidata_lut_t *lut;
 	
 	/* Calculate the length of the lookup-table and allocate memory */
-	l = _vbidata_init(NULL, swidth, dwidth, level, filter, bwidth, beta, offset);
+	l = _vbidata_init(NULL, nsymbols, dwidth, level, filter, bwidth, beta, offset);
 	
 	lut = malloc(l);
 	if(!lut)
@@ -114,12 +114,12 @@ vbidata_lut_t *vbidata_init(unsigned int swidth, unsigned int dwidth, int level,
 	}
 	
 	/* Generate the lookup-table and return */
-	_vbidata_init(lut, swidth, dwidth, level, filter, bwidth, beta, offset);
+	_vbidata_init(lut, nsymbols, dwidth, level, filter, bwidth, beta, offset);
 	
 	return(lut);
 }
 
-static int _vbidata_init_step(vbidata_lut_t *lut, unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
+static int _vbidata_init_step(vbidata_lut_t *lut, unsigned int nsymbols, unsigned int dwidth, int level, double width, double rise, double offset)
 {
 	int l;
 	int b, x;
@@ -128,7 +128,7 @@ static int _vbidata_init_step(vbidata_lut_t *lut, unsigned int swidth, unsigned 
 	
 	l = 0;
 	
-	for(b = 0; b < swidth; b++)
+	for(b = 0; b < nsymbols; b++)
 	{
 		lptr->offset = lptr->length = 0;
 		
@@ -157,13 +157,13 @@ static int _vbidata_init_step(vbidata_lut_t *lut, unsigned int swidth, unsigned 
 	return(l * sizeof(int16_t));
 }
 
-vbidata_lut_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int level, double width, double rise, double offset)
+vbidata_lut_t *vbidata_init_step(unsigned int nsymbols, unsigned int dwidth, int level, double width, double rise, double offset)
 {
 	int l;
 	vbidata_lut_t *lut;
 	
 	/* Calculate the length of the lookup-table and allocate memory */
-	l = _vbidata_init_step(NULL, swidth, dwidth, level, width, rise, offset);
+	l = _vbidata_init_step(NULL, nsymbols, dwidth, level, width, rise, offset);
 	lut = malloc(l);
 	if(!lut)
 	{
@@ -171,7 +171,7 @@ vbidata_lut_t *vbidata_init_step(unsigned int swidth, unsigned int dwidth, int l
 	}
 	
 	/* Generate the lookup-table and return */
-	_vbidata_init_step(lut, swidth, dwidth, level, width, rise, offset);
+	_vbidata_init_step(lut, nsymbols, dwidth, level, width, rise, offset);
 	
 	return(lut);
 }
