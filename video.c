@@ -1726,7 +1726,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.colour_mode    = VID_APOLLO_FSC,
 	.fsc_flag_width = 0.00002000, /* 20.00µs */
 	.fsc_flag_left  = 0.00001470, /* |-->| 14.70µs */
-	.fsc_flag_level = 1.00,
+	.fsc_flag_level = 0.5000,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -1772,7 +1772,7 @@ const vid_config_t vid_config_apollo_colour = {
 	.colour_mode    = VID_APOLLO_FSC,
 	.fsc_flag_width = 0.00002000, /* 20.00µs */
 	.fsc_flag_left  = 0.00001470, /* |-->| 14.70µs */
-	.fsc_flag_level = 1.00,
+	.fsc_flag_level = 0.70,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -1899,7 +1899,9 @@ const vid_config_t vid_config_cbs405_m = {
 	.sync_level     = 1.000, /* 100% */
 	
 	.colour_mode    = VID_CBS_FSC,
+	.fsc_flag_width = 0.000001372, /* 1.372µs */
 	.fsc_flag_left  = 0.000008573, /* |-->| 8.573µs */
+	.fsc_flag_level = 1.000,
 	
 	.gamma          =  1.0,
 	.rw_co          =  0.299, /* R weight */
@@ -1938,7 +1940,9 @@ const vid_config_t vid_config_cbs405 = {
 	.sync_level     = -0.30,
 	
 	.colour_mode    = VID_CBS_FSC,
+	.fsc_flag_width = 0.000001372, /* 1.372µs */
 	.fsc_flag_left  = 0.000008573, /* |-->| 8.573µs */
+	.fsc_flag_level = -0.30,
 	
 	.gamma          =  1.0,
 	.rw_co          =  0.299, /* R weight */
@@ -2492,10 +2496,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	const char *seq;
 	int x;
 	int vy;
-	int w;
 	int pal = 0;
 	int fsc = 0;
-	vid_line_t *l = lines[0];
+	uint8_t sc = 0;
+	vid_line_t *l = lines[1];
 	
 	l->width    = s->width;
 	l->frame    = s->bframe;
@@ -2922,15 +2926,29 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		pal = 0;
 	}
 	
-	/* Render the left side sync pulse */
-	if(seq[0] == 'v') w = s->vsync_short_width;
-	else if(seq[0] == 'V') w = s->vsync_long_width;
-	else if(seq[0] == 'h') w = s->hsync_width;
-	else w = 0;
-	
-	for(x = 0; x < w && x < s->half_width; x++)
+	/* Blank the next line */
+	for(x = 0; x < s->width; x++)
 	{
-		l->output[x * 2] = s->sync_level;
+		lines[2]->output[x * 2] = s->blanking_level;
+	}
+	
+	x = 0;
+	
+	/* Draw the sync pulses */
+	sc = 0x00;
+	
+	/* Left sync pulse */
+	if(seq[0] == 'h')      sc |= 1 << 0;
+	else if(seq[0] == 'v') sc |= 1 << 1;
+	else if(seq[0] == 'V') sc |= 1 << 2;
+	
+	/* Middle sync pulse */
+	if(seq[3] == 'v')      sc |= 1 << 3;
+	else if(seq[3] == 'V') sc |= 1 << 4;
+	
+	if(sc)
+	{
+		vbidata_render(s->syncs, &sc, 0, 5, VBIDATA_LSB_FIRST, l);
 	}
 	
 	/* Render the active video if required */
@@ -2944,17 +2962,11 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		int al = (seq[2] == 'a' ? s->active_left : (seq[3] == 'a' ? s->half_width : -1));
 		int ar = (seq[3] == 'a' ? s->active_left + s->active_width : (seq[2] == 'a' ? s->half_width : -1));
 		
-		/* Blank the line up until the start of active video */
-		for(; x < al; x++)
-		{
-			l->output[x * 2] = s->blanking_level;
-		}
-		
 		/* Render the active video */
 		prgb = (s->framebuffer != NULL && vy != -1 ? &s->framebuffer[vy * s->active_width + al - s->active_left] : NULL);
 		rgb = 0x000000;
 		
-		for(o = &l->output[x * 2]; x < ar; x++, o += 2)
+		for(x = al, o = &l->output[al * 2]; x < ar; x++, o += 2)
 		{
 			if(prgb)
 			{
@@ -2978,32 +2990,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		}
 	}
 	
-	/* Render the middle sync pulse if required */
-	if(seq[3] == 'v') w = s->vsync_short_width;
-	else if(seq[3] == 'V') w = s->vsync_long_width;
-	else w = 0;
-	
-	if(w)
-	{
-		/* Blank the line up until the start of the pulse */
-		for(; x < s->half_width; x++)
-		{
-			l->output[x * 2] = s->blanking_level;
-		}
-		
-		/* Render the pulse */
-		for(; x < s->half_width + w && x < s->width; x++)
-		{
-			l->output[x * 2] = s->sync_level;
-		}
-	}
-	
-	/* Blank the remainder of the line */
-	for(; x < s->width; x++)
-	{
-		l->output[x * 2] = s->blanking_level;
-	}
-	
 	/* Render the colour burst */
 	if(pal)
 	{
@@ -3013,7 +2999,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		}
 	}
 	
-	/* Render the FSC flag */
+	/* Render the Apollo FSC flag */
 	if(s->conf.colour_mode == VID_APOLLO_FSC && fsc == 1 &&
 	  (l->line == 18 || l->line == 281))
 	{
@@ -3022,21 +3008,17 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		 * on field line 18. The flag also indicates the temperature of
 		 * the camera by its duration, varying between 5 and 45 μs. The
 		 * duration is fixed to 20 μs in hacktv. */
-		for(x = s->fsc_flag_left; x < s->fsc_flag_left + s->fsc_flag_width; x++)
-		{
-			l->output[x * 2] = s->fsc_flag_level;
-		}
+		
+		sc = 1;
+		vbidata_render(s->fsc_syncs, &sc, 0, 1, VBIDATA_LSB_FIRST, l);
 	}
 	
 	/* Render the CBS FSC flag */
 	if(s->conf.colour_mode == VID_CBS_FSC && fsc == 2 &&
 	  (l->line == 1 || l->line == 203))
 	{
-		w = (l->line == 1 ? s->fsc_flag_left : s->half_width + s->fsc_flag_left);
-		for(x = 0; x < s->vsync_short_width; x++)
-		{
-			l->output[(w + x) * 2] = s->sync_level;
-		}
+		sc = 1 << (l->line == 1 ? 0 : 1);
+		vbidata_render(s->fsc_syncs, &sc, 0, 2, VBIDATA_LSB_FIRST, l);
 	}
 	
 	/* Render the SECAM colour subcarrier */
@@ -3574,12 +3556,59 @@ static int _init_vfilter(vid_t *s)
 	return(VID_OK);
 }
 
+vbidata_lut_t *_render_sync_pulses(vid_t *s, const double syncs[][4], int num)
+{
+	int i, l;
+	vbidata_lut_t *lut;
+	vbidata_lut_t *lptr;
+	
+	/* This function pre-renders sync pulses into a vbidata format table */
+	
+	/* Calculate the memory needed for the sync pulse table */
+	for(l = i = 0; i < num; i++)
+	{
+		l += vbidata_update_step(
+			NULL,
+			syncs[i][0] * s->pixel_rate,		/* Offset */
+			syncs[i][1] * s->pixel_rate,		/* Width */
+			syncs[i][2] * RT1090 * s->pixel_rate,	/* Rise-time */
+			syncs[i][3]				/* Level */
+		);
+	}
+	l += 1;
+	
+	/* Allocate memory and render the sync pulses */
+	lut = malloc(l * sizeof(int16_t));
+	if(!lut)
+	{
+		return(NULL);
+	}
+	
+	lptr = lut;
+	for(i = 0; i < num; i++, lptr = (vbidata_lut_t *) &lptr->value[lptr->length])
+	{
+		vbidata_update_step(
+			lptr,
+			syncs[i][0] * s->pixel_rate,		/* Offset */
+			syncs[i][1] * s->pixel_rate,		/* Width */
+			syncs[i][2] * RT1090 * s->pixel_rate,	/* Rise-time */
+			syncs[i][3]				/* Level */
+		);
+	}
+	
+	/* Mark the end of the table */
+	lptr->length = -1;
+	
+	return(lut);
+}
+
 int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const vid_config_t * const conf)
 {
 	int r, x;
 	int64_t c;
 	double d;
 	double glut[0x100];
+	double width;
 	double level, slevel;
 	vid_line_t *l;
 	
@@ -3595,18 +3624,15 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	_test_sample_rate(&s->conf, s->pixel_rate);
 	
 	/* Calculate the number of samples per line */
-	s->width = round((double) s->pixel_rate / ((double) s->conf.frame_rate.num / s->conf.frame_rate.den) / s->conf.lines);
-	s->half_width = round((double) s->pixel_rate / ((double) s->conf.frame_rate.num / s->conf.frame_rate.den) / s->conf.lines / 2);
+	width = 1.0 / ((double) s->conf.frame_rate.num / s->conf.frame_rate.den) / s->conf.lines;
+	s->width = round((double) s->pixel_rate * width);
+	s->half_width = round((double) s->pixel_rate * width / 2);
 	s->max_width = s->width;
 	
 	/* Calculate the active video width and offset */
 	s->active_left = round(s->pixel_rate * s->conf.active_left);
 	s->active_width = ceil(s->pixel_rate * s->conf.active_width);
 	if(s->active_width > s->width) s->active_width = s->width;
-	
-	s->hsync_width       = round(s->pixel_rate * s->conf.hsync_width);
-	s->vsync_short_width = round(s->pixel_rate * s->conf.vsync_short_width);
-	s->vsync_long_width  = round(s->pixel_rate * s->conf.vsync_long_width);
 	
 	/* Calculate signal levels */
 	/* slevel is the the sub-carrier level. When FM modulating
@@ -3635,6 +3661,20 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	s->black_level    = round(s->conf.black_level    * level * INT16_MAX);
 	s->blanking_level = round(s->conf.blanking_level * level * INT16_MAX);
 	s->sync_level     = round(s->conf.sync_level     * level * INT16_MAX);
+	
+	/* Pre-render the sync pulses */
+	d = (s->conf.sync_level - s->conf.blanking_level) * level * INT16_MAX;
+	s->syncs = _render_sync_pulses(s, (const double[][4]) {
+		{ 0,         s->conf.hsync_width,       s->conf.sync_rise, d },
+		{ 0,         s->conf.vsync_short_width, s->conf.sync_rise, d },
+		{ 0,         s->conf.vsync_long_width,  s->conf.sync_rise, d },
+		{ width / 2, s->conf.vsync_short_width, s->conf.sync_rise, d },
+		{ width / 2, s->conf.vsync_long_width,  s->conf.sync_rise, d },
+	}, 5);
+	if(s->syncs == NULL)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
 	
 	/* Allocate memory for YUV lookup tables */
 	s->yiq_level_lookup = malloc(0x1000000 * sizeof(_yiq16_t));
@@ -3741,9 +3781,30 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 	}
 	
-	s->fsc_flag_left  = round(s->pixel_rate * s->conf.fsc_flag_left);
-	s->fsc_flag_width = round(s->pixel_rate * s->conf.fsc_flag_width);
-	s->fsc_flag_level = round(s->conf.fsc_flag_level * (s->conf.white_level - s->conf.blanking_level) * level * INT16_MAX);
+	/* Pre-render the FSC pulses */
+	if(s->conf.colour_mode == VID_APOLLO_FSC)
+	{
+		d = (s->conf.fsc_flag_level - s->conf.blanking_level) * level * INT16_MAX;
+		s->fsc_syncs = _render_sync_pulses(s, (const double[][4]) {
+			{ s->conf.fsc_flag_left, s->conf.fsc_flag_width, s->conf.sync_rise, d },
+		}, 1);
+		if(s->fsc_syncs == NULL)
+		{
+			return(VID_OUT_OF_MEMORY);
+		}
+	}
+	else if(s->conf.colour_mode == VID_CBS_FSC)
+	{
+		d = (s->conf.fsc_flag_level - s->conf.blanking_level) * level * INT16_MAX;
+		s->fsc_syncs = _render_sync_pulses(s, (const double[][4]) {
+			{ s->conf.fsc_flag_left,             s->conf.fsc_flag_width, s->conf.sync_rise, d },
+			{ width / 2 + s->conf.fsc_flag_left, s->conf.fsc_flag_width, s->conf.sync_rise, d }, 
+		}, 2);
+		if(s->fsc_syncs == NULL)
+		{
+			return(VID_OUT_OF_MEMORY);
+		}
+	}
 	
 	if(s->conf.colour_mode == VID_SECAM)
 	{
@@ -3836,7 +3897,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	}
 	else
 	{
-		_add_lineprocess(s, "raster", 1, NULL, _vid_next_line_raster, NULL);
+		_add_lineprocess(s, "raster", 3, NULL, _vid_next_line_raster, NULL);
 	}
 	
 	/* Initialise VITS inserter */
@@ -4359,6 +4420,8 @@ void vid_free(vid_t *s)
 	}
 	
 	free(s->burst_win);
+	free(s->syncs);
+	free(s->fsc_syncs);
 	
 	memset(s, 0, sizeof(vid_t));
 }

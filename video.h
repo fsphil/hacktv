@@ -35,6 +35,7 @@ typedef struct vid_t vid_t;
 #include "acp.h"
 #include "vits.h"
 #include "vitc.h"
+#include "vbidata.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -334,9 +335,7 @@ struct vid_t {
 	int active_width;
 	int active_left;
 	
-	int hsync_width;
-	int vsync_short_width;
-	int vsync_long_width;
+	vbidata_lut_t *syncs;
 	
 	int16_t white_level;
 	int16_t black_level;
@@ -362,9 +361,7 @@ struct vid_t {
 	cint16_t *fm_secam_bell;
 	int16_t secam_fsync_level;
 	
-	int fsc_flag_left;
-	int fsc_flag_width;
-	int16_t fsc_flag_level;
+	vbidata_lut_t *fsc_syncs;
 	
 	/* Video state */
 	uint32_t *framebuffer;
