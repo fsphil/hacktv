@@ -59,6 +59,27 @@ void vbidata_update(vbidata_lut_t *lut, int render, int offset, int value)
 	}
 }
 
+int vbidata_update_step(vbidata_lut_t *lut, double offset, double width, double rise, int level)
+{
+	int x1, x2;
+	vbidata_lut_t lc;
+	vbidata_lut_t *lptr = (lut ? lut : &lc);
+	
+	x1 = floor(offset - rise / 2);
+	x2 = ceil(offset + width + rise / 2);
+	
+	lptr->length = 0;
+	lptr->offset = 0;
+	
+	for(; x1 <= x2; x1++)
+	{
+		double h = rc_window(x1, offset, width, rise) * level;
+		vbidata_update(lptr, lut ? 1 : 0, x1, round(h));
+	}
+	
+	return(2 + lptr->length);
+}
+
 static int _vbidata_init(vbidata_lut_t *lut, unsigned int nsymbols, unsigned int dwidth, int level, int filter, double bwidth, double beta, double offset)
 {
 	int l;
@@ -122,32 +143,18 @@ vbidata_lut_t *vbidata_init(unsigned int nsymbols, unsigned int dwidth, int leve
 static int _vbidata_init_step(vbidata_lut_t *lut, unsigned int nsymbols, unsigned int dwidth, int level, double width, double rise, double offset)
 {
 	int l;
-	int b, x;
-	vbidata_lut_t lc;
-	vbidata_lut_t *lptr = (lut ? lut : &lc);
+	int b;
+	vbidata_lut_t *lptr = lut;
 	
 	l = 0;
 	
-	for(b = 0; b < nsymbols; b++)
+	for(b = 0; b < nsymbols; b++, lptr = (vbidata_lut_t *) (lptr ? &lptr->value[lptr->length] : NULL))
 	{
-		lptr->offset = lptr->length = 0;
-		
-		for(x = 0; x < dwidth; x++)
-		{
-			double h = rc_window((double) x - offset, width * b, width, rise) * level;
-			vbidata_update(lptr, lut ? 1 : 0, x, round(h));
-		}
-		
-		l += 2 + lptr->length;
-		
-		if(lut)
-		{
-			lptr = (vbidata_lut_t *) &lptr->value[lptr->length];
-		}
+		l += vbidata_update_step(lptr, offset + width * b, width, rise, level);
 	}
 	
 	/* End of LUT marker */
-	if(lut)
+	if(lptr)
 	{
 		lptr->length = -1;
 	}
@@ -179,10 +186,13 @@ vbidata_lut_t *vbidata_init_step(unsigned int nsymbols, unsigned int dwidth, int
 void vbidata_render(const vbidata_lut_t *lut, const uint8_t *src, int offset, int length, int order, vid_line_t *line)
 {
 	int b = -offset;
-	int x;
+	int x, lx;
 	int bit;
+	vid_line_t *l;
 	
 	/* LUT format:
+	 * 
+	 * Array of int16's:
 	 * 
 	 * [l][x][[v]...] = [length][x offset][[value]...]
 	 * [-1]           = End of LUT
@@ -194,9 +204,35 @@ void vbidata_render(const vbidata_lut_t *lut, const uint8_t *src, int offset, in
 		
 		if(bit)
 		{
-			for(x = 0; x < lut->length; x++)
+			x = 0;
+			lx = lut->offset;
+			l = line;
+			
+			/* Move to the previous line if the offset for this symbol is negative */
+			while(lx < 0 && l->width > 0)
 			{
-				line->output[(lut->offset + x) * 2] += lut->value[x];
+				l = l->previous;
+				lx += l->width;
+			}
+			
+			/* Lines with zero length mark a boundary we can't pass */
+			if(l->width == 0)
+			{
+				l = l->next;
+				x = -lx;
+				lx = 0;
+			}
+			
+			/* Render the symbol - moving to the next line if necessary */
+			while(x < lut->length && l->width > 0)
+			{
+				for(; x < lut->length && lx < l->width; x++, lx++)
+				{
+					l->output[lx * 2] += lut->value[x];
+				}
+				
+				l = l->next;
+				lx = 0;
 			}
 		}
 	}
