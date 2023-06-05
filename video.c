@@ -4238,6 +4238,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->oline[r].frame = 1;
 		s->oline[r].line = 0;
 		s->oline[r].vbialloc = 0;
+		s->oline[r].previous = &s->oline[(r + s->olines - 1) % s->olines];
 		s->oline[r].next = &s->oline[(r + 1) % s->olines];
 	}
 	

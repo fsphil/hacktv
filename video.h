@@ -285,7 +285,8 @@ struct vid_line_t {
 	/* Status */
 	int vbialloc;
 	
-	/* Pointer the next line */
+	/* Pointer the previous and next line */
+	vid_line_t *previous;
 	vid_line_t *next;
 };
 
