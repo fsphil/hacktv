@@ -3624,7 +3624,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	_test_sample_rate(&s->conf, s->pixel_rate);
 	
 	/* Calculate the number of samples per line */
-	width = 1.0 / ((double) s->conf.frame_rate.num / s->conf.frame_rate.den) / s->conf.lines;
+	width = (double) s->conf.frame_rate.den / s->conf.frame_rate.num / s->conf.lines;
+	
 	s->width = round((double) s->pixel_rate * width);
 	s->half_width = round((double) s->pixel_rate * width / 2);
 	s->max_width = s->width;
