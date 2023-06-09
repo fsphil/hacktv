@@ -59,6 +59,7 @@ out of the hackrf are not too high for your receiver.
 
 INSTALL
 
+cd src
 make
 make install
 

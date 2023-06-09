@@ -21,17 +21,17 @@
 #include <getopt.h>
 #include <signal.h>
 #include "hacktv.h"
-#include "test.h"
-#include "ffmpeg.h"
-#include "file.h"
-#include "hackrf.h"
+#include "av_test.h"
+#include "av_ffmpeg.h"
+#include "rf_file.h"
+#include "rf_hackrf.h"
 
 #ifdef HAVE_SOAPYSDR
-#include "soapysdr.h"
+#include "rf_soapysdr.h"
 #endif
 
 #ifdef HAVE_FL2K
-#include "fl2k.h"
+#include "rf_fl2k.h"
 #endif
 
 volatile int _abort = 0;
