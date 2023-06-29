@@ -93,6 +93,11 @@ typedef struct {
 	limiter_t limiter;
 	int16_t sample;
 	
+	/* FM energy dispersal */
+	div_t ed_delta;
+	div_t ed_counter;
+	div_t ed_overflow;
+	
 } _mod_fm_t;
 
 typedef struct {
@@ -131,6 +136,7 @@ typedef struct {
 	/* FM modulation options */
 	double fm_level;
 	double fm_deviation;
+	double fm_energy_dispersal;
 	
 	/* Overall signal level (pre-modulation) */
 	double level;

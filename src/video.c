@@ -226,6 +226,7 @@ const vid_config_t vid_config_pal_fm = {
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
 	.fm_deviation   = 16e6, /* 16 MHz/V */
+	//.fm_energy_dispersal = 0.0625, /* 1 MHz deviation (2 MHz p-p) */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -2316,6 +2317,20 @@ static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, 
 	return(VID_OK);
 }
 
+static int _init_fm_energy_dispersal(_mod_fm_t *fm, int sample_rate, rational_t frequency, int level)
+{
+	rational_t r;
+	
+	r = rational_div((rational_t) { level * 4, 1 }, (rational_t) { sample_rate, 1 });
+	r = rational_mul(r, frequency);
+	
+	fm->ed_delta = div(r.num, r.den);
+	fm->ed_overflow = (div_t) { level * 4, r.den };
+	fm->ed_counter = (div_t) { 0, 0 };
+	
+	return(VID_OK);
+}
+
 static void inline _fm_modulator_add(_mod_fm_t *fm, int16_t *dst, int16_t sample)
 {
 	cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
@@ -2358,6 +2373,25 @@ static void inline _fm_modulator_cgain(_mod_fm_t *fm, int16_t *dst, int16_t samp
 
 static void inline _fm_modulator(_mod_fm_t *fm, int16_t *dst, int16_t sample)
 {
+	if(fm->ed_overflow.quot != 0)
+	{
+		sample += abs(fm->ed_counter.quot + -fm->ed_overflow.quot / 2) - fm->ed_overflow.quot / 4;
+		
+		fm->ed_counter.quot += fm->ed_delta.quot;
+		fm->ed_counter.rem  += fm->ed_delta.rem;
+		
+		if(fm->ed_counter.rem >= fm->ed_overflow.rem)
+		{
+			fm->ed_counter.quot++;
+			fm->ed_counter.rem -= fm->ed_overflow.rem;
+		}
+		
+		if(fm->ed_counter.quot >= fm->ed_overflow.quot)
+		{
+			fm->ed_counter.quot -= fm->ed_overflow.quot;
+		}
+	}
+	
 	cint32_mul(&fm->phase, &fm->phase, &fm->lut[sample - INT16_MIN]);
 	
 	dst[0] = ((fm->phase.i >> 16) * fm->level) >> 15;
@@ -4219,6 +4253,17 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		{
 			vid_free(s);
 			return(r);
+		}
+		
+		if(s->conf.fm_energy_dispersal)
+		{
+			/* Apply a frame locked triangular wave to the FM baseband signal */
+			_init_fm_energy_dispersal(
+				&s->fm_video,
+				s->sample_rate,
+				(rational_t) { s->sample_rate, s->width * s->conf.lines }, // s->conf.frame_rate
+				round(INT16_MAX * s->conf.fm_energy_dispersal)
+			);
 		}
 		
 		_add_lineprocess(s, "fmmod", 1, NULL, _vid_fmmod_process, NULL);
