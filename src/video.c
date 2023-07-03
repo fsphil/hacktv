@@ -3131,6 +3131,11 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			fir_int16_process_block(&s->fm_secam_fir, l->output + 1, l->output + 1, s->width, 2);
 			iir_int16_process(&s->fm_secam_iir, l->output + 1, l->output + 1, s->width, 2);
 			
+			/* Reset the SECAM FM phase every line, alternating every third line */
+			s->fm_secam.counter = INT16_MAX;
+			s->fm_secam.phase.i = ((l->frame * s->conf.lines) + l->line) % 3 == 0 ? INT32_MAX : -INT32_MAX;
+			s->fm_secam.phase.q = 0;
+			
 			/* Limit the FM deviation */
 			dmin = s->fm_secam_dmin[((l->frame * s->conf.lines) + l->line) & 1];
 			dmax = s->fm_secam_dmax[((l->frame * s->conf.lines) + l->line) & 1];
