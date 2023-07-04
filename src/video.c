@@ -640,6 +640,57 @@ const vid_config_t vid_config_secam_i = {
 	.nicam_beta     = 1.0,
 };
 
+const vid_config_t vid_config_secam_bg = {
+	
+	/* System B/G (SECAM) */
+	.output_type    = HACKTV_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 5000000, /* Hz */
+	.vsb_lower_bw   =  750000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	
+	.video_level    = 0.80 * (100.0 / 124.0), /* Power level of video */
+	.fm_mono_level  = 0.15, /* FM audio carrier power level */
+	
+	.type           = VID_RASTER_625,
+	.frame_rate     = { 25, 1 },
+	.lines          = 625,
+	.hline          = 313,
+	
+	.active_lines   = 576,
+	.active_width   = 0.00005195, /* 51.95µs */
+	.active_left    = 0.00001040, /* |-->| 10.40µs */
+	
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
+	
+	.white_level    = 0.20,
+	.black_level    = 0.76,
+	.blanking_level = 0.76,
+	.sync_level     = 1.00,
+	
+	.colour_mode    = VID_SECAM,
+	.burst_width    = 0.00005690, /* 56.9μs */
+	.burst_rise     = 0.00000100, /* 1.00µs */
+	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
+	
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	.iu_co          =  0.000,
+	.iv_co          = -1.902 * 280e3, /* D'R */
+	.qu_co          =  1.505 * 230e3, /* D'B */
+	.qv_co          =  0.000,
+	
+	.fm_mono_carrier   = 5500000, /* Hz */
+	.fm_mono_deviation = 50000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
+};
+
 const vid_config_t vid_config_secam_fm = {
 	
 	/* SECAM FM (satellite) */
@@ -1966,6 +2017,8 @@ const vid_configs_t vid_configs[] = {
 	{ "d",             &vid_config_secam_dk         },
 	{ "k",             &vid_config_secam_dk         },
 	{ "secam-i",       &vid_config_secam_i          },
+	{ "secam-b",       &vid_config_secam_bg         },
+	{ "secam-g",       &vid_config_secam_bg         },
 	{ "secam-fm",      &vid_config_secam_fm         },
 	{ "secam",         &vid_config_secam            },
 	{ "m",             &vid_config_ntsc_m           },
