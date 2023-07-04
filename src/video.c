@@ -3871,7 +3871,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		fir_low_pass(taps, 51, s->pixel_rate, 1.50e6, 0.50e6, 1.0);
 		fir_int16_init(&s->fm_secam_fir, taps, 51, 1, 1, 0);
 		
-		fir_band_reject(taps, 51, s->pixel_rate, SECAM_FM_FREQ - 1.0e6, SECAM_FM_FREQ + 1e6, 1e6, 1.0);
+		fir_band_reject(taps, 51, s->pixel_rate, SECAM_FM_FREQ - 1e6, SECAM_FM_FREQ + 1e6, 1e6, 1.0);
 		fir_int16_init(&s->secam_l_fir, taps, 51, 1, 1, 0);
 		
 		/* FM deviation limits */
