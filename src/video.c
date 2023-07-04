@@ -42,9 +42,9 @@
 */
 
 #define SECAM_FM_DEV 1000e3
-#define SECAM_FM_FREQ 4286000
-#define SECAM_CB_FREQ 4250000
-#define SECAM_CR_FREQ 4406260
+#define SECAM_FM_FREQ 4328125 /* 277 fH */
+#define SECAM_CB_FREQ 4250000 /* 272 fH */
+#define SECAM_CR_FREQ 4406250 /* 282 fH */
 
 const vid_config_t vid_config_pal_i = {
 	
