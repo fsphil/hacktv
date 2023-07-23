@@ -352,5 +352,5 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	s->rf_close = _rf_close;
 	
 	return(HACKTV_OK);
-};
+}
 

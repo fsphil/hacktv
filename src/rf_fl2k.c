@@ -190,5 +190,5 @@ int rf_fl2k_open(hacktv_t *s, const char *device)
 	s->rf_close = _rf_close;
 	
 	return(HACKTV_OK);
-};
+}
 
