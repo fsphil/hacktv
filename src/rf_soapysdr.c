@@ -75,7 +75,7 @@ static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 			}
 			
 			l -= r;
-			buffs[0] = (int16_t *) buffs[0] + r;
+			buffs[0] = (int16_t *) buffs[0] + r * 2;
 		}
 	}
 	
