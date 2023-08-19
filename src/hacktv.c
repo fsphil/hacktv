@@ -800,6 +800,7 @@ int main(int argc, char *argv[])
 	}
 	
 	/* Catch all the signals */
+#ifndef _WIN32
 	struct sigaction action = { .sa_handler = _sigint_callback_handler };
 	sigaction(SIGINT, &action, NULL);
 	sigaction(SIGILL, &action, NULL);
@@ -807,6 +808,14 @@ int main(int argc, char *argv[])
 	sigaction(SIGSEGV, &action, NULL);
 	sigaction(SIGTERM, &action, NULL);
 	sigaction(SIGABRT, &action, NULL);
+#else
+	signal(SIGINT, &_sigint_callback_handler);
+	signal(SIGILL, &_sigint_callback_handler);
+	signal(SIGFPE, &_sigint_callback_handler);
+	signal(SIGSEGV, &_sigint_callback_handler);
+	signal(SIGTERM, &_sigint_callback_handler);
+	signal(SIGABRT, &_sigint_callback_handler);
+#endif
 	
 	memcpy(&vid_conf, vid_confs->conf, sizeof(vid_config_t));
 	
