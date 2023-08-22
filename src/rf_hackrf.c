@@ -112,7 +112,7 @@ static int _buffer_free(buffers_t *buffers)
 	return(0);
 }
 
-static int _buffer_read(buffers_t *buffers, void *dst, size_t length)
+static int _buffer_read(buffers_t *buffers, int8_t *dst, size_t length)
 {
 	buffer_t *buf = &buffers->buffers[buffers->out];
 	
@@ -161,52 +161,51 @@ static int _buffer_read(buffers_t *buffers, void *dst, size_t length)
 	return(length);
 }
 
-static int _buffer_write(buffers_t *buffers, void *src, size_t length)
+static size_t _buffer_write_ptr(buffers_t *buffers, int8_t **src)
 {
-	int i, l = 0;
+	buffer_t *buf = &buffers->buffers[buffers->in];
 	
-	while(length > 0)
+	if(buf->length == buffers->length)
 	{
-		buffer_t *buf = &buffers->buffers[buffers->in];
+		pthread_mutex_lock(&buf->mutex);
 		
-		if(buf->length == buffers->length)
+		if(buf->status == BUFFER_PREFILL)
 		{
-			pthread_mutex_lock(&buf->mutex);
-			
-			if(buf->status == BUFFER_PREFILL)
-			{
-				buffers->prefill = 0;
-				buf->status = BUFFER_READY;
-			}
-			
-			while(buf->status != BUFFER_EMPTY)
-			{
-				pthread_cond_wait(&buf->cond, &buf->mutex);
-			}
-			
-			pthread_mutex_unlock(&buf->mutex);
-			
-			buf->length = 0;
+			buffers->prefill = 0;
+			buf->status = BUFFER_READY;
 		}
 		
-		i = (length > buffers->length - buf->length ? buffers->length - buf->length : length);
-		memcpy(buf->data + buf->length, src, i);
-		buf->length += i;
-		src = (uint8_t *) src + i;
-		length -= i;
-		l += i;
-		
-		if(buf->length == buffers->length)
+		while(buf->status != BUFFER_EMPTY)
 		{
-			pthread_mutex_lock(&buf->mutex);
-			buf->status = (buffers->prefill ? BUFFER_PREFILL : BUFFER_READY);
-			pthread_mutex_unlock(&buf->mutex);
-			
-			buffers->in = (buffers->in + 1) % buffers->count;
+			pthread_cond_wait(&buf->cond, &buf->mutex);
 		}
+		
+		pthread_mutex_unlock(&buf->mutex);
+		
+		buf->length = 0;
 	}
 	
-	return(l);
+	*src = buf->data + buf->length;
+	
+	return(buffers->length - buf->length);
+}
+
+static int _buffer_write(buffers_t *buffers, size_t length)
+{
+	buffer_t *buf = &buffers->buffers[buffers->in];
+	
+	buf->length += length;
+	
+	if(buf->length == buffers->length)
+	{
+		pthread_mutex_lock(&buf->mutex);
+		buf->status = (buffers->prefill ? BUFFER_PREFILL : BUFFER_READY);
+		pthread_mutex_unlock(&buf->mutex);
+		
+		buffers->in = (buffers->in + 1) % buffers->count;
+	}
+	
+	return(length);
 }
 
 static int _tx_callback(hackrf_transfer *transfer)
@@ -218,7 +217,7 @@ static int _tx_callback(hackrf_transfer *transfer)
 	
 	while(l)
 	{
-		r = _buffer_read(&rf->buffers, buf, l);
+		r = _buffer_read(&rf->buffers, (int8_t *) buf, l);
 		
 		if(r == 0)
 		{
@@ -239,24 +238,24 @@ static int _tx_callback(hackrf_transfer *transfer)
 static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 {
 	hackrf_t *rf = private;
-	int8_t iq8[1024 * 4];
+	int8_t *iq8 = NULL;
 	int i, r;
 	
 	samples *= 2;
 	
 	while(samples > 0)
 	{
-		r = (samples > 1024 * 4 ? 1024 * 4 : samples);
+		r = _buffer_write_ptr(&rf->buffers, &iq8);
 		
-		for(i = 0; i < r; i++)
+		for(i = 0; i < r && i < samples; i++)
 		{
 			iq8[i] = iq_data[i] >> 8;
 		}
 		
-		_buffer_write(&rf->buffers, iq8, r);
+		_buffer_write(&rf->buffers, i);
 		
-		iq_data += r;
-		samples -= r;
+		iq_data += i;
+		samples -= i;
 	}
 	
 	return(HACKTV_OK);
