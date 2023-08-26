@@ -90,10 +90,8 @@ const vid_config_t vid_config_pal_i = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 6000000 - 400, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -147,10 +145,8 @@ const vid_config_t vid_config_pal_bg = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 5500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -204,10 +200,8 @@ const vid_config_t vid_config_pal_dk = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -264,10 +258,8 @@ const vid_config_t vid_config_pal_fm = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 85000, /* +/- Hz */
@@ -321,10 +313,8 @@ const vid_config_t vid_config_pal = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_pal_m = {
@@ -370,10 +360,8 @@ const vid_config_t vid_config_pal_m = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 4500000, /* Hz */
 	.fm_mono_deviation = 25000, /* +/- Hz */
@@ -422,10 +410,8 @@ const vid_config_t vid_config_pal_n = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = -0.877,
 	.qu_co          = -0.493,
-	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 4500000, /* Hz */
 	.fm_mono_deviation = 25000, /* +/- Hz */
@@ -471,10 +457,8 @@ const vid_config_t vid_config_525pal = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_secam_l = {
@@ -519,10 +503,8 @@ const vid_config_t vid_config_secam_l = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          = -1.902 * 280e3, /* D'R */
 	.qu_co          =  1.505 * 230e3, /* D'B */
-	.qv_co          =  0.000,
 	
 	.am_mono_carrier = 6500000, /* Hz */
 	
@@ -572,10 +554,8 @@ const vid_config_t vid_config_secam_dk = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          = -1.902 * 280e3, /* D'R */
 	.qu_co          =  1.505 * 230e3, /* D'B */
-	.qv_co          =  0.000,
 	
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -627,10 +607,8 @@ const vid_config_t vid_config_secam_i = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          = -1.902 * 280e3, /* D'R */
 	.qu_co          =  1.505 * 230e3, /* D'B */
-	.qv_co          =  0.000,
 	
 	.fm_mono_carrier   = 6000000 - 400, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -681,10 +659,8 @@ const vid_config_t vid_config_secam_bg = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          = -1.902 * 280e3, /* D'R */
 	.qu_co          =  1.505 * 230e3, /* D'B */
-	.qv_co          =  0.000,
 	
 	.fm_mono_carrier   = 5500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -734,10 +710,8 @@ const vid_config_t vid_config_secam_fm = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          = -1.902 * 280e3, /* D'R */
 	.qu_co          =  1.505 * 230e3, /* D'B */
-	.qv_co          =  0.000,
 	
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 85000, /* +/- Hz */
@@ -789,10 +763,8 @@ const vid_config_t vid_config_secam = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          = -1.902 * 280e3, /* D'R */
 	.qu_co          =  1.505 * 230e3, /* D'B */
-	.qv_co          =  0.000,
 };
 
 const vid_config_t vid_config_ntsc_m = {
@@ -838,10 +810,8 @@ const vid_config_t vid_config_ntsc_m = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          =  0.877,
 	.qu_co          =  0.493,
-	.qv_co          =  0.000,
 	
 	.fm_mono_carrier   = 4500000, /* Hz */
 	.fm_mono_deviation = 25000, /* +/- Hz */
@@ -892,10 +862,8 @@ const vid_config_t vid_config_ntsc_i = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          =  0.877,
 	.qu_co          =  0.493,
-	.qv_co          =  0.000,
 	
 	.fm_mono_carrier   = 6000000 - 400, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -950,10 +918,8 @@ const vid_config_t vid_config_ntsc_fm = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          =  0.877,
 	.qu_co          =  0.493,
-	.qv_co          =  0.000,
 	
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 85000, /* +/- Hz */
@@ -1011,10 +977,8 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          =  0.877,
 	.qu_co          =  0.493,
-	.qv_co          =  0.000,
 	
 	.dance_carrier  = 5000000.0 * 63 / 88 * 8 / 5, /* Hz */
 	.dance_beta     = 1.0,
@@ -1059,10 +1023,8 @@ const vid_config_t vid_config_ntsc = {
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
 	.bw_co          =  0.114, /* B weight */
-	.iu_co          =  0.000,
 	.iv_co          =  0.877,
 	.qu_co          =  0.493,
-	.qv_co          =  0.000,
 };
 
 const vid_config_t vid_config_pal60_i = {
@@ -1109,10 +1071,8 @@ const vid_config_t vid_config_pal60_i = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 6000000 - 400, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
@@ -1160,10 +1120,8 @@ const vid_config_t vid_config_pal60 = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_d2mac_am = {
@@ -1196,10 +1154,8 @@ const vid_config_t vid_config_d2mac_am = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.927,
 	.qu_co          = 0.733,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_d2mac_fm = {
@@ -1234,10 +1190,8 @@ const vid_config_t vid_config_d2mac_fm = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.927,
 	.qu_co          = 0.733,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_d2mac = {
@@ -1270,10 +1224,8 @@ const vid_config_t vid_config_d2mac = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.927,
 	.qu_co          = 0.733,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_dmac_am = {
@@ -1306,10 +1258,8 @@ const vid_config_t vid_config_dmac_am = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.927,
 	.qu_co          = 0.733,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_dmac_fm = {
@@ -1344,10 +1294,8 @@ const vid_config_t vid_config_dmac_fm = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.927,
 	.qu_co          = 0.733,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_dmac = {
@@ -1380,10 +1328,8 @@ const vid_config_t vid_config_dmac = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.iu_co          = 0.000,
 	.iv_co          = 0.927,
 	.qu_co          = 0.733,
-	.qv_co          = 0.000,
 };
 
 const vid_config_t vid_config_819_e = {
@@ -3807,8 +3753,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		u = (b - y);
 		v = (r - y);
 		
-		i = s->conf.iv_co * v + s->conf.iu_co * u;
-		q = s->conf.qv_co * v + s->conf.qu_co * u;
+		i = s->conf.iv_co * v;
+		q = s->conf.qu_co * u;
 		
 		/* Adjust values to correct signal level */
 		y = (s->conf.black_level + (y * (s->conf.white_level - s->conf.black_level))) * level;
