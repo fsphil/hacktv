@@ -1767,7 +1767,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		for(x = s->mac.chrominance_left; x < s->mac.chrominance_left + s->mac.chrominance_width; x++)
 		{
 			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
-			l->output[x * 2] += (l->line & 1 ? s->yiq_level_lookup[rgb].q : s->yiq_level_lookup[rgb].i);
+			l->output[x * 2] += (l->line & 1 ? s->yiq_level_lookup[rgb].i : s->yiq_level_lookup[rgb].q);
 			if(px != NULL) px++;
 		}
 	}

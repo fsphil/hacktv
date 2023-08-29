@@ -211,8 +211,8 @@ typedef struct {
 	double fsc_flag_left;
 	double fsc_flag_level;
 	
-	double iv_co;
-	double qu_co;
+	double ev_co;
+	double eu_co;
 	
 	int secam_field_id;
 	
