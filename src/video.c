@@ -3071,15 +3071,15 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			
 			if(((l->frame * s->conf.lines) + l->line) & 1)
 			{
-				level = s->yiq_level_lookup[0x000000].q;
-				dev = -s->secam_fsync_level;
-				rw = 18e-6;
+				level = s->yiq_level_lookup[0x000000].q; // D'r
+				dev = s->secam_fsync_level;
+				rw = 15e-6;
 			}
 			else
 			{
-				level = s->yiq_level_lookup[0x000000].i;
-				dev = s->secam_fsync_level;
-				rw = 15e-6;
+				level = s->yiq_level_lookup[0x000000].i; // D'b
+				dev = -s->secam_fsync_level;
+				rw = 18e-6;
 			}
 			
 			for(x = 0; x < s->width; x++)
@@ -3112,11 +3112,11 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				if(((l->frame * s->conf.lines) + l->line) & 1)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[rgb].q;
+					l->output[x * 2 + 1] = s->yiq_level_lookup[rgb].q; // D'r
 				}
 				else
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[rgb].i;
+					l->output[x * 2 + 1] = s->yiq_level_lookup[rgb].i; // D'b
 				}
 			}
 			
