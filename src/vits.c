@@ -236,12 +236,27 @@ static int _init_525(vits_t *s, unsigned int sample_rate, int width, int level)
 	return(0);
 }
 
-int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int level)
+int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int pal, int level)
 {
 	memset(s, 0, sizeof(vits_t));
 	
 	if(lines == 625) return(_init_625(s, sample_rate, width, level));
 	else if(lines == 525) return(_init_525(s, sample_rate, width, level));
+	
+	if(pal)
+	{
+		/* The insertion signals is locked at 60 ± 5° from the positive (B-Y) axis for PAL */
+		double p = 135.0 * (M_PI / 180.0);
+		s->cs_phase = (cint16_t) {
+			round(sin(p) * INT16_MAX),
+			round(cos(p) * INT16_MAX),
+		};
+	}
+	else
+	{
+		/* For NTSC is is the same as the burst, 180° */
+		s->cs_phase = (cint16_t) { 0, -INT16_MAX };
+	}
 	
 	return(-1);
 }
@@ -281,7 +296,11 @@ int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	for(x = 0; x < s->width; x++)
 	{
 		l->output[x * 2] += v->line[i][x * 2 + 0];
-		if(l->lut_i) l->output[x * 2] += (l->lut_i[x] * v->line[i][x * 2 + 1]) >> 15;
+		if(l->lut)
+		{
+			l->output[x * 2] += (((v->cs_phase.i * l->lut[x].q +
+				v->cs_phase.q * l->lut[x].i) >> 15) * v->line[i][x * 2 + 1]) >> 15;
+		}
 	}
 	
 	l->vbialloc = 1;

@@ -282,10 +282,8 @@ struct vid_line_t {
 	int frame;
 	int line;
 	
-	/* Colour subcarrier pointers */
-	const int16_t *lut_b;	/* Burst */
-	const int16_t *lut_i;	/* I/V phase */
-	const int16_t *lut_q;	/* Q/U phase */
+	/* Colour subcarrier (complex) */
+	const cint16_t *lut;
 	
 	/* Status */
 	int vbialloc;
@@ -350,8 +348,9 @@ struct vid_t {
 	
 	unsigned int colour_lookup_width;
 	unsigned int colour_lookup_offset;
-	int16_t *colour_lookup;
+	cint16_t *colour_lookup;
 	
+	cint16_t burst_phase;
 	int burst_left;
 	int burst_width;
 	int16_t *burst_win;

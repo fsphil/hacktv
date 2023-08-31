@@ -410,8 +410,8 @@ const vid_config_t vid_config_pal_n = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
-	.ev_co          = -0.877,
-	.eu_co          = -0.493,
+	.ev_co          = 0.877,
+	.eu_co          = 0.493,
 	
 	.fm_mono_carrier   = 4500000, /* Hz */
 	.fm_mono_deviation = 25000, /* +/- Hz */
@@ -2205,88 +2205,6 @@ static int16_t *_burstwin(unsigned int sample_rate, double width, double rise, d
 	return(win);
 }
 
-static int16_t *_colour_subcarrier_phase(vid_t *s, int phase)
-{
-	unsigned int p;
-	
-	/* Limit phase offset to 0 > 359 */
-	if((phase %= 360) < 0)
-	{
-		phase += 360;
-	}
-	
-	p = s->colour_lookup_offset;
-	
-	/* And apply the offset for the required phase */
-	if(phase == 0)
-	{
-		p += 0;
-	}
-	else if(phase == 45)
-	{
-		p += s->colour_lookup_width * 3 / 8;
-	}
-	else if(phase == 90)
-	{
-		p += s->colour_lookup_width * 6 / 8;
-	}
-	else if(phase == 135)
-	{
-		p += s->colour_lookup_width * 1 / 8;
-	}
-	else if(phase == 180)
-	{
-		p += s->colour_lookup_width * 4 / 8;
-	}
-	else if(phase == 225)
-	{
-		p += s->colour_lookup_width * 7 / 8;
-	}
-	else if(phase == 270)
-	{
-		p += s->colour_lookup_width * 2 / 8;
-	}
-	else if(phase == 315)
-	{
-		p += s->colour_lookup_width * 5 / 8;
-	}
-	
-	/* Keep the position within the buffer */
-	p %= s->colour_lookup_width;
-	
-	/* Return a pointer to the line */
-	return(&s->colour_lookup[p]);
-}
-
-static void _get_colour_subcarrier(vid_t *s, int frame, int line, const int16_t **pb, const int16_t **pi, const int16_t **pq)
-{
-	int16_t *b = NULL;
-	int16_t *i = NULL;
-	int16_t *q = NULL;
-	int odd = (frame + line + 1) & 1;
-	
-	if(s->conf.colour_mode == VID_PAL)
-	{
-		b = _colour_subcarrier_phase(s, odd ? -135 : 135);
-		i = _colour_subcarrier_phase(s, 0);
-		q = _colour_subcarrier_phase(s, odd ? -90 : 90);
-	}
-	else if(s->conf.colour_mode == VID_NTSC)
-	{
-		b = _colour_subcarrier_phase(s, 180);
-		i = _colour_subcarrier_phase(s, 0);
-		q = _colour_subcarrier_phase(s, 90);
-	}
-	
-	if(pb) *pb = b;
-	if(pi) *pi = i;
-	if(pq) *pq = q;
-	
-	/* Update offset for the next line */
-	s->colour_lookup_offset += s->width;
-	s->colour_lookup_offset %= s->colour_lookup_width;
-}
-
 /* FM modulator
  * deviation = peak deviation in Hz (+/-) from frequency */
 static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, double deviation, double level)
@@ -2506,14 +2424,13 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 {
 	int m, r;
 	
-	/* Test if the chosen sample rate results in an even number of
+	/* Test if the chosen sample rate results in an exact number of
 	 * samples per line. If not, display a warning and show the
 	 * previous and next valid sample rates. */
 	
 	/* Calculate lowest valid sample rate */
 	m = conf->lines * conf->frame_rate.num;
 	m /= r = gcd(m, conf->frame_rate.den);
-	if(conf->frame_rate.den / r & 1) m *= 2;
 	
 	/* Is the chosen sample rate good? */
 	if(sample_rate % m == 0) return;
@@ -2538,9 +2455,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	l->frame    = s->bframe;
 	l->line     = s->bline;
 	l->vbialloc = 0;
-	l->lut_b    = NULL;
-	l->lut_i    = NULL;
-	l->lut_q    = NULL;
+	l->lut      = NULL;
 	
 	/* Sequence codes: abcd
 	 * 
@@ -2940,11 +2855,21 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		/* Does this line use colour? */
 		pal  = seq[1] == '0';
-		pal |= seq[1] == '1' && (l->frame & 1) == 1;
-		pal |= seq[1] == '2' && (l->frame & 1) == 0;
+		pal |= seq[1] == '1' && (l->frame & 1) == 0;
+		pal |= seq[1] == '2' && (l->frame & 1) == 1;
 		
 		/* Calculate colour sub-carrier lookup-positions for the start of this line */
-		_get_colour_subcarrier(s, l->frame, l->line, &l->lut_b, &l->lut_i, &l->lut_q);
+		l->lut = &s->colour_lookup[s->colour_lookup_offset];
+		
+		/* Update offset for the next line */
+		s->colour_lookup_offset += s->width;
+		s->colour_lookup_offset %= s->colour_lookup_width;
+		
+		if(s->conf.colour_mode == VID_PAL && pal &&
+		   (l->frame + l->line) & 1)
+		{
+			pal = -1;
+		}
 	}
 	if(s->conf.colour_mode == VID_APOLLO_FSC)
 	{
@@ -3017,8 +2942,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			
 			if(pal)
 			{
-				*o += (s->yiq_level_lookup[rgb].i * l->lut_i[x] +
-				       s->yiq_level_lookup[rgb].q * l->lut_q[x]) >> 15;
+				*o += (s->yiq_level_lookup[rgb].i * l->lut[x].q +
+				       s->yiq_level_lookup[rgb].q * l->lut[x].i * pal) >> 15;
 			}
 		}
 	}
@@ -3028,7 +2953,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
-			l->output[x * 2] += (l->lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
+			l->output[x * 2] += (((s->burst_phase.i * l->lut[x].q +
+			                       s->burst_phase.q * l->lut[x].i * pal) >> 15) * s->burst_win[x - s->burst_left]) >> 15;
 		}
 	}
 	
@@ -3787,7 +3713,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		d = 2.0 * M_PI * ((double) s->conf.colour_carrier.num / s->conf.colour_carrier.den) / s->pixel_rate;
 		
 		/*  To make overflow easier to handle the length of the table is extended by one line */
-		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(int16_t));
+		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(cint16_t));
 		if(!s->colour_lookup)
 		{
 			vid_free(s);
@@ -3796,7 +3722,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		
 		for(c = 0; c < s->colour_lookup_width + s->width; c++)
 		{
-			s->colour_lookup[c] = round(sin(d * c) * INT16_MAX);
+			s->colour_lookup[c] = (cint16_t) {
+				round(cos(d * c) * INT16_MAX),
+				round(sin(d * c) * INT16_MAX)
+			};
 		}
 		
 		s->colour_lookup_offset = 0;
@@ -3817,6 +3746,21 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		{
 			vid_free(s);
 			return(VID_OUT_OF_MEMORY);
+		}
+		
+		if(s->conf.colour_mode == VID_PAL)
+		{
+			/* PAL has a 135° burst, alternating between + and - */
+			double p = 135.0 * (M_PI / 180.0);
+			s->burst_phase = (cint16_t) {
+				round(cos(p) * INT16_MAX),
+				round(sin(p) * INT16_MAX)
+			};
+		}
+		else if(s->conf.colour_mode == VID_NTSC)
+		{
+			/* NTSC has a 180° burst */
+			s->burst_phase = (cint16_t) { -INT16_MAX, 0 };
 		}
 	}
 	
@@ -3942,7 +3886,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	/* Initialise VITS inserter */
 	if(s->conf.vits)
 	{
-		if((r = vits_init(&s->vits, s->pixel_rate, s->width, s->conf.lines, s->white_level - s->blanking_level)) != VID_OK)
+		r = vits_init(
+			&s->vits, s->pixel_rate, s->width, s->conf.lines,
+			s->conf.colour_mode == VID_PAL,
+			s->white_level - s->blanking_level
+		);
+		
+		if(r != VID_OK)
 		{
 			vid_free(s);
 			return(r);
