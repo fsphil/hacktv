@@ -264,6 +264,7 @@ typedef struct {
 typedef struct {
 	const char *id;
 	const vid_config_t *conf;
+	const char *desc;
 } vid_configs_t;
 
 typedef struct {

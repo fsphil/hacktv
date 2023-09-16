@@ -97,6 +97,8 @@ typedef struct {
 	char *passthru;
 	int invert_video;
 	int secam_field_id;
+	int list_modes;
+	int json;
 	char *ffmt;
 	char *fopts;
 	

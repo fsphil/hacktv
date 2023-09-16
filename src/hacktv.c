@@ -72,6 +72,7 @@ static void print_usage(void)
 		"\n"
 		"  -o, --output <target>          Set the output device or file, Default: hackrf\n"
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
+		"      --list-modes               List available modes and exit.\n"
 		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
 		"      --pixelrate <value>        Set the video pixel rate in Hz. Default: Sample rate\n"
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
@@ -116,6 +117,7 @@ static void print_usage(void)
 		"      --invert-video             Invert the composite video signal sync and\n"
 		"                                 white levels.\n"
 		"      --secam-field-id           Enable SECAM field identification.\n"
+		"      --json                     Output a JSON array when used with --list-modes.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -174,58 +176,6 @@ static void print_usage(void)
 		"  is real or complex.\n"
 		"\n"
 		"  If no valid output prefix is provided, file: is assumed.\n"
-		"\n"
-		"Supported television modes:\n"
-		"\n"
-		"  i             = PAL colour, 25 fps, 625 lines, AM (complex), 6.0 MHz FM audio\n"
-		"  b, g          = PAL colour, 25 fps, 625 lines, AM (complex), 5.5 MHz FM audio\n"
-		"  pal-d, pal-k  = PAL colour, 25 fps, 625 lines, AM (complex), 6.5 MHz FM audio\n"
-		"  pal-fm        = PAL colour, 25 fps, 625 lines, FM (complex), 6.5 MHz FM audio\n"
-		"  pal           = PAL colour, 25 fps, 625 lines, unmodulated (real)\n"
-		"  pal-m         = PAL colour, 30/1.001 fps, 525 lines, AM (complex), 4.5 MHz FM audio\n"
-		"  pal-n         = PAL colour, 25 fps, 625 lines, AM (complex), 4.5 MHz FM audio\n"
-		"  525pal        = PAL colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
-		"  m             = NTSC colour, 30/1.001 fps, 525 lines, AM (complex), 4.5 MHz FM audio\n"
-		"  ntsc-i        = NTSC colour, 30/1.001 fps, 525 lines, AM (complex), 6.0 MHz FM audio\n"
-		"  ntsc-fm       = NTSC colour, 30/1.001 fps, 525 lines, FM (complex), 6.5 MHz FM audio\n"
-		"  ntsc-bs       = NTSC colour, 30/1.001 fps, 525 lines, FM (complex), BS digital audio\n"
-		"  ntsc          = NTSC colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
-		"  pal60-i       = PAL colour, 30/1.001 fps, 525 lines, AM (complex), 6.0 MHz FM audio\n"
-		"  pal60         = PAL colour, 30/1.001 fps, 525 lines, unmodulated (real)\n"
-		"  l             = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz AM\n"
-		"                  audio\n"
-		"  d, k          = SECAM colour, 25 fps, 625 lines, AM (complex), 6.5 MHz FM\n"
-		"                  audio\n"
-		"  secam-i       = SECAM colour, 25 fps, 625 lines, AM (complex), 6.0 MHz FM audio\n"
-		"  secam-b       = SECAM colour, 25 fps, 625 lines, AM (complex), 5.5 MHz FM audio\n"
-		"  secam-g       = SECAM colour, 25 fps, 625 lines, AM (complex), 5.5 MHz FM audio\n"
-		"  secam-fm      = SECAM colour, 25 fps, 625 lines, FM (complex), 6.5 MHz FM audio\n"
-		"  secam         = SECAM colour, 25 fps, 625 lines, unmodulated (real)\n"
-		"  d2mac-fm      = D2-MAC, 25 fps, 625 lines, FM (complex)\n"
-		"  d2mac-am      = D2-MAC, 25 fps, 625 lines, AM (complex)\n"
-		"  d2mac         = D2-MAC, 25 fps, 625 lines, unmodulated (real)\n"
-		"  dmac-fm       = D-MAC, 25 fps, 625 lines, FM (complex)\n"
-		"  dmac-am       = D-MAC, 25 fps, 625 lines, AM (complex)\n"
-		"  dmac          = D-MAC, 25 fps, 625 lines, unmodulated (real)\n"
-		"  e             = No colour, 25 fps, 819 lines, AM (complex)\n"
-		"  819           = No colour, 25 fps, 819 lines, unmodulated (real)\n"
-		"  a             = No colour, 25 fps, 405 lines, AM (complex)\n"
-		"  405           = No colour, 25 fps, 405 lines, unmodulated (real)\n"
-		"  240-am        = No colour, 25 fps, 240 lines, AM (complex)\n"
-		"  240           = No colour, 25 fps, 240 lines, unmodulated (real)\n"
-		"  30-am         = No colour, 12.5 fps, 30 lines, AM (complex)\n"
-		"  30            = No colour, 12.5 fps, 30 lines, unmodulated (real)\n"
-		"  nbtv-am       = No colour, 12.5 fps, 32 lines, AM (complex)\n"
-		"  nbtv          = No colour, 12.5 fps, 32 lines, unmodulated (real)\n"
-		"  apollo-fsc-fm = Field sequential colour, 30/1.001 fps, 525 lines, FM (complex)\n"
-		"                  1.25 MHz FM audio\n"
-		"  apollo-fsc    = Field sequential colour, 30/1.001 fps, 525 lines, unmodulated\n"
-		"                  (real)\n"
-		"  apollo-fm     = No colour, 10 fps, 320 lines, FM (complex), 1.25 MHz FM audio\n"
-		"  apollo        = No colour, 10 fps, 320 lines, unmodulated (real)\n"
-		"  m-cbs405      = Field sequential colour, 72 fps, 405 lines, VSB (complex),\n"
-		"                  4.5MHz FM audio\n"
-		"  cbs405        = Field sequential colour, 72 fps, 405 lines, unmodulated (real)\n"
 		"\n"
 		"NOTE: The number of samples per line is rounded to the nearest integer,\n"
 		"which may result in a slight frame rate error.\n"
@@ -337,6 +287,69 @@ static void print_usage(void)
 	);
 }
 
+/* fputs() a string with JSON-style escape sequences */
+static int _fputs_json(const char *str, FILE *stream)
+{
+	int c;
+	
+	for(c = 0; *str; str++)
+	{
+		const char *s = NULL;
+		int r;
+		
+		switch(*str)
+		{
+		case '"': s = "\\\""; break;
+		case '\\': s = "\\\\"; break;
+		//case '/': s = "\\/"; break;
+		case '\b': s = "\\b"; break;
+		case '\f': s = "\\f"; break;
+		case '\n': s = "\\n"; break;
+		case '\r': s = "\\r"; break;
+		case '\t': s = "\\t"; break;
+		}
+		
+		if(s) r = fputs(s, stream);
+		else r = fputc(*str, stream) == EOF ? EOF : 1;
+		
+		if(r == EOF)
+		{
+			return(c > 0 ? c : EOF);
+		}
+		
+		c += r;
+	}
+	
+	return(c);
+}
+
+/* List all avaliable modes, optionally formatted as a JSON array */
+static void _list_modes(int json)
+{
+	const vid_configs_t *vc;
+	
+	if(json) printf("[\n");
+	
+	/* Load the mode configuration */
+	for(vc = vid_configs; vc->id != NULL; vc++)
+	{
+		if(json)
+		{
+			printf("  {\n    \"id\": \"");
+			_fputs_json(vc->id, stdout);
+			printf("\",\n    \"description\": \"");
+			_fputs_json(vc->desc ? vc->desc : "", stdout);
+			printf("\"\n  }%s\n", vc[1].id != NULL ? "," : "");
+		}
+		else
+		{
+			printf("  %-14s = %s\n", vc->id, vc->desc ? vc->desc : "");
+		}
+	}
+	
+	if(json) printf("]\n");
+}
+
 enum {
 	_OPT_TELETEXT = 1000,
 	_OPT_WSS,
@@ -373,6 +386,8 @@ enum {
 	_OPT_FFMT,
 	_OPT_FOPTS,
 	_OPT_PIXELRATE,
+	_OPT_LIST_MODES,
+	_OPT_JSON,
 };
 
 int main(int argc, char *argv[])
@@ -382,6 +397,7 @@ int main(int argc, char *argv[])
 	static struct option long_options[] = {
 		{ "output",         required_argument, 0, 'o' },
 		{ "mode",           required_argument, 0, 'm' },
+		{ "list-modes",     no_argument,       0, _OPT_LIST_MODES },
 		{ "samplerate",     required_argument, 0, 's' },
 		{ "pixelrate",      required_argument, 0, _OPT_PIXELRATE },
 		{ "level",          required_argument, 0, 'l' },
@@ -423,6 +439,7 @@ int main(int argc, char *argv[])
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
 		{ "secam-field-id", no_argument,       0, _OPT_SECAM_FIELD_ID },
+		{ "json",           no_argument,       0, _OPT_JSON },
 		{ "ffmt",           required_argument, 0, _OPT_FFMT },
 		{ "fopts",          required_argument, 0, _OPT_FOPTS },
 		{ "frequency",      required_argument, 0, 'f' },
@@ -555,6 +572,10 @@ int main(int argc, char *argv[])
 		
 		case 'm': /* -m, --mode <name> */
 			s.mode = optarg;
+			break;
+		
+		case _OPT_LIST_MODES: /* --list-modes */
+			s.list_modes = 1;
 			break;
 		
 		case 's': /* -s, --samplerate <value> */
@@ -717,6 +738,10 @@ int main(int argc, char *argv[])
 			s.secam_field_id = 1;
 			break;
 		
+		case _OPT_JSON: /* --json */
+			s.json = 1;
+			break;
+		
 		case _OPT_FFMT: /* --ffmt <format> */
 			s.ffmt = optarg;
 			break;
@@ -779,6 +804,12 @@ int main(int argc, char *argv[])
 			print_usage();
 			return(0);
 		}
+	}
+	
+	if(s.list_modes)
+	{
+		_list_modes(s.json);
+		return(-1);
 	}
 	
 	if(optind >= argc)
