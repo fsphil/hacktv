@@ -43,11 +43,14 @@ typedef struct {
 	size_t audio_samples;
 } av_test_t;
 
-static uint32_t *_av_test_read_video(void *private, float *ratio)
+static av_frame_t _av_test_read_video(void *private)
 {
 	av_test_t *av = private;
-	if(ratio) *ratio = 4.0 / 3.0;
-	return(av->video);
+	av_frame_t v = av_frame_defaults;
+	
+	v.framebuffer = av->video;
+	
+	return(v);
 }
 
 static int16_t *_av_test_read_audio(void *private, size_t *samples)

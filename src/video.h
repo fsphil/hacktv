@@ -74,8 +74,23 @@ typedef struct vid_t vid_t;
 #define VID_75US 2
 #define VID_J17  3
 
-/* AV source function prototypes */
-typedef uint32_t *(*vid_read_video_t)(void *private, float *ratio);
+/* AV source types and function prototypes */
+typedef struct {
+	
+	/* Pointer to the 32-bit RGBx framebuffer, or NULL */
+	uint32_t *framebuffer;
+	
+	/* The image aspect ratio */
+	float ratio;
+	
+	/* Interlace flag */
+	int interlaced;
+	
+} av_frame_t;
+
+extern const av_frame_t av_frame_defaults;
+
+typedef av_frame_t (*vid_read_video_t)(void *private);
 typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
 typedef int (*vid_eof_t)(void *private);
 typedef int (*vid_close_t)(void *private);
@@ -380,6 +395,9 @@ struct vid_t {
 	
 	/* Current frame's aspect ratio */
 	float ratio;
+	
+	/* Current frame's interlaced status */
+	int interlaced;
 	
 	/* Teletext state */
 	tt_t tt;

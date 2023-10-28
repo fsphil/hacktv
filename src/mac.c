@@ -1745,6 +1745,10 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		y = (l->line - 336) * 2 + 1;
 	}
 	
+	/* Shift the lines by one if the source
+	 * video has the bottom field first */
+	if(s->interlaced == 2) y -= 1;
+	
 	/* Render the luminance */
 	if(y >= 0)
 	{

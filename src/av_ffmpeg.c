@@ -594,6 +594,11 @@ static void *_video_scaler_thread(void *arg)
 			INT_MAX
 		);
 		
+		/* Copy some data to the scaled image */
+		oframe->interlaced_frame = frame->interlaced_frame;
+		oframe->top_field_first = frame->top_field_first;
+		
+		/* Done with the frame */
 		av_frame_unref(frame);
 		
 		_frame_dbuffer_ready(&av->out_video_buffer, 0);
@@ -607,14 +612,15 @@ static void *_video_scaler_thread(void *arg)
 	return(NULL);
 }
 
-static uint32_t *_av_ffmpeg_read_video(void *private, float *ratio)
+static av_frame_t _av_ffmpeg_read_video(void *private)
 {
 	av_ffmpeg_t *av = private;
+	av_frame_t v = av_frame_defaults;
 	AVFrame *frame;
 	
 	if(av->video_stream == NULL)
 	{
-		return(NULL);
+		return(v);
 	}
 	
 	frame = _frame_dbuffer_flip(&av->out_video_buffer);
@@ -622,22 +628,26 @@ static uint32_t *_av_ffmpeg_read_video(void *private, float *ratio)
 	{
 		/* EOF or abort */
 		av->video_eof = 1;
-		return(NULL);
+		return(v);
 	}
 	
-	if(ratio)
+	/* Return image ratio */
+	if(frame->sample_aspect_ratio.den > 0 && frame->height > 0)
 	{
-		/* Default to 4:3 ratio if it can't be calculated */
-		*ratio = 4.0 / 3.0;
-		
-		if(frame->sample_aspect_ratio.den > 0 && frame->height > 0)
-		{
-			*ratio  = (float) frame->sample_aspect_ratio.num / frame->sample_aspect_ratio.den;
-			*ratio *= (float) frame->width / frame->height;
-		}
+		v.ratio  = (float) frame->sample_aspect_ratio.num / frame->sample_aspect_ratio.den;
+		v.ratio *= (float) frame->width / frame->height;
 	}
 	
-	return((uint32_t *) frame->data[0]);
+	/* Return interlace status */
+	if(frame->interlaced_frame)
+	{
+		v.interlaced = frame->top_field_first ? 1 : 2;
+	}
+	
+	/* Set the pointer to the framebuffer */
+	v.framebuffer = (uint32_t *) frame->data[0];
+	
+	return(v);
 }
 
 static void *_audio_decode_thread(void *arg)

@@ -2000,6 +2000,13 @@ const vid_configs_t vid_configs[] = {
 	{ NULL },
 };
 
+/* av_frame_t defaults */
+const av_frame_t av_frame_defaults = {
+	.framebuffer = NULL,
+	.ratio = 4.0 / 3.0,
+	.interlaced = 0,
+};
+
 /* Video filter process */
 typedef struct {
 	fir_int16_t fir;
@@ -2375,14 +2382,14 @@ static void _free_am_modulator(_mod_am_t *am)
 }
 
 /* AV source callback handlers */
-static uint32_t *_av_read_video(vid_t *s, float *ratio)
+static av_frame_t _av_read_video(vid_t *s)
 {
 	if(s->av_read_video)
 	{
-		return(s->av_read_video(s->av_private, ratio));
+		return(s->av_read_video(s->av_private));
 	}
 	
-	return(NULL);
+	return(av_frame_defaults);
 }
 
 static int16_t *_av_read_audio(vid_t *s, size_t *samples)
@@ -2847,6 +2854,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		vy = l->line - 1;
 	}
+	
+	/* Shift the lines by one if the source
+	 * video has the bottom field first */
+	if(s->interlaced == 2) vy -= 1;
 	
 	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	
@@ -4455,13 +4466,18 @@ static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
 	/* Load the next frame */
 	if(s->bline == 1 || (s->conf.interlace && s->bline == s->conf.hline))
 	{
+		av_frame_t a;
+		
 		/* Have we reached the end of the video? */
 		if(_av_eof(s))
 		{
 			return(NULL);
 		}
 		
-		s->framebuffer = _av_read_video(s, &s->ratio);
+		a = _av_read_video(s);
+		s->framebuffer = a.framebuffer;
+		s->ratio = a.ratio;
+		s->interlaced = a.interlaced;
 	}
 	
 	for(i = 0; i < s->nprocesses; i++)
