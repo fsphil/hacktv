@@ -2857,7 +2857,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	
 	/* Shift the lines by one if the source
 	 * video has the bottom field first */
-	if(s->interlaced == 2) vy -= 1;
+	if(s->interlaced == 2) vy += 1;
 	
 	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	
