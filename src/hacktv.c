@@ -21,8 +21,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include "hacktv.h"
-#include "av_test.h"
-#include "av_ffmpeg.h"
+#include "av.h"
 #include "rf_file.h"
 #include "rf_hackrf.h"
 
@@ -1127,6 +1126,20 @@ int main(int argc, char *argv[])
 	
 	av_ffmpeg_init();
 	
+	/* Configure AV source settings */
+	s.vid.av = (av_t) {
+		.frame_rate = (rational_t) {
+			.num = s.vid.conf.frame_rate.num * (s.vid.conf.interlace ? 2 : 1),
+			.den = s.vid.conf.frame_rate.den,
+		},
+		.width = s.vid.active_width,
+		.height = s.vid.conf.active_lines,
+		.sample_rate = (rational_t) {
+			.num = (s.vid.audio ? HACKTV_AUDIO_SAMPLE_RATE : 0),
+			1,
+		},
+	};
+	
 	do
 	{
 		for(c = optind; c < argc && !_abort; c++)
@@ -1147,15 +1160,15 @@ int main(int argc, char *argv[])
 			
 			if(strncmp(pre, "test", l) == 0)
 			{
-				r = av_test_open(&s.vid);
+				r = av_test_open(&s.vid.av);
 			}
 			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{
-				r = av_ffmpeg_open(&s.vid, sub, s.ffmt, s.fopts);
+				r = av_ffmpeg_open(&s.vid.av, sub, s.ffmt, s.fopts);
 			}
 			else
 			{
-				r = av_ffmpeg_open(&s.vid, pre, s.ffmt, s.fopts);
+				r = av_ffmpeg_open(&s.vid.av, pre, s.ffmt, s.fopts);
 			}
 			
 			if(r != HACKTV_OK)
@@ -1180,7 +1193,7 @@ int main(int argc, char *argv[])
 				_signal = 0;
 			}
 			
-			vid_av_close(&s.vid);
+			av_close(&s.vid.av);
 		}
 	}
 	while(s.repeat && !_abort);

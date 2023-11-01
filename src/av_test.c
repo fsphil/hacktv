@@ -43,33 +43,35 @@ typedef struct {
 	size_t audio_samples;
 } av_test_t;
 
-static av_frame_t _av_test_read_video(void *private)
+static int _test_read_video(void *ctx, av_frame_t *frame)
 {
-	av_test_t *av = private;
-	av_frame_t v = av_frame_defaults;
+	av_test_t *s = ctx;
 	
-	v.framebuffer = av->video;
+	*frame = av_frame_default;
+	frame->framebuffer = s->video;
+	frame->width = s->width;
+	frame->height = s->height;
 	
-	return(v);
+	return(AV_OK);
 }
 
-static int16_t *_av_test_read_audio(void *private, size_t *samples)
+static int16_t *_test_read_audio(void *ctx, size_t *samples)
 {
-	av_test_t *av = private;
-	*samples = av->audio_samples;
-	return(av->audio);
+	av_test_t *s = ctx;
+	*samples = s->audio_samples;
+	return(s->audio);
 }
 
-static int _av_test_close(void *private)
+static int _test_close(void *ctx)
 {
-	av_test_t *av = private;
-	if(av->video) free(av->video);
-	if(av->audio) free(av->audio);
-	free(av);
+	av_test_t *s = ctx;
+	if(s->video) free(s->video);
+	if(s->audio) free(s->audio);
+	free(s);
 	return(HACKTV_OK);
 }
 
-int av_test_open(vid_t *s)
+int av_test_open(av_t *av)
 {
 	uint32_t const bars[8] = {
 		0x000000,
@@ -81,67 +83,67 @@ int av_test_open(vid_t *s)
 		0xBFBF00,
 		0xFFFFFF,
 	};
-	av_test_t *av;
+	av_test_t *s;
 	int c, x, y;
 	double d;
 	int16_t l;
 	
-	av = calloc(1, sizeof(av_test_t));
-	if(!av)
+	s = calloc(1, sizeof(av_test_t));
+	if(!s)
 	{
 		return(HACKTV_OUT_OF_MEMORY);
 	}
 	
 	/* Generate a basic test pattern */
-	av->width = s->active_width;
-	av->height = s->conf.active_lines;
-	av->video = malloc(vid_get_framebuffer_length(s));
-	if(!av->video)
+	s->width = av->width;
+	s->height = av->height;
+	s->video = malloc(av->width * av->height * sizeof(uint32_t));
+	if(!s->video)
 	{
-		free(av);
+		free(s);
 		return(HACKTV_OUT_OF_MEMORY);
 	}
 	
-	for(y = 0; y < s->conf.active_lines; y++)
+	for(y = 0; y < s->height; y++)
 	{
-		for(x = 0; x < s->active_width; x++)
+		for(x = 0; x < s->width; x++)
 		{
-			if(y < s->conf.active_lines - 140)
+			if(y < s->height - 140)
 			{
 				/* 75% colour bars */
-				c = 7 - x * 8 / s->active_width;
+				c = 7 - x * 8 / s->width;
 				c = bars[c];
 			}
-			else if(y < s->conf.active_lines - 120)
+			else if(y < s->height - 120)
 			{
 				/* 75% red */
 				c = 0xBF0000;
 			}
-			else if(y < s->conf.active_lines - 100)
+			else if(y < s->height - 100)
 			{
 				/* Gradient black to white */
-				c = x * 0xFF / (s->active_width - 1);
+				c = x * 0xFF / (s->width - 1);
 				c = c << 16 | c << 8 | c;
 			}
 			else
 			{
 				/* 8 level grey bars */
-				c = x * 0xFF / (s->active_width - 1);
+				c = x * 0xFF / (s->width - 1);
 				c &= 0xE0;
 				c = c | (c >> 3) | (c >> 6);
 				c = c << 16 | c << 8 | c;
 			}
 			
-			av->video[y * s->active_width + x] = c;
+			s->video[y * s->width + x] = c;
 		}
 	}
 	
 	/* Overlay the logo */
-	if(s->active_width >= LOGO_WIDTH * LOGO_SCALE &&
-	   s->conf.active_lines >= LOGO_HEIGHT * LOGO_SCALE)
+	if(s->width >= LOGO_WIDTH * LOGO_SCALE &&
+	   s->height >= LOGO_HEIGHT * LOGO_SCALE)
 	{
-		x = s->active_width / 2;
-		y = s->conf.active_lines / 10;
+		x = s->width / 2;
+		y = s->height / 10;
 		
 		for(x = 0; x < LOGO_WIDTH * LOGO_SCALE; x++)
 		{
@@ -149,57 +151,58 @@ int av_test_open(vid_t *s)
 			{
 				c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
 				
-				av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
+				s->video[(s->height / 10 + y) * s->width + ((s->width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
 			}
 		}
 	}
 	
 	/* Generate the 1khz test tones (BBC 1 style) */
-	d = 1000.0 * 2 * M_PI / HACKTV_AUDIO_SAMPLE_RATE;
-	y = HACKTV_AUDIO_SAMPLE_RATE * 64 / 100; /* 640ms */
-	av->audio_samples = y * 10; /* 6.4 seconds */
-	av->audio = malloc(av->audio_samples * 2 * sizeof(int16_t));
-	if(!av->audio)
+	d = 1000.0 * 2 * M_PI * av->sample_rate.den / av->sample_rate.num;
+	y = av->sample_rate.num / av->sample_rate.den * 64 / 100; /* 640ms */
+	s->audio_samples = y * 10; /* 6.4 seconds */
+	s->audio = malloc(s->audio_samples * 2 * sizeof(int16_t));
+	if(!s->audio)
 	{
-		free(av);
+		free(s->video);
+		free(s);
 		return(HACKTV_OUT_OF_MEMORY);
 	}
 	
-	for(x = 0; x < av->audio_samples; x++)
+	for(x = 0; x < s->audio_samples; x++)
 	{
 		l = sin(x * d) * INT16_MAX * 0.1;
 		
 		if(x < y)
 		{
 			/* 0 - 640ms, interrupt left channel */
-			av->audio[x * 2 + 0] = 0;
-			av->audio[x * 2 + 1] = l;
+			s->audio[x * 2 + 0] = 0;
+			s->audio[x * 2 + 1] = l;
 		}
 		else if(x >= y * 2 && x < y * 3)
 		{
 			/* 1280ms - 1920ms, interrupt right channel */
-			av->audio[x * 2 + 0] = l;
-			av->audio[x * 2 + 1] = 0;
+			s->audio[x * 2 + 0] = l;
+			s->audio[x * 2 + 1] = 0;
 		}
 		else if(x >= y * 4 && x < y * 5)
 		{
 			/* 2560ms - 3200ms, interrupt right channel again */
-			av->audio[x * 2 + 0] = l;
-			av->audio[x * 2 + 1] = 0;
+			s->audio[x * 2 + 0] = l;
+			s->audio[x * 2 + 1] = 0;
 		}
 		else
 		{
 			/* Use both channels for all other times */
-			av->audio[x * 2 + 0] = l; /* Left */
-			av->audio[x * 2 + 1] = l; /* Right */
+			s->audio[x * 2 + 0] = l; /* Left */
+			s->audio[x * 2 + 1] = l; /* Right */
 		}
 	}
 	
 	/* Register the callback functions */
-	s->av_private = av;
-	s->av_read_video = _av_test_read_video;
-	s->av_read_audio = _av_test_read_audio;
-	s->av_close = _av_test_close;
+	av->av_source_ctx = s;
+	av->read_video = _test_read_video;
+	av->read_audio = _test_read_audio;
+	av->close = _test_close;
 	
 	return(HACKTV_OK);
 }

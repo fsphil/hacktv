@@ -23,6 +23,7 @@
 #include "nicam728.h"
 #include "dance.h"
 #include "hacktv.h"
+#include "av.h"
 
 /* 
  * Video generation
@@ -2000,13 +2001,6 @@ const vid_configs_t vid_configs[] = {
 	{ NULL },
 };
 
-/* av_frame_t defaults */
-const av_frame_t av_frame_defaults = {
-	.framebuffer = NULL,
-	.ratio = 4.0 / 3.0,
-	.interlaced = 0,
-};
-
 /* Video filter process */
 typedef struct {
 	fir_int16_t fir;
@@ -2379,52 +2373,6 @@ static void inline _am_modulator_add(_mod_am_t *am, int16_t *dst, int16_t sample
 static void _free_am_modulator(_mod_am_t *am)
 {
 	/* Nothing */
-}
-
-/* AV source callback handlers */
-static av_frame_t _av_read_video(vid_t *s)
-{
-	if(s->av_read_video)
-	{
-		return(s->av_read_video(s->av_private));
-	}
-	
-	return(av_frame_defaults);
-}
-
-static int16_t *_av_read_audio(vid_t *s, size_t *samples)
-{
-	if(s->av_read_audio)
-	{
-		return(s->av_read_audio(s->av_private, samples));
-	}
-	
-	return(NULL);
-}
-
-static int _av_eof(vid_t *s)
-{
-	if(s->av_eof)
-	{
-		return(s->av_eof(s->av_private));
-	}
-	
-	return(0);
-}
-
-int vid_av_close(vid_t *s)
-{
-	int r;
-	
-	r = s->av_close ? s->av_close(s->av_private) : VID_ERROR;
-	
-	s->av_private = NULL;
-	s->av_read_video = NULL;
-	s->av_read_audio = NULL;
-	s->av_eof = NULL;
-	s->av_close = NULL;
-	
-	return(r);
 }
 
 void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
@@ -2857,7 +2805,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	
 	/* Shift the lines by one if the source
 	 * video has the bottom field first */
-	if(s->interlaced == 2) vy += 1;
+	if(s->vframe.interlaced == 2) vy += 1;
 	
 	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	
@@ -2932,7 +2880,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		int ar = (seq[3] == 'a' ? s->active_left + s->active_width : (seq[2] == 'a' ? s->half_width : -1));
 		
 		/* Render the active video */
-		prgb = (s->framebuffer != NULL && vy != -1 ? &s->framebuffer[vy * s->active_width + al - s->active_left] : NULL);
+		prgb = (s->vframe.framebuffer != NULL && vy != -1 ? &s->vframe.framebuffer[vy * s->vframe.width + al - s->active_left] : NULL);
 		rgb = 0x000000;
 		
 		for(x = al, o = &l->output[al * 2]; x < ar; x++, o += 2)
@@ -3044,8 +2992,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				if(x >= s->active_left && x < s->active_left + s->active_width)
 				{
-					rgb = s->framebuffer != NULL && vy >= 0 ? s->framebuffer[vy * s->active_width + x - s->active_left] & 0xFFFFFF : 0x000000;
-				}
+					rgb = s->vframe.framebuffer != NULL && vy >= 0 ? s->vframe.framebuffer[vy * s->vframe.width + x - s->active_left] & 0xFFFFFF : 0x000000;
+                                }
 				
 				if(((l->frame * s->conf.lines) + l->line) & 1)
 				{
@@ -3135,7 +3083,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 			
 			if(s->audiobuffer_samples == 0)
 			{
-				s->audiobuffer = _av_read_audio(s, &s->audiobuffer_samples);
+				s->audiobuffer = av_read_audio(&s->av, &s->audiobuffer_samples);
 				
 				if(s->conf.systeraudio == 1)
 				{
@@ -3873,7 +3821,13 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	s->bline  = 1;
 	s->bframe = 1;
 	
-	s->framebuffer = NULL;
+	s->vframe = (av_frame_t) {
+		.width = s->active_width,
+		.height = s->conf.active_lines,
+		.framebuffer = NULL,
+		.ratio = 4.0 / 3.0,
+		.interlaced = 0,
+	};
 	s->olines = 1;
 	s->audio = 0;
 	
@@ -4337,7 +4291,7 @@ void vid_free(vid_t *s)
 	int i;
 	
 	/* Close the AV source */
-	vid_av_close(s);
+	av_close(&s->av);
 	
 	for(i = 0; i < s->nprocesses; i++)
 	{
@@ -4466,18 +4420,13 @@ static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
 	/* Load the next frame */
 	if(s->bline == 1 || (s->conf.interlace && s->bline == s->conf.hline))
 	{
-		av_frame_t a;
-		
 		/* Have we reached the end of the video? */
-		if(_av_eof(s))
+		if(av_eof(&s->av))
 		{
 			return(NULL);
 		}
 		
-		a = _av_read_video(s);
-		s->framebuffer = a.framebuffer;
-		s->ratio = a.ratio;
-		s->interlaced = a.interlaced;
+		av_read_video(&s->av, &s->vframe);
 	}
 	
 	for(i = 0; i < s->nprocesses; i++)

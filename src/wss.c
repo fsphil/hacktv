@@ -152,7 +152,7 @@ int wss_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	{
 		/* Auto mode selects between 4:3 and 16:9 based on the
 		 * the ratio of the source frame. */
-		_group_bits(w->vbi, s->ratio <= (14.0 / 9.0) ? 0x08 : 0x07, 29 + 24, 4);
+		_group_bits(w->vbi, s->vframe.ratio <= (14.0 / 9.0) ? 0x08 : 0x07, 29 + 24, 4);
 	}
 	
 	/* 42.5μs of line 23 needs to be blanked otherwise the WSS bits may

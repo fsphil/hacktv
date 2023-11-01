@@ -160,7 +160,7 @@ void _audio_offset(uint8_t const **dst, uint8_t const * const *src, int offset, 
 	}
 }
 
-static int _packet_queue_init(av_ffmpeg_t *av, _packet_queue_t *q)
+static int _packet_queue_init(av_ffmpeg_t *s, _packet_queue_t *q)
 {
 	q->length = 0;
 	q->size = 0;
@@ -170,11 +170,11 @@ static int _packet_queue_init(av_ffmpeg_t *av, _packet_queue_t *q)
 	return(0);
 }
 
-static int _packet_queue_flush(av_ffmpeg_t *av, _packet_queue_t *q)
+static int _packet_queue_flush(av_ffmpeg_t *s, _packet_queue_t *q)
 {
 	_packet_queue_item_t *p;
 	
-	pthread_mutex_lock(&av->mutex);
+	pthread_mutex_lock(&s->mutex);
 	
 	while(q->length--)
 	{
@@ -186,32 +186,32 @@ static int _packet_queue_flush(av_ffmpeg_t *av, _packet_queue_t *q)
 		free(p);
 	}
 	
-	pthread_cond_signal(&av->cond);
-	pthread_mutex_unlock(&av->mutex);
+	pthread_cond_signal(&s->cond);
+	pthread_mutex_unlock(&s->mutex);
 	
 	return(0);
 }
 
-static void _packet_queue_free(av_ffmpeg_t *av, _packet_queue_t *q)
+static void _packet_queue_free(av_ffmpeg_t *s, _packet_queue_t *q)
 {
-	_packet_queue_flush(av, q);
+	_packet_queue_flush(s, q);
 }
 
-static void _packet_queue_abort(av_ffmpeg_t *av, _packet_queue_t *q)
+static void _packet_queue_abort(av_ffmpeg_t *s, _packet_queue_t *q)
 {
-	pthread_mutex_lock(&av->mutex);
+	pthread_mutex_lock(&s->mutex);
 	
 	q->abort = 1;
 	
-	pthread_cond_signal(&av->cond);
-	pthread_mutex_unlock(&av->mutex);
+	pthread_cond_signal(&s->cond);
+	pthread_mutex_unlock(&s->mutex);
 }
 
-static int _packet_queue_write(av_ffmpeg_t *av, _packet_queue_t *q, AVPacket *pkt)
+static int _packet_queue_write(av_ffmpeg_t *s, _packet_queue_t *q, AVPacket *pkt)
 {
 	_packet_queue_item_t *p;
 	
-	pthread_mutex_lock(&av->mutex);
+	pthread_mutex_lock(&s->mutex);
 	
 	/* A NULL packet signals the end of the stream / file */
 	if(pkt == NULL)
@@ -223,20 +223,20 @@ static int _packet_queue_write(av_ffmpeg_t *av, _packet_queue_t *q, AVPacket *pk
 		/* Limit the size of the queue */
 		while(q->abort == 0 && q->size + pkt->size + sizeof(_packet_queue_item_t) > MAX_QUEUE_SIZE)
 		{
-			av->input_stall = 1;
-			pthread_cond_signal(&av->cond);
-			pthread_cond_wait(&av->cond, &av->mutex);
+			s->input_stall = 1;
+			pthread_cond_signal(&s->cond);
+			pthread_cond_wait(&s->cond, &s->mutex);
 		}
 		
-		av->input_stall = 0;
+		s->input_stall = 0;
 		
 		if(q->abort == 1)
 		{
 			/* Abort was called while waiting for the queue size to drop */
 			av_packet_unref(pkt);
 			
-			pthread_cond_signal(&av->cond);
-			pthread_mutex_unlock(&av->mutex);
+			pthread_cond_signal(&s->cond);
+			pthread_mutex_unlock(&s->mutex);
 			
 			return(-2);
 		}
@@ -261,33 +261,33 @@ static int _packet_queue_write(av_ffmpeg_t *av, _packet_queue_t *q, AVPacket *pk
 		q->size += pkt->size + sizeof(_packet_queue_item_t);
 	}
 	
-	pthread_cond_signal(&av->cond);
-	pthread_mutex_unlock(&av->mutex);
+	pthread_cond_signal(&s->cond);
+	pthread_mutex_unlock(&s->mutex);
 	
 	return(0);
 }
 
-static int _packet_queue_read(av_ffmpeg_t *av, _packet_queue_t *q, AVPacket *pkt)
+static int _packet_queue_read(av_ffmpeg_t *s, _packet_queue_t *q, AVPacket *pkt)
 {
 	_packet_queue_item_t *p;
 	
-	pthread_mutex_lock(&av->mutex);
+	pthread_mutex_lock(&s->mutex);
 	
 	while(q->length == 0)
 	{
-		if(av->input_stall)
+		if(s->input_stall)
 		{
-			pthread_mutex_unlock(&av->mutex);
+			pthread_mutex_unlock(&s->mutex);
 			return(0);
 		}
 		
 		if(q->abort == 1 || q->eof == 1)
 		{
-			pthread_mutex_unlock(&av->mutex);
+			pthread_mutex_unlock(&s->mutex);
 			return(q->abort == 1 ? -2 : -1);
 		}
 		
-		pthread_cond_wait(&av->cond, &av->mutex);
+		pthread_cond_wait(&s->cond, &s->mutex);
 	}
 	
 	p = q->first;
@@ -299,8 +299,8 @@ static int _packet_queue_read(av_ffmpeg_t *av, _packet_queue_t *q, AVPacket *pkt
 	
 	free(p);
 	
-	pthread_cond_signal(&av->cond);
-	pthread_mutex_unlock(&av->mutex);
+	pthread_cond_signal(&s->cond);
+	pthread_mutex_unlock(&s->mutex);
 	
 	return(0);
 }
@@ -421,16 +421,16 @@ static AVFrame *_frame_dbuffer_flip(_frame_dbuffer_t *d)
 
 static void *_input_thread(void *arg)
 {
-	av_ffmpeg_t *av = (av_ffmpeg_t *) arg;
+	av_ffmpeg_t *s = (av_ffmpeg_t *) arg;
 	AVPacket pkt;
 	int r;
 	
 	//fprintf(stderr, "_input_thread(): Starting\n");
 	
 	/* Fetch packets from the source */
-	while(av->thread_abort == 0)
+	while(s->thread_abort == 0)
 	{
-		r = av_read_frame(av->format_ctx, &pkt);
+		r = av_read_frame(s->format_ctx, &pkt);
 		
 		if(r == AVERROR(EAGAIN))
 		{
@@ -443,13 +443,13 @@ static void *_input_thread(void *arg)
 			break;
 		}
 		
-		if(av->video_stream && pkt.stream_index == av->video_stream->index)
+		if(s->video_stream && pkt.stream_index == s->video_stream->index)
 		{
-			_packet_queue_write(av, &av->video_queue, &pkt);
+			_packet_queue_write(s, &s->video_queue, &pkt);
 		}
-		else if(av->audio_stream && pkt.stream_index == av->audio_stream->index)
+		else if(s->audio_stream && pkt.stream_index == s->audio_stream->index)
 		{
-			_packet_queue_write(av, &av->audio_queue, &pkt);
+			_packet_queue_write(s, &s->audio_queue, &pkt);
 		}
 		else
 		{
@@ -458,8 +458,8 @@ static void *_input_thread(void *arg)
 	}
 	
 	/* Set the EOF flag in the queues */
-	_packet_queue_write(av, &av->video_queue, NULL);
-	_packet_queue_write(av, &av->audio_queue, NULL);
+	_packet_queue_write(s, &s->video_queue, NULL);
+	_packet_queue_write(s, &s->audio_queue, NULL);
 	
 	//fprintf(stderr, "_input_thread(): Ending\n");
 	
@@ -468,7 +468,7 @@ static void *_input_thread(void *arg)
 
 static void *_video_decode_thread(void *arg)
 {
-	av_ffmpeg_t *av = (av_ffmpeg_t *) arg;
+	av_ffmpeg_t *s = (av_ffmpeg_t *) arg;
 	AVPacket pkt, *ppkt = NULL;
 	AVFrame *frame;
 	int r;
@@ -478,11 +478,11 @@ static void *_video_decode_thread(void *arg)
 	frame = av_frame_alloc();
 	
 	/* Fetch video packets from the queue and decode */
-	while(av->thread_abort == 0)
+	while(s->thread_abort == 0)
 	{
 		if(ppkt == NULL)
 		{
-			r = _packet_queue_read(av, &av->video_queue, &pkt);
+			r = _packet_queue_read(s, &s->video_queue, &pkt);
 			if(r == -2)
 			{
 				/* Thread is aborting */
@@ -492,7 +492,7 @@ static void *_video_decode_thread(void *arg)
 			ppkt = (r >= 0 ? &pkt : NULL);
 		}
 		
-		r = avcodec_send_packet(av->video_codec_ctx, ppkt);
+		r = avcodec_send_packet(s->video_codec_ctx, ppkt);
 		
 		if(ppkt != NULL && r != AVERROR(EAGAIN))
 		{
@@ -506,13 +506,13 @@ static void *_video_decode_thread(void *arg)
 			break;
 		}
 		
-		r = avcodec_receive_frame(av->video_codec_ctx, frame);
+		r = avcodec_receive_frame(s->video_codec_ctx, frame);
 		
 		if(r == 0)
 		{
 			/* We have received a frame! */
-			av_frame_ref(_frame_dbuffer_back_buffer(&av->in_video_buffer), frame);
-			_frame_dbuffer_ready(&av->in_video_buffer, 0);
+			av_frame_ref(_frame_dbuffer_back_buffer(&s->in_video_buffer), frame);
+			_frame_dbuffer_ready(&s->in_video_buffer, 0);
 		}
 		else if(r != AVERROR(EAGAIN))
 		{
@@ -521,7 +521,7 @@ static void *_video_decode_thread(void *arg)
 		}
 	}
 	
-	_frame_dbuffer_abort(&av->in_video_buffer);
+	_frame_dbuffer_abort(&s->in_video_buffer);
 	
 	av_frame_free(&frame);
 	
@@ -532,7 +532,7 @@ static void *_video_decode_thread(void *arg)
 
 static void *_video_scaler_thread(void *arg)
 {
-	av_ffmpeg_t *av = (av_ffmpeg_t *) arg;
+	av_ffmpeg_t *s = (av_ffmpeg_t *) arg;
 	AVFrame *frame, *oframe;
 	AVRational ratio;
 	int64_t pts;
@@ -540,14 +540,14 @@ static void *_video_scaler_thread(void *arg)
 	//fprintf(stderr, "_video_scaler_thread(): Starting\n");
 	
 	/* Fetch video frames and pass them through the scaler */
-	while((frame = _frame_dbuffer_flip(&av->in_video_buffer)) != NULL)
+	while((frame = _frame_dbuffer_flip(&s->in_video_buffer)) != NULL)
 	{
 		pts = frame->best_effort_timestamp;
 		
 		if(pts != AV_NOPTS_VALUE)
 		{
-			pts  = av_rescale_q(pts, av->video_stream->time_base, av->video_time_base);
-			pts -= av->video_start_time;
+			pts  = av_rescale_q(pts, s->video_stream->time_base, s->video_time_base);
+			pts -= s->video_start_time;
 			
 			if(pts < 0)
 			{
@@ -559,20 +559,20 @@ static void *_video_scaler_thread(void *arg)
 			while(pts > 0)
 			{
 				/* This frame is in the future. Repeat the previous one */
-				_frame_dbuffer_ready(&av->out_video_buffer, 1);
-				av->video_start_time++;
+				_frame_dbuffer_ready(&s->out_video_buffer, 1);
+				s->video_start_time++;
 				pts--;
 			}
 		}
 		
-		oframe = _frame_dbuffer_back_buffer(&av->out_video_buffer);
+		oframe = _frame_dbuffer_back_buffer(&s->out_video_buffer);
 		
 		sws_scale(
-			av->sws_ctx,
+			s->sws_ctx,
 			(uint8_t const * const *) frame->data,
 			frame->linesize,
 			0,
-			av->video_codec_ctx->height,
+			s->video_codec_ctx->height,
 			oframe->data,
 			oframe->linesize
 		);
@@ -601,60 +601,63 @@ static void *_video_scaler_thread(void *arg)
 		/* Done with the frame */
 		av_frame_unref(frame);
 		
-		_frame_dbuffer_ready(&av->out_video_buffer, 0);
-		av->video_start_time++;
+		_frame_dbuffer_ready(&s->out_video_buffer, 0);
+		s->video_start_time++;
 	}
 	
-	_frame_dbuffer_abort(&av->out_video_buffer);
+	_frame_dbuffer_abort(&s->out_video_buffer);
 	
 	//fprintf(stderr, "_video_scaler_thread(): Ending\n");
 	
 	return(NULL);
 }
 
-static av_frame_t _av_ffmpeg_read_video(void *private)
+static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 {
-	av_ffmpeg_t *av = private;
-	av_frame_t v = av_frame_defaults;
-	AVFrame *frame;
+	av_ffmpeg_t *s = ctx;
+	AVFrame *avframe;
 	
-	if(av->video_stream == NULL)
+	*frame = av_frame_default;
+	
+	if(s->video_stream == NULL)
 	{
-		return(v);
+		return(AV_OK);
 	}
 	
-	frame = _frame_dbuffer_flip(&av->out_video_buffer);
-	if(!frame)
+	avframe = _frame_dbuffer_flip(&s->out_video_buffer);
+	if(!avframe)
 	{
 		/* EOF or abort */
-		av->video_eof = 1;
-		return(v);
+		s->video_eof = 1;
+		return(AV_OK);
 	}
 	
 	/* Return image ratio */
-	if(frame->sample_aspect_ratio.den > 0 && frame->height > 0)
+	if(avframe->sample_aspect_ratio.den > 0 && avframe->height > 0)
 	{
-		v.ratio  = (float) frame->sample_aspect_ratio.num / frame->sample_aspect_ratio.den;
-		v.ratio *= (float) frame->width / frame->height;
+		frame->ratio  = (float) avframe->sample_aspect_ratio.num / avframe->sample_aspect_ratio.den;
+		frame->ratio *= (float) avframe->width / avframe->height;
 	}
 	
 	/* Return interlace status */
-	if(frame->interlaced_frame)
+	if(avframe->interlaced_frame)
 	{
-		v.interlaced = frame->top_field_first ? 1 : 2;
+		frame->interlaced = avframe->top_field_first ? 1 : 2;
 	}
 	
 	/* Set the pointer to the framebuffer */
-	v.framebuffer = (uint32_t *) frame->data[0];
+	frame->framebuffer = (uint32_t *) avframe->data[0];
+	frame->width = avframe->width;
+	frame->height = avframe->height;
 	
-	return(v);
+	return(AV_OK);
 }
 
 static void *_audio_decode_thread(void *arg)
 {
 	/* TODO: This function is virtually identical to _video_decode_thread(),
 	 *       they should probably be combined */
-	av_ffmpeg_t *av = (av_ffmpeg_t *) arg;
+	av_ffmpeg_t *s = (av_ffmpeg_t *) arg;
 	AVPacket pkt, *ppkt = NULL;
 	AVFrame *frame;
 	int r;
@@ -664,11 +667,11 @@ static void *_audio_decode_thread(void *arg)
 	frame = av_frame_alloc();
 	
 	/* Fetch audio packets from the queue and decode */
-	while(av->thread_abort == 0)
+	while(s->thread_abort == 0)
 	{
 		if(ppkt == NULL)
 		{
-			r = _packet_queue_read(av, &av->audio_queue, &pkt);
+			r = _packet_queue_read(s, &s->audio_queue, &pkt);
 			if(r == -2)
 			{
 				/* Thread is aborting */
@@ -678,7 +681,7 @@ static void *_audio_decode_thread(void *arg)
 			ppkt = (r >= 0 ? &pkt : NULL);
 		}
 		
-		r = avcodec_send_packet(av->audio_codec_ctx, ppkt);
+		r = avcodec_send_packet(s->audio_codec_ctx, ppkt);
 		
 		if(ppkt != NULL && r != AVERROR(EAGAIN))
 		{
@@ -686,13 +689,13 @@ static void *_audio_decode_thread(void *arg)
 			ppkt = NULL;
 		}
 		
-		r = avcodec_receive_frame(av->audio_codec_ctx, frame);
+		r = avcodec_receive_frame(s->audio_codec_ctx, frame);
 		
 		if(r == 0)
 		{
 			/* We have received a frame! */
-			av_frame_ref(_frame_dbuffer_back_buffer(&av->in_audio_buffer), frame);
-			_frame_dbuffer_ready(&av->in_audio_buffer, 0);
+			av_frame_ref(_frame_dbuffer_back_buffer(&s->in_audio_buffer), frame);
+			_frame_dbuffer_ready(&s->in_audio_buffer, 0);
 		}
 		else if(r != AVERROR(EAGAIN))
 		{
@@ -701,7 +704,7 @@ static void *_audio_decode_thread(void *arg)
 		}
 	}
 	
-	_frame_dbuffer_abort(&av->in_audio_buffer);
+	_frame_dbuffer_abort(&s->in_audio_buffer);
 	
 	av_frame_free(&frame);
 	
@@ -712,7 +715,7 @@ static void *_audio_decode_thread(void *arg)
 
 static void *_audio_scaler_thread(void *arg)
 {
-	av_ffmpeg_t *av = (av_ffmpeg_t *) arg;
+	av_ffmpeg_t *s = (av_ffmpeg_t *) arg;
 	AVFrame *frame, *oframe;
 	int64_t pts, next_pts;
 	uint8_t const *data[AV_NUM_DATA_POINTERS];
@@ -721,15 +724,15 @@ static void *_audio_scaler_thread(void *arg)
 	//fprintf(stderr, "_audio_scaler_thread(): Starting\n");
 	
 	/* Fetch audio frames and pass them through the resampler */
-	while((frame = _frame_dbuffer_flip(&av->in_audio_buffer)) != NULL)
+	while((frame = _frame_dbuffer_flip(&s->in_audio_buffer)) != NULL)
 	{
 		pts = frame->best_effort_timestamp;
 		drop = 0;
 		
 		if(pts != AV_NOPTS_VALUE)
 		{
-			pts      = av_rescale_q(pts, av->audio_stream->time_base, av->audio_time_base);
-			pts     -= av->audio_start_time;
+			pts      = av_rescale_q(pts, s->audio_stream->time_base, s->audio_time_base);
+			pts     -= s->audio_start_time;
 			next_pts = pts + frame->nb_samples;
 			
 			if(next_pts <= 0)
@@ -739,17 +742,17 @@ static void *_audio_scaler_thread(void *arg)
 				continue;
 			}
 			
-			if(pts < -av->allowed_error)
+			if(pts < -s->allowed_error)
 			{
 				/* Trim this frame */
 				drop = -pts;
-				//swr_drop_input(av->swr_ctx, -pts); /* It would be nice if this existed */
+				//swr_drop_input(s->swr_ctx, -pts); /* It would be nice if this existed */
 			}
-			else if(pts > av->allowed_error)
+			else if(pts > s->allowed_error)
 			{
 				/* This frame is in the future. Send silence to fill the gap */
-				r = swr_inject_silence(av->swr_ctx, pts);
-				av->audio_start_time += pts;
+				r = swr_inject_silence(s->swr_ctx, pts);
+				s->audio_start_time += pts;
 			}
 		}
 		
@@ -761,26 +764,26 @@ static void *_audio_scaler_thread(void *arg)
 			data,
 			(const uint8_t **) frame->data,
 			drop,
-			av->audio_codec_ctx->ch_layout.nb_channels,
-			av->audio_codec_ctx->sample_fmt
+			s->audio_codec_ctx->ch_layout.nb_channels,
+			s->audio_codec_ctx->sample_fmt
 		);
 #else
 		_audio_offset(
 			data,
 			(const uint8_t **) frame->data,
 			drop,
-			av->audio_codec_ctx->channels,
-			av->audio_codec_ctx->sample_fmt
+			s->audio_codec_ctx->channels,
+			s->audio_codec_ctx->sample_fmt
 		);
 #endif
 		
 		do
 		{
-			oframe = _frame_dbuffer_back_buffer(&av->out_audio_buffer);
+			oframe = _frame_dbuffer_back_buffer(&s->out_audio_buffer);
 			r = swr_convert(
-				av->swr_ctx,
+				s->swr_ctx,
 				oframe->data,
-				av->out_frame_size,
+				s->out_frame_size,
 				count ? data : NULL,
 				count
 			);
@@ -788,9 +791,9 @@ static void *_audio_scaler_thread(void *arg)
 			
 			oframe->nb_samples = r;
 			
-			_frame_dbuffer_ready(&av->out_audio_buffer, 0);
+			_frame_dbuffer_ready(&s->out_audio_buffer, 0);
 			
-			av->audio_start_time += count;
+			s->audio_start_time += count;
 			count = 0;
 		}
 		while(r > 0);
@@ -798,28 +801,28 @@ static void *_audio_scaler_thread(void *arg)
 		av_frame_unref(frame);
 	}
 	
-	_frame_dbuffer_abort(&av->out_audio_buffer);
+	_frame_dbuffer_abort(&s->out_audio_buffer);
 	
 	//fprintf(stderr, "_audio_scaler_thread(): Ending\n");
 	
 	return(NULL);
 }
 
-static int16_t *_av_ffmpeg_read_audio(void *private, size_t *samples)
+static int16_t *_ffmpeg_read_audio(void *ctx, size_t *samples)
 {
-	av_ffmpeg_t *av = private;
+	av_ffmpeg_t *s = ctx;
 	AVFrame *frame;
 	
-	if(av->audio_stream == NULL)
+	if(s->audio_stream == NULL)
 	{
 		return(NULL);
 	}
 	
-	frame = _frame_dbuffer_flip(&av->out_audio_buffer);
+	frame = _frame_dbuffer_flip(&s->out_audio_buffer);
 	if(!frame)
 	{
 		/* EOF or abort */
-		av->audio_eof = 1;
+		s->audio_eof = 1;
 		return(NULL);
 	}
 	
@@ -828,12 +831,12 @@ static int16_t *_av_ffmpeg_read_audio(void *private, size_t *samples)
 	return((int16_t *) frame->data[0]);
 }
 
-static int _av_ffmpeg_eof(void *private)
+static int _ffmpeg_eof(void *ctx)
 {
-	av_ffmpeg_t *av = private;
+	av_ffmpeg_t *s = ctx;
 	
-	if((av->video_stream && !av->video_eof) ||
-	   (av->audio_stream && !av->audio_eof))
+	if((s->video_stream && !s->video_eof) ||
+	   (s->audio_stream && !s->audio_eof))
 	{
 		return(0);
 	}
@@ -841,67 +844,67 @@ static int _av_ffmpeg_eof(void *private)
 	return(1);
 }
 
-static int _av_ffmpeg_close(void *private)
+static int _ffmpeg_close(void *ctx)
 {
-	av_ffmpeg_t *av = private;
+	av_ffmpeg_t *s = ctx;
 	
-	av->thread_abort = 1;
-	_packet_queue_abort(av, &av->video_queue);
-	_packet_queue_abort(av, &av->audio_queue);
+	s->thread_abort = 1;
+	_packet_queue_abort(s, &s->video_queue);
+	_packet_queue_abort(s, &s->audio_queue);
 	
-	pthread_join(av->input_thread, NULL);
+	pthread_join(s->input_thread, NULL);
 	
-	if(av->video_stream != NULL)
+	if(s->video_stream != NULL)
 	{
-		_frame_dbuffer_abort(&av->in_video_buffer);
-		_frame_dbuffer_abort(&av->out_video_buffer);
+		_frame_dbuffer_abort(&s->in_video_buffer);
+		_frame_dbuffer_abort(&s->out_video_buffer);
 		
-		pthread_join(av->video_decode_thread, NULL);
-		pthread_join(av->video_scaler_thread, NULL);
+		pthread_join(s->video_decode_thread, NULL);
+		pthread_join(s->video_scaler_thread, NULL);
 		
-		_packet_queue_free(av, &av->video_queue);
-		_frame_dbuffer_free(&av->in_video_buffer);
+		_packet_queue_free(s, &s->video_queue);
+		_frame_dbuffer_free(&s->in_video_buffer);
 		
-		av_freep(&av->out_video_buffer.frame[0]->data[0]);
-		av_freep(&av->out_video_buffer.frame[1]->data[0]);
-		_frame_dbuffer_free(&av->out_video_buffer);
+		av_freep(&s->out_video_buffer.frame[0]->data[0]);
+		av_freep(&s->out_video_buffer.frame[1]->data[0]);
+		_frame_dbuffer_free(&s->out_video_buffer);
 		
-		avcodec_free_context(&av->video_codec_ctx);
-		sws_freeContext(av->sws_ctx);
+		avcodec_free_context(&s->video_codec_ctx);
+		sws_freeContext(s->sws_ctx);
 	}
 	
-	if(av->audio_stream != NULL)
+	if(s->audio_stream != NULL)
 	{
-		_frame_dbuffer_abort(&av->in_audio_buffer);
-		_frame_dbuffer_abort(&av->out_audio_buffer);
+		_frame_dbuffer_abort(&s->in_audio_buffer);
+		_frame_dbuffer_abort(&s->out_audio_buffer);
 		
-		pthread_join(av->audio_decode_thread, NULL);
-		pthread_join(av->audio_scaler_thread, NULL);
+		pthread_join(s->audio_decode_thread, NULL);
+		pthread_join(s->audio_scaler_thread, NULL);
 		
-		_packet_queue_free(av, &av->audio_queue);
-		_frame_dbuffer_free(&av->in_audio_buffer);
+		_packet_queue_free(s, &s->audio_queue);
+		_frame_dbuffer_free(&s->in_audio_buffer);
 		
-		//av_freep(&av->out_audio_buffer.frame[0]->data[0]);
-		//av_freep(&av->out_audio_buffer.frame[1]->data[0]);
-		_frame_dbuffer_free(&av->out_audio_buffer);
+		//av_freep(&s->out_audio_buffer.frame[0]->data[0]);
+		//av_freep(&s->out_audio_buffer.frame[1]->data[0]);
+		_frame_dbuffer_free(&s->out_audio_buffer);
 		
-		avcodec_free_context(&av->audio_codec_ctx);
-		swr_free(&av->swr_ctx);
+		avcodec_free_context(&s->audio_codec_ctx);
+		swr_free(&s->swr_ctx);
 	}
 	
-	avformat_close_input(&av->format_ctx);
+	avformat_close_input(&s->format_ctx);
 	
-	pthread_cond_destroy(&av->cond);
-	pthread_mutex_destroy(&av->mutex);
+	pthread_cond_destroy(&s->cond);
+	pthread_mutex_destroy(&s->mutex);
 	
-	free(av);
+	free(s);
 	
 	return(HACKTV_OK);
 }
 
-int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
+int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 {
-	av_ffmpeg_t *av;
+	av_ffmpeg_t *s;
 	const AVInputFormat *fmt = NULL;
 	AVDictionary *opts = NULL;
 	const AVCodec *codec;
@@ -913,8 +916,8 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 	int r;
 	int i;
 	
-	av = calloc(1, sizeof(av_ffmpeg_t));
-	if(!av)
+	s = calloc(1, sizeof(av_ffmpeg_t));
+	if(!s)
 	{
 		return(HACKTV_OUT_OF_MEMORY);
 	}
@@ -936,7 +939,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 	}
 	
 	/* Open the video */
-	if((r = avformat_open_input(&av->format_ctx, input_url, fmt, &opts)) < 0)
+	if((r = avformat_open_input(&s->format_ctx, input_url, fmt, &opts)) < 0)
 	{
 		fprintf(stderr, "Error opening file '%s'\n", input_url);
 		_print_ffmpeg_error(r);
@@ -944,7 +947,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 	}
 	
 	/* Read stream info from the file */
-	if(avformat_find_stream_info(av->format_ctx, NULL) < 0)
+	if(avformat_find_stream_info(s->format_ctx, NULL) < 0)
 	{
 		fprintf(stderr, "Error reading stream information from file\n");
 		return(HACKTV_ERROR);
@@ -952,68 +955,67 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 	
 	/* Dump some useful information to stderr */
 	fprintf(stderr, "Opening '%s'...\n", input_url);
-	av_dump_format(av->format_ctx, 0, input_url, 0);
+	av_dump_format(s->format_ctx, 0, input_url, 0);
 	
 	/* Find the first video and audio streams */
 	/* TODO: Allow the user to select streams by number or name */
-	av->video_stream = NULL;
-	av->audio_stream = NULL;
+	s->video_stream = NULL;
+	s->audio_stream = NULL;
 	
-	for(i = 0; i < av->format_ctx->nb_streams; i++)
+	for(i = 0; i < s->format_ctx->nb_streams; i++)
 	{
-		if(av->video_stream == NULL && av->format_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+		if(s->video_stream == NULL && s->format_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
 		{
-			av->video_stream = av->format_ctx->streams[i];
+			s->video_stream = s->format_ctx->streams[i];
 		}
 		
-		if(s->audio && av->audio_stream == NULL && av->format_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+		if(av->sample_rate.num && s->audio_stream == NULL && s->format_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
 		{
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-			if(av->format_ctx->streams[i]->codecpar->ch_layout.nb_channels <= 0) continue;
+			if(s->format_ctx->streams[i]->codecpar->ch_layout.nb_channels <= 0) continue;
 #else
-			if(av->format_ctx->streams[i]->codecpar->channels <= 0) continue;
+			if(s->format_ctx->streams[i]->codecpar->channels <= 0) continue;
 #endif
-			av->audio_stream = av->format_ctx->streams[i];
+			s->audio_stream = s->format_ctx->streams[i];
 		}
 	}
 	
 	/* At minimum we need either a video or audio stream */
-	if(av->video_stream == NULL && av->audio_stream == NULL)
+	if(s->video_stream == NULL && s->audio_stream == NULL)
 	{
 		fprintf(stderr, "No video or audio streams found\n");
 		return(HACKTV_ERROR);
 	}
 	
-	if(av->video_stream != NULL)
+	if(s->video_stream != NULL)
 	{
-		fprintf(stderr, "Using video stream %d.\n", av->video_stream->index);
+		fprintf(stderr, "Using video stream %d.\n", s->video_stream->index);
 		
 		/* Create the video's time_base using the current TV mode's frames per second.
 		 * Numerator and denominator are swapped as ffmpeg uses seconds per frame. */
-		av->video_time_base.num = s->conf.frame_rate.den;
-		av->video_time_base.den = s->conf.frame_rate.num;
-		if(s->conf.interlace) av->video_time_base.den *= 2;
+		s->video_time_base.num = av->frame_rate.den;
+		s->video_time_base.den = av->frame_rate.num;
 		
 		/* Use the video's start time as the reference */
-		time_base = av->video_stream->time_base;
-		start_time = av->video_stream->start_time;
+		time_base = s->video_stream->time_base;
+		start_time = s->video_stream->start_time;
 		
 		/* Get a pointer to the codec context for the video stream */
-		av->video_codec_ctx = avcodec_alloc_context3(NULL);
-		if(!av->video_codec_ctx)
+		s->video_codec_ctx = avcodec_alloc_context3(NULL);
+		if(!s->video_codec_ctx)
 		{
 			return(HACKTV_OUT_OF_MEMORY);
 		}
 		
-		if(avcodec_parameters_to_context(av->video_codec_ctx, av->video_stream->codecpar) < 0)
+		if(avcodec_parameters_to_context(s->video_codec_ctx, s->video_stream->codecpar) < 0)
 		{
 			return(HACKTV_ERROR);
 		}
 		
-		av->video_codec_ctx->thread_count = 0; /* Let ffmpeg decide number of threads */
+		s->video_codec_ctx->thread_count = 0; /* Let ffmpeg decide number of threads */
 		
 		/* Find the decoder for the video stream */
-		codec = avcodec_find_decoder(av->video_codec_ctx->codec_id);
+		codec = avcodec_find_decoder(s->video_codec_ctx->codec_id);
 		if(codec == NULL)
 		{
 			fprintf(stderr, "Unsupported video codec\n");
@@ -1021,19 +1023,19 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 		}
 		
 		/* Open video codec */
-		if(avcodec_open2(av->video_codec_ctx, codec, NULL) < 0)
+		if(avcodec_open2(s->video_codec_ctx, codec, NULL) < 0)
 		{
 			fprintf(stderr, "Error opening video codec\n");
 			return(HACKTV_ERROR);
 		}
 		
 		/* Initialise SWS context for software scaling */
-		av->sws_ctx = sws_getContext(
-			av->video_codec_ctx->width,
-			av->video_codec_ctx->height,
-			av->video_codec_ctx->pix_fmt,
-			s->active_width,
-			s->conf.active_lines,
+		s->sws_ctx = sws_getContext(
+			s->video_codec_ctx->width,
+			s->video_codec_ctx->height,
+			s->video_codec_ctx->pix_fmt,
+			av->width,
+			av->height,
 			AV_PIX_FMT_RGB32,
 			SWS_BICUBIC,
 			NULL,
@@ -1041,38 +1043,38 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 			NULL
 		);
 		
-		if(!av->sws_ctx)
+		if(!s->sws_ctx)
 		{
 			return(HACKTV_OUT_OF_MEMORY);
 		}
 		
-		av->video_eof = 0;
+		s->video_eof = 0;
 	}
 	else
 	{
 		fprintf(stderr, "No video streams found.\n");
 	}
 	
-	if(av->audio_stream != NULL)
+	if(s->audio_stream != NULL)
 	{
-		fprintf(stderr, "Using audio stream %d.\n", av->audio_stream->index);
+		fprintf(stderr, "Using audio stream %d.\n", s->audio_stream->index);
 		
 		/* Get a pointer to the codec context for the video stream */
-		av->audio_codec_ctx = avcodec_alloc_context3(NULL);
-		if(!av->audio_codec_ctx)
+		s->audio_codec_ctx = avcodec_alloc_context3(NULL);
+		if(!s->audio_codec_ctx)
 		{
 			return(HACKTV_ERROR);
 		}
 		
-		if(avcodec_parameters_to_context(av->audio_codec_ctx, av->audio_stream->codecpar) < 0)
+		if(avcodec_parameters_to_context(s->audio_codec_ctx, s->audio_stream->codecpar) < 0)
 		{
 			return(HACKTV_ERROR);
 		}
 		
-		av->audio_codec_ctx->thread_count = 0; /* Let ffmpeg decide number of threads */
+		s->audio_codec_ctx->thread_count = 0; /* Let ffmpeg decide number of threads */
 		
 		/* Find the decoder for the audio stream */
-		codec = avcodec_find_decoder(av->audio_codec_ctx->codec_id);
+		codec = avcodec_find_decoder(s->audio_codec_ctx->codec_id);
 		if(codec == NULL)
 		{
 			fprintf(stderr, "Unsupported audio codec\n");
@@ -1080,64 +1082,64 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 		}
 		
 		/* Open audio codec */
-		if(avcodec_open2(av->audio_codec_ctx, codec, NULL) < 0)
+		if(avcodec_open2(s->audio_codec_ctx, codec, NULL) < 0)
 		{
 			fprintf(stderr, "Error opening audio codec\n");
 			return(HACKTV_ERROR);
 		}
 		
 		/* Create the audio time_base using the source sample rate */
-		av->audio_time_base.num = 1;
-		av->audio_time_base.den = av->audio_codec_ctx->sample_rate;
+		s->audio_time_base.num = 1;
+		s->audio_time_base.den = s->audio_codec_ctx->sample_rate;
 		
 		/* Use the audio's start time as the reference if no video was detected */
-		if(av->video_stream == NULL)
+		if(s->video_stream == NULL)
 		{
-			time_base = av->audio_stream->time_base;
-			start_time = av->audio_stream->start_time;
+			time_base = s->audio_stream->time_base;
+			start_time = s->audio_stream->start_time;
 		}
 		
 		/* Prepare the resampler */
-		av->swr_ctx = swr_alloc();
-		if(!av->swr_ctx)
+		s->swr_ctx = swr_alloc();
+		if(!s->swr_ctx)
 		{
 			return(HACKTV_OUT_OF_MEMORY);
 		}
 		
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-		if(!av->audio_codec_ctx->ch_layout.nb_channels)
+		if(!s->audio_codec_ctx->ch_layout.nb_channels)
 		{
 			/* Set the default layout for codecs that don't specify any */
-			av_channel_layout_default(&default_ch_layout, av->audio_codec_ctx->ch_layout.nb_channels);
-			av->audio_codec_ctx->ch_layout = default_ch_layout;
+			av_channel_layout_default(&default_ch_layout, s->audio_codec_ctx->ch_layout.nb_channels);
+			s->audio_codec_ctx->ch_layout = default_ch_layout;
 		}
 		
-		av_opt_set_int(av->swr_ctx, "in_channel_layout",    av->audio_codec_ctx->ch_layout.u.mask, 0);
-		av_opt_set_int(av->swr_ctx, "in_sample_rate",       av->audio_codec_ctx->sample_rate, 0);
-		av_opt_set_sample_fmt(av->swr_ctx, "in_sample_fmt", av->audio_codec_ctx->sample_fmt, 0);
+		av_opt_set_int(s->swr_ctx, "in_channel_layout",    s->audio_codec_ctx->ch_layout.u.mask, 0);
+		av_opt_set_int(s->swr_ctx, "in_sample_rate",       s->audio_codec_ctx->sample_rate, 0);
+		av_opt_set_sample_fmt(s->swr_ctx, "in_sample_fmt", s->audio_codec_ctx->sample_fmt, 0);
 #else
-		if(!av->audio_codec_ctx->channel_layout)
+		if(!s->audio_codec_ctx->channel_layout)
 		{
 			/* Set the default layout for codecs that don't specify any */
-			av->audio_codec_ctx->channel_layout = av_get_default_channel_layout(av->audio_codec_ctx->channels);
+			s->audio_codec_ctx->channel_layout = av_get_default_channel_layout(s->audio_codec_ctx->channels);
 		}
 		
-		av_opt_set_int(av->swr_ctx, "in_channel_layout",    av->audio_codec_ctx->channel_layout, 0);
-		av_opt_set_int(av->swr_ctx, "in_sample_rate",       av->audio_codec_ctx->sample_rate, 0);
-		av_opt_set_sample_fmt(av->swr_ctx, "in_sample_fmt", av->audio_codec_ctx->sample_fmt, 0);
+		av_opt_set_int(s->swr_ctx, "in_channel_layout",    s->audio_codec_ctx->channel_layout, 0);
+		av_opt_set_int(s->swr_ctx, "in_sample_rate",       s->audio_codec_ctx->sample_rate, 0);
+		av_opt_set_sample_fmt(s->swr_ctx, "in_sample_fmt", s->audio_codec_ctx->sample_fmt, 0);
 #endif
 		
-		av_opt_set_int(av->swr_ctx, "out_channel_layout",    AV_CH_LAYOUT_STEREO, 0);
-		av_opt_set_int(av->swr_ctx, "out_sample_rate",       HACKTV_AUDIO_SAMPLE_RATE, 0);
-		av_opt_set_sample_fmt(av->swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
+		av_opt_set_int(s->swr_ctx, "out_channel_layout",    AV_CH_LAYOUT_STEREO, 0);
+		av_opt_set_int(s->swr_ctx, "out_sample_rate",       av->sample_rate.num / av->sample_rate.den, 0);
+		av_opt_set_sample_fmt(s->swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
 		
-		if(swr_init(av->swr_ctx) < 0)
+		if(swr_init(s->swr_ctx) < 0)
 		{
 			fprintf(stderr, "Failed to initialise the resampling context\n");
 			return(HACKTV_ERROR);
 		}
 		
-		av->audio_eof = 0;
+		s->audio_eof = 0;
 	}
 	else
 	{
@@ -1150,57 +1152,57 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 	}
 	
 	/* Calculate the start time for each stream */
-	if(av->video_stream != NULL)
+	if(s->video_stream != NULL)
 	{
-		av->video_start_time = av_rescale_q(start_time, time_base, av->video_time_base);
+		s->video_start_time = av_rescale_q(start_time, time_base, s->video_time_base);
 	}
 	
-	if(av->audio_stream != NULL)
+	if(s->audio_stream != NULL)
 	{
-		av->audio_start_time = av_rescale_q(start_time, time_base, av->audio_time_base);
+		s->audio_start_time = av_rescale_q(start_time, time_base, s->audio_time_base);
 	}
 	
 	/* Register the callback functions */
-	s->av_private = av;
-	s->av_read_video = _av_ffmpeg_read_video;
-	s->av_read_audio = _av_ffmpeg_read_audio;
-	s->av_eof = _av_ffmpeg_eof;
-	s->av_close = _av_ffmpeg_close;
+	av->av_source_ctx = s;
+	av->read_video = _ffmpeg_read_video;
+	av->read_audio = _ffmpeg_read_audio;
+	av->eof = _ffmpeg_eof;
+	av->close = _ffmpeg_close;
 	
 	/* Start the threads */
-	av->thread_abort = 0;
-	pthread_mutex_init(&av->mutex, NULL);
-	pthread_cond_init(&av->cond, NULL);
-	_packet_queue_init(av, &av->video_queue);
-	_packet_queue_init(av, &av->audio_queue);
+	s->thread_abort = 0;
+	pthread_mutex_init(&s->mutex, NULL);
+	pthread_cond_init(&s->cond, NULL);
+	_packet_queue_init(s, &s->video_queue);
+	_packet_queue_init(s, &s->audio_queue);
 	
-	if(av->video_stream != NULL)
+	if(s->video_stream != NULL)
 	{
-		_frame_dbuffer_init(&av->in_video_buffer);
-		_frame_dbuffer_init(&av->out_video_buffer);
+		_frame_dbuffer_init(&s->in_video_buffer);
+		_frame_dbuffer_init(&s->out_video_buffer);
 		
 		/* Allocate memory for the output frame buffers */
 		for(i = 0; i < 2; i++)
 		{
-			av->out_video_buffer.frame[i]->width = s->active_width;
-			av->out_video_buffer.frame[i]->height = s->conf.active_lines;
+			s->out_video_buffer.frame[i]->width = av->width;
+			s->out_video_buffer.frame[i]->height = av->height;
 			
 			r = av_image_alloc(
-				av->out_video_buffer.frame[i]->data,
-				av->out_video_buffer.frame[i]->linesize,
-				s->active_width, s->conf.active_lines,
+				s->out_video_buffer.frame[i]->data,
+				s->out_video_buffer.frame[i]->linesize,
+				av->width, av->height,
 				AV_PIX_FMT_RGB32, 1
 			);
 		}
 		
-		r = pthread_create(&av->video_decode_thread, NULL, &_video_decode_thread, (void *) av);
+		r = pthread_create(&s->video_decode_thread, NULL, &_video_decode_thread, (void *) s);
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting video decoder thread.\n");
 			return(HACKTV_ERROR);
 		}
 		
-		r = pthread_create(&av->video_scaler_thread, NULL, &_video_scaler_thread, (void *) av);
+		r = pthread_create(&s->video_scaler_thread, NULL, &_video_scaler_thread, (void *) s);
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting video scaler thread.\n");
@@ -1208,39 +1210,39 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 		}
 	}
 	
-	if(av->audio_stream != NULL)
+	if(s->audio_stream != NULL)
 	{
-		_frame_dbuffer_init(&av->in_audio_buffer);
-		_frame_dbuffer_init(&av->out_audio_buffer);
+		_frame_dbuffer_init(&s->in_audio_buffer);
+		_frame_dbuffer_init(&s->out_audio_buffer);
 		
 		/* Calculate the number of samples needed for output */
-		av->out_frame_size = av_rescale_rnd(
-			av->audio_codec_ctx->frame_size, /* Can this be trusted? */
-			HACKTV_AUDIO_SAMPLE_RATE,
-			av->audio_codec_ctx->sample_rate,
+		s->out_frame_size = av_rescale_q_rnd(
+			s->audio_codec_ctx->frame_size, /* Can this be trusted? */
+			(AVRational) { av->sample_rate.num, av->sample_rate.den },
+			(AVRational) { s->audio_codec_ctx->sample_rate, 1 },
 			AV_ROUND_UP
 		);
 		
-		if(av->out_frame_size <= 0)
+		if(s->out_frame_size <= 0)
 		{
-			av->out_frame_size = HACKTV_AUDIO_SAMPLE_RATE;
+			s->out_frame_size = av->sample_rate.num / av->sample_rate.den;
 		}
 		
 		/* Calculate the allowed error in input samples, +/- 20ms */
-		av->allowed_error = av_rescale_q(AV_TIME_BASE * 0.020, AV_TIME_BASE_Q, av->audio_time_base);
+		s->allowed_error = av_rescale_q(AV_TIME_BASE * 0.020, AV_TIME_BASE_Q, s->audio_time_base);
 		
 		for(i = 0; i < 2; i++)
 		{
-			av->out_audio_buffer.frame[i]->format = AV_SAMPLE_FMT_S16;
+			s->out_audio_buffer.frame[i]->format = AV_SAMPLE_FMT_S16;
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-			av->out_audio_buffer.frame[i]->ch_layout.nb_channels = AV_CH_LAYOUT_STEREO;
+			s->out_audio_buffer.frame[i]->ch_layout.nb_channels = AV_CH_LAYOUT_STEREO;
 #else
-			av->out_audio_buffer.frame[i]->channel_layout = AV_CH_LAYOUT_STEREO;
+			s->out_audio_buffer.frame[i]->channel_layout = AV_CH_LAYOUT_STEREO;
 #endif
-			av->out_audio_buffer.frame[i]->sample_rate = HACKTV_AUDIO_SAMPLE_RATE;
-			av->out_audio_buffer.frame[i]->nb_samples = av->out_frame_size;
+			s->out_audio_buffer.frame[i]->sample_rate = av->sample_rate.num / av->sample_rate.den;
+			s->out_audio_buffer.frame[i]->nb_samples = s->out_frame_size;
 			
-			r = av_frame_get_buffer(av->out_audio_buffer.frame[i], 0);
+			r = av_frame_get_buffer(s->out_audio_buffer.frame[i], 0);
 			if(r < 0)
 			{
 				fprintf(stderr, "Error allocating output audio buffer %d\n", i);
@@ -1248,14 +1250,14 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 			}
 		}
 		
-		r = pthread_create(&av->audio_decode_thread, NULL, &_audio_decode_thread, (void *) av);
+		r = pthread_create(&s->audio_decode_thread, NULL, &_audio_decode_thread, (void *) s);
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting audio decoder thread.\n");
 			return(HACKTV_ERROR);
 		}
 		
-		r = pthread_create(&av->audio_scaler_thread, NULL, &_audio_scaler_thread, (void *) av);
+		r = pthread_create(&s->audio_scaler_thread, NULL, &_audio_scaler_thread, (void *) s);
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting audio resampler thread.\n");
@@ -1263,7 +1265,7 @@ int av_ffmpeg_open(vid_t *s, char *input_url, char *format, char *options)
 		}
 	}
 	
-	r = pthread_create(&av->input_thread, NULL, &_input_thread, (void *) av);
+	r = pthread_create(&s->input_thread, NULL, &_input_thread, (void *) s);
 	if(r != 0)
 	{
 		fprintf(stderr, "Error starting input thread.\n");

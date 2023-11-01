@@ -19,6 +19,7 @@
 #define _VIDEO_H
 
 #include <stdint.h>
+#include "av.h"
 #include "nicam728.h"
 #include "dance.h"
 #include "fir.h"
@@ -73,29 +74,6 @@ typedef struct vid_t vid_t;
 #define VID_50US 1
 #define VID_75US 2
 #define VID_J17  3
-
-/* AV source types and function prototypes */
-typedef struct {
-	
-	/* Pointer to the 32-bit RGBx framebuffer, or NULL */
-	uint32_t *framebuffer;
-	
-	/* The image aspect ratio */
-	float ratio;
-	
-	/* Interlace flag */
-	int interlaced;
-	
-} av_frame_t;
-
-extern const av_frame_t av_frame_defaults;
-
-typedef av_frame_t (*vid_read_video_t)(void *private);
-typedef int16_t *(*vid_read_audio_t)(void *private, size_t *samples);
-typedef int (*vid_eof_t)(void *private);
-typedef int (*vid_close_t)(void *private);
-
-
 
 /* RF modulation */
 
@@ -334,12 +312,8 @@ struct _lineprocess_t {
 
 struct vid_t {
 	
-	/* Source interface */
-	void *av_private;
-	vid_read_video_t av_read_video;
-	vid_read_audio_t av_read_audio;
-	vid_eof_t av_eof;
-	vid_close_t av_close;
+	/* AV source */
+	av_t av;
 	
 	/* Signal configuration */
 	vid_config_t conf;
@@ -383,7 +357,7 @@ struct vid_t {
 	vbidata_lut_t *fsc_syncs;
 	
 	/* Video state */
-	uint32_t *framebuffer;
+	av_frame_t vframe;
 	
 	/* The frame and line number being rendered next */
 	int bframe;
@@ -392,12 +366,6 @@ struct vid_t {
 	/* The frame and line number returned by vid_next_line() */
 	int frame;
 	int line;
-	
-	/* Current frame's aspect ratio */
-	float ratio;
-	
-	/* Current frame's interlaced status */
-	int interlaced;
 	
 	/* Teletext state */
 	tt_t tt;

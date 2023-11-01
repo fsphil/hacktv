@@ -1466,7 +1466,7 @@ static int _line_625(vid_t *s, int frame, int line, uint8_t *data, int x)
 	b  = s->mac.vsam << 5;
 	b |= 1 << 4;      /* Reserved, always 1 */
 	//b |= 1 << 3;    /* Aspect ratio: 0: 16:9, 1: 4:3 */
-	b |= (s->ratio <= (14.0 / 9.0) ? 1 : 0) << 3;
+	b |= (s->vframe.ratio <= (14.0 / 9.0) ? 1 : 0) << 3;
 	b |= 1 << 2;      /* For satellite broadcast, this bit has no significance */
 	b |= 1 << 1;      /* Sound/data multiplex format: 0: no or incompatible sound, 1: compatible sound */
 	b |= 1 << 0;      /* Video configuration: 0: no or incompatible video, 1: compatible video */
@@ -1626,7 +1626,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		_prbs1_reset(&s->mac, l->frame - 1);
 		
 		/* Update the aspect ratio flag */
-		s->mac.ratio = (s->ratio <= (14.0 / 9.0) ? 0 : 1);
+		s->mac.ratio = (s->vframe.ratio <= (14.0 / 9.0) ? 0 : 1);
 		
 		/* Push the DG0 and DG3 SI packets every four frames.
 		 * DG0 is sent on both subframes for D-MAC. */
@@ -1747,14 +1747,14 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	/* Shift the lines by one if the source
 	 * video has the bottom field first */
-	if(s->interlaced == 2) y += 1;
+	if(s->vframe.interlaced == 2) y += 1;
 	
 	if(y < 0 || y >= s->conf.active_lines) y = -1;
 	
 	/* Render the luminance */
 	if(y >= 0)
 	{
-		uint32_t *px = (s->framebuffer != NULL ? &s->framebuffer[y * s->active_width] : NULL);
+		uint32_t *px = (s->vframe.framebuffer != NULL ? &s->vframe.framebuffer[y * s->vframe.width] : NULL);
 		
 		for(x = s->active_left; x < s->active_left + s->active_width; x++)
 		{
@@ -1768,7 +1768,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	if(y >= 0)
 	{
-		uint32_t *px = (s->framebuffer != NULL ? &s->framebuffer[y * s->active_width] : NULL);
+		uint32_t *px = (s->vframe.framebuffer != NULL ? &s->vframe.framebuffer[y * s->vframe.width] : NULL);
 		
 		for(x = s->mac.chrominance_left; x < s->mac.chrominance_left + s->mac.chrominance_width; x++)
 		{
