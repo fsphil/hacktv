@@ -1754,12 +1754,19 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	/* Render the luminance */
 	if(y >= 0)
 	{
-		uint32_t *px = (s->vframe.framebuffer != NULL ? &s->vframe.framebuffer[y * s->vframe.width] : NULL);
+		uint32_t rgb = 0x000000;
+		uint32_t *px = &rgb;
+		int stride = 0;
 		
-		for(x = s->active_left; x < s->active_left + s->active_width; x++)
+		if(s->vframe.framebuffer != NULL)
 		{
-			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
-			l->output[x * 2] = s->yiq_level_lookup[rgb].y;
+			px = &s->vframe.framebuffer[y * s->vframe.line_stride];
+			stride = s->vframe.pixel_stride;
+		}
+		
+		for(x = s->active_left; x < s->active_left + s->active_width; x++, px += stride)
+		{
+			l->output[x * 2] = s->yiq_level_lookup[*px & 0xFFFFFF].y;
 		}
 	}
 	
@@ -1768,13 +1775,19 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	if(y >= 0)
 	{
-		uint32_t *px = (s->vframe.framebuffer != NULL ? &s->vframe.framebuffer[y * s->vframe.width] : NULL);
+		uint32_t rgb = 0x000000;
+		uint32_t *px = &rgb;
+		int stride = 0;
 		
-		for(x = s->mac.chrominance_left; x < s->mac.chrominance_left + s->mac.chrominance_width; x++)
+		if(s->vframe.framebuffer != NULL)
 		{
-			uint32_t rgb = (px != NULL ? *(px++) & 0xFFFFFF : 0x000000);
-			l->output[x * 2] += (l->line & 1 ? s->yiq_level_lookup[rgb].i : s->yiq_level_lookup[rgb].q);
-			if(px != NULL) px++;
+			px = &s->vframe.framebuffer[y * s->vframe.line_stride];
+			stride = s->vframe.pixel_stride * 2;
+		}
+		
+		for(x = s->mac.chrominance_left; x < s->mac.chrominance_left + s->mac.chrominance_width; x++, px += stride)
+		{
+			l->output[x * 2] += (l->line & 1 ? s->yiq_level_lookup[*px & 0xFFFFFF].i : s->yiq_level_lookup[*px & 0xFFFFFF].q);
 		}
 	}
 	

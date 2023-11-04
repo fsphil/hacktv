@@ -34,6 +34,8 @@ typedef struct {
 	
 	/* 32-bit RGBx framebuffer */
 	uint32_t *framebuffer;
+	int pixel_stride;
+	int line_stride;
 	
 	/* The image aspect ratio */
 	float ratio;
@@ -80,6 +82,10 @@ extern int av_read_video(av_t *s, av_frame_t *frame);
 extern int16_t *av_read_audio(av_t *s, size_t *samples);
 extern int av_eof(av_t *s);
 extern int av_close(av_t *s);
+
+extern void av_hflip_frame(av_frame_t *frame);
+extern void av_vflip_frame(av_frame_t *frame);
+extern void av_rotate_frame(av_frame_t *frame, int a);
 
 #include "av_test.h"
 #include "av_ffmpeg.h"

@@ -48,9 +48,11 @@ static int _test_read_video(void *ctx, av_frame_t *frame)
 	av_test_t *s = ctx;
 	
 	*frame = av_frame_default;
-	frame->framebuffer = s->video;
 	frame->width = s->width;
 	frame->height = s->height;
+	frame->framebuffer = s->video;
+	frame->pixel_stride = 1;
+	frame->line_stride = frame->width;
 	
 	return(AV_OK);
 }

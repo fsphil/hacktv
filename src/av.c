@@ -22,6 +22,8 @@ const av_frame_t av_frame_default = {
 	.width = 0,
 	.height = 0,
 	.framebuffer = NULL,
+	.pixel_stride = 0,
+	.line_stride = 0,
 	.ratio = 4.0 / 3.0,
 	.interlaced = 0,
 };
@@ -77,5 +79,46 @@ int av_close(av_t *s)
 	s->close = NULL;
 	
 	return(r);
+}
+
+void av_hflip_frame(av_frame_t *frame)
+{
+	frame->framebuffer += (frame->width - 1) * frame->pixel_stride;
+	frame->pixel_stride = -frame->pixel_stride;
+}
+
+void av_vflip_frame(av_frame_t *frame)
+{
+	frame->framebuffer += (frame->height - 1) * frame->line_stride;
+	frame->line_stride = -frame->line_stride;
+}
+
+void av_rotate_frame(av_frame_t *frame, int a)
+{
+	a = a % 4;
+	
+	if(a == 1 || a == 3)
+	{
+		int i;
+		
+		/* Rotate the frame 90 degrees clockwise */
+		
+		frame->framebuffer += (frame->height - 1) * frame->line_stride;
+		
+		i = frame->width;
+		frame->width = frame->height;
+		frame->height = i;
+		
+		i = frame->pixel_stride;
+		frame->pixel_stride = -frame->line_stride;
+		frame->line_stride = i;
+        }
+	
+	if(a == 2 || a == 3)
+	{
+		/* Rotate the frame 180 degrees */
+		av_hflip_frame(frame);
+		av_vflip_frame(frame);
+	}
 }
 

@@ -646,9 +646,11 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	}
 	
 	/* Set the pointer to the framebuffer */
-	frame->framebuffer = (uint32_t *) avframe->data[0];
 	frame->width = avframe->width;
 	frame->height = avframe->height;
+	frame->framebuffer = (uint32_t *) avframe->data[0];
+	frame->pixel_stride = 1;
+	frame->line_stride = frame->width;
 	
 	return(AV_OK);
 }

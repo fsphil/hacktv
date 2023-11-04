@@ -2871,24 +2871,24 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	/* Render the active video if required */
 	if(seq[2] == 'a' || seq[3] == 'a')
 	{
-		uint32_t rgb;
-		uint32_t *prgb;
+		uint32_t rgb = 0x000000;
+		uint32_t *prgb = &rgb;
+		int stride = 0;
 		int16_t *o;
 		
 		/* Calculate active video portion of this line */
 		int al = (seq[2] == 'a' ? s->active_left : (seq[3] == 'a' ? s->half_width : -1));
 		int ar = (seq[3] == 'a' ? s->active_left + s->active_width : (seq[2] == 'a' ? s->half_width : -1));
 		
-		/* Render the active video */
-		prgb = (s->vframe.framebuffer != NULL && vy != -1 ? &s->vframe.framebuffer[vy * s->vframe.width + al - s->active_left] : NULL);
-		rgb = 0x000000;
-		
-		for(x = al, o = &l->output[al * 2]; x < ar; x++, o += 2)
+		if(s->vframe.framebuffer && vy >= 0)
 		{
-			if(prgb)
-			{
-				rgb = *(prgb++) & 0xFFFFFF;
-			}
+			prgb = &s->vframe.framebuffer[vy * s->vframe.line_stride + (al - s->active_left) * s->vframe.pixel_stride];
+			stride = s->vframe.pixel_stride;
+		}
+		
+		for(x = al, o = &l->output[al * 2]; x < ar; x++, o += 2, prgb += stride)
+		{
+			rgb = *prgb & 0xFFFFFF;
 			
 			if(s->conf.colour_mode == VID_APOLLO_FSC ||
 			   s->conf.colour_mode == VID_CBS_FSC)
@@ -2984,24 +2984,52 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		}
 		else if(seq[2] == 'a' || seq[3] == 'a')
 		{
-			uint32_t rgb;
+			uint32_t rgb = 0x000000;
+			uint32_t *prgb = &rgb;
+			int stride = 0;
 			
-			for(x = 0; x < s->width; x++)
+			if(s->vframe.framebuffer && vy >= 0)
 			{
-				rgb = 0x000000;
+				prgb = &s->vframe.framebuffer[vy * s->vframe.line_stride];
+				stride = s->vframe.pixel_stride;
+			}
+			
+			if(((l->frame * s->conf.lines) + l->line) & 1)
+			{
+				/* D'r */
 				
-				if(x >= s->active_left && x < s->active_left + s->active_width)
+				for(x = 0; x < s->active_left; x++)
 				{
-					rgb = s->vframe.framebuffer != NULL && vy >= 0 ? s->vframe.framebuffer[vy * s->vframe.width + x - s->active_left] & 0xFFFFFF : 0x000000;
-                                }
-				
-				if(((l->frame * s->conf.lines) + l->line) & 1)
-				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[rgb].q; // D'r
+					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].q;
 				}
-				else
+				
+				for(; x < s->active_left + s->active_width; x++, prgb += stride)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[rgb].i; // D'b
+					l->output[x * 2 + 1] = s->yiq_level_lookup[*prgb & 0xFFFFFF].q;
+				}
+				
+				for(; x < s->width; x++)
+				{
+					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].q;
+				}
+			}
+			else
+			{
+				/* D'b */
+				
+				for(x = 0; x < s->active_left; x++)
+				{
+					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].i;
+				}
+				
+				for(; x < s->active_left + s->active_width; x++, prgb += stride)
+				{
+					l->output[x * 2 + 1] = s->yiq_level_lookup[*prgb & 0xFFFFFF].i;
+				}
+				
+				for(; x < s->width; x++)
+				{
+					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].i;
 				}
 			}
 			
@@ -3825,6 +3853,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		.width = s->active_width,
 		.height = s->conf.active_lines,
 		.framebuffer = NULL,
+		.pixel_stride = 0,
+		.line_stride = 0,
 		.ratio = 4.0 / 3.0,
 		.interlaced = 0,
 	};
