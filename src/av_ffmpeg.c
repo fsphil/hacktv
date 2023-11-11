@@ -44,6 +44,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/time.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/cpu.h>
 #include "hacktv.h"
 
 /* Maximum length of the packet queue */
@@ -650,7 +651,7 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	frame->height = avframe->height;
 	frame->framebuffer = (uint32_t *) avframe->data[0];
 	frame->pixel_stride = 1;
-	frame->line_stride = frame->width;
+	frame->line_stride = avframe->linesize[0] / sizeof(uint32_t);
 	
 	return(AV_OK);
 }
@@ -1193,7 +1194,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 				s->out_video_buffer.frame[i]->data,
 				s->out_video_buffer.frame[i]->linesize,
 				av->width, av->height,
-				AV_PIX_FMT_RGB32, 1
+				AV_PIX_FMT_RGB32, av_cpu_max_align()
 			);
 		}
 		
