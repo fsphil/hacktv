@@ -24,7 +24,7 @@ const av_frame_t av_frame_default = {
 	.framebuffer = NULL,
 	.pixel_stride = 0,
 	.line_stride = 0,
-	.ratio = 4.0 / 3.0,
+	.aspect = { 4, 3 },
 	.interlaced = 0,
 };
 

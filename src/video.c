@@ -3855,7 +3855,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		.framebuffer = NULL,
 		.pixel_stride = 0,
 		.line_stride = 0,
-		.ratio = 4.0 / 3.0,
+		.aspect = { 4, 3 },
 		.interlaced = 0,
 	};
 	s->olines = 1;

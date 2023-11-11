@@ -38,7 +38,7 @@ typedef struct {
 	int line_stride;
 	
 	/* The image aspect ratio */
-	float ratio;
+	rational_t aspect;
 	
 	/* Interlace flag */
 	int interlaced;

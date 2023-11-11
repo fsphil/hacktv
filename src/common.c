@@ -51,6 +51,12 @@ rational_t rational_div(rational_t a, rational_t b)
 	return((rational_t) { c / e, d / e });
 }
 
+int rational_cmp(rational_t a, rational_t b)
+{
+	int64_t c = (int64_t) a.num * b.den - (int64_t) a.den * b.num;
+	return(c < 0 ? -1 : (c > 0 ? 1 : 0));
+}
+
 cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level)
 {
 	cint16_t *lut;
