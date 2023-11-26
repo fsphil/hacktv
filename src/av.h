@@ -37,15 +37,13 @@ typedef struct {
 	int pixel_stride;
 	int line_stride;
 	
-	/* The image aspect ratio */
-	rational_t aspect;
+	/* The pixel aspect ratio */
+	rational_t pixel_aspect_ratio;
 	
 	/* Interlace flag */
 	int interlaced;
 	
 } av_frame_t;
-
-extern const av_frame_t av_frame_default;
 
 typedef int (*av_read_video_t)(void *ctx, av_frame_t *frame);
 typedef int16_t *(*av_read_audio_t)(void *ctx, size_t *samples);
@@ -78,10 +76,15 @@ typedef struct {
 	
 } av_t;
 
+extern void av_frame_init(av_frame_t *frame, int width, int height, uint32_t *framebuffer, int pstride, int lstride);
+
 extern int av_read_video(av_t *s, av_frame_t *frame);
 extern int16_t *av_read_audio(av_t *s, size_t *samples);
 extern int av_eof(av_t *s);
 extern int av_close(av_t *s);
+
+extern rational_t av_display_aspect_ratio(av_frame_t *frame);
+extern void av_set_display_aspect_ratio(av_frame_t *frame, rational_t display_aspect_ratio);
 
 extern void av_hflip_frame(av_frame_t *frame);
 extern void av_vflip_frame(av_frame_t *frame);

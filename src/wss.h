@@ -24,6 +24,7 @@
 
 typedef struct {
 	vid_t *vid;
+	rational_t auto_threshold;
 	uint8_t code;
 	vbidata_lut_t *lut;
 	uint8_t vbi[18];

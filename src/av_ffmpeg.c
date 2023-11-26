@@ -618,7 +618,7 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	av_ffmpeg_t *s = ctx;
 	AVFrame *avframe;
 	
-	*frame = av_frame_default;
+	av_frame_init(frame, 0, 0, NULL, 0, 0);
 	
 	if(s->video_stream == NULL)
 	{
@@ -634,12 +634,13 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	}
 	
 	/* Return image ratio */
-	if(avframe->sample_aspect_ratio.den > 0 && avframe->height > 0)
+	if(avframe->sample_aspect_ratio.num > 0 &&
+	   avframe->sample_aspect_ratio.den > 0)
 	{
-		frame->aspect = rational_mul(
-			(rational_t) { avframe->sample_aspect_ratio.num, avframe->sample_aspect_ratio.den },
-			(rational_t) { avframe->width, avframe->height }
-		);
+		frame->pixel_aspect_ratio = (rational_t) {
+			avframe->sample_aspect_ratio.num,
+			avframe->sample_aspect_ratio.den
+		};
 	}
 	
 	/* Return interlace status */

@@ -46,14 +46,8 @@ typedef struct {
 static int _test_read_video(void *ctx, av_frame_t *frame)
 {
 	av_test_t *s = ctx;
-	
-	*frame = av_frame_default;
-	frame->width = s->width;
-	frame->height = s->height;
-	frame->framebuffer = s->video;
-	frame->pixel_stride = 1;
-	frame->line_stride = frame->width;
-	
+	av_frame_init(frame, s->width, s->height, s->video, 1, s->width);
+	av_set_display_aspect_ratio(frame, (rational_t) { 4, 3 });
 	return(AV_OK);
 }
 

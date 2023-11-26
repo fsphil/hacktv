@@ -18,15 +18,18 @@
 #include <stddef.h>
 #include "av.h"
 
-const av_frame_t av_frame_default = {
-	.width = 0,
-	.height = 0,
-	.framebuffer = NULL,
-	.pixel_stride = 0,
-	.line_stride = 0,
-	.aspect = { 4, 3 },
-	.interlaced = 0,
-};
+void av_frame_init(av_frame_t *frame, int width, int height, uint32_t *framebuffer, int pstride, int lstride)
+{
+	*frame = (av_frame_t) {
+		.width = width,
+		.height = height,
+		.framebuffer = framebuffer,
+		.pixel_stride = pstride,
+		.line_stride = lstride,
+		.pixel_aspect_ratio = { 1, 1 },
+		.interlaced = 0,
+	};
+}
 
 int av_read_video(av_t *s, av_frame_t *frame)
 {
@@ -38,7 +41,7 @@ int av_read_video(av_t *s, av_frame_t *frame)
 	}
 	else
 	{
-		*frame = av_frame_default;
+		av_frame_init(frame, 0, 0, NULL, 0, 0);
 		r = AV_OK;
 	}
 	
@@ -79,6 +82,26 @@ int av_close(av_t *s)
 	s->close = NULL;
 	
 	return(r);
+}
+
+rational_t av_display_aspect_ratio(av_frame_t *frame)
+{
+	/* Helper function to return a frames display aspect ratio */
+	/* DAR = SAR * PAR */
+	return(rational_mul(
+		(rational_t) { frame->width, frame->height },
+		frame->pixel_aspect_ratio)
+	);
+}
+
+void av_set_display_aspect_ratio(av_frame_t *frame, rational_t display_aspect_ratio)
+{
+	/* Helper function to set a frames display aspect ratio */
+	/* PAR = DAR / SAR */
+	frame->pixel_aspect_ratio = rational_div(
+		display_aspect_ratio,
+		(rational_t) { frame->width, frame->height }
+	);
 }
 
 void av_hflip_frame(av_frame_t *frame)

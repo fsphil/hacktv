@@ -165,6 +165,7 @@ typedef struct {
 	
 	uint8_t vsam; /* VSAM Vision scrambling and access mode */
 	uint8_t ratio; /* 0: 4:3, 1: 16:9 */
+	rational_t ratio_threshold;
 	
 	/* Main TV audio */
 	mac_audioenc_t audio;

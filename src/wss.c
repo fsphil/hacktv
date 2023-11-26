@@ -100,6 +100,12 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 		return(VID_OUT_OF_MEMORY);
 	}
 	
+	/* Calculate the threshold pixel aspect ratio for auto mode */
+	s->auto_threshold = rational_div(
+		(rational_t) { 14, 9 },
+		(rational_t) { s->vid->active_width, s->vid->conf.active_lines }
+	);
+	
 	/* Prepare the VBI data. Start with the run-in and start code */
 	s->vbi[0] = 0xF8; // 11111000
 	s->vbi[1] = 0xE3; // 11100011
@@ -150,9 +156,17 @@ int wss_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	if(w->code == 0xFF)
 	{
-		/* Auto mode selects between 4:3 and 16:9 based on the
-		 * the ratio of the source frame. */
-		_group_bits(w->vbi, rational_cmp(s->vframe.aspect, (rational_t) { 14, 9 }) <= 0 ? 0x08 : 0x07, 29 + 24, 4);
+		int c;
+		
+		/* Auto mode selects between 4:3 and 16:9 depending
+		 * on the the pixel aspect ratio of the source frame */
+		
+		c = rational_cmp(
+			s->vframe.pixel_aspect_ratio,
+			w->auto_threshold
+		);
+		
+		_group_bits(w->vbi, c <= 0 ? 0x08 : 0x07, 29 + 24, 4);
 	}
 	
 	/* 42.5μs of line 23 needs to be blanked otherwise the WSS bits may

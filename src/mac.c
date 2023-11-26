@@ -878,6 +878,12 @@ int mac_init(vid_t *s)
 	
 	mac->vsam = MAC_VSAM_FREE_ACCESS;
 	
+	/* Calculate the threshold pixel aspect ratio for auto aspect ratio */
+	mac->ratio_threshold = rational_div(
+		(rational_t) { 14, 9 },
+		(rational_t) { s->active_width, s->conf.active_lines }
+	);
+	
 	/* Initialise Eurocrypt, if required */
 	if(s->conf.eurocrypt)
 	{
@@ -1466,7 +1472,7 @@ static int _line_625(vid_t *s, int frame, int line, uint8_t *data, int x)
 	b  = s->mac.vsam << 5;
 	b |= 1 << 4;      /* Reserved, always 1 */
 	//b |= 1 << 3;    /* Aspect ratio: 0: 16:9, 1: 4:3 */
-	b |= (rational_cmp(s->vframe.aspect, (rational_t) { 14, 9 }) <= 0 ? 1 : 0) << 3;
+	b |= (rational_cmp(s->vframe.pixel_aspect_ratio, s->mac.ratio_threshold) <= 0 ? 1 : 0) << 3;
 	b |= 1 << 2;      /* For satellite broadcast, this bit has no significance */
 	b |= 1 << 1;      /* Sound/data multiplex format: 0: no or incompatible sound, 1: compatible sound */
 	b |= 1 << 0;      /* Video configuration: 0: no or incompatible video, 1: compatible video */
@@ -1626,7 +1632,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		_prbs1_reset(&s->mac, l->frame - 1);
 		
 		/* Update the aspect ratio flag */
-		s->mac.ratio = (rational_cmp(s->vframe.aspect, (rational_t) { 14, 9 }) <= 0 ? 0 : 1);
+		s->mac.ratio = (rational_cmp(s->vframe.pixel_aspect_ratio, s->mac.ratio_threshold) <= 0 ? 0 : 1);
 		
 		/* Push the DG0 and DG3 SI packets every four frames.
 		 * DG0 is sent on both subframes for D-MAC. */
