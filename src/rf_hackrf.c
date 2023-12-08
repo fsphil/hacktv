@@ -21,7 +21,7 @@
 #include <libhackrf/hackrf.h>
 #include <pthread.h>
 #include <unistd.h>
-#include "hacktv.h"
+#include "rf.h"
 
 typedef enum {
 	BUFFER_EMPTY,
@@ -258,7 +258,7 @@ static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_close(void *private)
@@ -270,7 +270,7 @@ static int _rf_close(void *private)
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_stop_tx() failed: %s (%d)\n", hackrf_error_name(r), r);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	/* Wait until streaming has stopped */
@@ -290,24 +290,18 @@ static int _rf_close(void *private)
 	_buffer_free(&rf->buffers);
 	free(rf);
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
-int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsigned int txvga_gain, unsigned char amp_enable)
+int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t frequency_hz, unsigned int txvga_gain, unsigned char amp_enable)
 {
 	hackrf_t *rf;
 	int r;
 	
-	if(s->vid.conf.output_type != HACKTV_INT16_COMPLEX)
-	{
-		fprintf(stderr, "rf_hackrf_open(): Unsupported mode output type for this device.\n");
-		return(HACKTV_ERROR);
-	}
-	
 	rf = calloc(1, sizeof(hackrf_t));
 	if(!rf)
 	{
-		return(HACKTV_OUT_OF_MEMORY);
+		return(RF_OUT_OF_MEMORY);
 	}
 	
 	/* Prepare the HackRF for output */
@@ -316,7 +310,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	{
 		fprintf(stderr, "hackrf_init() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	r = hackrf_open_by_serial(serial, &rf->d);
@@ -324,23 +318,23 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	{
 		fprintf(stderr, "hackrf_open() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
-	r = hackrf_set_sample_rate_manual(rf->d, s->vid.sample_rate, 1);
+	r = hackrf_set_sample_rate_manual(rf->d, sample_rate, 1);
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_sample_rate_set() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
-	r = hackrf_set_baseband_filter_bandwidth(rf->d, hackrf_compute_baseband_filter_bw(s->vid.sample_rate));
+	r = hackrf_set_baseband_filter_bandwidth(rf->d, hackrf_compute_baseband_filter_bw(sample_rate));
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_baseband_filter_bandwidth_set() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	r = hackrf_set_freq(rf->d, frequency_hz);
@@ -348,7 +342,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	{
 		fprintf(stderr, "hackrf_set_freq() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	r = hackrf_set_txvga_gain(rf->d, txvga_gain);
@@ -356,7 +350,7 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	{
 		fprintf(stderr, "hackrf_set_txvga_gain() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	r = hackrf_set_amp_enable(rf->d, amp_enable);
@@ -364,11 +358,11 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	{
 		fprintf(stderr, "hackrf_set_amp_enable() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	/* Allocate memory for the output buffers, enough for at least 400ms - minimum 4 */
-	r = s->vid.sample_rate * 2 * 4 / 10 / hackrf_get_transfer_buffer_size(rf->d);
+	r = sample_rate * 2 * 4 / 10 / hackrf_get_transfer_buffer_size(rf->d);
 	if(r < 4) r = 4;
 	_buffer_init(&rf->buffers, r, hackrf_get_transfer_buffer_size(rf->d));
 	
@@ -378,14 +372,14 @@ int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsig
 	{
 		fprintf(stderr, "hackrf_start_tx() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	/* Register the callback functions */
-	s->rf_private = rf;
-	s->rf_write = _rf_write;
-	s->rf_close = _rf_close;
+	s->ctx = rf;
+	s->write = _rf_write;
+	s->close = _rf_close;
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 

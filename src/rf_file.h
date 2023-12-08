@@ -18,7 +18,7 @@
 #ifndef _FILE_H
 #define _FILE_H
 
-extern int rf_file_open(hacktv_t *s, char *filename, int type);
+extern int rf_file_open(rf_t *s, char *filename, int type, int complex);
 
 #endif
 

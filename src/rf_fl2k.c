@@ -15,11 +15,12 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <osmo-fl2k.h>
 #include <pthread.h>
-#include "hacktv.h"
+#include "rf.h"
 
 #define BUFFERS 4
 
@@ -76,7 +77,7 @@ static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 	
 	if(rf->abort)
 	{
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	while(samples > 0)
@@ -98,7 +99,7 @@ static int _rf_write(void *private, int16_t *iq_data, size_t samples)
 		}
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_close(void *private)
@@ -118,10 +119,10 @@ static int _rf_close(void *private)
 	
 	free(rf);
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
-int rf_fl2k_open(hacktv_t *s, const char *device)
+int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 {
 	fl2k_t *rf;
 	int r;
@@ -129,7 +130,7 @@ int rf_fl2k_open(hacktv_t *s, const char *device)
 	rf = calloc(1, sizeof(fl2k_t));
 	if(!rf)
 	{
-		return(HACKTV_OUT_OF_MEMORY);
+		return(RF_OUT_OF_MEMORY);
 	}
 	
 	rf->abort = 0;
@@ -141,7 +142,7 @@ int rf_fl2k_open(hacktv_t *s, const char *device)
 	{
 		fprintf(stderr, "fl2k_open() failed to open device #%d.\n", r);
 		_rf_close(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	for(r = 0; r < BUFFERS; r++)
@@ -164,31 +165,31 @@ int rf_fl2k_open(hacktv_t *s, const char *device)
 	{
 		fprintf(stderr, "fl2k_start_tx() failed: %d\n", r);
 		_rf_close(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
-	r = fl2k_set_sample_rate(rf->d, s->vid.sample_rate);
+	r = fl2k_set_sample_rate(rf->d, sample_rate);
 	if(r < 0)
 	{
 		fprintf(stderr, "fl2k_set_sample_rate() failed: %d\n", r);
 		_rf_close(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	/* Read back the actual frequency */
 	r = fl2k_get_sample_rate(rf->d);
-	if(r != s->vid.sample_rate)
+	if(r != sample_rate)
 	{
 		//fprintf(stderr, "fl2k sample rate changed from %d > %d\n", s->vid.sample_rate, r);
 		//_rf_close(rf);
-		//return(HACKTV_ERROR);
+		//return(RF_ERROR);
 	}
 	
 	/* Register the callback functions */
-	s->rf_private = rf;
-	s->rf_write = _rf_write;
-	s->rf_close = _rf_close;
+	s->ctx = rf;
+	s->write = _rf_write;
+	s->close = _rf_close;
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 

@@ -18,7 +18,7 @@
 #ifndef _HACKRF_H
 #define _HACKRF_H
 
-extern int rf_hackrf_open(hacktv_t *s, const char *serial, uint64_t frequency_hz, unsigned int txvga_gain, unsigned char amp_enable);
+extern int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t frequency_hz, unsigned int txvga_gain, unsigned char amp_enable);
 
 #endif
 

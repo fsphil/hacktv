@@ -18,7 +18,7 @@
 #ifndef _FL2K_H
 #define _FL2K_H
 
-extern int rf_fl2k_open(hacktv_t *s, const char *device);
+extern int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate);
 
 #endif
 

@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "hacktv.h"
+#include "rf.h"
 
 /* File sink */
 typedef struct {
@@ -49,7 +49,7 @@ static int _rf_file_write_uint8_real(void *private, int16_t *iq_data, size_t sam
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_int8_real(void *private, int16_t *iq_data, size_t samples)
@@ -70,7 +70,7 @@ static int _rf_file_write_int8_real(void *private, int16_t *iq_data, size_t samp
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_uint16_real(void *private, int16_t *iq_data, size_t samples)
@@ -91,7 +91,7 @@ static int _rf_file_write_uint16_real(void *private, int16_t *iq_data, size_t sa
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_int16_real(void *private, int16_t *iq_data, size_t samples)
@@ -112,7 +112,7 @@ static int _rf_file_write_int16_real(void *private, int16_t *iq_data, size_t sam
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_int32_real(void *private, int16_t *iq_data, size_t samples)
@@ -133,7 +133,7 @@ static int _rf_file_write_int32_real(void *private, int16_t *iq_data, size_t sam
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_float_real(void *private, int16_t *iq_data, size_t samples)
@@ -154,7 +154,7 @@ static int _rf_file_write_float_real(void *private, int16_t *iq_data, size_t sam
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_uint8_complex(void *private, int16_t *iq_data, size_t samples)
@@ -176,7 +176,7 @@ static int _rf_file_write_uint8_complex(void *private, int16_t *iq_data, size_t 
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_int8_complex(void *private, int16_t *iq_data, size_t samples)
@@ -198,7 +198,7 @@ static int _rf_file_write_int8_complex(void *private, int16_t *iq_data, size_t s
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_uint16_complex(void *private, int16_t *iq_data, size_t samples)
@@ -220,7 +220,7 @@ static int _rf_file_write_uint16_complex(void *private, int16_t *iq_data, size_t
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_int16_complex(void *private, int16_t *iq_data, size_t samples)
@@ -229,7 +229,7 @@ static int _rf_file_write_int16_complex(void *private, int16_t *iq_data, size_t 
 	
 	fwrite(iq_data, sizeof(int16_t) * 2, samples, rf->f);
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_int32_complex(void *private, int16_t *iq_data, size_t samples)
@@ -251,7 +251,7 @@ static int _rf_file_write_int32_complex(void *private, int16_t *iq_data, size_t 
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_write_float_complex(void *private, int16_t *iq_data, size_t samples)
@@ -273,7 +273,7 @@ static int _rf_file_write_float_complex(void *private, int16_t *iq_data, size_t 
 		samples -= i;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
 static int _rf_file_close(void *private)
@@ -284,27 +284,27 @@ static int _rf_file_close(void *private)
 	if(rf->data) free(rf->data);
 	free(rf);
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 
-int rf_file_open(hacktv_t *s, char *filename, int type)
+int rf_file_open(rf_t *s, char *filename, int type, int complex)
 {
 	rf_file_t *rf = calloc(1, sizeof(rf_file_t));
 	
 	if(!rf)
 	{
 		perror("calloc");
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
-	rf->complex = s->vid.conf.output_type == HACKTV_INT16_COMPLEX;
+	rf->complex = complex != 0;
 	rf->type = type;
 	
 	if(filename == NULL)
 	{
 		fprintf(stderr, "No output filename provided.\n");
 		_rf_file_close(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	else if(strcmp(filename, "-") == 0)
 	{
@@ -318,57 +318,57 @@ int rf_file_open(hacktv_t *s, char *filename, int type)
 		{
 			perror("fopen");
 			_rf_file_close(rf);
-			return(HACKTV_ERROR);
+			return(RF_ERROR);
 		}
 	}
 	
 	/* Find the size of the output data type */
 	switch(type)
 	{
-	case HACKTV_UINT8:  rf->data_size = sizeof(uint8_t);  break;
-	case HACKTV_INT8:   rf->data_size = sizeof(int8_t);   break;
-	case HACKTV_UINT16: rf->data_size = sizeof(uint16_t); break;
-	case HACKTV_INT16:  rf->data_size = sizeof(int16_t);  break;
-	case HACKTV_INT32:  rf->data_size = sizeof(int32_t);  break;
-	case HACKTV_FLOAT:  rf->data_size = sizeof(float);    break;
+	case RF_UINT8:  rf->data_size = sizeof(uint8_t);  break;
+	case RF_INT8:   rf->data_size = sizeof(int8_t);   break;
+	case RF_UINT16: rf->data_size = sizeof(uint16_t); break;
+	case RF_INT16:  rf->data_size = sizeof(int16_t);  break;
+	case RF_INT32:  rf->data_size = sizeof(int32_t);  break;
+	case RF_FLOAT:  rf->data_size = sizeof(float);    break;
 	default:
 		fprintf(stderr, "%s: Unrecognised data type %d\n", __func__, type);
 		_rf_file_close(rf);
-		return(HACKTV_ERROR);
+		return(RF_ERROR);
 	}
 	
 	/* Double the size for complex types */
 	if(rf->complex) rf->data_size *= 2;
 	
-	/* Allocate enough memory for one TV line */
-	rf->samples = s->vid.width;
+	/* Number of samples in the temporary buffer */
+	rf->samples = 4096;
 	
 	/* Allocate the memory, unless the output is int16 complex */
-	if(rf->type != HACKTV_INT16 || !rf->complex)
+	if(rf->type != RF_INT16 || !rf->complex)
 	{
 		rf->data = malloc(rf->data_size * rf->samples);
 		if(!rf->data)
 		{
 			perror("malloc");
 			_rf_file_close(rf);
-			return(HACKTV_ERROR);
+			return(RF_ERROR);
 		}
 	}
 	
 	/* Register the callback functions */
-	s->rf_private = rf;
-	s->rf_close = _rf_file_close;
+	s->ctx = rf;
+	s->close = _rf_file_close;
 	
 	switch(type)
 	{
-	case HACKTV_UINT8:  s->rf_write = rf->complex ? _rf_file_write_uint8_complex  : _rf_file_write_uint8_real;  break;
-	case HACKTV_INT8:   s->rf_write = rf->complex ? _rf_file_write_int8_complex   : _rf_file_write_int8_real;   break;
-	case HACKTV_UINT16: s->rf_write = rf->complex ? _rf_file_write_uint16_complex : _rf_file_write_uint16_real; break;
-	case HACKTV_INT16:  s->rf_write = rf->complex ? _rf_file_write_int16_complex  : _rf_file_write_int16_real;  break;
-	case HACKTV_INT32:  s->rf_write = rf->complex ? _rf_file_write_int32_complex  : _rf_file_write_int32_real;  break;
-	case HACKTV_FLOAT:  s->rf_write = rf->complex ? _rf_file_write_float_complex  : _rf_file_write_float_real;  break;
+	case RF_UINT8:  s->write = rf->complex ? _rf_file_write_uint8_complex  : _rf_file_write_uint8_real;  break;
+	case RF_INT8:   s->write = rf->complex ? _rf_file_write_int8_complex   : _rf_file_write_int8_real;   break;
+	case RF_UINT16: s->write = rf->complex ? _rf_file_write_uint16_complex : _rf_file_write_uint16_real; break;
+	case RF_INT16:  s->write = rf->complex ? _rf_file_write_int16_complex  : _rf_file_write_int16_real;  break;
+	case RF_INT32:  s->write = rf->complex ? _rf_file_write_int32_complex  : _rf_file_write_int32_real;  break;
+	case RF_FLOAT:  s->write = rf->complex ? _rf_file_write_float_complex  : _rf_file_write_float_real;  break;
 	}
 	
-	return(HACKTV_OK);
+	return(RF_OK);
 }
 

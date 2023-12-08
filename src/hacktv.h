@@ -20,35 +20,15 @@
 
 #include <stdint.h>
 #include "video.h"
+#include "rf.h"
 
 /* Return codes */
 #define HACKTV_OK             0
 #define HACKTV_ERROR         -1
 #define HACKTV_OUT_OF_MEMORY -2
 
-/* Integer types */
-#define HACKTV_INT16_COMPLEX 0
-#define HACKTV_INT16_REAL    1
-
-/* File output types */
-#define HACKTV_UINT8  0
-#define HACKTV_INT8   1
-#define HACKTV_UINT16 2
-#define HACKTV_INT16  3
-#define HACKTV_INT32  4
-#define HACKTV_FLOAT  5 /* 32-bit float */
-
 /* Standard audio sample rate */
 #define HACKTV_AUDIO_SAMPLE_RATE 32000
-
-/* AV source function prototypes */
-typedef uint32_t *(*hacktv_av_read_video_t)(void *private, float *ratio);
-typedef int16_t *(*hacktv_av_read_audio_t)(void *private, size_t *samples);
-typedef int (*hacktv_av_close_t)(void *private);
-
-/* RF output function prototypes */
-typedef int (*hacktv_rf_write_t)(void *private, int16_t *iq_data, size_t samples);
-typedef int (*hacktv_rf_close_t)(void *private);
 
 /* Program state */
 typedef struct {
@@ -106,9 +86,7 @@ typedef struct {
 	vid_t vid;
 	
 	/* RF sink interface */
-	void *rf_private;
-	hacktv_rf_write_t rf_write;
-	hacktv_rf_close_t rf_close;
+	rf_t rf;
 	
 } hacktv_t;
 

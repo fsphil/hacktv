@@ -22,16 +22,7 @@
 #include <signal.h>
 #include "hacktv.h"
 #include "av.h"
-#include "rf_file.h"
-#include "rf_hackrf.h"
-
-#ifdef HAVE_SOAPYSDR
-#include "rf_soapysdr.h"
-#endif
-
-#ifdef HAVE_FL2K
-#include "rf_fl2k.h"
-#endif
+#include "rf.h"
 
 static volatile sig_atomic_t _abort = 0;
 static volatile sig_atomic_t _signal = 0;
@@ -40,27 +31,6 @@ static void _sigint_callback_handler(int signum)
 {
 	_abort = 1;
 	_signal = signum;
-}
-
-/* RF sink callback handlers */
-static int _hacktv_rf_write(hacktv_t *s, int16_t *iq_data, size_t samples)
-{
-	if(s->rf_write)
-	{
-		return(s->rf_write(s->rf_private, iq_data, samples));
-	}
-	
-	return(HACKTV_ERROR);
-}
-
-static int _hacktv_rf_close(hacktv_t *s)
-{
-	if(s->rf_close)
-	{
-		return(s->rf_close(s->rf_private));
-	}
-	
-	return(HACKTV_OK);
 }
 
 static void print_usage(void)
@@ -502,7 +472,7 @@ int main(int argc, char *argv[])
 	s.amp = 0;
 	s.gain = 0;
 	s.antenna = NULL;
-	s.file_type = HACKTV_INT16;
+	s.file_type = RF_INT16;
 	
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:", long_options, &option_index)) != -1)
@@ -769,27 +739,27 @@ int main(int argc, char *argv[])
 			
 			if(strcmp(optarg, "uint8") == 0)
 			{
-				s.file_type = HACKTV_UINT8;
+				s.file_type = RF_UINT8;
 			}
 			else if(strcmp(optarg, "int8") == 0)
 			{
-				s.file_type = HACKTV_INT8;
+				s.file_type = RF_INT8;
 			}
 			else if(strcmp(optarg, "uint16") == 0)
 			{
-				s.file_type = HACKTV_UINT16;
+				s.file_type = RF_UINT16;
 			}
 			else if(strcmp(optarg, "int16") == 0)
 			{
-				s.file_type = HACKTV_INT16;
+				s.file_type = RF_INT16;
 			}
 			else if(strcmp(optarg, "int32") == 0)
 			{
-				s.file_type = HACKTV_INT32;
+				s.file_type = RF_INT32;
 			}
 			else if(strcmp(optarg, "float") == 0)
 			{
-				s.file_type = HACKTV_FLOAT;
+				s.file_type = RF_FLOAT;
 			}
 			else
 			{
@@ -1089,7 +1059,7 @@ int main(int argc, char *argv[])
 	
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{
-		if(rf_hackrf_open(&s, s.output, s.frequency, s.gain, s.amp) != HACKTV_OK)
+		if(rf_hackrf_open(&s.rf, s.output, s.vid.sample_rate, s.frequency, s.gain, s.amp) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
@@ -1098,7 +1068,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_SOAPYSDR
 	else if(strcmp(s.output_type, "soapysdr") == 0)
 	{
-		if(rf_soapysdr_open(&s, s.output, s.frequency, s.gain, s.antenna) != HACKTV_OK)
+		if(rf_soapysdr_open(&s.rf, s.output, s.vid.sample_rate, s.frequency, s.gain, s.antenna) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
@@ -1108,7 +1078,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_FL2K
 	else if(strcmp(s.output_type, "fl2k") == 0)
 	{
-		if(rf_fl2k_open(&s, s.output) != HACKTV_OK)
+		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
@@ -1117,7 +1087,7 @@ int main(int argc, char *argv[])
 #endif
 	else if(strcmp(s.output_type, "file") == 0)
 	{
-		if(rf_file_open(&s, s.output, s.file_type) != HACKTV_OK)
+		if(rf_file_open(&s.rf, s.output, s.file_type, s.vid.conf.output_type == RF_INT16_COMPLEX) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
@@ -1184,7 +1154,7 @@ int main(int argc, char *argv[])
 				
 				if(data == NULL) break;
 				
-				if(_hacktv_rf_write(&s, data, samples) != HACKTV_OK) break;
+				if(rf_write(&s.rf, data, samples) != RF_OK) break;
 			}
 			
 			if(_signal)
@@ -1198,7 +1168,7 @@ int main(int argc, char *argv[])
 	}
 	while(s.repeat && !_abort);
 	
-	_hacktv_rf_close(&s);
+	rf_close(&s.rf);
 	vid_free(&s.vid);
 	
 	av_ffmpeg_deinit();

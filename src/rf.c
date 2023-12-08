@@ -1,6 +1,6 @@
 /* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
-/* Copyright 2017 Philip Heron <phil@sanslogic.co.uk>                    */
+/* Copyright 2023 Philip Heron <phil@sanslogic.co.uk>                    */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
 /* it under the terms of the GNU General Public License as published by  */
@@ -15,10 +15,28 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _SOAPYSDR_H
-#define _SOAPYSDR_H
+#include <stddef.h>
+#include <stdint.h>
+#include "rf.h"
 
-extern int rf_soapysdr_open(rf_t *s, const char *device, unsigned int sample_rate, unsigned int frequency_hz, unsigned int gain, const char *antenna);
+/* RF sink callback handlers */
+int rf_write(rf_t *s, int16_t *iq_data, size_t samples)
+{
+	if(s->write)
+	{
+		return(s->write(s->ctx, iq_data, samples));
+	}
+	
+	return(RF_ERROR);
+}
 
-#endif
+int rf_close(rf_t *s)
+{
+	if(s->close)
+	{
+		return(s->close(s->ctx));
+	}
+	
+	return(RF_OK);
+}
 
