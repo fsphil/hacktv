@@ -916,7 +916,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	const AVCodec *codec;
 	AVRational time_base;
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-	AVChannelLayout default_ch_layout;
+	AVChannelLayout dst_ch_layout = AV_CHANNEL_LAYOUT_STEREO;
 #endif
 	int64_t start_time = 0;
 	int r;
@@ -1113,16 +1113,11 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		}
 		
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-		if(!s->audio_codec_ctx->ch_layout.nb_channels)
-		{
-			/* Set the default layout for codecs that don't specify any */
-			av_channel_layout_default(&default_ch_layout, s->audio_codec_ctx->ch_layout.nb_channels);
-			s->audio_codec_ctx->ch_layout = default_ch_layout;
-		}
-		
-		av_opt_set_int(s->swr_ctx, "in_channel_layout",    s->audio_codec_ctx->ch_layout.u.mask, 0);
+		av_opt_set_chlayout(s->swr_ctx, "in_chlayout",     &s->audio_codec_ctx->ch_layout, 0);
 		av_opt_set_int(s->swr_ctx, "in_sample_rate",       s->audio_codec_ctx->sample_rate, 0);
 		av_opt_set_sample_fmt(s->swr_ctx, "in_sample_fmt", s->audio_codec_ctx->sample_fmt, 0);
+		
+		av_opt_set_chlayout(s->swr_ctx, "out_chlayout",    &dst_ch_layout, 0);
 #else
 		if(!s->audio_codec_ctx->channel_layout)
 		{
@@ -1133,9 +1128,10 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		av_opt_set_int(s->swr_ctx, "in_channel_layout",    s->audio_codec_ctx->channel_layout, 0);
 		av_opt_set_int(s->swr_ctx, "in_sample_rate",       s->audio_codec_ctx->sample_rate, 0);
 		av_opt_set_sample_fmt(s->swr_ctx, "in_sample_fmt", s->audio_codec_ctx->sample_fmt, 0);
-#endif
 		
 		av_opt_set_int(s->swr_ctx, "out_channel_layout",    AV_CH_LAYOUT_STEREO, 0);
+#endif
+		
 		av_opt_set_int(s->swr_ctx, "out_sample_rate",       av->sample_rate.num / av->sample_rate.den, 0);
 		av_opt_set_sample_fmt(s->swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
 		
@@ -1241,7 +1237,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		{
 			s->out_audio_buffer.frame[i]->format = AV_SAMPLE_FMT_S16;
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-			s->out_audio_buffer.frame[i]->ch_layout.nb_channels = AV_CH_LAYOUT_STEREO;
+			s->out_audio_buffer.frame[i]->ch_layout = (AVChannelLayout) AV_CHANNEL_LAYOUT_STEREO;
 #else
 			s->out_audio_buffer.frame[i]->channel_layout = AV_CH_LAYOUT_STEREO;
 #endif
