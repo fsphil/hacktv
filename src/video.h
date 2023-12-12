@@ -134,6 +134,9 @@ typedef struct {
 	/* Overall signal level (pre-modulation) */
 	double level;
 	
+	/* Swap the IQ in complex signals */
+	int swap_iq;
+	
 	/* Signal offset and passthru */
 	int64_t offset;
 	char *passthru;

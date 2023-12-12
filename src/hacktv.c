@@ -81,6 +81,8 @@ static void print_usage(void)
 		"      --mac-audio-l1-protection  Use first level protection (D/D2-MAC).\n"
 		"                                 (Default)\n"
 		"      --mac-audio-l2-protection  Use second level protection (D/D2-MAC).\n"
+		"      --swap-iq                  Swap the I and Q channels to invert the spectrum.\n"
+		"                                 Applied before offset and passthru. (Complex modes only).\n"
 		"      --offset <value>           Add a frequency offset in Hz (Complex modes only).\n"
 		"      --passthru <file>          Read and add an int16 complex signal.\n"
 		"      --invert-video             Invert the composite video signal sync and\n"
@@ -348,6 +350,7 @@ enum {
 	_OPT_MAC_AUDIO_LINEAR,
 	_OPT_MAC_AUDIO_L1_PROTECTION,
 	_OPT_MAC_AUDIO_L2_PROTECTION,
+	_OPT_SWAP_IQ,
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
 	_OPT_INVERT_VIDEO,
@@ -404,6 +407,7 @@ int main(int argc, char *argv[])
 		{ "mac-audio-linear", no_argument,     0, _OPT_MAC_AUDIO_LINEAR },
 		{ "mac-audio-l1-protection", no_argument, 0, _OPT_MAC_AUDIO_L1_PROTECTION },
 		{ "mac-audio-l2-protection", no_argument, 0, _OPT_MAC_AUDIO_L2_PROTECTION },
+		{ "swap-iq",        no_argument,       0, _OPT_SWAP_IQ },
 		{ "offset",         required_argument, 0, _OPT_OFFSET },
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
@@ -690,7 +694,11 @@ int main(int argc, char *argv[])
 		case _OPT_MAC_AUDIO_L2_PROTECTION: /* --mac-audio-l2-protection */
 			s.mac_audio_protection = MAC_SECOND_LEVEL_PROTECTION;
 			break;
-
+		
+		case _OPT_SWAP_IQ: /* --swap-iq */
+			s.swap_iq = 1;
+			break;
+		
 		case _OPT_OFFSET: /* --offset <value Hz> */
 			s.offset = (int64_t) strtod(optarg, NULL);
 			break;
@@ -1042,6 +1050,7 @@ int main(int argc, char *argv[])
 		vid_conf.vfilter = 1;
 	}
 	
+	vid_conf.swap_iq = s.swap_iq;
 	vid_conf.offset = s.offset;
 	vid_conf.passthru = s.passthru;
 	vid_conf.invert_video = s.invert_video;

@@ -73,6 +73,7 @@ typedef struct {
 	int mac_audio_quality;
 	int mac_audio_protection;
 	int mac_audio_companded;
+	int swap_iq;
 	int64_t offset;
 	char *passthru;
 	int invert_video;

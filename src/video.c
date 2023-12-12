@@ -3272,6 +3272,22 @@ static int _vid_fmmod_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 	return(1);
 }
 
+static int _vid_swap_iq_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	vid_line_t *l = lines[0];
+	int x;
+	int16_t t;
+	
+	for(x = 0; x < l->width; x++)
+	{
+		t = l->output[x * 2 + 0];
+		l->output[x * 2 + 0] = l->output[x * 2 + 1];
+		l->output[x * 2 + 1] = t;
+	}
+	
+	return(1);
+}
+
 static int _vid_offset_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vid_line_t *l = lines[0];
@@ -4216,6 +4232,11 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		_add_lineprocess(s, "fmmod", 1, NULL, _vid_fmmod_process, NULL);
+	}
+	
+	if(s->conf.swap_iq != 0)
+	{
+		_add_lineprocess(s, "swap_iq", 1, NULL, _vid_swap_iq_process, NULL);
 	}
 	
 	if(s->conf.offset != 0)
