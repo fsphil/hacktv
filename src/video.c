@@ -4148,7 +4148,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	/* NICAM audio */
 	if(s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0)
 	{
-		r = nicam_mod_init(&s->nicam, NICAM_MODE_STEREO, 0, s->sample_rate, s->conf.nicam_carrier, s->conf.nicam_beta, s->conf.nicam_level * slevel);
+		r = nicam_mod_init(&s->nicam, NICAM_MODE_STEREO, 1, s->sample_rate, s->conf.nicam_carrier, s->conf.nicam_beta, s->conf.nicam_level * slevel);
 		
 		if(r != 0)
 		{
