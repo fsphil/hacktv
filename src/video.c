@@ -2164,7 +2164,7 @@ const static double fm_audio_j17_taps[65] = {
  * sub-carrier at f Hz (bell curve) */
 static void _secam_g(double *g, double f)
 {
-	const double f0 = SECAM_FM_FREQ;
+	const double f0 = 4.286e6;
 	double lq, rq, d;
 	
 	f = f / f0 - f0 / f;
