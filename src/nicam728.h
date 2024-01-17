@@ -96,7 +96,6 @@ typedef struct {
 
 extern void nicam_encode_init(nicam_enc_t *s, uint8_t mode, uint8_t reserve);
 extern void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], const int16_t audio[NICAM_AUDIO_LEN * 2]);
-extern void nicam_encode_mac_packet(nicam_enc_t *s, uint8_t pkt[91], const int16_t audio[NICAM_AUDIO_LEN * 2]);
 
 extern int nicam_mod_init(nicam_mod_t *s, uint8_t mode, uint8_t reserve, unsigned int sample_rate, unsigned int frequency, double beta, double level);
 extern void nicam_mod_input(nicam_mod_t *s, const int16_t audio[NICAM_AUDIO_LEN * 2]);

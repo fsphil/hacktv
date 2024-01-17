@@ -248,44 +248,6 @@ void nicam_encode_frame(nicam_enc_t *s, uint8_t frame[NICAM_FRAME_BYTES], const 
 	s->frame++;
 }
 
-void nicam_encode_mac_packet(nicam_enc_t *s, uint8_t pkt[91], const int16_t audio[NICAM_AUDIO_LEN * 2])
-{
-	/* Creates a 90 byte companded sound coding block, first level protection */
-	int16_t j17[NICAM_AUDIO_LEN * 2];
-	int i, x;
-	
-	/* Encode the audio */
-	_process_audio(s, j17, audio);
-	
-	/* PT Packet Type */
-	pkt[0] = 0xC7;
-	
-	/* Unallocated */
-	pkt[1] = 0x00;
-	pkt[2] = 0x00;
-	
-	/* Pack the 11-bit compressed samples into the packet */
-	for(x = 3, i = 0; i < NICAM_AUDIO_LEN * 2; i += 8, x += 11)
-	{
-		pkt[x +  0] =                     (j17[i + 0] >> 0);
-		pkt[x +  1] = (j17[i + 1] << 3) | (j17[i + 0] >> 8);
-		pkt[x +  2] = (j17[i + 2] << 6) | (j17[i + 1] >> 5);
-		pkt[x +  3] =                     (j17[i + 2] >> 2);
-		pkt[x +  4] = (j17[i + 3] << 1) | (j17[i + 2] >> 10);
-		pkt[x +  5] = (j17[i + 4] << 4) | (j17[i + 3] >> 7);
-		pkt[x +  6] = (j17[i + 5] << 7) | (j17[i + 4] >> 4);
-		pkt[x +  7] =                     (j17[i + 5] >> 1);
-		pkt[x +  8] = (j17[i + 6] << 2) | (j17[i + 5] >> 9);
-		pkt[x +  9] = (j17[i + 7] << 5) | (j17[i + 6] >> 6);
-		pkt[x + 10] =                     (j17[i + 7] >> 3);
-	}
-	
-	/* Increment the frame counter (not used for MAC) */
-	s->frame++;
-}
-
-
-
 static double _hamming(double x)
 {
 	if(x < -1 || x > 1) return(0);
