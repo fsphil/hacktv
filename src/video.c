@@ -1444,6 +1444,55 @@ const vid_config_t vid_config_405_a = {
 	.am_mono_bandwidth = 10000, /* Hz */
 };
 
+const vid_config_t vid_config_405_a_ntsc = {
+	
+	/* System A (405 line NTSC, based on the 1954 Marconi proposal) */
+	.output_type    = RF_INT16_COMPLEX,
+	
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   =  750000, /* Hz */
+	.vsb_lower_bw   = 3000000, /* Hz */
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 0.8, /* Power level of video */
+	.am_audio_level = 0.2, /* Power level of audio */
+	
+	.type           = VID_RASTER_405,
+	.frame_rate     = { 25, 1 },
+	.lines          = 405,
+	.hline          = 203,
+	
+	.active_lines   = 376,
+	.active_width   = 0.00008030, /* 80.3µs */
+	.active_left    = 0.00001680, /* |-->| 16.8µs */
+	
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00 µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
+	
+	.white_level    =  0.90,
+	.black_level    =  0.35,
+	.blanking_level =  0.30,
+	.sync_level     =  0.00,
+	
+	.colour_mode    = VID_NTSC,
+	.burst_width    = 0.00000339, /* 3.39 ±0.38µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00001050, /* |-->| 10.5 ±0.1µs */
+	.burst_level    = 3.0 / 6.0, /* 30% full carrier */
+	.colour_carrier = { 5315625, 2 }, /* 2657812.5 Hz */
+	
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	.ev_co          =  0.877,
+	.eu_co          =  0.493,
+	
+	/* AM modulated */
+	.am_mono_carrier = -3500000, /* Hz */
+	.am_mono_bandwidth = 10000, /* Hz */
+};
+
 const vid_config_t vid_config_405_i = {
 	
 	/* System A (405 line monochrome) */
@@ -1516,6 +1565,48 @@ const vid_config_t vid_config_405 = {
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
 	.bw_co          = 0.114, /* B weight */
+};
+
+const vid_config_t vid_config_405_ntsc = {
+	
+	/* 405 line video (NTSC, based on the 1954 Marconi proposal) */
+	.output_type    = RF_INT16_REAL,
+	
+	.level          = 1.0, /* Overall signal level */
+	.video_level    = 1.0, /* Power level of video */
+	
+	.video_bw       = 3.0e6,
+	
+	.type           = VID_RASTER_405,
+	.frame_rate     = { 25, 1 },
+	.lines          = 405,
+	.hline          = 203,
+	
+	.active_lines   = 376,
+	.active_width   = 0.00008030, /* 80.3µs */
+	.active_left    = 0.00001680, /* |-->| 16.8µs */
+	
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
+	
+	.white_level    =  0.60,
+	.black_level    =  0.05,
+	.blanking_level =  0.00,
+	.sync_level     = -0.30,
+	
+	.colour_mode    = VID_NTSC,
+	.burst_width    = 0.00000339, /* 3.39 ±0.38µs */
+	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
+	.burst_left     = 0.00001050, /* |-->| 10.5 ±0.1µs */
+	.burst_level    = 3.0 / 6.0, /* 30% full carrier */
+	.colour_carrier = { 5315625, 2 }, /* 2657812.5 Hz */
+	
+	.rw_co          =  0.299, /* R weight */
+	.gw_co          =  0.587, /* G weight */
+	.bw_co          =  0.114, /* B weight */
+	.ev_co          =  0.877,
+	.eu_co          =  0.493,
 };
 
 const vid_config_t vid_config_baird_240_am = {
@@ -1984,8 +2075,10 @@ const vid_configs_t vid_configs[] = {
 	{ "e",             &vid_config_819_e,            "No colour, 25 fps, 819 lines, AM (complex), 11.15 MHz AM audio" },
 	{ "819",           &vid_config_819,              "No colour, 25 fps, 819 lines, unmodulated (real)" },
 	{ "a",             &vid_config_405_a,            "No colour, 25 fps, 405 lines, AM (complex), -3.5 MHz AM audio" },
+	{ "ntsc-a",        &vid_config_405_a_ntsc,       "NTSC colour, 25 fps, 405 lines, AM (complex), -3.5 MHz AM audio" },
 	{ "405-i",         &vid_config_405_i,            "No colour, 25 fps, 405 lines, AM (complex), 6.0 MHz FM audio" },
 	{ "405",           &vid_config_405,              "No colour, 25 fps, 405 lines, unmodulated (real)" },
+	{ "ntsc-405",      &vid_config_405_ntsc,         "NTSC colour, 25 fps, 405 lines, unmodulated (real)" },
 	{ "240-am",        &vid_config_baird_240_am,     "No colour, 25 fps, 240 lines, AM (complex)" },
 	{ "240",           &vid_config_baird_240,        "No colour, 25 fps, 240 lines, unmodulated (real)" },
 	{ "30-am",         &vid_config_baird_30_am,      "No colour, 12.5 fps, 30 lines, AM (complex)" },
@@ -2671,36 +2764,36 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		case 2:   seq = "V__V"; break;
 		case 3:   seq = "V__V"; break;
 		case 4:   seq = "V__V"; break;
-		case 5:   seq = "h___"; break;
-		case 6:   seq = "h___"; break;
-		case 7:   seq = "h___"; break;
-		case 8:   seq = "h___"; break;
-		case 9:   seq = "h___"; break;
-		case 10:  seq = "h___"; break;
-		case 11:  seq = "h___"; break;
-		case 12:  seq = "h___"; break;
-		case 13:  seq = "h___"; break;
-		case 14:  seq = "h___"; break;
-		case 15:  seq = "h___"; break;
+		case 5:   seq = "h0__"; break;
+		case 6:   seq = "h0__"; break;
+		case 7:   seq = "h0__"; break;
+		case 8:   seq = "h0__"; break;
+		case 9:   seq = "h0__"; break;
+		case 10:  seq = "h0__"; break;
+		case 11:  seq = "h0__"; break;
+		case 12:  seq = "h0__"; break;
+		case 13:  seq = "h0__"; break;
+		case 14:  seq = "h0__"; break;
+		case 15:  seq = "h0__"; break;
 		
-		case 203: seq = "h_aV"; break;
+		case 203: seq = "h0aV"; break;
 		case 204: seq = "V__V"; break;
 		case 205: seq = "V__V"; break;
 		case 206: seq = "V__V"; break;
 		case 207: seq = "V___"; break;
-		case 208: seq = "h___"; break;
-		case 209: seq = "h___"; break;
-		case 210: seq = "h___"; break;
-		case 211: seq = "h___"; break;
-		case 212: seq = "h___"; break;
-		case 213: seq = "h___"; break;
-		case 214: seq = "h___"; break;
-		case 215: seq = "h___"; break;
-		case 216: seq = "h___"; break;
-		case 217: seq = "h___"; break;
-		case 218: seq = "h__a"; break;
+		case 208: seq = "h0__"; break;
+		case 209: seq = "h0__"; break;
+		case 210: seq = "h0__"; break;
+		case 211: seq = "h0__"; break;
+		case 212: seq = "h0__"; break;
+		case 213: seq = "h0__"; break;
+		case 214: seq = "h0__"; break;
+		case 215: seq = "h0__"; break;
+		case 216: seq = "h0__"; break;
+		case 217: seq = "h0__"; break;
+		case 218: seq = "h0_a"; break;
 		
-		default:  seq = "h_aa"; break;
+		default:  seq = "h0aa"; break;
 		}
 		
 		/* Calculate the active line number */
