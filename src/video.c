@@ -2489,6 +2489,46 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 	fprintf(stderr, "Next valid pixel rates: %u, %u\n", m * r, m * (r + 1));
 }
 
+static int _vid_next_line_rawbb(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	vid_line_t *l = lines[0];
+	int x, i;
+	
+	l->width    = s->width;
+	l->frame    = s->bframe;
+	l->line     = s->bline;
+	l->vbialloc = 0;
+	l->lut      = NULL;
+	
+	/* Read the next line */
+	x = l->width;
+	while(x > 0)
+	{
+		i = fread(l->output, sizeof(int16_t), x, s->raw_bb_file);
+		if(i < x && feof(s->raw_bb_file))
+		{
+			rewind(s->raw_bb_file);
+		}
+		
+		x -= i;
+	}
+	
+	/* Move samples into I channel and scale for output */
+	for(x = l->width - 1; x >= 0; x--)
+	{
+		l->output[x * 2] = s->blanking_level +
+			(((int) l->output[x] - s->conf.raw_bb_blanking_level) * (s->white_level - s->blanking_level) / s->conf.raw_bb_white_level);
+	}
+	
+	/* Clear the Q channel */
+	for(x = 0; x < s->max_width; x++)
+	{
+		l->output[x * 2 + 1] = 0;
+	}
+	
+	return(1);
+}
+
 static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	const char *seq;
@@ -3970,9 +4010,21 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	s->olines = 1;
 	s->audio = 0;
 	
-	/* Initialise D/D2-MAC state */
-	if(s->conf.type == VID_MAC)
+	if(s->conf.raw_bb_file != NULL)
 	{
+		s->raw_bb_file = fopen(s->conf.raw_bb_file, "rb");
+		if(!s->raw_bb_file)
+		{
+			perror("fopen");
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "rawbb", 1, NULL, _vid_next_line_rawbb, NULL);
+	}
+	else if(s->conf.type == VID_MAC)
+	{
+		/* Initialise D/D2-MAC state */
 		r = mac_init(s);
 		
 		if(r != VID_OK)

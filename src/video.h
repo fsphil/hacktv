@@ -137,6 +137,11 @@ typedef struct {
 	/* Swap the IQ in complex signals */
 	int swap_iq;
 	
+	/* Raw video baseband input */
+	char *raw_bb_file;
+	int16_t raw_bb_blanking_level;
+	int16_t raw_bb_white_level;
+	
 	/* Signal offset and passthru */
 	int64_t offset;
 	char *passthru;
@@ -369,6 +374,9 @@ struct vid_t {
 	/* The frame and line number returned by vid_next_line() */
 	int frame;
 	int line;
+	
+	/* Raw baseband video file */
+	FILE *raw_bb_file;
 	
 	/* Teletext state */
 	tt_t tt;

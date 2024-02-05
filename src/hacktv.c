@@ -354,6 +354,9 @@ enum {
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
 	_OPT_INVERT_VIDEO,
+	_OPT_RAW_BB_FILE,
+	_OPT_RAW_BB_BLANKING,
+	_OPT_RAW_BB_WHITE,
 	_OPT_SECAM_FIELD_ID,
 	_OPT_FFMT,
 	_OPT_FOPTS,
@@ -411,6 +414,9 @@ int main(int argc, char *argv[])
 		{ "offset",         required_argument, 0, _OPT_OFFSET },
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
 		{ "invert-video",   no_argument,       0, _OPT_INVERT_VIDEO },
+		{ "raw-bb-file",    required_argument, 0, _OPT_RAW_BB_FILE },
+		{ "raw-bb-blanking", required_argument, 0, _OPT_RAW_BB_BLANKING },
+		{ "raw-bb-white",   required_argument, 0, _OPT_RAW_BB_WHITE },
 		{ "secam-field-id", no_argument,       0, _OPT_SECAM_FIELD_ID },
 		{ "json",           no_argument,       0, _OPT_JSON },
 		{ "ffmt",           required_argument, 0, _OPT_FFMT },
@@ -477,6 +483,8 @@ int main(int argc, char *argv[])
 	s.gain = 0;
 	s.antenna = NULL;
 	s.file_type = RF_INT16;
+	s.raw_bb_blanking_level = 0;
+	s.raw_bb_white_level = INT16_MAX;
 	
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:", long_options, &option_index)) != -1)
@@ -709,6 +717,18 @@ int main(int argc, char *argv[])
 		
 		case _OPT_INVERT_VIDEO: /* --invert-video */
 			s.invert_video = 1;
+			break;
+		
+		case _OPT_RAW_BB_FILE: /* --raw-bb-file <file> */
+			s.raw_bb_file = optarg;
+			break;
+		
+		case _OPT_RAW_BB_BLANKING: /* --raw-bb-blanking <value> */
+			s.raw_bb_blanking_level = strtol(optarg, NULL, 0);
+			break;
+		
+		case _OPT_RAW_BB_WHITE: /* --raw-bb-white <value> */
+			s.raw_bb_white_level = strtol(optarg, NULL, 0);
 			break;
 		
 		case _OPT_SECAM_FIELD_ID: /* --secam-field-id */
@@ -1054,6 +1074,9 @@ int main(int argc, char *argv[])
 	vid_conf.offset = s.offset;
 	vid_conf.passthru = s.passthru;
 	vid_conf.invert_video = s.invert_video;
+	vid_conf.raw_bb_file = s.raw_bb_file;
+	vid_conf.raw_bb_blanking_level = s.raw_bb_blanking_level;
+	vid_conf.raw_bb_white_level = s.raw_bb_white_level;
 	vid_conf.secam_field_id = s.secam_field_id;
 	
 	/* Setup video encoder */
