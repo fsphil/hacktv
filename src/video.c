@@ -1446,7 +1446,8 @@ const vid_config_t vid_config_405_a = {
 
 const vid_config_t vid_config_405_a_ntsc = {
 	
-	/* System A (405 line NTSC, based on the 1954 Marconi proposal) */
+	/* System A (405 line NTSC, based on specs from
+	 * BBC Engineering Division Monograph No. 32, Appendix A) */
 	.output_type    = RF_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
@@ -1454,8 +1455,8 @@ const vid_config_t vid_config_405_a_ntsc = {
 	.vsb_lower_bw   = 3000000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
-	.video_level    = 0.8, /* Power level of video */
-	.am_audio_level = 0.2, /* Power level of audio */
+	.video_level    = 0.80 / 1.22, /* Power level of video (reduced for NTSC 122% overshoot) */
+	.am_audio_level = 0.20, /* Power level of audio */
 	
 	.type           = VID_RASTER_405,
 	.frame_rate     = { 25, 1 },
@@ -1470,7 +1471,7 @@ const vid_config_t vid_config_405_a_ntsc = {
 	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00 µs */
 	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
-	.white_level    =  0.90,
+	.white_level    =  1.00,
 	.black_level    =  0.35,
 	.blanking_level =  0.30,
 	.sync_level     =  0.00,
@@ -1479,7 +1480,7 @@ const vid_config_t vid_config_405_a_ntsc = {
 	.burst_width    = 0.00000339, /* 3.39 ±0.38µs */
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00001050, /* |-->| 10.5 ±0.1µs */
-	.burst_level    = 3.0 / 6.0, /* 30% full carrier */
+	.burst_level    = 3.0 / 7.0, /* 30% full carrier */
 	.colour_carrier = { 5315625, 2 }, /* 2657812.5 Hz */
 	
 	.rw_co          =  0.299, /* R weight */
@@ -1569,7 +1570,8 @@ const vid_config_t vid_config_405 = {
 
 const vid_config_t vid_config_405_ntsc = {
 	
-	/* 405 line video (NTSC, based on the 1954 Marconi proposal) */
+	/* 405 line video (NTSC, based on specs from
+	 * BBC Engineering Division Monograph No. 32, Appendix A) */
 	.output_type    = RF_INT16_REAL,
 	
 	.level          = 1.0, /* Overall signal level */
@@ -1590,7 +1592,7 @@ const vid_config_t vid_config_405_ntsc = {
 	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00µs */
 	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
-	.white_level    =  0.60,
+	.white_level    =  0.70,
 	.black_level    =  0.05,
 	.blanking_level =  0.00,
 	.sync_level     = -0.30,
@@ -1599,7 +1601,7 @@ const vid_config_t vid_config_405_ntsc = {
 	.burst_width    = 0.00000339, /* 3.39 ±0.38µs */
 	.burst_rise     = 0.00000030, /* 0.30 ±0.10µs */
 	.burst_left     = 0.00001050, /* |-->| 10.5 ±0.1µs */
-	.burst_level    = 3.0 / 6.0, /* 30% full carrier */
+	.burst_level    = 3.0 / 7.0, /* 30% full carrier */
 	.colour_carrier = { 5315625, 2 }, /* 2657812.5 Hz */
 	
 	.rw_co          =  0.299, /* R weight */
