@@ -2519,7 +2519,7 @@ static int _vid_next_line_rawbb(vid_t *s, void *arg, int nlines, vid_line_t **li
 	for(x = l->width - 1; x >= 0; x--)
 	{
 		l->output[x * 2] = s->blanking_level +
-			(((int) l->output[x] - s->conf.raw_bb_blanking_level) * (s->white_level - s->blanking_level) / s->conf.raw_bb_white_level);
+			(((int) l->output[x] - s->conf.raw_bb_blanking_level) * (s->white_level - s->blanking_level) / (s->conf.raw_bb_white_level - s->conf.raw_bb_blanking_level));
 	}
 	
 	/* Clear the Q channel */
