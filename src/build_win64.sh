@@ -47,7 +47,7 @@ fi
 if [[ ! -f $PREFIX/lib/libosmo-fl2k.a ]]; then
 	
 	if [[ ! -d osmo-fl2k ]]; then
-		git clone --depth 1 git://git.osmocom.org/osmo-fl2k
+		git clone --depth 1 https://gitea.osmocom.org/sdr/osmo-fl2k
 	fi
 	
 	rm -rf osmo-fl2k/build
