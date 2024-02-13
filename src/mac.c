@@ -950,7 +950,7 @@ int mac_init(vid_t *s)
 	/* Set the video properties */
 	s->active_width &= ~1;	/* Ensure the active width is an even number */
 	mac->chrominance_width = s->active_width / 2;
-	mac->chrominance_left  = round(s->pixel_rate * (233.5 / MAC_CLOCK_RATE));
+	mac->chrominance_left  = round(s->pixel_rate * (233.0 / MAC_CLOCK_RATE));
 	mac->white_ref_left    = round(s->pixel_rate * (371.0 / MAC_CLOCK_RATE));
 	mac->black_ref_left    = round(s->pixel_rate * (533.0 / MAC_CLOCK_RATE));
 	mac->black_ref_right   = round(s->pixel_rate * (695.0 / MAC_CLOCK_RATE));

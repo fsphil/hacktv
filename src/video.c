@@ -1139,7 +1139,7 @@ const vid_config_t vid_config_d2mac_am = {
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_left    = 585.0 / MAC_CLOCK_RATE,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.00, /* Overall signal level */
@@ -1175,7 +1175,7 @@ const vid_config_t vid_config_d2mac_fm = {
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_left    = 585.0 / MAC_CLOCK_RATE,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
@@ -1209,7 +1209,7 @@ const vid_config_t vid_config_d2mac = {
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_left    = 585.0 / MAC_CLOCK_RATE,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
@@ -1243,7 +1243,7 @@ const vid_config_t vid_config_dmac_am = {
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_left    = 585.0 / MAC_CLOCK_RATE,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.00, /* Overall signal level */
@@ -1279,7 +1279,7 @@ const vid_config_t vid_config_dmac_fm = {
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_left    = 585.0 / MAC_CLOCK_RATE,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
@@ -1313,7 +1313,7 @@ const vid_config_t vid_config_dmac = {
 	.hline          = 313,
 	
 	.active_lines   = 576,
-	.active_left    = 586.0 / MAC_CLOCK_RATE,
+	.active_left    = 585.0 / MAC_CLOCK_RATE,
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
