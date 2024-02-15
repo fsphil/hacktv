@@ -596,8 +596,13 @@ static void *_video_scaler_thread(void *arg)
 		);
 		
 		/* Copy some data to the scaled image */
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(58, 29, 100)
+		oframe->interlaced_frame = frame->flags & AV_FRAME_FLAG_INTERLACED ? 1 : 0;
+		oframe->top_field_first = frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST ? 1 : 0;
+#else
 		oframe->interlaced_frame = frame->interlaced_frame;
 		oframe->top_field_first = frame->top_field_first;
+#endif
 		
 		/* Done with the frame */
 		av_frame_unref(frame);
