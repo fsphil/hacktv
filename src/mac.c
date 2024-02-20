@@ -1753,7 +1753,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	/* Shift the lines by one if the source
 	 * video has the bottom field first */
-	if(s->vframe.interlaced == 2) y += 1;
+	if(y >= 0 && s->vframe.interlaced == 2) y += 1;
 	
 	if(y < 0 || y >= s->conf.active_lines) y = -1;
 	
