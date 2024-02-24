@@ -3356,19 +3356,26 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 		
 		if(s->conf.fm_right_level > 0 && s->conf.fm_right_carrier != 0)
 		{
-			int16_t a2 = 0;
+			int16_t a2 = s->fm_right.sample;
 			
 			if(s->conf.a2stereo)
 			{
 				int16_t s1[2] = { 0, 0 };
 				int16_t s2[2] = { 0, 0 };
 				
+				if(s->a2stereo_system_m)
+				{
+					/* The System M variant is L-R, not R */
+					a2 = s->fm_left.sample - s->fm_right.sample;
+				}
+				
+				/* Add the pilot tone */
 				_am_modulator_add(&s->a2stereo_signal, s1, 0);
 				_am_modulator_add(&s->a2stereo_pilot, s2, s1[0]);
-				a2 = s2[0];
+				a2 += s2[0];
 			}
 			
-			_fm_modulator_add(&s->fm_right, add, s->fm_right.sample + a2);
+			_fm_modulator_add(&s->fm_right, add, a2);
 		}
 		
 		if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
@@ -4160,8 +4167,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	if(s->conf.a2stereo)
 	{
 		/* Enable Zweikanalton / A2 Stereo */
+		s->a2stereo_system_m = s->conf.fm_mono_carrier == 4500000;
 		s->conf.fm_right_level = s->conf.fm_mono_level * 0.446684; /* -7 dB */
-		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + 242000;
+		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + (s->a2stereo_system_m ? 224213 : 242000);
 		s->conf.fm_right_deviation = s->conf.fm_mono_deviation;
 		s->conf.fm_right_preemph = s->conf.fm_mono_preemph;
 		
@@ -4172,8 +4180,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		/* 117.5 Hz == Stereo */
-		r = _init_am_modulator(&s->a2stereo_signal, s->sample_rate, 117.5, 1.0);
+		/* 117.5 Hz == Stereo (149.9 Hz for M variant) */
+		r = _init_am_modulator(&s->a2stereo_signal, s->sample_rate, (s->a2stereo_system_m ? 149.9 : 117.5), 1.0);
 		if(r != VID_OK)
 		{
 			vid_free(s);

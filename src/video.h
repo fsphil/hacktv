@@ -412,6 +412,7 @@ struct vid_t {
 	_mod_fm_t fm_right;
 	
 	/* Zweikanalton / A2 Stereo state */
+	int a2stereo_system_m;
 	_mod_am_t a2stereo_pilot;
 	_mod_am_t a2stereo_signal;
 	
