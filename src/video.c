@@ -4173,7 +4173,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->conf.fm_right_deviation = s->conf.fm_mono_deviation;
 		s->conf.fm_right_preemph = s->conf.fm_mono_preemph;
 		
-		r = _init_am_modulator(&s->a2stereo_pilot, s->sample_rate, 54.6875e3, 0.05);
+		r = _init_am_modulator(&s->a2stereo_pilot, s->sample_rate, (s->a2stereo_system_m ? 55.06993e3 : 54.6875e3), 0.05);
 		if(r != VID_OK)
 		{
 			vid_free(s);
