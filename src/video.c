@@ -329,8 +329,8 @@ const vid_config_t vid_config_pal_m = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.83, /* Power level of video */
-	.fm_mono_level  = 0.17, /* FM audio carrier power level */
+	.video_level    = 0.77, /* Power level of video */
+	.fm_mono_level  = 0.15, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001, },
@@ -380,8 +380,8 @@ const vid_config_t vid_config_pal_n = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.83, /* Power level of video */
-	.fm_mono_level  = 0.16, /* FM audio carrier power level */
+	.video_level    = 0.77, /* Power level of video */
+	.fm_mono_level  = 0.15, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
@@ -779,8 +779,8 @@ const vid_config_t vid_config_ntsc_m = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.83, /* Power level of video */
-	.fm_mono_level  = 0.17, /* FM audio carrier power level */
+	.video_level    = 0.77, /* Power level of video */
+	.fm_mono_level  = 0.15, /* FM audio carrier power level */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
@@ -1969,8 +1969,8 @@ const vid_config_t vid_config_cbs405_m = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.83, /* Power level of video */
-	.fm_mono_level  = 0.17, /* FM audio carrier power level */
+	.video_level    = 0.77, /* Power level of video */
+	.fm_mono_level  = 0.15, /* FM audio carrier power level */
 	
 	.type           = VID_CBS_405,
 	.frame_rate     = { 72, 1 },
