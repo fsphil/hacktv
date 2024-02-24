@@ -3366,7 +3366,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				if(s->a2stereo_system_m)
 				{
 					/* The System M variant is L-R, not R */
-					a2 = (s->fm_mono.sample - s->fm_right.sample) / 2;
+					a2 = s->fm_mono.sample - s->fm_right.sample;
 				}
 				
 				/* Add the pilot tone */
