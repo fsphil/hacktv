@@ -317,7 +317,6 @@ int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
 	
 	/* Generate the filter taps */
 	ntaps = 21 * interpolation;
-	ntaps += (ntaps % interpolation ? interpolation - (ntaps % interpolation) : 0);
 	if((ntaps & 1) == 0) ntaps--;
 	
 	taps = calloc(ntaps, sizeof(double));
