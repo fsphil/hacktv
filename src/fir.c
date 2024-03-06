@@ -68,6 +68,24 @@ static void kaiser(double *taps, size_t ntaps, double beta)
 	taps[ntaps - 1] = i_beta;
 }
 
+void fir_normalise(double *taps, size_t ntaps, double f)
+{
+	double a;
+	int i;
+	
+	for(a = i = 0; i < ntaps; i++)
+	{
+		a += taps[i];
+	}
+	
+	a = a / f;
+	
+	for(i = 0; i < ntaps; i++)
+	{
+		taps[i] /= a;
+	}
+}
+
 void fir_low_pass(double *taps, size_t ntaps, double sample_rate, double cutoff, double width, double gain)
 {
 	int n, M;
