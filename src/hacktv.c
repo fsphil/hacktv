@@ -521,23 +521,13 @@ int main(int argc, char *argv[])
 			}
 			else if(strcmp(pre, "soapysdr") == 0)
 			{
-#ifdef HAVE_SOAPYSDR
 				s.output_type = "soapysdr";
 				s.output = sub;
-#else
-				fprintf(stderr, "SoapySDR support is not available in this build of hacktv.\n");
-				return(-1);
-#endif
 			}
 			else if(strcmp(pre, "fl2k") == 0)
 			{
-#ifdef HAVE_FL2K
 				s.output_type = "fl2k";
 				s.output = sub;
-#else
-				fprintf(stderr, "FL2K support is not available in this build of hacktv.\n");
-				return(-1);
-#endif
 			}
 			else
 			{
@@ -1105,26 +1095,34 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 	}
-#ifdef HAVE_SOAPYSDR
 	else if(strcmp(s.output_type, "soapysdr") == 0)
 	{
+#ifdef HAVE_SOAPYSDR
 		if(rf_soapysdr_open(&s.rf, s.output, s.vid.sample_rate, s.frequency, s.gain, s.antenna) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
 		}
-	}
+#else
+		fprintf(stderr, "SoapySDR support is not available in this build of hacktv.\n");
+		vid_free(&s.vid);
+		return(-1);
 #endif
-#ifdef HAVE_FL2K
+	}
 	else if(strcmp(s.output_type, "fl2k") == 0)
 	{
+#ifdef HAVE_FL2K
 		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
 		}
-	}
+#else
+		fprintf(stderr, "FL2K support is not available in this build of hacktv.\n");
+		vid_free(&s.vid);
+		return(-1);
 #endif
+	}
 	else if(strcmp(s.output_type, "file") == 0)
 	{
 		if(rf_file_open(&s.rf, s.output, s.file_type, s.vid.conf.output_type == RF_INT16_COMPLEX) != RF_OK)
