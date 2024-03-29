@@ -51,7 +51,10 @@ extern int rf_write(rf_t *s, int16_t *iq_data, size_t samples);
 extern int rf_close(rf_t *s);
 
 #include "rf_file.h"
+
+#ifdef HAVE_HACKRF
 #include "rf_hackrf.h"
+#endif
 
 #ifdef HAVE_SOAPYSDR
 #include "rf_soapysdr.h"
