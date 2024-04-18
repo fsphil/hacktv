@@ -33,6 +33,24 @@ static void _sigint_callback_handler(int signum)
 	_signal = signum;
 }
 
+static int _parse_ratio(rational_t *r, const char *s)
+{
+	int i;
+	int64_t e;
+	
+	i = sscanf(s, "%d%*[:/]%d", &r->num, &r->den);
+	if(i != 2 || r->den == 0)
+	{
+		return(HACKTV_ERROR);
+	}
+	
+	e = gcd(r->num, r->den);
+	r->num /= e;
+	r->den /= e;
+	
+	return(HACKTV_OK);
+}
+
 static void print_usage(void)
 {
 	printf(
@@ -48,6 +66,9 @@ static void print_usage(void)
 		"  -D, --deviation <value>        Override the mode's FM peak deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -i, --interlace                Update image each field instead of each frame.\n"
+		"      --fit <mode>               Set fit mode (stretch, fill, fit, or none), Default: stretch\n"
+		"      --min-aspect <value>       Set the minimum aspect ratio for fit mode.\n"
+		"      --max-aspect <value>       Set the maximum aspect ratio for fit mode.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
 		"      --shuffle                  Randomly shuffle the inputs.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
@@ -365,6 +386,11 @@ enum {
 	_OPT_LIST_MODES,
 	_OPT_JSON,
 	_OPT_SHUFFLE,
+	_OPT_FIT,
+	_OPT_MIN_ASPECT,
+	_OPT_MAX_ASPECT,
+	_OPT_LETTERBOX,
+	_OPT_PILLARBOX,
 };
 
 int main(int argc, char *argv[])
@@ -381,6 +407,11 @@ int main(int argc, char *argv[])
 		{ "deviation",      required_argument, 0, 'D' },
 		{ "gamma",          required_argument, 0, 'G' },
 		{ "interlace",      no_argument,       0, 'i' },
+		{ "fit",            required_argument, 0, _OPT_FIT },
+		{ "min-aspect",     required_argument, 0, _OPT_MIN_ASPECT },
+		{ "max-aspect",     required_argument, 0, _OPT_MAX_ASPECT },
+		{ "letterbox",      no_argument,       0, _OPT_LETTERBOX },
+		{ "pillarbox",      no_argument,       0, _OPT_PILLARBOX },
 		{ "repeat",         no_argument,       0, 'r' },
 		{ "shuffle",        no_argument,       0, _OPT_SHUFFLE },
 		{ "verbose",        no_argument,       0, 'v' },
@@ -457,6 +488,7 @@ int main(int argc, char *argv[])
 	s.deviation = -1;
 	s.gamma = -1;
 	s.interlace = 0;
+	s.fit_mode = AV_FIT_STRETCH;
 	s.repeat = 0;
 	s.shuffle = 0;
 	s.verbose = 0;
@@ -575,6 +607,54 @@ int main(int argc, char *argv[])
 		
 		case 'i': /* -i, --interlace */
 			s.interlace = 1;
+			break;
+		
+		case _OPT_FIT: /* --fit <mode> */
+			
+			if(strcmp(optarg, "stretch") == 0) s.fit_mode = AV_FIT_STRETCH;
+			else if(strcmp(optarg, "fill") == 0) s.fit_mode = AV_FIT_FILL;
+			else if(strcmp(optarg, "fit") == 0) s.fit_mode = AV_FIT_FIT;
+			else if(strcmp(optarg, "none") == 0) s.fit_mode = AV_FIT_NONE;
+			else
+			{
+				fprintf(stderr, "Unrecognised fit mode '%s'.\n", optarg);
+				return(-1);
+			}
+			
+			break;
+		
+		case _OPT_MIN_ASPECT: /* --min-aspect <value> */
+			                     
+			if(_parse_ratio(&s.min_aspect, optarg) != HACKTV_OK)
+			{
+				fprintf(stderr, "Invalid minimum aspect\n");
+				return(-1);
+			}
+			
+			break;
+		
+		case _OPT_MAX_ASPECT: /* --max-aspect <value> */
+			
+			if(_parse_ratio(&s.max_aspect, optarg) != HACKTV_OK)
+			{
+				fprintf(stderr, "Invalid maximum aspect\n");
+				return(-1);
+			}
+			
+			break;
+		
+		case _OPT_LETTERBOX: /* --letterbox */
+			
+			/* For compatiblity with CJ fork */
+			s.fit_mode = AV_FIT_FIT;
+			
+			break;
+		
+		case _OPT_PILLARBOX: /* --pillarbox */
+			
+			/* For compatiblity with CJ fork */
+			s.fit_mode = AV_FIT_FILL;
+			
 			break;
 		
 		case 'r': /* -r, --repeat */
@@ -1146,6 +1226,13 @@ int main(int argc, char *argv[])
 			.num = s.vid.conf.frame_rate.num * (s.vid.conf.interlace ? 2 : 1),
 			.den = s.vid.conf.frame_rate.den,
 		},
+		.display_aspect_ratios = {
+			s.vid.conf.frame_aspects[0],
+			s.vid.conf.frame_aspects[1]
+		},
+		.fit_mode = s.fit_mode,
+		.min_display_aspect_ratio = s.min_aspect,
+		.max_display_aspect_ratio = s.max_aspect,
 		.width = s.vid.active_width,
 		.height = s.vid.conf.active_lines,
 		.sample_rate = (rational_t) {
@@ -1153,6 +1240,14 @@ int main(int argc, char *argv[])
 			1,
 		},
 	};
+	
+	if((s.vid.conf.frame_orientation & 3) == VID_ROTATE_90 ||
+	   (s.vid.conf.frame_orientation & 3) == VID_ROTATE_270)
+	{
+		/* Flip dimensions if the lines are scanned vertically */
+		s.vid.av.width = s.vid.conf.active_lines;
+		s.vid.av.height = s.vid.active_width;
+	}
 	
 	do
 	{

@@ -27,15 +27,16 @@
 typedef struct {
 	const char *id;
 	uint8_t code;
+	rational_t aspect[2];
 } _wss_modes_t;
 
 static const _wss_modes_t _wss_modes[] = {
-	{ "4:3", 0x08 },
-	{ "16:9", 0x07 },
-	{ "14:9-letterbox", 0x01 },
-	{ "16:9-letterbox", 0x04 },
-	{ "auto", 0xFF },
-	{ NULL, 0 },
+	{ "4:3", 0x08, { { 4, 3 } } },
+	{ "16:9", 0x07, { { 16, 9 } } },
+	{ "14:9-letterbox", 0x01, { { 4, 3 } } },
+	{ "16:9-letterbox", 0x04, { { 4, 3 } } },
+	{ "auto", 0xFF, { { 4, 3 }, { 16, 9 } } },
+	{ },
 };
 
 static size_t _group_bits(uint8_t *vbi, uint8_t code, size_t offset, size_t length)
@@ -74,6 +75,8 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 		if(strcasecmp(mode, _wss_modes[o].id) == 0)
 		{
 			s->code = _wss_modes[o].code;
+			vid->conf.frame_aspects[0] = _wss_modes[o].aspect[0];
+			vid->conf.frame_aspects[1] = _wss_modes[o].aspect[1];
 			break;
 		}
 	}

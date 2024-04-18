@@ -43,6 +43,7 @@ extern int64_t gcd(int64_t a, int64_t b);
 extern rational_t rational_mul(rational_t a, rational_t b);
 extern rational_t rational_div(rational_t a, rational_t b);
 extern int rational_cmp(rational_t a, rational_t b);
+extern rational_t rational_nearest(rational_t ref, rational_t a, rational_t b);
 extern cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level);
 extern double rc_window(double t, double left, double width, double rise);
 

@@ -50,12 +50,24 @@ typedef int16_t *(*av_read_audio_t)(void *ctx, size_t *samples);
 typedef int (*av_eof_t)(void *ctx);
 typedef int (*av_close_t)(void *ctx);
 
+/* Frame fit/crop modes */
+typedef enum {
+	AV_FIT_STRETCH,
+	AV_FIT_FILL,
+	AV_FIT_FIT,
+	AV_FIT_NONE,
+} av_fit_mode_t;
+
 typedef struct {
 	
 	/* Video settings */
 	int width;
 	int height;
 	rational_t frame_rate;
+	rational_t display_aspect_ratios[2];
+	av_fit_mode_t fit_mode;
+	rational_t min_display_aspect_ratio;
+	rational_t max_display_aspect_ratio;
 	av_frame_t default_frame;
 	
 	/* Video state */
@@ -85,6 +97,8 @@ extern int av_close(av_t *s);
 
 extern rational_t av_display_aspect_ratio(av_frame_t *frame);
 extern void av_set_display_aspect_ratio(av_frame_t *frame, rational_t display_aspect_ratio);
+
+extern rational_t av_calculate_frame_size(av_t *s, rational_t resolution, rational_t pixel_aspect_ratio);
 
 extern void av_hflip_frame(av_frame_t *frame);
 extern void av_vflip_frame(av_frame_t *frame);

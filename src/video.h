@@ -376,6 +376,8 @@ struct vid_t {
 	
 	/* Video state */
 	av_frame_t vframe;
+	int vframe_x;
+	int vframe_y;
 	
 	/* The frame and line number being rendered next */
 	int bframe;

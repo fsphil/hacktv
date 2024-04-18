@@ -2589,6 +2589,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	int pal = 0;
 	int fsc = 0;
 	uint8_t sc = 0;
+	int al, ar;
 	vid_line_t *l = lines[1];
 	
 	l->width    = s->width;
@@ -2992,7 +2993,11 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	 * video has the bottom field first */
 	if(vy >= 0 && s->vframe.interlaced == 2) vy += 1;
 	
-	if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
+	/* Centre the video vertically */
+	vy -= s->vframe_y;
+	
+	/* Check for out of bounds */
+	if(vy < 0 || vy >= s->vframe.height) vy = -1;
 	
 	if(s->conf.colour_mode == VID_PAL ||
 	   s->conf.colour_mode == VID_NTSC)
@@ -3062,16 +3067,22 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		int16_t *o;
 		
 		/* Calculate active video portion of this line */
-		int al = (seq[2] == 'a' ? s->active_left : (seq[3] == 'a' ? s->half_width : -1));
-		int ar = (seq[3] == 'a' ? s->active_left + s->active_width : (seq[2] == 'a' ? s->half_width : -1));
+		al = (seq[2] == 'a' ? s->active_left : (seq[3] == 'a' ? s->half_width : -1));
+		ar = (seq[3] == 'a' ? s->active_left + s->active_width : (seq[2] == 'a' ? s->half_width : -1));
+		
+		for(x = al, o = &l->output[al * 2]; x < s->active_left + s->vframe_x; x++, o += 2)
+		{
+			*o = s->yiq_level_lookup[0x000000].y;
+		}
 		
 		if(s->vframe.framebuffer && vy >= 0)
 		{
-			prgb = &s->vframe.framebuffer[vy * s->vframe.line_stride + (al - s->active_left) * s->vframe.pixel_stride];
+			prgb  = &s->vframe.framebuffer[vy * s->vframe.line_stride];
+			prgb += (x - s->active_left - s->vframe_x) * s->vframe.pixel_stride;
 			stride = s->vframe.pixel_stride;
 		}
 		
-		for(x = al, o = &l->output[al * 2]; x < ar; x++, o += 2, prgb += stride)
+		for(; x < s->active_left + s->vframe_x + s->vframe.width && x < ar; x++, o += 2, prgb += stride)
 		{
 			rgb = *prgb & 0xFFFFFF;
 			
@@ -3089,6 +3100,11 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				*o += (s->yiq_level_lookup[rgb].i * l->lut[x].q +
 				       s->yiq_level_lookup[rgb].q * l->lut[x].i * pal) >> 15;
 			}
+		}
+		
+		for(; x < ar; x++, o += 2)
+		{
+			*o = s->yiq_level_lookup[0x000000].y;
 		}
 	}
 	
@@ -3183,12 +3199,12 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			{
 				/* D'r */
 				
-				for(x = 0; x < s->active_left; x++)
+				for(x = 0; x < s->active_left + s->vframe_x; x++)
 				{
 					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].q;
 				}
 				
-				for(; x < s->active_left + s->active_width; x++, prgb += stride)
+				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
 					l->output[x * 2 + 1] = s->yiq_level_lookup[*prgb & 0xFFFFFF].q;
 				}
@@ -3202,12 +3218,12 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			{
 				/* D'b */
 				
-				for(x = 0; x < s->active_left; x++)
+				for(x = 0; x < s->active_left + s->vframe_x; x++)
 				{
 					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].i;
 				}
 				
-				for(; x < s->active_left + s->active_width; x++, prgb += stride)
+				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
 					l->output[x * 2 + 1] = s->yiq_level_lookup[*prgb & 0xFFFFFF].i;
 				}
@@ -4689,6 +4705,22 @@ static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
 		}
 		
 		av_read_video(&s->av, &s->vframe);
+		
+		av_rotate_frame(&s->vframe, s->conf.frame_orientation & 3);
+		if(s->conf.frame_orientation & VID_HFLIP) av_hflip_frame(&s->vframe);
+		if(s->conf.frame_orientation & VID_VFLIP) av_vflip_frame(&s->vframe);
+		
+		/* Crop frame to fit inside active video area */
+		av_crop_frame(&s->vframe,
+			(s->vframe.width - s->active_width) / 2,
+			(s->vframe.height - s->conf.active_lines) / 2,
+			s->active_width,
+			s->conf.active_lines
+		);
+		
+		/* Calculate frame offset from top left */
+		s->vframe_x = (s->active_width - s->vframe.width) / 2;
+		s->vframe_y = (s->conf.active_lines - s->vframe.height) / 2;
 	}
 	
 	for(i = 0; i < s->nprocesses; i++)
