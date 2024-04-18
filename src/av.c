@@ -145,3 +145,15 @@ void av_rotate_frame(av_frame_t *frame, int a)
 	}
 }
 
+void av_crop_frame(av_frame_t *frame, int x, int y, int width, int height)
+{
+	if(x < 0) { width += x; x = 0; }
+	if(y < 0) { height += y; y = 0; }
+	if(x + width > frame->width) width = frame->width - x;
+	if(y + height > frame->height) height = frame->height - y;
+	
+	frame->framebuffer += y * frame->line_stride + x * frame->pixel_stride;
+	frame->width = width;
+	frame->height = height;
+}
+

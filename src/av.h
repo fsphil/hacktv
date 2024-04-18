@@ -89,6 +89,7 @@ extern void av_set_display_aspect_ratio(av_frame_t *frame, rational_t display_as
 extern void av_hflip_frame(av_frame_t *frame);
 extern void av_vflip_frame(av_frame_t *frame);
 extern void av_rotate_frame(av_frame_t *frame, int a);
+extern void av_crop_frame(av_frame_t *frame, int x, int y, int width, int height);
 
 #include "av_test.h"
 #include "av_ffmpeg.h"
