@@ -571,7 +571,7 @@ static void *_video_scaler_thread(void *arg)
 		
 		oframe = _frame_dbuffer_back_buffer(&s->out_video_buffer);
 		
-		ratio = frame->sample_aspect_ratio;
+		ratio = av_guess_sample_aspect_ratio(s->format_ctx, s->video_stream, frame);
 		
 		if(ratio.num == 0 || ratio.den == 0)
 		{
