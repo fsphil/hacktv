@@ -1,6 +1,6 @@
 
 CC      := $(CROSS_HOST)gcc
-PKGCONF := $(CROSS_HOST)pkg-config
+PKGCONF := pkg-config
 CFLAGS  := -g -Wall -pthread -O3 $(EXTRA_CFLAGS)
 LDFLAGS := -g -lm -pthread $(EXTRA_LDFLAGS)
 OBJS    := hacktv.o common.o fir.o vbidata.o teletext.o wss.o video.o mac.o dance.o eurocrypt.o videocrypt.o videocrypts.o syster.o acp.o vits.o vitc.o nicam728.o av.o av_test.o av_ffmpeg.o rf.o rf_file.o
