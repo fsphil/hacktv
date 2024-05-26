@@ -5,7 +5,7 @@ set -x
 
 HOST=x86_64-w64-mingw32
 PREFIX=$(pwd)/build_win64/install_root
-export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+export PKG_CONFIG_LIBDIR=$PREFIX/lib/pkgconfig
 
 mkdir -p $PREFIX
 cd build_win64
@@ -33,7 +33,9 @@ if [[ ! -f $PREFIX/lib/libhackrf.a ]]; then
 	rm -rf hackrf-2023.01.1/host/libhackrf/build
 	mkdir -p hackrf-2023.01.1/host/libhackrf/build
 	cd hackrf-2023.01.1/host/libhackrf/build
-	mingw64-cmake \
+	cmake .. \
+		-DCMAKE_SYSTEM_NAME=Windows \
+		-DCMAKE_C_COMPILER=$HOST-gcc \
 		-DCMAKE_INSTALL_PREFIX=$PREFIX \
 		-DCMAKE_INSTALL_LIBPREFIX=$PREFIX/lib \
 		-DLIBUSB_INCLUDE_DIR=$PREFIX/include/libusb-1.0 \
@@ -53,7 +55,9 @@ if [[ ! -f $PREFIX/lib/libosmo-fl2k.a ]]; then
 	rm -rf osmo-fl2k/build
 	mkdir -p osmo-fl2k/build
 	cd osmo-fl2k/build
-	mingw64-cmake \
+	cmake .. \
+		-DCMAKE_SYSTEM_NAME=Windows \
+		-DCMAKE_C_COMPILER=$HOST-gcc \
 		-DCMAKE_INSTALL_PREFIX=$PREFIX \
 		-DCMAKE_INSTALL_LIBPREFIX=$PREFIX \
 		-DCMAKE_INSTALL_LIBDIR=$PREFIX/lib \
@@ -93,7 +97,7 @@ fi
 if [[ ! -f $PREFIX/lib/libavformat.a ]]; then
 	
 	if [[ ! -d ffmpeg ]]; then
-		git clone --depth 1 https://github.com/FFmpeg/FFmpeg.git ffmpeg
+		git clone --depth 1 --branch n6.1.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg
 	fi
 	
 	cd ffmpeg
@@ -109,7 +113,6 @@ fi
 
 cd ..
 CROSS_HOST=$HOST- make -j4 EXTRA_LDFLAGS="-static" EXTRA_PKGS="libusb-1.0"
-mv -f hacktv hacktv.exe || true
 $HOST-strip hacktv.exe
 
 echo "Done"
