@@ -23,6 +23,9 @@
 #include <unistd.h>
 #include "rf.h"
 
+/* Value from host/libhackrf/src/hackrf.c */
+#define TRANSFER_BUFFER_SIZE 262144
+
 typedef enum {
 	BUFFER_EMPTY,
 	BUFFER_PREFILL,
@@ -362,9 +365,9 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 	}
 	
 	/* Allocate memory for the output buffers, enough for at least 400ms - minimum 4 */
-	r = sample_rate * 2 * 4 / 10 / hackrf_get_transfer_buffer_size(rf->d);
+	r = sample_rate * 2 * 4 / 10 / TRANSFER_BUFFER_SIZE;
 	if(r < 4) r = 4;
-	_buffer_init(&rf->buffers, r, hackrf_get_transfer_buffer_size(rf->d));
+	_buffer_init(&rf->buffers, r, TRANSFER_BUFFER_SIZE);
 	
 	/* Begin transmitting */
 	r = hackrf_start_tx(rf->d, _tx_callback, rf);
