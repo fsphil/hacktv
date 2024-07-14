@@ -37,6 +37,7 @@ typedef struct vid_t vid_t;
 #include "vits.h"
 #include "vitc.h"
 #include "vbidata.h"
+#include "sis.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -203,6 +204,7 @@ typedef struct {
 	int acp;
 	int vits;
 	int vitc;
+	char *sis;
 	char *eurocrypt;
 	
 	/* RGB weights, should add up to 1.0 */
@@ -432,6 +434,9 @@ struct vid_t {
 	nicam_mod_t nicam;
 	int16_t nicam_buf[NICAM_AUDIO_LEN * 2];
 	size_t nicam_buf_len;
+	
+	/* SiS state */
+	sis_t sis;
 	
 	/* DANCE audio state */
 	dance_mod_t dance;

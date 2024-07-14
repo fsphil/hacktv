@@ -103,6 +103,7 @@ static void print_usage(void)
 		"      --mac-audio-l1-protection  Use first level protection (D/D2-MAC).\n"
 		"                                 (Default)\n"
 		"      --mac-audio-l2-protection  Use second level protection (D/D2-MAC).\n"
+		"      --sis <mode>               Enable Sound-in-Syncs (dcsis only)\n"
 		"      --swap-iq                  Swap the I and Q channels to invert the spectrum.\n"
 		"                                 Applied before offset and passthru. (Complex modes only).\n"
 		"      --offset <value>           Add a frequency offset in Hz (Complex modes only).\n"
@@ -372,6 +373,7 @@ enum {
 	_OPT_MAC_AUDIO_LINEAR,
 	_OPT_MAC_AUDIO_L1_PROTECTION,
 	_OPT_MAC_AUDIO_L2_PROTECTION,
+	_OPT_SIS,
 	_OPT_SWAP_IQ,
 	_OPT_OFFSET,
 	_OPT_PASSTHRU,
@@ -444,6 +446,7 @@ int main(int argc, char *argv[])
 		{ "mac-audio-linear", no_argument,     0, _OPT_MAC_AUDIO_LINEAR },
 		{ "mac-audio-l1-protection", no_argument, 0, _OPT_MAC_AUDIO_L1_PROTECTION },
 		{ "mac-audio-l2-protection", no_argument, 0, _OPT_MAC_AUDIO_L2_PROTECTION },
+		{ "sis",            required_argument, 0, _OPT_SIS },
 		{ "swap-iq",        no_argument,       0, _OPT_SWAP_IQ },
 		{ "offset",         required_argument, 0, _OPT_OFFSET },
 		{ "passthru",       required_argument, 0, _OPT_PASSTHRU },
@@ -779,6 +782,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_MAC_AUDIO_L2_PROTECTION: /* --mac-audio-l2-protection */
 			s.mac_audio_protection = MAC_SECOND_LEVEL_PROTECTION;
+			break;
+		
+		case _OPT_SIS: /* --sis <mode> */
+			s.sis = optarg;
 			break;
 		
 		case _OPT_SWAP_IQ: /* --swap-iq */
@@ -1146,6 +1153,17 @@ int main(int argc, char *argv[])
 	if(s.filter)
 	{
 		vid_conf.vfilter = 1;
+	}
+	
+	if(s.sis)
+	{
+		if(vid_conf.lines != 625)
+		{
+			fprintf(stderr, "SiS is only available with 625 line modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.sis = s.sis;
 	}
 	
 	vid_conf.swap_iq = s.swap_iq;

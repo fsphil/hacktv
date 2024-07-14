@@ -3376,7 +3376,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 			}
 			
 			if((s->conf.nicam_level > 0 && s->conf.nicam_carrier != 0) ||
-			   s->conf.type == VID_MAC)
+			   s->conf.type == VID_MAC || s->conf.sis)
 			{
 				s->nicam_buf[s->nicam_buf_len++] = audio[0];
 				s->nicam_buf[s->nicam_buf_len++] = audio[1];
@@ -3391,6 +3391,11 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 					if(s->conf.type == VID_MAC)
 					{
 						mac_write_audio(s, &s->mac.audio, 0, s->nicam_buf, NICAM_AUDIO_LEN * 2);
+					}
+					
+					if(s->conf.sis)
+					{
+						sis_write_audio(&s->sis, s->nicam_buf);
 					}
 					
 					s->nicam_buf_len = 0;
@@ -4210,6 +4215,20 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "vitc", 1, &s->vitc, vitc_render, NULL);
 	}
 	
+	/* Initialise SiS encoder */
+	if(s->conf.sis)
+	{
+		if((r = sis_init(&s->sis, s->conf.sis, s, NICAM_MODE_STEREO, 0)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "sis", 1, &s->sis, sis_render, NULL);
+		
+		s->audio = 1;
+	}
+	
 	/* Initialise the teletext system */
 	if(s->conf.teletext)
 	{
@@ -4591,6 +4610,11 @@ void vid_free(vid_t *s)
 	if(s->conf.teletext)
 	{
 		tt_free(&s->tt);
+	}
+	
+	if(s->conf.sis)
+	{
+		sis_free(&s->sis);
 	}
 	
 	if(s->conf.vitc)
