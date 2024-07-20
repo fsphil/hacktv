@@ -300,6 +300,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 {
 	hackrf_t *rf;
 	int r;
+	uint8_t rev;
 	
 	rf = calloc(1, sizeof(hackrf_t));
 	if(!rf)
@@ -319,6 +320,13 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 		fprintf(stderr, "hackrf_init() failed: %s (%d)\n", hackrf_error_name(r), r);
 		free(rf);
 		return(RF_ERROR);
+	}
+	
+	/* Print the hardware revision */
+	r = hackrf_board_rev_read(rf->d, &rev);
+	if(r == HACKRF_SUCCESS)
+	{
+		fprintf(stderr, "hackrf: Hardware Revision: %s\n", hackrf_board_rev_name(rev));
 	}
 	
 	r = hackrf_open_by_serial(serial, &rf->d);
