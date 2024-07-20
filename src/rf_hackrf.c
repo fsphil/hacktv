@@ -307,6 +307,11 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 		return(RF_OUT_OF_MEMORY);
 	}
 	
+	/* Print the library version number */
+	fprintf(stderr, "libhackrf version: %s (%s)\n",
+		hackrf_library_release(),
+		hackrf_library_version());
+	
 	/* Prepare the HackRF for output */
 	r = hackrf_init();
 	if(r != HACKRF_SUCCESS)
