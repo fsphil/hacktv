@@ -51,6 +51,11 @@ static int _parse_ratio(rational_t *r, const char *s)
 	return(HACKTV_OK);
 }
 
+static void print_version(void)
+{
+	printf("hacktv %s\n", VERSION);
+}
+
 static void print_usage(void)
 {
 	printf(
@@ -112,6 +117,7 @@ static void print_usage(void)
 		"                                 white levels.\n"
 		"      --secam-field-id           Enable SECAM field identification.\n"
 		"      --json                     Output a JSON array when used with --list-modes.\n"
+		"      --version                  Print the version number and exit.\n"
 		"\n"
 		"Input options\n"
 		"\n"
@@ -393,6 +399,7 @@ enum {
 	_OPT_MAX_ASPECT,
 	_OPT_LETTERBOX,
 	_OPT_PILLARBOX,
+	_OPT_VERSION,
 };
 
 int main(int argc, char *argv[])
@@ -463,6 +470,7 @@ int main(int argc, char *argv[])
 		{ "gain",           required_argument, 0, 'g' },
 		{ "antenna",        required_argument, 0, 'A' },
 		{ "type",           required_argument, 0, 't' },
+		{ "version",        no_argument,       0, _OPT_VERSION },
 		{ 0,                0,                 0,  0  }
 	};
 	static hacktv_t s;
@@ -881,6 +889,10 @@ int main(int argc, char *argv[])
 			}
 			
 			break;
+		
+		case _OPT_VERSION: /* --version */
+			print_version();
+			return(0);
 		
 		case '?':
 			print_usage();
