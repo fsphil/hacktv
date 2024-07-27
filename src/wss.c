@@ -91,11 +91,11 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	level = round((vid->white_level - vid->black_level) * (5.0 / 7.0));
 	
 	s->vid = vid;
-	s->lut = vbidata_init(
-		137, s->vid->width,
-		level,
-		VBIDATA_FILTER_RC, (double) s->vid->width / 320, 0.7,
-		s->vid->pixel_rate * 11e-6
+	s->lut = vbidata_init_step(
+		137, vid->width, level,
+		(double) vid->pixel_rate * 200e-9,
+		(double) vid->pixel_rate * 200e-9,
+		(double) vid->pixel_rate * 11e-6
 	);
 	
 	if(!s->lut)
