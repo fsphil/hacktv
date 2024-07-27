@@ -31,11 +31,16 @@ typedef struct {
 } _wss_modes_t;
 
 static const _wss_modes_t _wss_modes[] = {
-	{ "4:3", 0x08, { { 4, 3 } } },
-	{ "16:9", 0x07, { { 16, 9 } } },
-	{ "14:9-letterbox", 0x01, { { 4, 3 } } },
-	{ "16:9-letterbox", 0x0B, { { 4, 3 } } },
-	{ "auto", 0xFF, { { 4, 3 }, { 16, 9 } } },
+	/* Name/ID,        Parity | Code, Display Aspect Ratio(s) */
+	{ "4:3",             0x08 | 0x00, { { 4, 3 } } },
+	{ "14:9-letterbox",  0x00 | 0x01, { { 4, 3 } } },
+	{ "14:9-top",        0x00 | 0x02, { { 4, 3 } } },
+	{ "16:9-letterbox",  0x08 | 0x03, { { 4, 3 } } },
+	{ "16:9-top",        0x00 | 0x04, { { 4, 3 } } },
+	{ "16:9+-letterbox", 0x08 | 0x05, { { 4, 3 } } },
+	{ "14:9-window",     0x08 | 0x06, { { 4, 3 } } },
+	{ "16:9",            0x00 | 0x07, { { 16, 9 } } },
+	{ "auto",            0xFF,        { { 4, 3 }, { 16, 9 } } },
 	{ },
 };
 
@@ -68,6 +73,14 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	
 	memset(s, 0, sizeof(wss_t));
 	
+	s->vid = vid;
+	
+	/* Calculate the threshold pixel aspect ratio for auto mode */
+	s->auto_threshold = rational_div(
+		(rational_t) { 14, 9 },
+		(rational_t) { s->vid->active_width, s->vid->conf.active_lines }
+	);
+	
 	/* Find the mode settings */
 	s->code = 0;
 	for(o = 0; _wss_modes[o].id != NULL; o++)
@@ -90,7 +103,6 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	/* Calculate the high level for the VBI data */
 	level = round((vid->white_level - vid->black_level) * (5.0 / 7.0));
 	
-	s->vid = vid;
 	s->lut = vbidata_init_step(
 		137, vid->width, level,
 		(double) vid->pixel_rate * 200e-9,
@@ -102,12 +114,6 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	{
 		return(VID_OUT_OF_MEMORY);
 	}
-	
-	/* Calculate the threshold pixel aspect ratio for auto mode */
-	s->auto_threshold = rational_div(
-		(rational_t) { 14, 9 },
-		(rational_t) { s->vid->active_width, s->vid->conf.active_lines }
-	);
 	
 	/* Prepare the VBI data. Start with the run-in and start code */
 	s->vbi[0] = 0xF8; // 11111000
