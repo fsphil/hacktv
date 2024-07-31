@@ -1022,9 +1022,9 @@ int main(int argc, char *argv[])
 	
 	if(s.wss)
 	{
-		if(vid_conf.lines != 625)
+		if(vid_conf.type != VID_RASTER_625)
 		{
-			fprintf(stderr, "WSS is only available with 625 line modes.\n");
+			fprintf(stderr, "WSS is only supported for 625 line raster modes.\n");
 			return(-1);
 		}
 		
