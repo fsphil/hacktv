@@ -3020,7 +3020,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			pal = -1;
 		}
 	}
-	if(s->conf.colour_mode == VID_APOLLO_FSC)
+	else if(s->conf.colour_mode == VID_APOLLO_FSC)
 	{
 		/* Apollo Field Sequential Colour */
 		fsc = (l->frame * 2 + (l->line < 264 ? 0 : 1)) % 3;
