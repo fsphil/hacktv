@@ -244,11 +244,11 @@ int vits_init(vits_t *s, unsigned int sample_rate, int width, int lines, int pal
 	
 	if(pal)
 	{
-		/* The insertion signals is locked at 60 ± 5° from the positive (B-Y) axis for PAL */
-		double p = 135.0 * (M_PI / 180.0);
+		/* The insertion signal is locked at 60 ± 5° from the positive (B-Y) axis for PAL */
+		double p = 60.0 * (M_PI / 180.0);
 		s->cs_phase = (cint16_t) {
-			round(sin(p) * INT16_MAX),
 			round(cos(p) * INT16_MAX),
+			round(sin(p) * INT16_MAX),
 		};
 	}
 	else
@@ -286,15 +286,34 @@ int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	{
 		if(l->line == 17 || l->line == 18) i = l->line - 17;
 		else if(l->line == 330 || l->line == 331) i = l->line - 330 + 2;
+		else if(v->fullscreen >= 0)
+		{
+			if(l->line >= 24 && l->line <= 310) i = v->fullscreen;
+			else if(l->line >= 336 && l->line <= 622) i = v->fullscreen;
+		}
 	}
 	else if(v->lines == 525)
 	{
 		if(l->line == 17) i = l->line - 17;
 		else if(l->line == 280) i = l->line - 280 + 1;
+		else if(v->fullscreen >= 0)
+		{
+			if(l->line >= 21 && l->line <= 262) i = v->fullscreen;
+			else if(l->line >= 284 && l->line <= 525) i = v->fullscreen;
+		}
 	}
 	
-	if(i < 0) return(0);
+	if(i < 0 || i >= 4) return(0);
 	if(!v->line[i]) return(0);
+	
+	if(v->fullscreen >= 0)
+	{
+		/* Blank the active portion of the line */
+		for(x = s->active_left; x <= s->active_left + s->active_width; x++)
+		{
+			l->output[x * 2] = s->blanking_level;
+		}
+	}
 	
 	for(x = 0; x < s->width; x++)
 	{
@@ -302,7 +321,7 @@ int vits_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		if(l->lut)
 		{
 			l->output[x * 2] += (((v->cs_phase.i * l->lut[x].q +
-				v->cs_phase.q * l->lut[x].i) >> 15) * v->line[i][x * 2 + 1]) >> 15;
+				               v->cs_phase.q * l->lut[x].i) >> 15) * v->line[i][x * 2 + 1]) >> 15;
 		}
 	}
 	
