@@ -3019,6 +3019,9 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		{
 			pal = -1;
 		}
+		
+		/* Clear the chrominance buffer */
+		if(pal) memset(s->chrominance_buffer, 0, sizeof(int16_t) * 2 * s->width);
 	}
 	else if(s->conf.colour_mode == VID_APOLLO_FSC)
 	{
@@ -3036,7 +3039,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	/* Blank the next line */
 	for(x = 0; x < s->width; x++)
 	{
-		lines[2]->output[x * 2] = s->blanking_level;
+		lines[2]->output[x * 2 + 0] = s->blanking_level;
+		lines[2]->output[x * 2 + 1] = 0;
 	}
 	
 	x = 0;
@@ -3064,7 +3068,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		uint32_t rgb = 0x000000;
 		uint32_t *prgb = &rgb;
 		int stride = 0;
-		int16_t *o;
+		int16_t *o, *oc;
 		
 		/* Calculate active video portion of this line */
 		al = (seq[2] == 'a' ? s->active_left : (seq[3] == 'a' ? s->half_width : -1));
@@ -3082,7 +3086,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			stride = s->vframe.pixel_stride;
 		}
 		
-		for(; x < s->active_left + s->vframe_x + s->vframe.width && x < ar; x++, o += 2, prgb += stride)
+		oc = &s->chrominance_buffer[x * 2];
+		for(; x < s->active_left + s->vframe_x + s->vframe.width && x < ar; x++, o += 2, oc += 2, prgb += stride)
 		{
 			rgb = *prgb & 0xFFFFFF;
 			
@@ -3097,8 +3102,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			
 			if(pal)
 			{
-				*o += (s->yiq_level_lookup[rgb].i * l->lut[x].q +
-				       s->yiq_level_lookup[rgb].q * l->lut[x].i * pal) >> 15;
+				oc[0] = s->yiq_level_lookup[rgb].i;
+				oc[1] = s->yiq_level_lookup[rgb].q;
 			}
 		}
 		
@@ -3108,13 +3113,25 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		}
 	}
 	
-	/* Render the colour burst */
 	if(pal)
 	{
-		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
+		int16_t *o, *oc;
+		
+		/* Render the colour burst */
+		oc = &s->chrominance_buffer[s->burst_left * 2];
+		for(x = 0; x < s->burst_width; x++, oc += 2)
 		{
-			l->output[x * 2] += (((s->burst_phase.i * l->lut[x].q +
-			                       s->burst_phase.q * l->lut[x].i * pal) >> 15) * s->burst_win[x - s->burst_left]) >> 15;
+			oc[0] = (s->burst_phase.i * s->burst_win[x]) >> 15;
+			oc[1] = (s->burst_phase.q * s->burst_win[x]) >> 15;
+		}
+		
+		/* Render the colour subcarrier */
+		o = l->output;
+		oc = s->chrominance_buffer;
+		for(x = 0; x < s->width; x++, o += 2, oc += 2)
+		{
+			*o += (oc[0] * l->lut[x].q +
+			       oc[1] * l->lut[x].i * pal) >> 15;
 		}
 	}
 	
@@ -3175,7 +3192,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				if(t < 0) t = 0;
 				else if(t > 1) t = 1;
 				
-				l->output[x * 2 + 1] = level + dev * t;
+				s->chrominance_buffer[x] = level + dev * t;
 			}
 			
 			sl = s->burst_left;
@@ -3201,17 +3218,17 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				for(x = 0; x < s->active_left + s->vframe_x; x++)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].q;
+					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].q;
 				}
 				
 				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[*prgb & 0xFFFFFF].q;
+					s->chrominance_buffer[x] = s->yiq_level_lookup[*prgb & 0xFFFFFF].q;
 				}
 				
 				for(; x < s->width; x++)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].q;
+					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].q;
 				}
 			}
 			else
@@ -3220,17 +3237,17 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				for(x = 0; x < s->active_left + s->vframe_x; x++)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].i;
+					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].i;
 				}
 				
 				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[*prgb & 0xFFFFFF].i;
+					s->chrominance_buffer[x] = s->yiq_level_lookup[*prgb & 0xFFFFFF].i;
 				}
 				
 				for(; x < s->width; x++)
 				{
-					l->output[x * 2 + 1] = s->yiq_level_lookup[0x000000].i;
+					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].i;
 				}
 			}
 			
@@ -3241,8 +3258,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		if(sr > sl)
 		{
 			fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width, 2);
-			fir_int16_process_block(&s->fm_secam_fir, l->output + 1, l->output + 1, s->width, 2);
-			iir_int16_process(&s->fm_secam_iir, l->output + 1, l->output + 1, s->width, 2);
+			fir_int16_process_block(&s->fm_secam_fir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
+			iir_int16_process(&s->fm_secam_iir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
 			
 			/* Reset the SECAM FM phase every line, alternating every third line */
 			s->fm_secam.counter = INT16_MAX;
@@ -3255,21 +3272,15 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			
 			for(x = sl; x < sr; x++)
 			{
-				if(l->output[x * 2 + 1] < dmin) l->output[x * 2 + 1] = dmin;
-				else if(l->output[x * 2 + 1] > dmax) l->output[x * 2 + 1] = dmax;
+				if(s->chrominance_buffer[x] < dmin) s->chrominance_buffer[x] = dmin;
+				else if(s->chrominance_buffer[x] > dmax) s->chrominance_buffer[x] = dmax;
 				
-				g = &s->fm_secam_bell[(uint16_t) l->output[x * 2 + 1]];
-				_fm_modulator_cgain(&s->fm_secam, &l->output[x * 2 + 1], l->output[x * 2 + 1], g);
+				g = &s->fm_secam_bell[(uint16_t) s->chrominance_buffer[x]];
+				_fm_modulator_cgain(&s->fm_secam, &s->chrominance_buffer[x], s->chrominance_buffer[x], g);
 				
-				l->output[x * 2] += (l->output[x * 2 + 1] * s->burst_win[x - s->burst_left]) >> 15;
+				l->output[x * 2] += (s->chrominance_buffer[x] * s->burst_win[x - s->burst_left]) >> 15;
 			}
 		}
-	}
-	
-	/* Clear the Q channel */
-	for(x = 0; x < s->max_width; x++)
-	{
-		l->output[x * 2 + 1] = 0;
 	}
 	
 	return(1);
@@ -3945,6 +3956,14 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		s->colour_lookup_offset = 0;
+		
+		/* Allocate memory for the chrominance baseband buffer */
+		s->chrominance_buffer = malloc(sizeof(int16_t) * 2 * s->width);
+		if(!s->chrominance_buffer)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
 	}
 	
 	if(s->conf.burst_level > 0)
@@ -4073,6 +4092,14 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			&s->burst_width
 		);
 		if(!s->burst_win)
+		{
+			vid_free(s);
+			return(VID_OUT_OF_MEMORY);
+		}
+		
+		/* Allocate memory for the chrominance baseband buffer */
+		s->chrominance_buffer = malloc(sizeof(int16_t) * s->width);
+		if(!s->chrominance_buffer)
 		{
 			vid_free(s);
 			return(VID_OUT_OF_MEMORY);
@@ -4686,6 +4713,7 @@ void vid_free(vid_t *s)
 		free(s->oline);
 	}
 	
+	free(s->chrominance_buffer);
 	free(s->burst_win);
 	free(s->syncs);
 	free(s->fsc_syncs);

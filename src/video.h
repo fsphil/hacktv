@@ -376,6 +376,9 @@ struct vid_t {
 	
 	vbidata_lut_t *fsc_syncs;
 	
+	/* PAL/NTSC chrominance baseband buffer */
+	int16_t *chrominance_buffer;
+	
 	/* Video state */
 	av_frame_t vframe;
 	int vframe_x;
