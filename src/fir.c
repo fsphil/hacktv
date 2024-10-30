@@ -302,7 +302,7 @@ size_t fir_int16_process_block(fir_int16_t *s, int16_t *out, const int16_t *in, 
 	memset(s->win, 0, (s->lwin + s->ataps) * sizeof(int16_t));
 	s->owin = 0;
 	
-	for(s->owin = 0; s->owin < s->ataps / 2; s->owin++, in += 2)
+	for(s->owin = 0; s->owin < s->ataps / 2; s->owin++, in += step)
 	{
 		s->win[s->owin] = *in;
 		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *in;
