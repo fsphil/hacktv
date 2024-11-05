@@ -644,8 +644,7 @@ static void *_video_scaler_thread(void *arg)
 		
 		/* Copy some data to the scaled image */
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(58, 29, 100)
-		oframe->interlaced_frame = frame->flags & AV_FRAME_FLAG_INTERLACED ? 1 : 0;
-		oframe->top_field_first = frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST ? 1 : 0;
+		oframe->flags = frame->flags;
 #else
 		oframe->interlaced_frame = frame->interlaced_frame;
 		oframe->top_field_first = frame->top_field_first;
@@ -696,10 +695,17 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	}
 	
 	/* Return interlace status */
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(58, 29, 100)
+	if(avframe->flags & AV_FRAME_FLAG_INTERLACED)
+	{
+		frame->interlaced = avframe->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST ? 1 : 2;
+	}
+#else
 	if(avframe->interlaced_frame)
 	{
 		frame->interlaced = avframe->top_field_first ? 1 : 2;
 	}
+#endif
 	
 	/* Set the pointer to the framebuffer */
 	frame->width = avframe->width;
