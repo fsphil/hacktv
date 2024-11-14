@@ -44,7 +44,7 @@ extern rational_t rational_mul(rational_t a, rational_t b);
 extern rational_t rational_div(rational_t a, rational_t b);
 extern int rational_cmp(rational_t a, rational_t b);
 extern rational_t rational_nearest(rational_t ref, rational_t a, rational_t b);
-extern rational_t rational_parse_fraction(const char *str, const char **endptr);
+extern rational_t rational_parse_decimal(const char *str, const char **endptr);
 extern rational_t rational_parse(const char *str, const char **endptr);
 extern cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level);
 extern double rc_window(double t, double left, double width, double rise);

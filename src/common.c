@@ -84,8 +84,9 @@ rational_t rational_nearest(rational_t ref, rational_t a, rational_t b)
 	return(rational_cmp(ref, h) <= 0 ? a : b);
 }
 
-rational_t rational_parse_fraction(const char *str, const char **endptr)
+rational_t rational_parse_decimal(const char *str, const char **endptr)
 {
+	/* Parse decimal number with exponent */
 	const char *s = str;
 	int64_t e, num, den = 1;
 	
@@ -165,13 +166,15 @@ rational_t rational_parse_fraction(const char *str, const char **endptr)
 
 rational_t rational_parse(const char *str, const char **endptr)
 {
+	/* Parse decimal number with exponent,
+	 * individually or as a ratio pair x:y or x/y */
 	const char *s;
 	rational_t a, b;
 	
 	if(endptr != NULL) *endptr = str;
 	
 	/* Parse the first part */
-	a = rational_parse_fraction(str, &s);
+	a = rational_parse_decimal(str, &s);
 	if(a.den == 0) return(a);
 	
 	if(*s == ':' || *s == '/')
@@ -181,7 +184,7 @@ rational_t rational_parse(const char *str, const char **endptr)
 		if(*s == ' ') return((rational_t) { });
 		
 		/* Parse the second part */
-		b = rational_parse_fraction(s, &str);
+		b = rational_parse_decimal(s, &str);
 		if(b.num == 0 || b.den == 0)
 		{
 			return((rational_t) { });
