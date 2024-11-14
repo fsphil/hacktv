@@ -33,22 +33,41 @@ int64_t gcd(int64_t a, int64_t b)
 	return(b);
 }
 
+const rational_t _normalise(int64_t *num, int64_t *den)
+{
+	int64_t e;
+	
+	if(*den == 0)
+	{
+		*num = 0;
+		return((rational_t) { });
+	}
+	
+	if(*den < 0)
+	{
+		*num = -*num;
+		*den = -*den;
+	}
+	
+	e = gcd(*num, *den);
+	
+	return((rational_t) { *num /= e, *den /= e });
+}
+
 rational_t rational_mul(rational_t a, rational_t b)
 {
-	int64_t c, d, e;
+	int64_t c, d;
 	c = (int64_t) a.num * b.num;
 	d = (int64_t) a.den * b.den;
-	e = gcd(c, d);
-	return((rational_t) { c / e, d / e });
+	return(_normalise(&c, &d));
 }
 
 rational_t rational_div(rational_t a, rational_t b)
 {
-	int64_t c, d, e;
+	int64_t c, d;
 	c = (int64_t) a.num * b.den;
 	d = (int64_t) a.den * b.num;
-	e = gcd(c, d);
-	return((rational_t) { c / e, d / e });
+	return(_normalise(&c, &d));
 }
 
 int rational_cmp(rational_t a, rational_t b)
