@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ctype.h>
 #include "common.h"
 
 int64_t gcd(int64_t a, int64_t b)
@@ -81,6 +82,125 @@ rational_t rational_nearest(rational_t ref, rational_t a, rational_t b)
 	/* Return "a" or "b" depending on which is nearest "ref", or "a" if equal */
 	rational_t h = { a.num * b.den + a.den * b.num, a.den * b.den * 2 };
 	return(rational_cmp(ref, h) <= 0 ? a : b);
+}
+
+rational_t rational_parse_fraction(const char *str, const char **endptr)
+{
+	const char *s = str;
+	int64_t e, num, den = 1;
+	
+	if(endptr != NULL) *endptr = str;
+	
+	/* Skip any leading spaces */
+	while(isspace(*s)) s++;
+	
+	/* Test for the sign */
+	if(*s == '+' || *s == '-')
+	{
+		if(*s == '-') den = -1;
+		s++;
+	}
+	
+	/* Test for no number */
+	if((s[0] != '.' && !isdigit(s[0])) ||
+	   (s[0] == '.' && !isdigit(s[1])))
+	{
+		return((rational_t) { });
+	}
+	
+	/* Read first number/integer part */
+	for(num = 0; isdigit(*s); s++)
+	{
+		num = num * 10 + *s - '0';
+	}
+	
+	/* Read the fractional part */
+	if(*s == '.')
+	{
+		for(s++; isdigit(*s); s++)
+		{
+			num = num * 10 + *s - '0';
+			den *= 10;
+		}
+		
+		(void) _normalise(&num, &den);
+	}
+	
+	/* Read the exponent part */
+	if(*s == 'e' || *s == 'E')
+	{
+		int neg = 0;
+		
+		s++;
+		
+		/* Test for the sign */
+		if(*s == '+' || *s == '-')
+		{
+			if(*s == '-') neg = 1;
+			s++;
+		}
+		
+		if(!isdigit(*s)) return((rational_t) { });
+		
+		for(e = 0; isdigit(*s); s++)
+		{
+			e = e * 10 + *s - '0';
+		}
+		
+		if(neg) { for(; e > 0; e--) den *= 10; }
+		else    { for(; e > 0; e--) num *= 10; }
+	}
+	
+	/* Test for empty string or invalid trailing characters */
+	if(*s == '.' || *s == '+' || *s == '-' ||
+	   *s == 'e' || *s == 'E' || s == str)
+	{
+		return((rational_t) { });
+	}
+	
+	/* Looks good, return the result */
+	if(endptr != NULL) *endptr = s;
+	return(_normalise(&num, &den));
+}
+
+rational_t rational_parse(const char *str, const char **endptr)
+{
+	const char *s;
+	rational_t a, b;
+	
+	if(endptr != NULL) *endptr = str;
+	
+	/* Parse the first part */
+	a = rational_parse_fraction(str, &s);
+	if(a.den == 0) return(a);
+	
+	if(*s == ':' || *s == '/')
+	{
+		/* Don't allow spaces after the divider */
+		s++;
+		if(*s == ' ') return((rational_t) { });
+		
+		/* Parse the second part */
+		b = rational_parse_fraction(s, &str);
+		if(b.num == 0 || b.den == 0)
+		{
+			return((rational_t) { });
+		}
+		
+		/* Test for too many dividers */
+		s = str;
+		if(*s == ':' || *s == '/')
+		{
+			return((rational_t) { });
+		}
+		
+		/* Apply divider */
+		a = rational_div(a, b);
+	}
+	
+	/* Looks good, return the result */
+	if(endptr != NULL) *endptr = s;
+	return(a);
 }
 
 cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level)
