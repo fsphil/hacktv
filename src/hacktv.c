@@ -33,24 +33,6 @@ static void _sigint_callback_handler(int signum)
 	_signal = signum;
 }
 
-static int _parse_ratio(rational_t *r, const char *s)
-{
-	int i;
-	int64_t e;
-	
-	i = sscanf(s, "%d%*[:/]%d", &r->num, &r->den);
-	if(i != 2 || r->den == 0)
-	{
-		return(HACKTV_ERROR);
-	}
-	
-	e = gcd(r->num, r->den);
-	r->num /= e;
-	r->den /= e;
-	
-	return(HACKTV_OK);
-}
-
 static void print_version(void)
 {
 	printf("hacktv %s\n", VERSION);
@@ -639,8 +621,9 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_MIN_ASPECT: /* --min-aspect <value> */
-			                     
-			if(_parse_ratio(&s.min_aspect, optarg) != HACKTV_OK)
+			
+			s.min_aspect = rational_parse(optarg, NULL);
+			if(s.min_aspect.den == 0)
 			{
 				fprintf(stderr, "Invalid minimum aspect\n");
 				return(-1);
@@ -650,7 +633,8 @@ int main(int argc, char *argv[])
 		
 		case _OPT_MAX_ASPECT: /* --max-aspect <value> */
 			
-			if(_parse_ratio(&s.max_aspect, optarg) != HACKTV_OK)
+			s.max_aspect = rational_parse(optarg, NULL);
+			if(s.max_aspect.den == 0)
 			{
 				fprintf(stderr, "Invalid maximum aspect\n");
 				return(-1);
