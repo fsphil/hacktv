@@ -147,21 +147,21 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 	/* Calculate visible resolution */
 	if(rational_cmp(b, c) < 0)
 	{
-		r.num = r.num * (b.num * c.den) / (c.num * b.den);
+		r.num = (int64_t) r.num * ((int64_t) b.num * c.den) / ((int64_t) c.num * b.den);
 	}
 	else if(rational_cmp(b, c) > 0)
 	{
-		r.den = r.den * (c.num * b.den) / (b.num * c.den);
+		r.den = (int64_t) r.den * ((int64_t) c.num * b.den) / ((int64_t) b.num * c.den);
 	}
 	
 	/* Calculate source resolution */
 	if(rational_cmp(b, aspect) < 0)
 	{
-		r.num = r.num * (aspect.num * b.den) / (b.num * aspect.den);
+		r.num = (int64_t) r.num * ((int64_t) aspect.num * b.den) / ((int64_t) b.num * aspect.den);
 	}
 	else if(rational_cmp(b, aspect) > 0)
 	{
-		r.den = r.den * (b.num * aspect.den) / (aspect.num * b.den);
+		r.den = (int64_t) r.den * ((int64_t) b.num * aspect.den) / ((int64_t) aspect.num * b.den);
 	}
 	
 	return(r);
