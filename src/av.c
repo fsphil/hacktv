@@ -102,6 +102,9 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 		{ { 352, 576 }, { 352, 351 } },   /* DVD */
 		{ { 352, 288 }, { 352, 351 } },   /* VCD/DVD */
 		{ { 176, 144 }, { 352, 351 } },   /* H.261/H.263 */
+		
+		{ { 720, 480 }, { 1600, 1587 } }, /* DVD */
+		
 		{ }
 	};
 	
