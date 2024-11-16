@@ -116,60 +116,62 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 	{
 		/* Mode "stretch" ignores the source aspect,
 		 * always returns the active resolution */
-		return(r);
 	}
 	else if(av->fit_mode == AV_FIT_NONE)
 	{
 		/* Mode "none" keeps the source resolution */
 		return(resolution);
 	}
-	else if(av->fit_mode == AV_FIT_FILL)
+	else
 	{
-		/* Mode "fill" scales the source video to
-		 * fill the active frame */
-		min = max = c;
-	}
-	else if(av->fit_mode == AV_FIT_FIT)
-	{
-		/* Mode "fit" scales the source video to
-		 * fit entirely within the active frame */
-		min = (rational_t) { 2, r.den };
-		max = (rational_t) { r.num, 2 };
-	}
-	
-	/* Test for min/max override */
-	if(av->min_display_aspect_ratio.den > 0)
-	{
-		min = av->min_display_aspect_ratio;
-	}
-	
-	if(av->max_display_aspect_ratio.den > 0)
-	{
-		max = av->max_display_aspect_ratio;
-	}
-	
-	/* Restrict visible ratio */
-	if(rational_cmp(b, min) < 0) b = min;
-	else if(rational_cmp(b, max) > 0) b = max;
-	
-	/* Calculate visible resolution */
-	if(rational_cmp(b, c) < 0)
-	{
-		r.num = (int64_t) r.num * ((int64_t) b.num * c.den) / ((int64_t) c.num * b.den);
-	}
-	else if(rational_cmp(b, c) > 0)
-	{
-		r.den = (int64_t) r.den * ((int64_t) c.num * b.den) / ((int64_t) b.num * c.den);
-	}
-	
-	/* Calculate source resolution */
-	if(rational_cmp(b, aspect) < 0)
-	{
-		r.num = (int64_t) r.num * ((int64_t) aspect.num * b.den) / ((int64_t) b.num * aspect.den);
-	}
-	else if(rational_cmp(b, aspect) > 0)
-	{
-		r.den = (int64_t) r.den * ((int64_t) b.num * aspect.den) / ((int64_t) aspect.num * b.den);
+		if(av->fit_mode == AV_FIT_FILL)
+		{
+			/* Mode "fill" scales the source video to
+			 * fill the active frame */
+			min = max = c;
+		}
+		else if(av->fit_mode == AV_FIT_FIT)
+		{
+			/* Mode "fit" scales the source video to
+			 * fit entirely within the active frame */
+			min = (rational_t) { 2, r.den };
+			max = (rational_t) { r.num, 2 };
+		}
+		
+		/* Test for min/max override */
+		if(av->min_display_aspect_ratio.den > 0)
+		{
+			min = av->min_display_aspect_ratio;
+		}
+		
+		if(av->max_display_aspect_ratio.den > 0)
+		{
+			max = av->max_display_aspect_ratio;
+		}
+		
+		/* Restrict visible ratio */
+		if(rational_cmp(b, min) < 0) b = min;
+		else if(rational_cmp(b, max) > 0) b = max;
+		
+		/* Calculate visible resolution */
+		if(rational_cmp(b, c) < 0)
+		{
+			r.num = (int64_t) r.num * ((int64_t) b.num * c.den) / ((int64_t) c.num * b.den);
+		}
+		else if(rational_cmp(b, c) > 0)
+		{
+			r.den = (int64_t) r.den * ((int64_t) c.num * b.den) / ((int64_t) b.num * c.den);
+		}
+		
+		/* Calculate source resolution */
+		if(rational_cmp(b, aspect) < 0)
+		{
+			r.num = (int64_t) r.num * ((int64_t) aspect.num * b.den) / ((int64_t) b.num * aspect.den);
+		}
+		else if(rational_cmp(b, aspect) > 0)
+		{
+			r.den = (int64_t) r.den * ((int64_t) b.num * aspect.den) / ((int64_t) aspect.num * b.den);
+		}
 	}
 	
 	/* Experiment: Adjust final resolution to compensate for padding */
