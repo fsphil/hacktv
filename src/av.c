@@ -90,12 +90,20 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 	rational_t b = aspect;
 	rational_t c = av->display_aspect_ratios[0];
 	rational_t min, max;
-	
-	/* Experiment: Adjust aspect to compensate for 702x576 > 720x576 padding */
-	//if(resolution.num == 720 && resolution.den == 576)
-	//{
-	//	b = aspect = rational_mul(aspect, (rational_t) { 720, 702 });
-	//}
+	const rational_t fadj[][2] = {
+		/* Horizontal resolution adjustment factors based on the list at:
+		 * https://xpt.sourceforge.net/techdocs/media/video/dvd/dvd04-DVDAuthoringSpecwise/ar01s02.html
+		 */
+		{ { 720, 576 }, { 720, 702 } },   /* D1/DV/DVB/DVD/SVCD */
+		{ { 704, 576 }, { 704, 702 } },   /* DVB/DVD/VCD */
+		{ { 544, 576 }, { 1088, 1053 } }, /* DVB */
+		{ { 480, 576 }, { 480, 468 } },   /* SVCD */
+		{ { 384, 288 }, { 768, 767 } },
+		{ { 352, 576 }, { 352, 351 } },   /* DVD */
+		{ { 352, 288 }, { 352, 351 } },   /* VCD/DVD */
+		{ { 176, 144 }, { 352, 351 } },   /* H.261/H.263 */
+		{ }
+	};
 	
 	/* Find the nearest display aspect ratio if there is more than one */
 	if(av->display_aspect_ratios[1].den > 0)
@@ -162,6 +170,17 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 	else if(rational_cmp(b, aspect) > 0)
 	{
 		r.den = (int64_t) r.den * ((int64_t) b.num * aspect.den) / ((int64_t) aspect.num * b.den);
+	}
+	
+	/* Experiment: Adjust final resolution to compensate for padding */
+	for(int i = 0; fadj[i][0].num != 0; i++)
+	{
+		if(resolution.num == fadj[i][0].num &&
+		   resolution.den == fadj[i][0].den)
+		{
+			r.num = (int64_t) r.num * fadj[i][1].num / fadj[i][1].den;
+			break;
+		}
 	}
 	
 	return(r);
