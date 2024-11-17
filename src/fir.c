@@ -322,19 +322,18 @@ void fir_int16_free(fir_int16_t *s)
 }
 
 /* Initialise int16 FIR filter rational resampler */
-int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
+int fir_int16_resampler_init(fir_int16_t *s, rational_t out_rate, rational_t in_rate)
 {
 	int ntaps;
 	double *taps;
-	int d;
+	rational_t r;
+	int i;
 	
-	/* Simplify ratio */
-	d = gcd(interpolation, decimation);
-	interpolation /= d;
-	decimation /= d;
+	/* Calculate ratio */
+	r = rational_div(out_rate, in_rate);
 	
 	/* Generate the filter taps */
-	ntaps = 21 * interpolation;
+	ntaps = 21 * r.num;
 	if((ntaps & 1) == 0) ntaps--;
 	
 	taps = calloc(ntaps, sizeof(double));
@@ -343,20 +342,22 @@ int fir_int16_resampler_init(fir_int16_t *s, int interpolation, int decimation)
 		return(-1);
 	}
 	
-	if(interpolation > decimation)
+	if(r.num > r.den)
 	{
-		fir_low_pass(taps, ntaps, interpolation, 0.45, 0.1, interpolation);
+		/* Resampling up */
+		fir_low_pass(taps, ntaps, r.num, 0.45, 0.1, r.num);
 	}
 	else
 	{
-		fir_low_pass(taps, ntaps, interpolation, 0.45 * interpolation / decimation, 0.1 * interpolation / decimation, interpolation);
+		/* Resampling down */
+		fir_low_pass(taps, ntaps, r.num, 0.45 * r.num / r.den, 0.1 * r.num / r.den, r.num);
 	}
 	
 	/* Create the FIR filter */
-	d = fir_int16_init(s, taps, ntaps, interpolation, decimation, 0);
+	i = fir_int16_init(s, taps, ntaps, r.num, r.den, 0);
 	free(taps);
 	
-	return(d);
+	return(i);
 }
 
 

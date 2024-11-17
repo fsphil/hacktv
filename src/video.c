@@ -3613,7 +3613,7 @@ static int _calc_filter_delay(int width, int ntaps)
 	return(delay);
 }
 
-static int _init_vresampler(vid_t *s)
+static int _init_vresampler(vid_t *s, rational_t in_rate, rational_t out_rate)
 {
 	_vid_filter_process_t *p;
 	int width;
@@ -3624,7 +3624,7 @@ static int _init_vresampler(vid_t *s)
 		return(VID_OUT_OF_MEMORY);
 	}
 	
-	fir_int16_resampler_init(&p->fir, s->sample_rate, s->pixel_rate);
+	fir_int16_resampler_init(&p->fir, out_rate, in_rate);
 	
 	/* Update maximum line width */
 	width = (s->width * p->fir.interpolation + p->fir.decimation - 1) / p->fir.decimation;
@@ -4274,7 +4274,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	
 	if(s->pixel_rate != s->sample_rate)
 	{
-		_init_vresampler(s);
+		_init_vresampler(s,
+			(rational_t) { s->pixel_rate, 1 },
+			(rational_t) { s->sample_rate, 1 }
+		);
 	}
 	
 	if(s->conf.vfilter)
