@@ -538,7 +538,7 @@ static void *_video_scaler_thread(void *arg)
 	av_ffmpeg_t *s = (av_ffmpeg_t *) arg;
 	AVFrame *frame, *oframe;
 	AVRational ratio;
-	rational_t r;
+	r64_t r;
 	int64_t pts;
 	
 	//fprintf(stderr, "_video_scaler_thread(): Starting\n");
@@ -581,10 +581,10 @@ static void *_video_scaler_thread(void *arg)
 		
 		r = av_calculate_frame_size(
 			s->av,
-			(rational_t) { frame->width, frame->height },
-			rational_mul(
-				(rational_t) { ratio.num, ratio.den },
-				(rational_t) { frame->width, frame->height }
+			(r64_t) { frame->width, frame->height },
+			r64_mul(
+				(r64_t) { ratio.num, ratio.den },
+				(r64_t) { frame->width, frame->height }
 			)
 		);
 		
@@ -688,7 +688,7 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	if(avframe->sample_aspect_ratio.num > 0 &&
 	   avframe->sample_aspect_ratio.den > 0)
 	{
-		frame->pixel_aspect_ratio = (rational_t) {
+		frame->pixel_aspect_ratio = (r64_t) {
 			avframe->sample_aspect_ratio.num,
 			avframe->sample_aspect_ratio.den
 		};

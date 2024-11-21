@@ -622,7 +622,7 @@ int main(int argc, char *argv[])
 		
 		case _OPT_MIN_ASPECT: /* --min-aspect <value> */
 			
-			s.min_aspect = rational_parse(optarg, NULL);
+			s.min_aspect = r64_parse(optarg, NULL);
 			if(s.min_aspect.den == 0)
 			{
 				fprintf(stderr, "Invalid minimum aspect\n");
@@ -633,7 +633,7 @@ int main(int argc, char *argv[])
 		
 		case _OPT_MAX_ASPECT: /* --max-aspect <value> */
 			
-			s.max_aspect = rational_parse(optarg, NULL);
+			s.max_aspect = r64_parse(optarg, NULL);
 			if(s.max_aspect.den == 0)
 			{
 				fprintf(stderr, "Invalid maximum aspect\n");
@@ -1240,7 +1240,7 @@ int main(int argc, char *argv[])
 	
 	/* Configure AV source settings */
 	s.vid.av = (av_t) {
-		.frame_rate = (rational_t) {
+		.frame_rate = (r64_t) {
 			.num = s.vid.conf.frame_rate.num * (s.vid.conf.interlace ? 2 : 1),
 			.den = s.vid.conf.frame_rate.den,
 		},
@@ -1253,7 +1253,7 @@ int main(int argc, char *argv[])
 		.max_display_aspect_ratio = s.max_aspect,
 		.width = s.vid.active_width,
 		.height = s.vid.conf.active_lines,
-		.sample_rate = (rational_t) {
+		.sample_rate = (r64_t) {
 			.num = (s.vid.audio ? HACKTV_AUDIO_SAMPLE_RATE : 0),
 			1,
 		},

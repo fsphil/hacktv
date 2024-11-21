@@ -27,7 +27,7 @@
 typedef struct {
 	const char *id;
 	uint8_t code;
-	rational_t aspect[2];
+	r64_t aspect[2];
 } _wss_modes_t;
 
 static const _wss_modes_t _wss_modes[] = {
@@ -76,9 +76,9 @@ int wss_init(wss_t *s, vid_t *vid, char *mode)
 	s->vid = vid;
 	
 	/* Calculate the threshold pixel aspect ratio for auto mode */
-	s->auto_threshold = rational_div(
-		(rational_t) { 14, 9 },
-		(rational_t) { s->vid->active_width, s->vid->conf.active_lines }
+	s->auto_threshold = r64_div(
+		(r64_t) { 14, 9 },
+		(r64_t) { s->vid->active_width, s->vid->conf.active_lines }
 	);
 	
 	/* Find the mode settings */
@@ -170,7 +170,7 @@ int wss_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		/* Auto mode selects between 4:3 and 16:9 depending
 		 * on the the pixel aspect ratio of the source frame */
 		
-		c = rational_cmp(
+		c = r64_cmp(
 			s->vframe.pixel_aspect_ratio,
 			w->auto_threshold
 		);

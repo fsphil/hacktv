@@ -34,14 +34,14 @@ int64_t gcd(int64_t a, int64_t b)
 	return(b);
 }
 
-const rational_t _normalise(int64_t *num, int64_t *den)
+const r64_t _normalise(int64_t *num, int64_t *den)
 {
 	int64_t e;
 	
 	if(*den == 0)
 	{
 		*num = 0;
-		return((rational_t) { });
+		return((r64_t) { });
 	}
 	
 	if(*den < 0)
@@ -52,10 +52,10 @@ const rational_t _normalise(int64_t *num, int64_t *den)
 	
 	e = gcd(*num, *den);
 	
-	return((rational_t) { *num /= e, *den /= e });
+	return((r64_t) { *num /= e, *den /= e });
 }
 
-rational_t rational_mul(rational_t a, rational_t b)
+r64_t r64_mul(r64_t a, r64_t b)
 {
 	int64_t c, d;
 	c = (int64_t) a.num * b.num;
@@ -63,7 +63,7 @@ rational_t rational_mul(rational_t a, rational_t b)
 	return(_normalise(&c, &d));
 }
 
-rational_t rational_div(rational_t a, rational_t b)
+r64_t r64_div(r64_t a, r64_t b)
 {
 	int64_t c, d;
 	c = (int64_t) a.num * b.den;
@@ -71,20 +71,20 @@ rational_t rational_div(rational_t a, rational_t b)
 	return(_normalise(&c, &d));
 }
 
-int rational_cmp(rational_t a, rational_t b)
+int r64_cmp(r64_t a, r64_t b)
 {
 	int64_t c = (int64_t) a.num * b.den - (int64_t) a.den * b.num;
 	return(c < 0 ? -1 : (c > 0 ? 1 : 0));
 }
 
-rational_t rational_nearest(rational_t ref, rational_t a, rational_t b)
+r64_t r64_nearest(r64_t ref, r64_t a, r64_t b)
 {
 	/* Return "a" or "b" depending on which is nearest "ref", or "a" if equal */
-	rational_t h = { a.num * b.den + a.den * b.num, a.den * b.den * 2 };
-	return(rational_cmp(ref, h) <= 0 ? a : b);
+	r64_t h = { a.num * b.den + a.den * b.num, a.den * b.den * 2 };
+	return(r64_cmp(ref, h) <= 0 ? a : b);
 }
 
-rational_t rational_parse_decimal(const char *str, const char **endptr)
+r64_t r64_parse_decimal(const char *str, const char **endptr)
 {
 	/* Parse decimal number with exponent */
 	const char *s = str;
@@ -106,7 +106,7 @@ rational_t rational_parse_decimal(const char *str, const char **endptr)
 	if((s[0] != '.' && !isdigit(s[0])) ||
 	   (s[0] == '.' && !isdigit(s[1])))
 	{
-		return((rational_t) { });
+		return((r64_t) { });
 	}
 	
 	/* Read first number/integer part */
@@ -141,7 +141,7 @@ rational_t rational_parse_decimal(const char *str, const char **endptr)
 			s++;
 		}
 		
-		if(!isdigit(*s)) return((rational_t) { });
+		if(!isdigit(*s)) return((r64_t) { });
 		
 		for(e = 0; isdigit(*s); s++)
 		{
@@ -156,7 +156,7 @@ rational_t rational_parse_decimal(const char *str, const char **endptr)
 	if(*s == '.' || *s == '+' || *s == '-' ||
 	   *s == 'e' || *s == 'E' || s == str)
 	{
-		return((rational_t) { });
+		return((r64_t) { });
 	}
 	
 	/* Looks good, return the result */
@@ -164,41 +164,41 @@ rational_t rational_parse_decimal(const char *str, const char **endptr)
 	return(_normalise(&num, &den));
 }
 
-rational_t rational_parse(const char *str, const char **endptr)
+r64_t r64_parse(const char *str, const char **endptr)
 {
 	/* Parse decimal number with exponent,
 	 * individually or as a ratio pair x:y or x/y */
 	const char *s;
-	rational_t a, b;
+	r64_t a, b;
 	
 	if(endptr != NULL) *endptr = str;
 	
 	/* Parse the first part */
-	a = rational_parse_decimal(str, &s);
+	a = r64_parse_decimal(str, &s);
 	if(a.den == 0) return(a);
 	
 	if(*s == ':' || *s == '/')
 	{
 		/* Don't allow spaces after the divider */
 		s++;
-		if(*s == ' ') return((rational_t) { });
+		if(*s == ' ') return((r64_t) { });
 		
 		/* Parse the second part */
-		b = rational_parse_decimal(s, &str);
+		b = r64_parse_decimal(s, &str);
 		if(b.num == 0 || b.den == 0)
 		{
-			return((rational_t) { });
+			return((r64_t) { });
 		}
 		
 		/* Test for too many dividers */
 		s = str;
 		if(*s == ':' || *s == '/')
 		{
-			return((rational_t) { });
+			return((r64_t) { });
 		}
 		
 		/* Apply divider */
-		a = rational_div(a, b);
+		a = r64_div(a, b);
 	}
 	
 	/* Looks good, return the result */

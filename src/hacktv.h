@@ -44,8 +44,8 @@ typedef struct {
 	float gamma;
 	int interlace;
 	av_fit_mode_t fit_mode;
-	rational_t min_aspect;
-	rational_t max_aspect;
+	r64_t min_aspect;
+	r64_t max_aspect;
 	int repeat;
 	int shuffle;
 	int verbose;

@@ -87,7 +87,7 @@ int vitc_init(vitc_t *s, vid_t *vid)
 	}
 	else
 	{
-		fprintf(stderr, "vitc: Unsupported frame rate %d/%d\n",
+		fprintf(stderr, "vitc: Unsupported frame rate %ld/%ld\n",
 			vid->conf.frame_rate.num,
 			vid->conf.frame_rate.den
 		);

@@ -84,13 +84,13 @@ int av_close(av_t *s)
 	return(r);
 }
 
-rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t aspect)
+r64_t av_calculate_frame_size(av_t *av, r64_t resolution, r64_t aspect)
 {
-	rational_t r = { av->width, av->height };
-	rational_t b = aspect;
-	rational_t c = av->display_aspect_ratios[0];
-	rational_t min, max;
-	const rational_t fadj[][2] = {
+	r64_t r = { av->width, av->height };
+	r64_t b = aspect;
+	r64_t c = av->display_aspect_ratios[0];
+	r64_t min, max;
+	const r64_t fadj[][2] = {
 		/* Horizontal resolution adjustment factors based on the list at:
 		 * https://xpt.sourceforge.net/techdocs/media/video/dvd/dvd04-DVDAuthoringSpecwise/ar01s02.html
 		 */
@@ -112,7 +112,7 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 	/* Find the nearest display aspect ratio if there is more than one */
 	if(av->display_aspect_ratios[1].den > 0)
 	{
-		c = rational_nearest(b, c, av->display_aspect_ratios[1]);
+		c = r64_nearest(b, c, av->display_aspect_ratios[1]);
 	}
 	
 	if(av->fit_mode == AV_FIT_STRETCH ||
@@ -138,8 +138,8 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 		{
 			/* Mode "fit" scales the source video to
 			 * fit entirely within the active frame */
-			min = (rational_t) { 2, r.den };
-			max = (rational_t) { r.num, 2 };
+			min = (r64_t) { 2, r.den };
+			max = (r64_t) { r.num, 2 };
 		}
 		
 		/* Test for min/max override */
@@ -154,25 +154,25 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 		}
 		
 		/* Restrict visible ratio */
-		if(rational_cmp(b, min) < 0) b = min;
-		else if(rational_cmp(b, max) > 0) b = max;
+		if(r64_cmp(b, min) < 0) b = min;
+		else if(r64_cmp(b, max) > 0) b = max;
 		
 		/* Calculate visible resolution */
-		if(rational_cmp(b, c) < 0)
+		if(r64_cmp(b, c) < 0)
 		{
 			r.num = (int64_t) r.num * ((int64_t) b.num * c.den) / ((int64_t) c.num * b.den);
 		}
-		else if(rational_cmp(b, c) > 0)
+		else if(r64_cmp(b, c) > 0)
 		{
 			r.den = (int64_t) r.den * ((int64_t) c.num * b.den) / ((int64_t) b.num * c.den);
 		}
 		
 		/* Calculate source resolution */
-		if(rational_cmp(b, aspect) < 0)
+		if(r64_cmp(b, aspect) < 0)
 		{
 			r.num = (int64_t) r.num * ((int64_t) aspect.num * b.den) / ((int64_t) b.num * aspect.den);
 		}
-		else if(rational_cmp(b, aspect) > 0)
+		else if(r64_cmp(b, aspect) > 0)
 		{
 			r.den = (int64_t) r.den * ((int64_t) b.num * aspect.den) / ((int64_t) aspect.num * b.den);
 		}
@@ -192,23 +192,23 @@ rational_t av_calculate_frame_size(av_t *av, rational_t resolution, rational_t a
 	return(r);
 }
 
-rational_t av_display_aspect_ratio(av_frame_t *frame)
+r64_t av_display_aspect_ratio(av_frame_t *frame)
 {
 	/* Helper function to return a frames display aspect ratio */
 	/* DAR = SAR * PAR */
-	return(rational_mul(
-		(rational_t) { frame->width, frame->height },
+	return(r64_mul(
+		(r64_t) { frame->width, frame->height },
 		frame->pixel_aspect_ratio)
 	);
 }
 
-void av_set_display_aspect_ratio(av_frame_t *frame, rational_t display_aspect_ratio)
+void av_set_display_aspect_ratio(av_frame_t *frame, r64_t display_aspect_ratio)
 {
 	/* Helper function to set a frames display aspect ratio */
 	/* PAR = DAR / SAR */
-	frame->pixel_aspect_ratio = rational_div(
+	frame->pixel_aspect_ratio = r64_div(
 		display_aspect_ratio,
-		(rational_t) { frame->width, frame->height }
+		(r64_t) { frame->width, frame->height }
 	);
 }
 
@@ -249,7 +249,7 @@ void av_rotate_frame(av_frame_t *frame, int a)
 		frame->line_stride = i;
 		
 		/* Reverse the pixel aspect ratio (r = 1 / r) */
-		frame->pixel_aspect_ratio = (rational_t) {
+		frame->pixel_aspect_ratio = (r64_t) {
 			frame->pixel_aspect_ratio.den,
 			frame->pixel_aspect_ratio.num
 		};

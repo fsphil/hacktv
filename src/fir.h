@@ -69,7 +69,7 @@ extern size_t fir_int16_process(fir_int16_t *s, int16_t *out, const int16_t *in,
 extern size_t fir_int16_process_block(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples, int step);
 extern void fir_int16_free(fir_int16_t *s);
 
-extern int fir_int16_resampler_init(fir_int16_t *s, rational_t out_rate, rational_t in_rate);
+extern int fir_int16_resampler_init(fir_int16_t *s, r64_t out_rate, r64_t in_rate);
 
 extern int fir_int16_complex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay);
 extern size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, const int16_t *in, size_t samples);

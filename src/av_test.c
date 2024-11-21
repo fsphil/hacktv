@@ -47,7 +47,7 @@ static int _test_read_video(void *ctx, av_frame_t *frame)
 {
 	av_test_t *s = ctx;
 	av_frame_init(frame, s->width, s->height, s->video, 1, s->width);
-	av_set_display_aspect_ratio(frame, (rational_t) { 4, 3 });
+	av_set_display_aspect_ratio(frame, (r64_t) { 4, 3 });
 	return(AV_OK);
 }
 

@@ -167,8 +167,8 @@ typedef struct {
 	/* Video */
 	int type;
 	
-	rational_t frame_rate;
-	rational_t frame_aspects[2];
+	r64_t frame_rate;
+	r64_t frame_aspects[2];
 	int frame_orientation;
 	
 	int lines;
@@ -213,7 +213,7 @@ typedef struct {
 	double bw_co;
 	
 	int colour_mode;
-	rational_t colour_carrier;
+	r64_t colour_carrier;
 	
 	double burst_width;
 	double burst_left;

@@ -2380,12 +2380,12 @@ static int _init_fm_modulator(_mod_fm_t *fm, int sample_rate, double frequency, 
 	return(VID_OK);
 }
 
-static int _init_fm_energy_dispersal(_mod_fm_t *fm, int sample_rate, rational_t frequency, int level)
+static int _init_fm_energy_dispersal(_mod_fm_t *fm, int sample_rate, r64_t frequency, int level)
 {
-	rational_t r;
+	r64_t r;
 	
-	r = rational_div((rational_t) { level * 4, 1 }, (rational_t) { sample_rate, 1 });
-	r = rational_mul(r, frequency);
+	r = r64_div((r64_t) { level * 4, 1 }, (r64_t) { sample_rate, 1 });
+	r = r64_mul(r, frequency);
 	
 	fm->ed_delta = div(r.num, r.den);
 	fm->ed_overflow = (div_t) { level * 4, r.den };
@@ -3613,7 +3613,7 @@ static int _calc_filter_delay(int width, int ntaps)
 	return(delay);
 }
 
-static int _init_vresampler(vid_t *s, rational_t in_rate, rational_t out_rate)
+static int _init_vresampler(vid_t *s, r64_t in_rate, r64_t out_rate)
 {
 	_vid_filter_process_t *p;
 	int width;
@@ -3932,7 +3932,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	if(s->conf.colour_mode == VID_PAL ||
 	   s->conf.colour_mode == VID_NTSC)
 	{
-		rational_t a = rational_div((rational_t) { s->pixel_rate, 1 }, s->conf.colour_carrier);
+		r64_t a = r64_div((r64_t) { s->pixel_rate, 1 }, s->conf.colour_carrier);
 		
 		/* Generate the colour subcarrier lookup table */
 		/* This carrier is in phase with the U (B-Y) component */
@@ -4275,8 +4275,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	if(s->pixel_rate != s->sample_rate)
 	{
 		_init_vresampler(s,
-			(rational_t) { s->pixel_rate, 1 },
-			(rational_t) { s->sample_rate, 1 }
+			(r64_t) { s->pixel_rate, 1 },
+			(r64_t) { s->sample_rate, 1 }
 		);
 	}
 	
@@ -4502,7 +4502,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			_init_fm_energy_dispersal(
 				&s->fm_video,
 				s->sample_rate,
-				(rational_t) { s->sample_rate, s->width * s->conf.lines }, // s->conf.frame_rate
+				(r64_t) { s->sample_rate, s->width * s->conf.lines }, // s->conf.frame_rate
 				round(INT16_MAX * s->conf.fm_energy_dispersal)
 			);
 		}

@@ -38,7 +38,7 @@ typedef struct {
 	int line_stride;
 	
 	/* The pixel aspect ratio */
-	rational_t pixel_aspect_ratio;
+	r64_t pixel_aspect_ratio;
 	
 	/* Interlace flag */
 	int interlaced;
@@ -63,18 +63,18 @@ typedef struct {
 	/* Video settings */
 	int width;
 	int height;
-	rational_t frame_rate;
-	rational_t display_aspect_ratios[2];
+	r64_t frame_rate;
+	r64_t display_aspect_ratios[2];
 	av_fit_mode_t fit_mode;
-	rational_t min_display_aspect_ratio;
-	rational_t max_display_aspect_ratio;
+	r64_t min_display_aspect_ratio;
+	r64_t max_display_aspect_ratio;
 	av_frame_t default_frame;
 	
 	/* Video state */
 	unsigned int frames;
 	
 	/* Audio settings */
-	rational_t sample_rate;
+	r64_t sample_rate;
 	
 	/* Audio state */
 	unsigned int samples;
@@ -95,10 +95,10 @@ extern int16_t *av_read_audio(av_t *s, size_t *samples);
 extern int av_eof(av_t *s);
 extern int av_close(av_t *s);
 
-extern rational_t av_display_aspect_ratio(av_frame_t *frame);
-extern void av_set_display_aspect_ratio(av_frame_t *frame, rational_t display_aspect_ratio);
+extern r64_t av_display_aspect_ratio(av_frame_t *frame);
+extern void av_set_display_aspect_ratio(av_frame_t *frame, r64_t display_aspect_ratio);
 
-extern rational_t av_calculate_frame_size(av_t *s, rational_t resolution, rational_t pixel_aspect_ratio);
+extern r64_t av_calculate_frame_size(av_t *s, r64_t resolution, r64_t pixel_aspect_ratio);
 
 extern void av_hflip_frame(av_frame_t *frame);
 extern void av_vflip_frame(av_frame_t *frame);

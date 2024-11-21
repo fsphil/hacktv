@@ -25,9 +25,9 @@
 #define RT2080 2.4410157268268087 /* Factor to convert 20-80% rise time to 0-100% */
 
 typedef struct {
-	int num;
-	int den;
-} rational_t;
+	int64_t num;
+	int64_t den;
+} r64_t;
 
 typedef struct {
 	int16_t i;
@@ -40,12 +40,12 @@ typedef struct {
 } cint32_t;
 
 extern int64_t gcd(int64_t a, int64_t b);
-extern rational_t rational_mul(rational_t a, rational_t b);
-extern rational_t rational_div(rational_t a, rational_t b);
-extern int rational_cmp(rational_t a, rational_t b);
-extern rational_t rational_nearest(rational_t ref, rational_t a, rational_t b);
-extern rational_t rational_parse_decimal(const char *str, const char **endptr);
-extern rational_t rational_parse(const char *str, const char **endptr);
+extern r64_t r64_mul(r64_t a, r64_t b);
+extern r64_t r64_div(r64_t a, r64_t b);
+extern int r64_cmp(r64_t a, r64_t b);
+extern r64_t r64_nearest(r64_t ref, r64_t a, r64_t b);
+extern r64_t r64_parse_decimal(const char *str, const char **endptr);
+extern r64_t r64_parse(const char *str, const char **endptr);
 extern cint16_t *sin_cint16(unsigned int length, unsigned int cycles, double level);
 extern double rc_window(double t, double left, double width, double rise);
 

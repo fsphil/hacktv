@@ -321,16 +321,16 @@ void fir_int16_free(fir_int16_t *s)
 	memset(s, 0, sizeof(fir_int16_t));
 }
 
-/* Initialise int16 FIR filter rational resampler */
-int fir_int16_resampler_init(fir_int16_t *s, rational_t out_rate, rational_t in_rate)
+/* Initialise int16 FIR filter r64 resampler */
+int fir_int16_resampler_init(fir_int16_t *s, r64_t out_rate, r64_t in_rate)
 {
 	int ntaps;
 	double *taps;
-	rational_t r;
+	r64_t r;
 	int i;
 	
 	/* Calculate ratio */
-	r = rational_div(out_rate, in_rate);
+	r = r64_div(out_rate, in_rate);
 	
 	/* Generate the filter taps */
 	ntaps = 21 * r.num;
