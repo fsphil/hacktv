@@ -3601,16 +3601,9 @@ static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, v
 
 static int _calc_filter_delay(int width, int ntaps)
 {
-	int delay;
-	
 	/* Calculate the number of samples delay needed
 	 * to make filter delay exactly N lines */
-	ntaps /= 2;
-	
-	delay = (ntaps + width - 1) / width;
-	delay = width * delay - ntaps;
-	
-	return(delay);
+	return(width - ((ntaps / 2) % width));
 }
 
 static int _init_vresampler(vid_t *s, r64_t in_rate, r64_t out_rate)
