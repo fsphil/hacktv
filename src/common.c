@@ -251,3 +251,29 @@ double rc_window(double t, double left, double width, double rise)
 	return(r);
 }
 
+double rrc(double x, double b, double t)
+{
+	double r;
+	
+	/* Based on the Wikipedia page, https://en.wikipedia.org/w/index.php?title=Root-raised-cosine_filter&oldid=787851747 */
+	
+	if(x == 0)
+	{
+		r = (1.0 / t) * (1.0 + b * (4.0 / M_PI - 1));
+	}
+	else if(fabs(x) == t / (4.0 * b))
+	{
+		r = b / (t * sqrt(2.0)) * ((1.0 + 2.0 / M_PI) * sin(M_PI / (4.0 * b)) + (1.0 - 2.0 / M_PI) * cos(M_PI / (4.0 * b)));
+	}
+	else
+	{
+		double t1 = (4.0 * b * (x / t));
+		double t2 = (sin(M_PI * (x / t) * (1.0 - b)) + 4.0 * b * (x / t) * cos(M_PI * (x / t) * (1.0 + b)));
+		double t3 = (M_PI * (x / t) * (1.0 - t1 * t1));
+		
+		r = (1.0 / t) * (t2 / t3);
+	}
+	
+	return(r);
+}
+

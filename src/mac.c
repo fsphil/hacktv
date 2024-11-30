@@ -148,11 +148,6 @@ static const _scale_factor_t _scale_factors[8] = {
 	{ 7, 6, 1, 1 }, /* 0b111 */
 };
 
-static double _rrc(double x)
-{
-	return(x == 0 ? 1 : sin(M_PI * x) / (M_PI * x));
-}
-
 static int16_t *_duobinary_lut(int mode, int width, double level)
 {
 	double samples_per_symbol;
@@ -186,7 +181,7 @@ static int16_t *_duobinary_lut(int mode, int width, double level)
 		
 		for(x = 0; x < ntaps; x++)
 		{
-			*(p++) = lround(_rrc((double) (x - htaps - err) / samples_per_symbol) * level);
+			*(p++) = lround(rrc((double) (x - htaps - err) / samples_per_symbol, 0, 1) * level);
 		}
 	}
 	

@@ -356,32 +356,6 @@ static double _hamming(double x)
 	return(0.54 - 0.46 * cos((M_PI * (1.0 + x))));
 }
 
-static double _rrc(double x, double b, double t)
-{
-	double r;
-	
-	/* Based on the Wikipedia page, https://en.wikipedia.org/w/index.php?title=Root-raised-cosine_filter&oldid=787851747 */
-	
-	if(x == 0)
-	{
-		r = (1.0 / t) * (1.0 + b * (4.0 / M_PI - 1));
-	}
-	else if(fabs(x) == t / (4.0 * b))
-	{
-		r = b / (t * sqrt(2.0)) * ((1.0 + 2.0 / M_PI) * sin(M_PI / (4.0 * b)) + (1.0 - 2.0 / M_PI) * cos(M_PI / (4.0 * b)));
-	}
-	else
-	{
-		double t1 = (4.0 * b * (x / t));
-		double t2 = (sin(M_PI * (x / t) * (1.0 - b)) + 4.0 * b * (x / t) * cos(M_PI * (x / t) * (1.0 + b)));
-		double t3 = (M_PI * (x / t) * (1.0 - t1 * t1));
-		
-		r = (1.0 / t) * (t2 / t3);
-	}
-	
-	return(r);
-}
-
 int dance_mod_init(dance_mod_t *s, uint8_t mode, unsigned int sample_rate, unsigned int frequency, double beta, double level)
 {
 	double sps;
@@ -409,7 +383,7 @@ int dance_mod_init(dance_mod_t *s, uint8_t mode, unsigned int sample_rate, unsig
 	{
 		t = ((double) x) / sps;
 		
-		r  = _rrc(t, beta, 1.0) * _hamming((double) x / n);
+		r  = rrc(t, beta, 1.0) * _hamming((double) x / n);
 		r *= M_SQRT1_2 * INT16_MAX * level;
 		
 		s->taps[x + n] = lround(r);
