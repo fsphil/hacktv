@@ -34,7 +34,7 @@ int64_t gcd(int64_t a, int64_t b)
 	return(b);
 }
 
-const r64_t _normalise(int64_t *num, int64_t *den)
+static r64_t _normalise(int64_t *num, int64_t *den)
 {
 	int64_t e;
 	
