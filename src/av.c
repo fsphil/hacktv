@@ -87,9 +87,6 @@ int av_close(av_t *s)
 r64_t av_calculate_frame_size(av_t *av, r64_t resolution, r64_t aspect)
 {
 	r64_t r = { av->width, av->height };
-	r64_t b = aspect;
-	r64_t c = av->display_aspect_ratios[0];
-	r64_t min, max;
 	const r64_t fadj[][2] = {
 		/* Horizontal resolution adjustment factors based on the list at:
 		 * https://xpt.sourceforge.net/techdocs/media/video/dvd/dvd04-DVDAuthoringSpecwise/ar01s02.html
@@ -109,14 +106,7 @@ r64_t av_calculate_frame_size(av_t *av, r64_t resolution, r64_t aspect)
 		{ }
 	};
 	
-	/* Find the nearest display aspect ratio if there is more than one */
-	if(av->display_aspect_ratios[1].den > 0)
-	{
-		c = r64_nearest(b, c, av->display_aspect_ratios[1]);
-	}
-	
-	if(av->fit_mode == AV_FIT_STRETCH ||
-	   aspect.num <= 0 || aspect.den <= 0)
+	if(av->fit_mode == AV_FIT_STRETCH)
 	{
 		/* Mode "stretch" ignores the source aspect,
 		 * always returns the active resolution */
@@ -128,53 +118,74 @@ r64_t av_calculate_frame_size(av_t *av, r64_t resolution, r64_t aspect)
 	}
 	else
 	{
+		r64_t b, c;
+		
+		/* Use frame size if no aspect set, assume 1:1 pixel ratio */
+		if(aspect.num <= 0 || aspect.den <= 0)
+		{
+			aspect = resolution;
+		}
+		
 		if(av->fit_mode == AV_FIT_FILL)
 		{
-			/* Mode "fill" scales the source video to
-			 * fill the active frame */
-			min = max = c;
+			/* Mode "fill" scales the source video to fill the active frame */
+			
+			/* Find the nearest display aspect ratio if there is more than one */
+			c = av->display_aspect_ratios[0];
+			
+			if(av->display_aspect_ratios[1].den > 0)
+			{
+				c = r64_nearest(aspect, c, av->display_aspect_ratios[1]);
+			}
 		}
-		else if(av->fit_mode == AV_FIT_FIT)
+		else
 		{
-			/* Mode "fit" scales the source video to
-			 * fit entirely within the active frame */
-			min = (r64_t) { 2, r.den };
-			max = (r64_t) { r.num, 2 };
+			c = aspect;
 		}
 		
-		/* Test for min/max override */
-		if(av->min_display_aspect_ratio.den > 0)
+		/* Enforce active ratio limits if set */
+		if(av->min_display_aspect_ratio.den > 0 &&
+		   r64_cmp(c, av->min_display_aspect_ratio) < 0)
 		{
-			min = av->min_display_aspect_ratio;
+			c = av->min_display_aspect_ratio;
 		}
 		
-		if(av->max_display_aspect_ratio.den > 0)
+		if(av->max_display_aspect_ratio.den > 0 &&
+		   r64_cmp(c, av->max_display_aspect_ratio) > 0)
 		{
-			max = av->max_display_aspect_ratio;
+			c = av->max_display_aspect_ratio;
 		}
 		
-		/* Restrict visible ratio */
-		if(r64_cmp(b, min) < 0) b = min;
-		else if(r64_cmp(b, max) > 0) b = max;
+		/* b = display ratio */
+		b = av->display_aspect_ratios[0];
+		
+		if(av->display_aspect_ratios[1].den > 0)
+		{
+			b = r64_nearest(c, b, av->display_aspect_ratios[1]);
+		}
 		
 		/* Calculate visible resolution */
-		if(r64_cmp(b, c) < 0)
+		if(r64_cmp(c, b) > 0)
 		{
-			r.num = (int64_t) r.num * ((int64_t) b.num * c.den) / ((int64_t) c.num * b.den);
+			/* Vertical padding (Letterbox) */
+			r.den = (int64_t) r.den * ((int64_t) b.num * c.den) / ((int64_t) b.den * c.num);
 		}
-		else if(r64_cmp(b, c) > 0)
+		else if(r64_cmp(c, b) < 0)
 		{
-			r.den = (int64_t) r.den * ((int64_t) c.num * b.den) / ((int64_t) b.num * c.den);
+			/* Horizontal padding (Pillarbox) */
+			r.num = (int64_t) r.num * ((int64_t) c.num * b.den) / ((int64_t) c.den * b.num);
 		}
 		
 		/* Calculate source resolution */
-		if(r64_cmp(b, aspect) < 0)
+		if(r64_cmp(c, aspect) > 0)
 		{
-			r.num = (int64_t) r.num * ((int64_t) aspect.num * b.den) / ((int64_t) b.num * aspect.den);
+			/* Vertical cropping */
+			r.den = (int64_t) r.den * ((int64_t) c.num * aspect.den) / ((int64_t) c.den * aspect.num);
 		}
-		else if(r64_cmp(b, aspect) > 0)
+		else if(r64_cmp(c, aspect) < 0)
 		{
-			r.den = (int64_t) r.den * ((int64_t) b.num * aspect.den) / ((int64_t) aspect.num * b.den);
+			/* Horizontal cropping */
+			r.num = (int64_t) r.num * ((int64_t) aspect.num * c.den) / ((int64_t) aspect.den * c.num);
 		}
 	}
 	
