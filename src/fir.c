@@ -230,8 +230,8 @@ int fir_int16_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int i
 	s->decimation = decimation;
 	
 	/* Round number of taps up to a multiple of the interpolation factor */
-	s->ntaps = ntaps + (ntaps % interpolation ? interpolation - (ntaps % interpolation) : 0);
-	s->ataps = s->ntaps / interpolation;
+	s->ataps = (ntaps + interpolation - 1) / interpolation;
+	s->ntaps = s->ataps * interpolation;
 	
 	s->itaps = calloc(s->ntaps, sizeof(int16_t));
 	s->qtaps = NULL;
@@ -376,8 +376,8 @@ int fir_int16_complex_init(fir_int16_t *s, const double *taps, unsigned int ntap
 	s->decimation = decimation;
 	
 	/* Round number of taps up to a multiple of the interpolation factor */
-	s->ntaps = ntaps + (ntaps % interpolation ? interpolation - (ntaps % interpolation) : 0);
-	s->ataps = s->ntaps / interpolation;
+	s->ataps = (ntaps + interpolation - 1) / interpolation;
+	s->ntaps = s->ataps * interpolation;
 	
 	s->itaps = calloc(s->ntaps, sizeof(int16_t));
 	s->qtaps = calloc(s->ntaps, sizeof(int16_t));
@@ -456,8 +456,8 @@ int fir_int16_scomplex_init(fir_int16_t *s, const double *taps, unsigned int nta
 	s->decimation = decimation;
 	
 	/* Round number of taps up to a multiple of the interpolation factor */
-	s->ntaps = ntaps + (ntaps % interpolation ? interpolation - (ntaps % interpolation) : 0);
-	s->ataps = s->ntaps / interpolation;
+	s->ataps = (ntaps + interpolation - 1) / interpolation;
+	s->ntaps = s->ataps * interpolation;
 	
 	s->itaps = calloc(s->ntaps, sizeof(int16_t));
 	s->qtaps = calloc(s->ntaps, sizeof(int16_t));
@@ -537,8 +537,8 @@ int fir_int32_init(fir_int32_t *s, const double *taps, unsigned int ntaps, int i
 	s->decimation = decimation;
 	
 	/* Round number of taps up to a multiple of the interpolation factor */
-	s->ntaps = ntaps + (ntaps % interpolation ? interpolation - (ntaps % interpolation) : 0);
-	s->ataps = s->ntaps / interpolation;
+	s->ataps = (ntaps + interpolation - 1) / interpolation;
+	s->ntaps = s->ataps * interpolation;
 	
 	s->itaps = malloc(s->ntaps * sizeof(int32_t));
 	s->qtaps = NULL;
