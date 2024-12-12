@@ -1,6 +1,7 @@
 /* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
 /* Copyright 2017 Philip Heron <phil@sanslogic.co.uk>                    */
+/* Copyright 2024 Matthew Millman                                        */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
 /* it under the terms of the GNU General Public License as published by  */
@@ -25,6 +26,26 @@
 
 /* Value from host/libhackrf/src/hackrf.c */
 #define TRANSFER_BUFFER_SIZE 262144
+
+/* HackDAC */
+#define HACKDAC_FIRMWARE_SUFFIX "hackdac"
+#define HACKDAC_MODE_RF          0
+#define HACKDAC_MODE_BASEBAND    (1 << 7)
+#define HACKDAC_AUDIO_MODE_SHIFT 1
+#define HACKDAC_AUDIO_MODE_MASK  (0x3 << HACKDAC_AUDIO_MODE_SHIFT)
+#define HACKDAC_AUDIO_MODE(x)    ((x) << HACKDAC_AUDIO_MODE_SHIFT)
+#define HACKDAC_NO_AUDIO         0 // No audio. Don't send any audio data to HackRF by any means.
+#define HACKDAC_SYNC_AUDIO       1 // Audio interleaved with video data
+#define HACKDAC_ASYNC_AUDIO      2 // Audio transferred separately through USB_AUDIO_OUT_EP
+
+#define HACKDAC_USB_AUDIO_BUFFER_SIZE 512 // (bytes), 128 L+R 16-bit samples
+#define HACKDAC_SYNC_MAGIC_1          0x87654321
+#define HACKDAC_SYNC_MAGIC_2          0x12345678
+#define HACKRF_AHB_BUFFER_SIZE        16384 // Not HackDAC specific but not exposed in hackrf.h either
+#define HACKDAC_PHASE_SIZE            (HACKRF_AHB_BUFFER_SIZE + HACKDAC_USB_AUDIO_BUFFER_SIZE)
+
+/* hackrf_set_hw_sync_mode is 'borrowed' to configure hackdac for now */
+#define hackrf_set_hackdac_mode(dev, value) hackrf_set_hw_sync_mode(dev, value)
 
 typedef enum {
 	BUFFER_EMPTY,
@@ -67,6 +88,12 @@ typedef struct {
 	
 	/* HackRF device */
 	hackrf_device *d;
+	
+	/* HackDAC device */
+	int hackdac_firmware_version; /* 0 if not present */
+	int hackdac_sync_frame_sent;
+	int hackdac_frame_phase;
+	int hackdac_frame_padding;
 	
 	/* Buffers */
 	buffers_t buffers;
@@ -238,6 +265,84 @@ static int _tx_callback(hackrf_transfer *transfer)
 	return(0);
 }
 
+static int _tx_callback_hackdac(hackrf_transfer *transfer)
+{
+	hackrf_t *rf = transfer->tx_ctx;
+	size_t l = transfer->valid_length;
+	uint8_t *buf = transfer->buffer;
+	int r;
+	
+	if(rf->hackdac_sync_frame_sent == 0)
+	{
+		/* The first frame sent is the sync frame, which
+		 * marks where interleaved a/v data begins */
+		
+		memset(buf, 0, HACKDAC_USB_AUDIO_BUFFER_SIZE);
+		
+		((uint32_t *) buf)[0] = HACKDAC_SYNC_MAGIC_1; // Signature
+		((uint32_t *) buf)[1] = HACKDAC_SYNC_MAGIC_2; // Signature
+		((uint32_t *) buf)[2] = HACKDAC_USB_AUDIO_BUFFER_SIZE; // Length of frame
+		
+		l -= HACKDAC_USB_AUDIO_BUFFER_SIZE;
+		buf += HACKDAC_USB_AUDIO_BUFFER_SIZE;
+		
+		rf->hackdac_sync_frame_sent = 1;
+	}
+	
+	while(l)
+	{
+		if(rf->hackdac_frame_padding > 0)
+		{
+			/* Underrun padding */
+			r = rf->hackdac_frame_padding;
+			if(r > l) r = l;
+			
+			memset(buf, 0, r);
+			
+			rf->hackdac_frame_padding -= r;
+		}
+		else if(rf->hackdac_frame_phase < HACKRF_AHB_BUFFER_SIZE)
+		{
+			/* Video phase */
+			r = HACKRF_AHB_BUFFER_SIZE - rf->hackdac_frame_phase;
+			if(r > l) r = l;
+			
+			r = _buffer_read(&rf->buffers, (int8_t *) buf, r);
+			
+			rf->hackdac_frame_phase += r;
+		}
+		else
+		{
+			/* Audio phase */
+			r = HACKDAC_PHASE_SIZE - rf->hackdac_frame_phase;
+			if(r > l) r = l;
+			
+			/* TODO: Read audio data */
+			memset(buf, 0, r);
+			
+			rf->hackdac_frame_phase += r;
+		}
+		
+		if(rf->hackdac_frame_phase == HACKDAC_PHASE_SIZE)
+		{
+			rf->hackdac_frame_phase = 0;
+		}
+		
+		if(r == 0)
+		{
+			/* Buffer underrun, pad remaining transfer buffer
+			 * with zeros - rounding up to the AV phase size */
+			rf->hackdac_frame_padding = (l + HACKDAC_PHASE_SIZE - 1) / HACKDAC_PHASE_SIZE;
+			rf->hackdac_frame_padding *= HACKDAC_PHASE_SIZE;
+		}
+		
+		l -= r;
+		buf += r;
+	}
+	
+	return(0);
+}
+
 static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	hackrf_t *rf = private;
@@ -253,6 +358,34 @@ static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 		for(i = 0; i < r && i < samples; i++)
 		{
 			iq8[i] = iq_data[i] >> 8;
+		}
+		
+		_buffer_write(&rf->buffers, i);
+		
+		iq_data += i;
+		samples -= i;
+	}
+	
+	return(RF_OK);
+}
+
+static int _rf_write_baseband(void *private, const int16_t *iq_data, size_t samples)
+{
+	hackrf_t *rf = private;
+	int8_t *iq8 = NULL;
+	int i, r;
+	
+	samples *= 2;
+	
+	while(samples > 0)
+	{
+		r = _buffer_write_ptr(&rf->buffers, &iq8);
+		
+		for(i = 0; i < r && i < samples; i += 2)
+		{
+			int sync = (iq_data[i] > -9000);
+			iq8[i + 0] = (iq_data[i] >> 1) & 0xFF;
+			iq8[i + 1] = ((iq_data[i] >> 9) & 0x7F) | (sync << 7);
 		}
 		
 		_buffer_write(&rf->buffers, i);
@@ -290,17 +423,23 @@ static int _rf_close(void *private)
 	
 	hackrf_exit();
 	
+	for(r = 0; r < 2; r++)
+	{
+		fir_int16_free(&rf->hackdac_audio_resampler[r]);
+	}
+	
 	_buffer_free(&rf->buffers);
 	free(rf);
 	
 	return(RF_OK);
 }
 
-int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t frequency_hz, unsigned int txvga_gain, unsigned char amp_enable)
+int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t frequency_hz, unsigned int txvga_gain, unsigned char amp_enable, unsigned char baseband)
 {
 	hackrf_t *rf;
 	int r;
 	uint8_t rev;
+	char str[256];
 	
 	rf = calloc(1, sizeof(hackrf_t));
 	if(!rf)
@@ -335,6 +474,63 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 	if(r == HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf: Hardware Revision: %s\n", hackrf_board_rev_name(rev));
+	}
+	
+	/* Print the firmware version */
+	r = hackrf_version_string_read(rf->d, str, sizeof(str) - 1);
+	if(r == HACKRF_SUCCESS)
+	{
+		char *pstr;
+		char hackdac_hardware_type;
+		
+		fprintf(stderr, "hackrf: Firmware Version: %s\n", str);
+		
+		/* Test for the hackdac firmware */
+		pstr = strstr(str, HACKDAC_FIRMWARE_SUFFIX);
+		if(pstr && sscanf(pstr, HACKDAC_FIRMWARE_SUFFIX "-%c-%d", &hackdac_hardware_type, &rf->hackdac_firmware_version) == 2)
+		{
+			fprintf(stderr, "hackrf: HackDAC Type: %c/%u\n", hackdac_hardware_type + ('A' - 'a'), rf->hackdac_firmware_version);
+		}
+	}
+	
+	/* Override RF settings for baseband mode */
+	if(baseband)
+	{
+		if(rf->hackdac_firmware_version == 0)
+		{
+			fprintf(stderr, "HackDAC required for baseband operation\n");
+			free(rf);
+			return(RF_ERROR);
+		}
+		
+		frequency_hz = 0;
+		txvga_gain = 0;
+		amp_enable = 0;
+	}
+	
+	if(rf->hackdac_firmware_version > 0)
+	{
+		uint8_t flags = 0;
+		
+		/* Configure HackDAC mode */
+		if(baseband)
+		{
+			flags |= HACKDAC_MODE_BASEBAND;
+			flags |= HACKDAC_AUDIO_MODE(HACKDAC_SYNC_AUDIO);
+		}
+		else
+		{
+			flags |= HACKDAC_MODE_RF;
+			flags |= HACKDAC_AUDIO_MODE(HACKDAC_NO_AUDIO);
+		}
+		
+		r = hackrf_set_hackdac_mode(rf->d, flags);
+		if(r != HACKRF_SUCCESS)
+		{
+			fprintf(stderr, "hackrf_set_hackdac_mode() failed: %s (%d)\n", hackrf_error_name(r), r);
+			free(rf);
+			return(RF_ERROR);
+		}
 	}
 	
 	r = hackrf_set_sample_rate_manual(rf->d, sample_rate, 1);
@@ -383,7 +579,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 	_buffer_init(&rf->buffers, r, TRANSFER_BUFFER_SIZE);
 	
 	/* Begin transmitting */
-	r = hackrf_start_tx(rf->d, _tx_callback, rf);
+	r = hackrf_start_tx(rf->d, baseband ? _tx_callback_hackdac : _tx_callback, rf);
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_start_tx() failed: %s (%d)\n", hackrf_error_name(r), r);
@@ -393,7 +589,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 	
 	/* Register the callback functions */
 	s->ctx = rf;
-	s->write = _rf_write;
+	s->write = baseband ? _rf_write_baseband : _rf_write;
 	s->close = _rf_close;
 	
 	return(RF_OK);

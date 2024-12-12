@@ -1188,7 +1188,7 @@ int main(int argc, char *argv[])
 	if(strcmp(s.output_type, "hackrf") == 0)
 	{
 #ifdef HAVE_HACKRF
-		if(rf_hackrf_open(&s.rf, s.output, s.vid.sample_rate, s.frequency, s.gain, s.amp) != RF_OK)
+		if(rf_hackrf_open(&s.rf, s.output, s.vid.sample_rate, s.frequency, s.gain, s.amp, s.vid.conf.output_type == RF_INT16_REAL) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
