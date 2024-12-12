@@ -31,7 +31,7 @@ typedef struct {
 	int type;
 } rf_file_t;
 
-static int _rf_file_write_uint8_real(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_uint8_real(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	uint8_t *u8 = rf->data;
@@ -52,7 +52,7 @@ static int _rf_file_write_uint8_real(void *private, int16_t *iq_data, size_t sam
 	return(RF_OK);
 }
 
-static int _rf_file_write_int8_real(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_int8_real(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	int8_t *i8 = rf->data;
@@ -73,7 +73,7 @@ static int _rf_file_write_int8_real(void *private, int16_t *iq_data, size_t samp
 	return(RF_OK);
 }
 
-static int _rf_file_write_uint16_real(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_uint16_real(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	uint16_t *u16 = rf->data;
@@ -94,7 +94,7 @@ static int _rf_file_write_uint16_real(void *private, int16_t *iq_data, size_t sa
 	return(RF_OK);
 }
 
-static int _rf_file_write_int16_real(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_int16_real(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	int16_t *i16 = rf->data;
@@ -115,7 +115,7 @@ static int _rf_file_write_int16_real(void *private, int16_t *iq_data, size_t sam
 	return(RF_OK);
 }
 
-static int _rf_file_write_int32_real(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_int32_real(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	int32_t *i32 = rf->data;
@@ -136,7 +136,7 @@ static int _rf_file_write_int32_real(void *private, int16_t *iq_data, size_t sam
 	return(RF_OK);
 }
 
-static int _rf_file_write_float_real(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_float_real(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	float *f32 = rf->data;
@@ -157,7 +157,7 @@ static int _rf_file_write_float_real(void *private, int16_t *iq_data, size_t sam
 	return(RF_OK);
 }
 
-static int _rf_file_write_uint8_complex(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_uint8_complex(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	uint8_t *u8 = rf->data;
@@ -179,7 +179,7 @@ static int _rf_file_write_uint8_complex(void *private, int16_t *iq_data, size_t 
 	return(RF_OK);
 }
 
-static int _rf_file_write_int8_complex(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_int8_complex(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	int8_t *i8 = rf->data;
@@ -201,7 +201,7 @@ static int _rf_file_write_int8_complex(void *private, int16_t *iq_data, size_t s
 	return(RF_OK);
 }
 
-static int _rf_file_write_uint16_complex(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_uint16_complex(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	uint16_t *u16 = rf->data;
@@ -223,7 +223,7 @@ static int _rf_file_write_uint16_complex(void *private, int16_t *iq_data, size_t
 	return(RF_OK);
 }
 
-static int _rf_file_write_int16_complex(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_int16_complex(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	
@@ -232,7 +232,7 @@ static int _rf_file_write_int16_complex(void *private, int16_t *iq_data, size_t 
 	return(RF_OK);
 }
 
-static int _rf_file_write_int32_complex(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_int32_complex(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	int32_t *i32 = rf->data;
@@ -254,7 +254,7 @@ static int _rf_file_write_int32_complex(void *private, int16_t *iq_data, size_t 
 	return(RF_OK);
 }
 
-static int _rf_file_write_float_complex(void *private, int16_t *iq_data, size_t samples)
+static int _rf_file_write_float_complex(void *private, const int16_t *iq_data, size_t samples)
 {
 	rf_file_t *rf = private;
 	float *f32 = rf->data;

@@ -20,7 +20,7 @@
 #include "rf.h"
 
 /* RF sink callback handlers */
-int rf_write(rf_t *s, int16_t *iq_data, size_t samples)
+int rf_write(rf_t *s, const int16_t *iq_data, size_t samples)
 {
 	if(s->write)
 	{

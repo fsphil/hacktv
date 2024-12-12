@@ -70,7 +70,7 @@ static void _callback(fl2k_data_info_t *data_info)
 	data_info->b_buf = NULL;
 }
 
-static int _rf_write(void *private, int16_t *iq_data, size_t samples)
+static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	fl2k_t *rf = private;
 	int i;

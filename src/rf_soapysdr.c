@@ -37,7 +37,7 @@ typedef struct {
 	
 } soapysdr_t;
 
-static int _rf_write(void *private, int16_t *iq_data, size_t samples)
+static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	soapysdr_t *rf = private;
 	const void *buffs[1];

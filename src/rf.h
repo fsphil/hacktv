@@ -36,7 +36,7 @@
 #define RF_FLOAT  5 /* 32-bit float */
 
 /* RF output function prototypes */
-typedef int (*rf_write_t)(void *ctx, int16_t *iq_data, size_t samples);
+typedef int (*rf_write_t)(void *ctx, const int16_t *iq_data, size_t samples);
 typedef int (*rf_close_t)(void *ctx);
 
 typedef struct {
@@ -47,7 +47,7 @@ typedef struct {
 	
 } rf_t;
 
-extern int rf_write(rf_t *s, int16_t *iq_data, size_t samples);
+extern int rf_write(rf_t *s, const int16_t *iq_data, size_t samples);
 extern int rf_close(rf_t *s);
 
 #include "rf_file.h"

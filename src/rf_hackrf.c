@@ -238,7 +238,7 @@ static int _tx_callback(hackrf_transfer *transfer)
 	return(0);
 }
 
-static int _rf_write(void *private, int16_t *iq_data, size_t samples)
+static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	hackrf_t *rf = private;
 	int8_t *iq8 = NULL;
