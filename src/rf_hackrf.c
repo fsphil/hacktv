@@ -423,11 +423,6 @@ static int _rf_close(void *private)
 	
 	hackrf_exit();
 	
-	for(r = 0; r < 2; r++)
-	{
-		fir_int16_free(&rf->hackdac_audio_resampler[r]);
-	}
-	
 	_buffer_free(&rf->buffers);
 	free(rf);
 	
