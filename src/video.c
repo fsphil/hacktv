@@ -4738,7 +4738,7 @@ size_t vid_get_framebuffer_length(vid_t *s)
 	return(sizeof(uint32_t) * s->active_width * s->conf.active_lines);
 }
 
-static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
+static vid_line_t *_vid_next_line(vid_t *s)
 {
 	vid_line_t *l = s->output_process->lines[0];
 	int i, j;
@@ -4793,23 +4793,17 @@ static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
 		s->bframe++;
 	}
 	
-	/* Return a pointer to the output buffer */
-	if(samples)
-	{
-		*samples = l->width;
-	}
-	
 	return(l);
 }
 
-int16_t *vid_next_line(vid_t *s, size_t *samples)
+vid_line_t *vid_next_line(vid_t *s)
 {
 	vid_line_t *l;
 	
 	/* Drop any delay lines introduced by scramblers / filters */
 	do
 	{
-		l = _vid_next_line(s, samples);
+		l = _vid_next_line(s);
 		if(l == NULL) return(NULL);
 	}
 	while(l->line < 1);
@@ -4817,6 +4811,6 @@ int16_t *vid_next_line(vid_t *s, size_t *samples)
 	s->frame = l->frame;
 	s->line  = l->line;
 	
-	return(l->output);
+	return(l);
 }
 

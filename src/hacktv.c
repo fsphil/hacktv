@@ -1320,12 +1320,11 @@ int main(int argc, char *argv[])
 			
 			while(!_abort)
 			{
-				size_t samples;
-				int16_t *data = vid_next_line(&s.vid, &samples);
+				vid_line_t *line = vid_next_line(&s.vid);
 				
-				if(data == NULL) break;
+				if(line == NULL) break;
 				
-				if(rf_write(&s.rf, data, samples) != RF_OK) break;
+				if(rf_write(&s.rf, line->output, line->width) != RF_OK) break;
 			}
 			
 			if(_signal)

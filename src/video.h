@@ -479,7 +479,7 @@ extern int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate,
 extern void vid_free(vid_t *s);
 extern void vid_info(vid_t *s);
 extern size_t vid_get_framebuffer_length(vid_t *s);
-extern int16_t *vid_next_line(vid_t *s, size_t *samples);
+extern vid_line_t *vid_next_line(vid_t *s);
 
 #endif
 
