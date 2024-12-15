@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 #include "video.h"
 #include "vbidata.h"
 
@@ -87,9 +88,8 @@ int vitc_init(vitc_t *s, vid_t *vid)
 	}
 	else
 	{
-		fprintf(stderr, "vitc: Unsupported frame rate %ld/%ld\n",
-			vid->conf.frame_rate.num,
-			vid->conf.frame_rate.den
+		fprintf(stderr, "vitc: Unsupported frame rate %" PRId64 "/%" PRId64 "\n",
+			vid->conf.frame_rate.num, vid->conf.frame_rate.den
 		);
 		
 		return(VID_ERROR);
