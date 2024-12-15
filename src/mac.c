@@ -1614,9 +1614,10 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	l->vbialloc = 0;
 	
 	/* Blank the +1 line */
-	for(x = 0; x < s->width; x++)
+	for(x = 0; x < s->max_width; x++)
 	{
-		lines[2]->output[x * 2] = s->blanking_level;
+		lines[2]->output[x * 2 + 0] = s->blanking_level;
+		lines[2]->output[x * 2 + 1] = 0;
 	}
 	
 	if(l->line == 1 && s->mac.eurocrypt)

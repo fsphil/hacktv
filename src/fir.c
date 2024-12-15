@@ -453,7 +453,7 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, size_t samples, s
 			aq >>= 15;
 			out[0] = ai < INT16_MIN ? INT16_MIN : (ai > INT16_MAX ? INT16_MAX : ai);
 			out[1] = aq < INT16_MIN ? INT16_MIN : (aq > INT16_MAX ? INT16_MAX : aq);
-			out += 2;
+			out += step;
 			x++;
 		}
 		
@@ -471,7 +471,7 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, size_t samples, s
 		}
 		if(++s->owin == s->lwin) s->owin = 0;
 		
-		s->in += 2 * step;
+		s->in += s->in_step;
 	}
 	
 	return(x);
@@ -522,7 +522,7 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 		samples = SIZE_MAX;
 	}
 	
-	for(x = 0; s->in_samples > 0 && x < samples; samples--)
+	for(x = 0; s->in_samples > 0 && x < samples; s->in_samples--)
 	{
 		for(; s->d < s->interpolation && x < samples; s->d += s->decimation)
 		{
@@ -541,7 +541,7 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 			aq >>= 15;
 			out[0] = ai < INT16_MIN ? INT16_MIN : (ai > INT16_MAX ? INT16_MAX : ai);
 			out[1] = aq < INT16_MIN ? INT16_MIN : (aq > INT16_MAX ? INT16_MAX : aq);
-			out += 2;
+			out += step;
 			x++;
 		}
 		
@@ -554,7 +554,7 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *s->in;
 		if(++s->owin == s->lwin) s->owin = 0;
 		
-		s->in += step;
+		s->in += s->in_step;
 	}
 	
 	return(x);
