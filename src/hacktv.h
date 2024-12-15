@@ -62,6 +62,7 @@ typedef struct {
 	int vitc;
 	int filter;
 	int nocolour;
+	float volume;
 	int noaudio;
 	int nonicam;
 	int a2stereo;

@@ -3335,8 +3335,11 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 			if(s->audiobuffer)
 			{
 				/* Fetch next sample */
-				audio[0] = s->audiobuffer[0];
-				audio[1] = s->audiobuffer[1];
+				for(int i = 0; i < 2; i++)
+				{
+					int32_t v = ((int32_t) s->audiobuffer[i] * s->conf.volume) >> 8;
+					audio[i] = (v < INT16_MIN ? INT16_MIN : (v > INT16_MAX ? INT16_MAX : v));
+				}
 				s->audiobuffer += 2;
 				s->audiobuffer_samples--;
 			}

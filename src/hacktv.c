@@ -71,6 +71,7 @@ static void print_usage(void)
 		"      --vitc                     Enable VITC time code.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"
+		"      --volume <value>           Adjust volume. Takes floats as argument.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
 		"      --a2stereo                 Enable Zweikanalton / A2 Stereo, disables NICAM.\n"
@@ -351,6 +352,7 @@ enum {
 	_OPT_VITC,
 	_OPT_FILTER,
 	_OPT_NOCOLOUR,
+	_OPT_VOLUME,
 	_OPT_NOAUDIO,
 	_OPT_NONICAM,
 	_OPT_A2STEREO,
@@ -424,6 +426,7 @@ int main(int argc, char *argv[])
 		{ "filter",         no_argument,       0, _OPT_FILTER },
 		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
 		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
+		{ "volume",         required_argument, 0, _OPT_VOLUME },
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
 		{ "nonicam",        no_argument,       0, _OPT_NONICAM },
 		{ "a2stereo",       no_argument,       0, _OPT_A2STEREO },
@@ -502,6 +505,7 @@ int main(int argc, char *argv[])
 	s.vitc = 0;
 	s.filter = 0;
 	s.nocolour = 0;
+	s.volume = 1.0;
 	s.noaudio = 0;
 	s.nonicam = 0;
 	s.a2stereo = 0;
@@ -715,6 +719,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_NOCOLOUR: /* --nocolour / --nocolor */
 			s.nocolour = 1;
+			break;
+		
+		case _OPT_VOLUME: /* --volume <value> */
+			s.volume = atof(optarg);
 			break;
 		
 		case _OPT_NOAUDIO: /* --noaudio */
@@ -1170,6 +1178,7 @@ int main(int argc, char *argv[])
 	vid_conf.swap_iq = s.swap_iq;
 	vid_conf.offset = s.offset;
 	vid_conf.passthru = s.passthru;
+	vid_conf.volume = s.volume * 256 + 0.5;
 	vid_conf.invert_video = s.invert_video;
 	vid_conf.raw_bb_file = s.raw_bb_file;
 	vid_conf.raw_bb_blanking_level = s.raw_bb_blanking_level;

@@ -229,6 +229,9 @@ typedef struct {
 	
 	int secam_field_id;
 	
+	/* Audio */
+	int volume;
+	
 	/* FM audio (Mono) */
 	double fm_mono_carrier;
 	double fm_mono_deviation;
