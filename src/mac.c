@@ -1235,11 +1235,16 @@ const uint8_t *mac_audioenc_read(mac_audioenc_t *enc)
 	for(b = 0; b < 2; b++)
 	{
 		/* Apply J.17 pre-emphasis filter */
+		fir_int16_feed(
+			&enc->channel[enc->stereo ? b : 0].fir,
+			enc->j17 + enc->channel[b].src_offset,
+			enc->channel[b].src_len,
+			step
+		);
 		fir_int16_process(
 			&enc->channel[enc->stereo ? b : 0].fir,
 			enc->j17 + enc->channel[b].offset,
-			enc->j17 + enc->channel[b].src_offset,
-			enc->channel[b].src_len,
+			0,
 			step
 		);
 		

@@ -3292,7 +3292,8 @@ static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lin
 	vid_line_t *dst = lines[0];
 	vid_line_t *src = lines[nlines - 1];
 	
-	dst->width = fir_int16_process(&p->fir, dst->output, src->output, src->width, 2);
+	fir_int16_feed(&p->fir, src->output, src->width, 2);
+	dst->width = fir_int16_process(&p->fir, dst->output, 0, 2);
 	
 	return(1);
 }
@@ -3620,7 +3621,7 @@ static int _init_vresampler(vid_t *s, r64_t in_rate, r64_t out_rate)
 	fir_int16_resampler_init(&p->fir, out_rate, in_rate);
 	
 	/* Update maximum line width */
-	width = (s->width * p->fir.interpolation + p->fir.decimation - 1) / p->fir.decimation;
+	width = fir_int16_output_size(&p->fir, s->width);
 	if(width > s->max_width) s->max_width = width;
 	
 	_add_lineprocess(s, "vresampler", 2, p, _vid_filter_process, _vid_filter_free);
