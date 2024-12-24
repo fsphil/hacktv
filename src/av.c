@@ -33,14 +33,21 @@ void av_frame_init(av_frame_t *frame, int width, int height, uint32_t *framebuff
 
 int av_read_video(av_t *s, av_frame_t *frame)
 {
-	int r;
+	int r = AV_EOF;
 	
 	if(s->read_video)
 	{
 		r = s->read_video(s->av_source_ctx, frame);
+		
+		if(r != AV_OK)
+		{
+			/* EOF or error */
+			s->read_video = NULL;
+		}
 	}
 	else
 	{
+		/* Send a blank frame */
 		av_frame_init(frame, 0, 0, NULL, 0, 0);
 		r = AV_OK;
 	}
@@ -50,23 +57,32 @@ int av_read_video(av_t *s, av_frame_t *frame)
 	return(r);
 }
 
-int16_t *av_read_audio(av_t *s, size_t *samples)
+int av_read_audio(av_t *s, int16_t **samples, size_t *nsamples)
 {
-	int16_t *r = NULL;
+	int r = AV_EOF;
+	
+	*samples = NULL;
+	*nsamples = 0;
 	
 	if(s->read_audio)
 	{
-		r = s->read_audio(s->av_source_ctx, samples);
+		r = s->read_audio(s->av_source_ctx, samples, nsamples);
+		
+		if(r != AV_OK)
+		{
+			/* EOF or error */
+			s->read_audio = NULL;
+		}
 	}
 	
-	s->samples += *samples;
+	if(r == AV_OK) s->samples += *nsamples;
 	
 	return(r);
 }
 
 int av_eof(av_t *s)
 {
-	return(s->eof ? s->eof(s->av_source_ctx) : 0);
+	return(s->read_video == NULL && s->read_audio == NULL ? 1 : 0);
 }
 
 int av_close(av_t *s)
@@ -78,7 +94,6 @@ int av_close(av_t *s)
 	s->av_source_ctx = NULL;
 	s->read_video = NULL;
 	s->read_audio = NULL;
-	s->eof = NULL;
 	s->close = NULL;
 	
 	return(r);

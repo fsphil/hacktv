@@ -51,11 +51,12 @@ static int _test_read_video(void *ctx, av_frame_t *frame)
 	return(AV_OK);
 }
 
-static int16_t *_test_read_audio(void *ctx, size_t *samples)
+static int _test_read_audio(void *ctx, int16_t **samples, size_t *nsamples)
 {
 	av_test_t *s = ctx;
-	*samples = s->audio_samples;
-	return(s->audio);
+	*samples = s->audio;
+	*nsamples = s->audio_samples;
+	return(AV_OK);
 }
 
 static int _test_close(void *ctx)

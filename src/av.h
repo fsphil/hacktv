@@ -19,12 +19,14 @@
 #define _AV_H
 
 #include <stdint.h>
+#include <pthread.h>
 #include "common.h"
 
 /* Return codes */
 #define AV_OK             0
 #define AV_ERROR         -1
 #define AV_OUT_OF_MEMORY -2
+#define AV_EOF           -3
 
 typedef struct {
 	
@@ -45,10 +47,27 @@ typedef struct {
 	
 } av_frame_t;
 
+
+
+/* AV module callbacks:
+ *
+ * av_read_video(): Returns AV_OK when a frame is available, or AV_EOF if
+ *                  the source has no further video frames.
+ *                  Any return code that is not AV_OK is treated as AV_EOF */
+
 typedef int (*av_read_video_t)(void *ctx, av_frame_t *frame);
-typedef int16_t *(*av_read_audio_t)(void *ctx, size_t *samples);
-typedef int (*av_eof_t)(void *ctx);
+
+/* av_read_audio(): Returns AV_OK when audio samples are available, or AV_EOF if
+ *                  the source has no further audio samples.
+ *                  Any return code that is not AV_OK is treated as AV_EOF */
+
+typedef int (*av_read_audio_t)(void *ctx, int16_t **samples, size_t *nsamples);
+
+/* av_close(): The source is being closed. The return code is ignored */
+
 typedef int (*av_close_t)(void *ctx);
+
+
 
 /* Frame fit/crop modes */
 typedef enum {
@@ -59,6 +78,9 @@ typedef enum {
 } av_fit_mode_t;
 
 typedef struct {
+	
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
 	
 	/* Video settings */
 	int width;
@@ -83,7 +105,6 @@ typedef struct {
 	void *av_source_ctx;
 	av_read_video_t read_video;
 	av_read_audio_t read_audio;
-	av_eof_t eof;
 	av_close_t close;
 	
 } av_t;
@@ -91,7 +112,7 @@ typedef struct {
 extern void av_frame_init(av_frame_t *frame, int width, int height, uint32_t *framebuffer, int pstride, int lstride);
 
 extern int av_read_video(av_t *s, av_frame_t *frame);
-extern int16_t *av_read_audio(av_t *s, size_t *samples);
+extern int av_read_audio(av_t *s, int16_t **samples, size_t *nsamples);
 extern int av_eof(av_t *s);
 extern int av_close(av_t *s);
 

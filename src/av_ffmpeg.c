@@ -673,7 +673,7 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	
 	if(s->video_stream == NULL)
 	{
-		return(AV_OK);
+		return(AV_EOF);
 	}
 	
 	avframe = _frame_dbuffer_flip(&s->out_video_buffer);
@@ -681,7 +681,7 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 	{
 		/* EOF or abort */
 		s->video_eof = 1;
-		return(AV_OK);
+		return(AV_EOF);
 	}
 	
 	/* Return image ratio */
@@ -872,14 +872,14 @@ static void *_audio_scaler_thread(void *arg)
 	return(NULL);
 }
 
-static int16_t *_ffmpeg_read_audio(void *ctx, size_t *samples)
+static int _ffmpeg_read_audio(void *ctx, int16_t **samples, size_t *nsamples)
 {
 	av_ffmpeg_t *s = ctx;
 	AVFrame *frame;
 	
 	if(s->audio_stream == NULL)
 	{
-		return(NULL);
+		return(AV_EOF);
 	}
 	
 	frame = _frame_dbuffer_flip(&s->out_audio_buffer);
@@ -887,25 +887,13 @@ static int16_t *_ffmpeg_read_audio(void *ctx, size_t *samples)
 	{
 		/* EOF or abort */
 		s->audio_eof = 1;
-		return(NULL);
+		return(AV_EOF);
 	}
 	
-	*samples = frame->nb_samples;
+	*samples = (int16_t *) frame->data[0];
+	*nsamples = frame->nb_samples;
 	
-	return((int16_t *) frame->data[0]);
-}
-
-static int _ffmpeg_eof(void *ctx)
-{
-	av_ffmpeg_t *s = ctx;
-	
-	if((s->video_stream && !s->video_eof) ||
-	   (s->audio_stream && !s->audio_eof))
-	{
-		return(0);
-	}
-	
-	return(1);
+	return(AV_OK);
 }
 
 static int _ffmpeg_close(void *ctx)
@@ -1215,7 +1203,6 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	av->av_source_ctx = s;
 	av->read_video = _ffmpeg_read_video;
 	av->read_audio = _ffmpeg_read_audio;
-	av->eof = _ffmpeg_eof;
 	av->close = _ffmpeg_close;
 	
 	/* Start the threads */

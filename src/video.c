@@ -3324,7 +3324,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 			
 			if(s->audiobuffer_samples == 0)
 			{
-				s->audiobuffer = av_read_audio(&s->av, &s->audiobuffer_samples);
+				av_read_audio(&s->av, &s->audiobuffer, &s->audiobuffer_samples);
 				
 				if(s->conf.systeraudio == 1)
 				{
