@@ -951,7 +951,7 @@ static int _ffmpeg_close(void *ctx)
 	
 	free(s);
 	
-	return(HACKTV_OK);
+	return(AV_OK);
 }
 
 int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
@@ -971,7 +971,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	s = calloc(1, sizeof(av_ffmpeg_t));
 	if(!s)
 	{
-		return(HACKTV_OUT_OF_MEMORY);
+		return(AV_OUT_OF_MEMORY);
 	}
 	
 	s->av = av;
@@ -997,14 +997,14 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	{
 		fprintf(stderr, "Error opening file '%s'\n", input_url);
 		_print_ffmpeg_error(r);
-		return(HACKTV_ERROR);
+		return(AV_ERROR);
 	}
 	
 	/* Read stream info from the file */
 	if(avformat_find_stream_info(s->format_ctx, NULL) < 0)
 	{
 		fprintf(stderr, "Error reading stream information from file\n");
-		return(HACKTV_ERROR);
+		return(AV_ERROR);
 	}
 	
 	/* Dump some useful information to stderr */
@@ -1025,7 +1025,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	if(s->video_stream == NULL && s->audio_stream == NULL)
 	{
 		fprintf(stderr, "No video or audio streams found\n");
-		return(HACKTV_ERROR);
+		return(AV_ERROR);
 	}
 	
 	if(s->video_stream != NULL)
@@ -1045,12 +1045,12 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		s->video_codec_ctx = avcodec_alloc_context3(NULL);
 		if(!s->video_codec_ctx)
 		{
-			return(HACKTV_OUT_OF_MEMORY);
+			return(AV_OUT_OF_MEMORY);
 		}
 		
 		if(avcodec_parameters_to_context(s->video_codec_ctx, s->video_stream->codecpar) < 0)
 		{
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		s->video_codec_ctx->thread_count = 0; /* Let ffmpeg decide number of threads */
@@ -1060,14 +1060,14 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		if(codec == NULL)
 		{
 			fprintf(stderr, "Unsupported video codec\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		/* Open video codec */
 		if(avcodec_open2(s->video_codec_ctx, codec, NULL) < 0)
 		{
 			fprintf(stderr, "Error opening video codec\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		/* Initialise SWS context for software scaling */
@@ -1086,7 +1086,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		
 		if(!s->sws_ctx)
 		{
-			return(HACKTV_OUT_OF_MEMORY);
+			return(AV_OUT_OF_MEMORY);
 		}
 		
 		s->video_eof = 0;
@@ -1104,12 +1104,12 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		s->audio_codec_ctx = avcodec_alloc_context3(NULL);
 		if(!s->audio_codec_ctx)
 		{
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		if(avcodec_parameters_to_context(s->audio_codec_ctx, s->audio_stream->codecpar) < 0)
 		{
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		s->audio_codec_ctx->thread_count = 0; /* Let ffmpeg decide number of threads */
@@ -1119,14 +1119,14 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		if(codec == NULL)
 		{
 			fprintf(stderr, "Unsupported audio codec\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		/* Open audio codec */
 		if(avcodec_open2(s->audio_codec_ctx, codec, NULL) < 0)
 		{
 			fprintf(stderr, "Error opening audio codec\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		/* Create the audio time_base using the source sample rate */
@@ -1144,7 +1144,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		s->swr_ctx = swr_alloc();
 		if(!s->swr_ctx)
 		{
-			return(HACKTV_OUT_OF_MEMORY);
+			return(AV_OUT_OF_MEMORY);
 		}
 		
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
@@ -1173,7 +1173,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		if(swr_init(s->swr_ctx) < 0)
 		{
 			fprintf(stderr, "Failed to initialise the resampling context\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		s->audio_eof = 0;
@@ -1235,14 +1235,14 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting video decoder thread.\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		r = pthread_create(&s->video_scaler_thread, NULL, &_video_scaler_thread, (void *) s);
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting video scaler thread.\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 	}
 	
@@ -1282,7 +1282,7 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 			if(r < 0)
 			{
 				fprintf(stderr, "Error allocating output audio buffer %d\n", i);
-				return(HACKTV_OUT_OF_MEMORY);
+				return(AV_OUT_OF_MEMORY);
 			}
 		}
 		
@@ -1290,14 +1290,14 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting audio decoder thread.\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 		
 		r = pthread_create(&s->audio_scaler_thread, NULL, &_audio_scaler_thread, (void *) s);
 		if(r != 0)
 		{
 			fprintf(stderr, "Error starting audio resampler thread.\n");
-			return(HACKTV_ERROR);
+			return(AV_ERROR);
 		}
 	}
 	
@@ -1305,10 +1305,10 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	if(r != 0)
 	{
 		fprintf(stderr, "Error starting input thread.\n");
-		return(HACKTV_ERROR);
+		return(AV_ERROR);
 	}
 	
-	return(HACKTV_OK);
+	return(AV_OK);
 }
 
 void av_ffmpeg_init(void)

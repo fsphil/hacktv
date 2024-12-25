@@ -65,7 +65,7 @@ static int _test_close(void *ctx)
 	if(s->video) free(s->video);
 	if(s->audio) free(s->audio);
 	free(s);
-	return(HACKTV_OK);
+	return(AV_OK);
 }
 
 int av_test_open(av_t *av)
@@ -88,7 +88,7 @@ int av_test_open(av_t *av)
 	s = calloc(1, sizeof(av_test_t));
 	if(!s)
 	{
-		return(HACKTV_OUT_OF_MEMORY);
+		return(AV_OUT_OF_MEMORY);
 	}
 	
 	/* Generate a basic test pattern */
@@ -98,7 +98,7 @@ int av_test_open(av_t *av)
 	if(!s->video)
 	{
 		free(s);
-		return(HACKTV_OUT_OF_MEMORY);
+		return(AV_OUT_OF_MEMORY);
 	}
 	
 	for(y = 0; y < s->height; y++)
@@ -162,7 +162,7 @@ int av_test_open(av_t *av)
 	{
 		free(s->video);
 		free(s);
-		return(HACKTV_OUT_OF_MEMORY);
+		return(AV_OUT_OF_MEMORY);
 	}
 	
 	for(x = 0; x < s->audio_samples; x++)
@@ -201,6 +201,6 @@ int av_test_open(av_t *av)
 	av->read_audio = _test_read_audio;
 	av->close = _test_close;
 	
-	return(HACKTV_OK);
+	return(AV_OK);
 }
 
