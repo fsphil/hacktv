@@ -1201,8 +1201,8 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	
 	/* Register the callback functions */
 	av->av_source_ctx = s;
-	av->read_video = _ffmpeg_read_video;
-	av->read_audio = _ffmpeg_read_audio;
+	av->read_video = s->video_stream != NULL ? _ffmpeg_read_video : NULL;
+	av->read_audio = s->audio_stream != NULL ? _ffmpeg_read_audio : NULL;
 	av->close = _ffmpeg_close;
 	
 	/* Start the threads */
