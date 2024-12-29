@@ -87,6 +87,7 @@ typedef struct {
 	int16_t raw_bb_blanking_level;
 	int16_t raw_bb_white_level;
 	int secam_field_id;
+	int secam_field_id_lines;
 	int list_modes;
 	int json;
 	char *ffmt;

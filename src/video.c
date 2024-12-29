@@ -3165,8 +3165,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		int sl = 0, sr = 0;
 		
 		if(s->conf.secam_field_id &&
-		   ((l->line >= 7 && l->line <= 15) ||
-		    (l->line >= 320 && l->line <= 328)))
+		   ((l->line >= 7 && l->line < 7 + s->secam_field_id_lines) ||
+		    (l->line >= 320 && l->line < 320 + s->secam_field_id_lines)))
 		{
 			int16_t level;
 			int16_t dev;
@@ -4078,6 +4078,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		
 		/* Field sync levels (optional) */
 		s->secam_fsync_level = round(350e3 / SECAM_FM_DEV * INT16_MAX);
+		s->secam_field_id_lines = s->conf.secam_field_id_lines;
+		if(s->secam_field_id_lines < 1 || s->secam_field_id_lines > 9)
+		{
+			/* Default to 9 field ID lines per field */
+			s->secam_field_id_lines = 9;
+		}
 		
 		/* Generate the colour subcarrier envelope */
 		s->burst_left  = round(s->pixel_rate * (s->conf.burst_left - s->conf.burst_rise / 2));

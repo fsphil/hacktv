@@ -99,6 +99,8 @@ static void print_usage(void)
 		"      --invert-video             Invert the composite video signal sync and\n"
 		"                                 white levels.\n"
 		"      --secam-field-id           Enable SECAM field identification.\n"
+		"      --secam-field-id-lines <x> Set the number of lines per field used for SECAM field\n"
+		"                                 identification. (1-9, default: 9)\n"
 		"      --json                     Output a JSON array when used with --list-modes.\n"
 		"      --version                  Print the version number and exit.\n"
 		"\n"
@@ -377,6 +379,7 @@ enum {
 	_OPT_RAW_BB_BLANKING,
 	_OPT_RAW_BB_WHITE,
 	_OPT_SECAM_FIELD_ID,
+	_OPT_SECAM_FIELD_ID_LINES,
 	_OPT_FFMT,
 	_OPT_FOPTS,
 	_OPT_PIXELRATE,
@@ -452,6 +455,7 @@ int main(int argc, char *argv[])
 		{ "raw-bb-blanking", required_argument, 0, _OPT_RAW_BB_BLANKING },
 		{ "raw-bb-white",   required_argument, 0, _OPT_RAW_BB_WHITE },
 		{ "secam-field-id", no_argument,       0, _OPT_SECAM_FIELD_ID },
+		{ "secam-field-id-lines", required_argument, 0, _OPT_SECAM_FIELD_ID_LINES },
 		{ "json",           no_argument,       0, _OPT_JSON },
 		{ "ffmt",           required_argument, 0, _OPT_FFMT },
 		{ "fopts",          required_argument, 0, _OPT_FOPTS },
@@ -825,6 +829,10 @@ int main(int argc, char *argv[])
 			s.secam_field_id = 1;
 			break;
 		
+		case _OPT_SECAM_FIELD_ID_LINES: /* --secam-field-id-lines <value> */
+			s.secam_field_id_lines = strtol(optarg, NULL, 0);
+			break;
+		
 		case _OPT_JSON: /* --json */
 			s.json = 1;
 			break;
@@ -1184,6 +1192,7 @@ int main(int argc, char *argv[])
 	vid_conf.raw_bb_blanking_level = s.raw_bb_blanking_level;
 	vid_conf.raw_bb_white_level = s.raw_bb_white_level;
 	vid_conf.secam_field_id = s.secam_field_id;
+	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, s.pixelrate, &vid_conf);

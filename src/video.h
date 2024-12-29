@@ -228,6 +228,7 @@ typedef struct {
 	double eu_co;
 	
 	int secam_field_id;
+	int secam_field_id_lines;
 	
 	/* Audio */
 	int volume;
@@ -376,6 +377,7 @@ struct vid_t {
 	fir_int16_t secam_l_fir;
 	cint16_t *fm_secam_bell;
 	int16_t secam_fsync_level;
+	int secam_field_id_lines;
 	
 	vbidata_lut_t *fsc_syncs;
 	
