@@ -2553,16 +2553,15 @@ static int _vid_next_line_rawbb(vid_t *s, void *arg, int nlines, vid_line_t **li
 	l->lut      = NULL;
 	
 	/* Read the next line */
-	x = l->width;
-	while(x > 0)
+	for(x = 0; x < l->width;)
 	{
-		i = fread(l->output, sizeof(int16_t), x, s->raw_bb_file);
+		i = fread(l->output + x, sizeof(int16_t), l->width - x, s->raw_bb_file);
 		if(i < x && feof(s->raw_bb_file))
 		{
 			rewind(s->raw_bb_file);
 		}
 		
-		x -= i;
+		x += i;
 	}
 	
 	/* Move samples into I channel and scale for output */
@@ -3556,14 +3555,20 @@ static int _vid_offset_process(vid_t *s, void *arg, int nlines, vid_line_t **lin
 static int _vid_passthru_process(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 {
 	vid_line_t *l = lines[0];
-	int x;
+	int x, i;
 	
 	if(feof(s->passthru))
 	{
 		return(1);
 	}
 	
-	fread(s->passline, sizeof(int16_t) * 2, l->width, s->passthru);
+	for(x = 0; x < l->width;)
+	{
+		i = fread(s->passline + x * 2, sizeof(int16_t) * 2, l->width - x, s->passthru);
+		if(i == 0) return(0);
+		
+		x += i;
+	}
 	
 	for(x = 0; x < l->width * 2; x++)
 	{
