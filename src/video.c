@@ -3904,6 +3904,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		u = (b - y) * s->conf.eu_co;
 		v = (r - y) * s->conf.ev_co;
 		
+		/* Limit magnitude of D/D2-MAC chrominance to -0.5 >= 0.5 */
+		if(s->conf.type == VID_MAC)
+		{
+			d = fabs(u) > fabs(v) ? fabs(u) : fabs(v);
+			if(d > 0.5)
+			{
+				d = 0.5 / d;
+				u *= d;
+				v *= d;
+			}
+		}
+		
 		/* Adjust values to correct signal level */
 		y = (s->conf.black_level + (y * (s->conf.white_level - s->conf.black_level))) * level;
 		
