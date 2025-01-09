@@ -286,9 +286,9 @@ typedef struct {
 
 typedef struct {
 	int16_t y;
-	int16_t i;
-	int16_t q;
-} _yiq16_t;
+	int16_t u;
+	int16_t v;
+} _yuv16_t;
 
 struct vid_line_t {
 	
@@ -358,7 +358,7 @@ struct vid_t {
 	int16_t blanking_level;
 	int16_t sync_level;
 	
-	_yiq16_t *yiq_level_lookup;
+	_yuv16_t *yuv_level_lookup;
 	
 	unsigned int colour_lookup_width;
 	unsigned int colour_lookup_offset;

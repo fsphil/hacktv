@@ -85,7 +85,7 @@ int acp_render_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		if(i < 0) i = 0;
 		else if(i > 255) i = 255;
 		
-		i = s->yiq_level_lookup[i << 16 | i << 8 | i].y;
+		i = s->yuv_level_lookup[i << 16 | i << 8 | i].y;
 		
 		a->pagc_level = s->sync_level + round((i - s->sync_level) * 1.10);
 	}

@@ -1781,17 +1781,17 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		
 		for(x = s->active_left; x < s->active_left + s->vframe_x; x++)
 		{
-			l->output[x * 2] = s->yiq_level_lookup[0x000000].y;
+			l->output[x * 2] = s->yuv_level_lookup[0x000000].y;
 		}
 		
 		for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, px += stride)
 		{
-			l->output[x * 2] = s->yiq_level_lookup[*px & 0xFFFFFF].y;
+			l->output[x * 2] = s->yuv_level_lookup[*px & 0xFFFFFF].y;
 		}
 		
 		for(; x < s->active_left + s->active_width; x++)
 		{
-			l->output[x * 2] = s->yiq_level_lookup[0x000000].y;
+			l->output[x * 2] = s->yuv_level_lookup[0x000000].y;
 		}
 	}
 	
@@ -1812,7 +1812,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		
 		for(x = s->mac.chrominance_left + s->vframe_x / 2; x < s->mac.chrominance_left + (s->vframe_x + s->vframe.width) / 2; x++, px += stride)
 		{
-			l->output[x * 2] += (l->line & 1 ? s->yiq_level_lookup[*px & 0xFFFFFF].i : s->yiq_level_lookup[*px & 0xFFFFFF].q);
+			l->output[x * 2] += (l->line & 1 ? s->yuv_level_lookup[*px & 0xFFFFFF].u : s->yuv_level_lookup[*px & 0xFFFFFF].v);
 		}
 	}
 	

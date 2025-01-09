@@ -3076,7 +3076,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		for(x = al, o = &l->output[al * 2]; x < s->active_left + s->vframe_x; x++, o += 2)
 		{
-			*o = s->yiq_level_lookup[0x000000].y;
+			*o = s->yuv_level_lookup[0x000000].y;
 		}
 		
 		if(s->vframe.framebuffer && vy >= 0)
@@ -3098,18 +3098,18 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				rgb |= (rgb << 8) | (rgb << 16);
 			}
 			
-			*o = s->yiq_level_lookup[rgb].y;
+			*o = s->yuv_level_lookup[rgb].y;
 			
 			if(pal)
 			{
-				oc[0] = s->yiq_level_lookup[rgb].i;
-				oc[1] = s->yiq_level_lookup[rgb].q;
+				oc[0] = s->yuv_level_lookup[rgb].u;
+				oc[1] = s->yuv_level_lookup[rgb].v;
 			}
 		}
 		
 		for(; x < ar; x++, o += 2)
 		{
-			*o = s->yiq_level_lookup[0x000000].y;
+			*o = s->yuv_level_lookup[0x000000].y;
 		}
 	}
 	
@@ -3130,8 +3130,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		oc = s->chrominance_buffer;
 		for(x = 0; x < s->width; x++, o += 2, oc += 2)
 		{
-			*o += (oc[0] * l->lut[x].q +
-			       oc[1] * l->lut[x].i * pal) >> 15;
+			/* The quadrature / imaginary result is used
+			 * to render the sub-carrier */
+			*o += (l->lut[x].i * oc[1] * pal +
+			       l->lut[x].q * oc[0]) >> 15;
 		}
 	}
 	
@@ -3174,13 +3176,13 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			
 			if(((l->frame * s->conf.lines) + l->line) & 1)
 			{
-				level = s->yiq_level_lookup[0x000000].q; // D'r
+				level = s->yuv_level_lookup[0x000000].v; // D'r
 				dev = s->secam_fsync_level;
 				rw = 15e-6;
 			}
 			else
 			{
-				level = s->yiq_level_lookup[0x000000].i; // D'b
+				level = s->yuv_level_lookup[0x000000].u; // D'b
 				dev = -s->secam_fsync_level;
 				rw = 18e-6;
 			}
@@ -3218,17 +3220,17 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				for(x = 0; x < s->active_left + s->vframe_x; x++)
 				{
-					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].q;
+					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].v;
 				}
 				
 				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
-					s->chrominance_buffer[x] = s->yiq_level_lookup[*prgb & 0xFFFFFF].q;
+					s->chrominance_buffer[x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].v;
 				}
 				
 				for(; x < s->width; x++)
 				{
-					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].q;
+					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].v;
 				}
 			}
 			else
@@ -3237,17 +3239,17 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				for(x = 0; x < s->active_left + s->vframe_x; x++)
 				{
-					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].i;
+					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].u;
 				}
 				
 				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
-					s->chrominance_buffer[x] = s->yiq_level_lookup[*prgb & 0xFFFFFF].i;
+					s->chrominance_buffer[x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].u;
 				}
 				
 				for(; x < s->width; x++)
 				{
-					s->chrominance_buffer[x] = s->yiq_level_lookup[0x000000].i;
+					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].u;
 				}
 			}
 			
@@ -3866,8 +3868,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	}
 	
 	/* Allocate memory for YUV lookup tables */
-	s->yiq_level_lookup = malloc(0x1000000 * sizeof(_yiq16_t));
-	if(s->yiq_level_lookup == NULL)
+	s->yuv_level_lookup = malloc(0x1000000 * sizeof(_yuv16_t));
+	if(s->yuv_level_lookup == NULL)
 	{
 		vid_free(s);
 		return(VID_OUT_OF_MEMORY);
@@ -3889,7 +3891,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	{
 		double r, g, b;
 		double y, u, v;
-		double i, q;
 		
 		/* Calculate RGB 0..1 values */
 		r = glut[(c & 0xFF0000) >> 16];
@@ -3903,27 +3904,27 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		u = (b - y);
 		v = (r - y);
 		
-		i = s->conf.eu_co * u;
-		q = s->conf.ev_co * v;
+		u = s->conf.eu_co * u;
+		v = s->conf.ev_co * v;
 		
 		/* Adjust values to correct signal level */
 		y = (s->conf.black_level + (y * (s->conf.white_level - s->conf.black_level))) * level;
 		
 		if(s->conf.colour_mode != VID_SECAM)
 		{
-			i *= (s->conf.white_level - s->conf.black_level) * level;
-			q *= (s->conf.white_level - s->conf.black_level) * level;
+			u *= (s->conf.white_level - s->conf.black_level) * level;
+			v *= (s->conf.white_level - s->conf.black_level) * level;
 		}
 		else
 		{
-			i = (i + SECAM_CB_FREQ - SECAM_FM_FREQ) / SECAM_FM_DEV;
-			q = (q + SECAM_CR_FREQ - SECAM_FM_FREQ) / SECAM_FM_DEV;
+			u = (u + SECAM_CB_FREQ - SECAM_FM_FREQ) / SECAM_FM_DEV;
+			v = (v + SECAM_CR_FREQ - SECAM_FM_FREQ) / SECAM_FM_DEV;
 		}
 		
 		/* Convert to INT16 range and store in tables */
-		s->yiq_level_lookup[c].y = round(_dlimit(y, -1, 1) * INT16_MAX);
-		s->yiq_level_lookup[c].i = round(_dlimit(i, -1, 1) * INT16_MAX);
-		s->yiq_level_lookup[c].q = round(_dlimit(q, -1, 1) * INT16_MAX);
+		s->yuv_level_lookup[c].y = round(_dlimit(y, -1, 1) * INT16_MAX);
+		s->yuv_level_lookup[c].u = round(_dlimit(u, -1, 1) * INT16_MAX);
+		s->yuv_level_lookup[c].v = round(_dlimit(v, -1, 1) * INT16_MAX);
 	}
 	
 	if(s->conf.colour_mode == VID_PAL ||
@@ -4692,7 +4693,7 @@ void vid_free(vid_t *s)
 	}
 	
 	/* Free allocated memory */
-	free(s->yiq_level_lookup);
+	free(s->yuv_level_lookup);
 	free(s->colour_lookup);
 	fir_int16_free(&s->secam_l_fir);
 	fir_int16_free(&s->fm_secam_fir);
