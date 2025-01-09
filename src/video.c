@@ -3901,11 +3901,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		y = r * s->conf.rw_co
 		  + g * s->conf.gw_co
 		  + b * s->conf.bw_co;
-		u = (b - y);
-		v = (r - y);
-		
-		u = s->conf.eu_co * u;
-		v = s->conf.ev_co * v;
+		u = (b - y) * s->conf.eu_co;
+		v = (r - y) * s->conf.ev_co;
 		
 		/* Adjust values to correct signal level */
 		y = (s->conf.black_level + (y * (s->conf.white_level - s->conf.black_level))) * level;
