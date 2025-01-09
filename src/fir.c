@@ -249,6 +249,7 @@ int fir_int16_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int i
 	s->win = calloc(s->ataps * 2 + delay, sizeof(int16_t));
 	s->owin = 0;
 	s->d = s->interpolation;
+	s->in_samples = 0;
 	
 	return(0);
 }
@@ -277,6 +278,18 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, size_t samples, size_t st
 	
 	for(x = 0; s->in_samples > 0 && x < samples; s->in_samples--)
 	{
+		if(s->d >= s->interpolation)
+		{
+			s->d -= s->interpolation;
+			
+			/* Append the next input sample to the round buffer */
+			s->win[s->owin] = *s->in;
+			if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *s->in;
+			if(++s->owin == s->lwin) s->owin = 0;
+			
+			s->in += s->in_step;
+		}
+		
 		for(; s->d < s->interpolation && x < samples; s->d += s->decimation)
 		{
 			win = &s->win[s->owin];
@@ -293,17 +306,6 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, size_t samples, size_t st
 			out += step;
 			x++;
 		}
-		
-		if(x == samples) break;
-		
-		s->d -= s->interpolation;
-		
-		/* Append the next input sample to the round buffer */
-		s->win[s->owin] = *s->in;
-		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *s->in;
-		if(++s->owin == s->lwin) s->owin = 0;
-		
-		s->in += s->in_step;
 	}
 	
 	return(x);
@@ -419,6 +421,7 @@ int fir_int16_complex_init(fir_int16_t *s, const double *taps, unsigned int ntap
 	s->win = calloc(s->ataps * 2 + delay, sizeof(int16_t) * 2);
 	s->owin = 0;
 	s->d = s->interpolation;
+	s->in_samples = 0;
 	
 	return(0);
 }
@@ -436,6 +439,23 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, size_t samples, s
 	
 	for(x = 0; s->in_samples > 0 && x < samples; s->in_samples--)
 	{
+		if(s->d >= s->interpolation)
+		{
+			s->d -= s->interpolation;
+			
+			/* Append the next input sample to the round buffer */
+			s->win[s->owin * 2 + 0] = s->in[0];
+			s->win[s->owin * 2 + 1] = s->in[1];
+			if(s->owin < s->ataps)
+			{
+				s->win[(s->owin + s->lwin) * 2 + 0] = s->in[0];
+				s->win[(s->owin + s->lwin) * 2 + 1] = s->in[1];
+			}
+			if(++s->owin == s->lwin) s->owin = 0;
+			
+			s->in += s->in_step;
+		}
+		
 		for(; s->d < s->interpolation && x < samples; s->d += s->decimation)
 		{
 			win = &s->win[s->owin * 2];
@@ -456,22 +476,6 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, size_t samples, s
 			out += step;
 			x++;
 		}
-		
-		if(x == samples) break;
-		
-		s->d -= s->interpolation;
-		
-		/* Append the next input sample to the round buffer */
-		s->win[s->owin * 2 + 0] = s->in[0];
-		s->win[s->owin * 2 + 1] = s->in[1];
-		if(s->owin < s->ataps)
-		{
-			s->win[(s->owin + s->lwin) * 2 + 0] = s->in[0];
-			s->win[(s->owin + s->lwin) * 2 + 1] = s->in[1];
-		}
-		if(++s->owin == s->lwin) s->owin = 0;
-		
-		s->in += s->in_step;
 	}
 	
 	return(x);
@@ -507,6 +511,7 @@ int fir_int16_scomplex_init(fir_int16_t *s, const double *taps, unsigned int nta
 	s->win = calloc(s->ataps * 2 + delay, sizeof(int16_t));
 	s->owin = 0;
 	s->d = s->interpolation;
+	s->in_samples = 0;
 	
 	return(0);
 }
@@ -524,6 +529,18 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 	
 	for(x = 0; s->in_samples > 0 && x < samples; s->in_samples--)
 	{
+		if(s->d >= s->interpolation)
+		{
+			s->d -= s->interpolation;
+			
+			/* Append the next input sample to the round buffer */
+			s->win[s->owin] = *s->in;
+			if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *s->in;
+			if(++s->owin == s->lwin) s->owin = 0;
+			
+			s->in += s->in_step;
+		}
+		
 		for(; s->d < s->interpolation && x < samples; s->d += s->decimation)
 		{
 			win = &s->win[s->owin];
@@ -544,17 +561,6 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 			out += step;
 			x++;
 		}
-		
-		if(x == samples) break;
-		
-		s->d -= s->interpolation;
-		
-		/* Append the next input sample to the round buffer */
-		s->win[s->owin] = *s->in;
-		if(s->owin < s->ataps) s->win[s->owin + s->lwin] = *s->in;
-		if(++s->owin == s->lwin) s->owin = 0;
-		
-		s->in += s->in_step;
 	}
 	
 	return(x);
