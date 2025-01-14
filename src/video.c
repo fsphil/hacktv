@@ -2556,7 +2556,7 @@ static int _vid_next_line_rawbb(vid_t *s, void *arg, int nlines, vid_line_t **li
 	for(x = 0; x < l->width;)
 	{
 		i = fread(l->output + x, sizeof(int16_t), l->width - x, s->raw_bb_file);
-		if(i < x && feof(s->raw_bb_file))
+		if(i <= 0 && feof(s->raw_bb_file))
 		{
 			rewind(s->raw_bb_file);
 		}
