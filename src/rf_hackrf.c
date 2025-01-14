@@ -203,6 +203,32 @@ static int _tx_callback_hackdac(hackrf_transfer *transfer)
 	return(0);
 }
 
+static void _rf_write_print_stats(hackrf_t *rf, size_t samples)
+{
+	hackrf_m0_state state;
+	int r;
+	
+	/* Only run this after at least 1 second of samples */
+	rf->stats_counter += samples;
+	if(rf->stats_counter < rf->sample_rate) return;
+	
+	rf->stats_counter -= rf->sample_rate;
+	
+	/* Fetch stats from the hackrf */
+	r = hackrf_get_m0_state(rf->d, &state);
+	
+	if(r == HACKRF_SUCCESS && state.num_shortfalls != rf->num_shortfalls)
+	{
+		/* The number of shortfalls/underruns has changed, print a warning */
+		fprintf(stderr, "hackrf: %u underrun%s, longest %u bytes\n",
+			state.num_shortfalls, state.num_shortfalls != 1 ? "s" : "",
+			state.longest_shortfall
+		);
+		
+		rf->num_shortfalls = state.num_shortfalls;
+	}
+}
+
 static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	hackrf_t *rf = private;
@@ -210,23 +236,7 @@ static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 	int i, r;
 	
 	/* Report some stats every ~1 second */
-	if((rf->stats_counter += samples) >= rf->sample_rate)
-	{
-		hackrf_m0_state state;
-		
-		r = hackrf_get_m0_state(rf->d, &state);
-		
-		if(r == HACKRF_SUCCESS && state.num_shortfalls != rf->num_shortfalls)
-		{
-			fprintf(stderr, "hackrf: %u underrun%s, longest %u bytes\n",
-				state.num_shortfalls, state.num_shortfalls != 1 ? "s" : "",
-				state.longest_shortfall
-			);
-			rf->num_shortfalls = state.num_shortfalls;
-		}
-		
-		rf->stats_counter -= rf->sample_rate;
-	}
+	_rf_write_print_stats(rf, samples);
 	
 	r = 0;
 	samples *= 2;
@@ -256,6 +266,9 @@ static int _rf_write_baseband(void *private, const int16_t *iq_data, size_t samp
 	hackrf_t *rf = private;
 	int8_t *iq8 = NULL;
 	int i, r = 0;
+	
+	/* Report some stats every ~1 second */
+	_rf_write_print_stats(rf, samples);
 	
 	samples *= 2;
 	
