@@ -52,6 +52,7 @@ typedef struct {
 	
 	/* HackRF device */
 	hackrf_device *d;
+	uint32_t sample_rate;
 	
 	/* HackDAC device */
 	int hackdac_firmware_version; /* 0 if not present */
@@ -62,6 +63,10 @@ typedef struct {
 	/* Buffers */
 	fifo_t buffers;
 	fifo_reader_t buffers_reader;
+	
+	/* Stats */
+	uint32_t stats_counter;
+	uint32_t num_shortfalls;
 	
 } hackrf_t;
 
@@ -202,8 +207,28 @@ static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	hackrf_t *rf = private;
 	int8_t *iq8 = NULL;
-	int i, r = 0;
+	int i, r;
 	
+	/* Report some stats every ~1 second */
+	if((rf->stats_counter += samples) >= rf->sample_rate)
+	{
+		hackrf_m0_state state;
+		
+		r = hackrf_get_m0_state(rf->d, &state);
+		
+		if(r == HACKRF_SUCCESS && state.num_shortfalls != rf->num_shortfalls)
+		{
+			fprintf(stderr, "hackrf: %u underrun%s, longest %u bytes\n",
+				state.num_shortfalls, state.num_shortfalls != 1 ? "s" : "",
+				state.longest_shortfall
+			);
+			rf->num_shortfalls = state.num_shortfalls;
+		}
+		
+		rf->stats_counter -= rf->sample_rate;
+	}
+	
+	r = 0;
 	samples *= 2;
 	
 	while(samples > 0)
@@ -301,6 +326,8 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 		return(RF_OUT_OF_MEMORY);
 	}
 	
+	rf->sample_rate = sample_rate;
+	
 	/* Print the library version number */
 	fprintf(stderr, "libhackrf version: %s (%s)\n",
 		hackrf_library_release(),
@@ -387,7 +414,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 		}
 	}
 	
-	r = hackrf_set_sample_rate_manual(rf->d, sample_rate, 1);
+	r = hackrf_set_sample_rate_manual(rf->d, rf->sample_rate, 1);
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_sample_rate_set() failed: %s (%d)\n", hackrf_error_name(r), r);
@@ -395,7 +422,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 		return(RF_ERROR);
 	}
 	
-	r = hackrf_set_baseband_filter_bandwidth(rf->d, hackrf_compute_baseband_filter_bw(sample_rate));
+	r = hackrf_set_baseband_filter_bandwidth(rf->d, hackrf_compute_baseband_filter_bw(rf->sample_rate));
 	if(r != HACKRF_SUCCESS)
 	{
 		fprintf(stderr, "hackrf_baseband_filter_bandwidth_set() failed: %s (%d)\n", hackrf_error_name(r), r);
@@ -428,7 +455,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 	}
 	
 	/* Allocate memory for the output buffers, enough for at least 400ms - minimum 4 */
-	r = sample_rate * 2 * 4 / 10 / TRANSFER_BUFFER_SIZE;
+	r = rf->sample_rate * 2 * 4 / 10 / TRANSFER_BUFFER_SIZE;
 	if(r < 4) r = 4;
 	fifo_init(&rf->buffers, r, TRANSFER_BUFFER_SIZE);
 	fifo_reader_init(&rf->buffers_reader, &rf->buffers, r / 2);
