@@ -276,10 +276,12 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, size_t samples, size_t st
 		samples = SIZE_MAX;
 	}
 	
-	for(x = 0; s->in_samples > 0 && x < samples; s->in_samples--)
+	for(x = 0; x < samples;)
 	{
 		if(s->d >= s->interpolation)
 		{
+			if(s->in_samples == 0) break;
+			
 			s->d -= s->interpolation;
 			
 			/* Append the next input sample to the round buffer */
@@ -288,6 +290,7 @@ size_t fir_int16_process(fir_int16_t *s, int16_t *out, size_t samples, size_t st
 			if(++s->owin == s->lwin) s->owin = 0;
 			
 			s->in += s->in_step;
+			s->in_samples--;
 		}
 		
 		for(; s->d < s->interpolation && x < samples; s->d += s->decimation)
@@ -358,8 +361,7 @@ int fir_int16_resampler_init(fir_int16_t *s, r64_t out_rate, r64_t in_rate)
 	r = r64_div(out_rate, in_rate);
 	
 	/* Generate the filter taps */
-	ntaps = 21 * r.num;
-	if((ntaps & 1) == 0) ntaps--;
+	ntaps = (21 * r.num) | 1;
 	
 	taps = calloc(ntaps, sizeof(double));
 	if(!taps)
@@ -437,10 +439,12 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, size_t samples, s
 		samples = SIZE_MAX;
 	}
 	
-	for(x = 0; s->in_samples > 0 && x < samples; s->in_samples--)
+	for(x = 0; x < samples;)
 	{
 		if(s->d >= s->interpolation)
 		{
+			if(s->in_samples == 0) break;
+			
 			s->d -= s->interpolation;
 			
 			/* Append the next input sample to the round buffer */
@@ -454,6 +458,7 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, size_t samples, s
 			if(++s->owin == s->lwin) s->owin = 0;
 			
 			s->in += s->in_step;
+			s->in_samples--;
 		}
 		
 		for(; s->d < s->interpolation && x < samples; s->d += s->decimation)
@@ -527,10 +532,12 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 		samples = SIZE_MAX;
 	}
 	
-	for(x = 0; s->in_samples > 0 && x < samples; s->in_samples--)
+	for(x = 0; x < samples;)
 	{
 		if(s->d >= s->interpolation)
 		{
+			if(s->in_samples == 0) return(x);
+			
 			s->d -= s->interpolation;
 			
 			/* Append the next input sample to the round buffer */
@@ -539,6 +546,7 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 			if(++s->owin == s->lwin) s->owin = 0;
 			
 			s->in += s->in_step;
+			s->in_samples--;
 		}
 		
 		for(; s->d < s->interpolation && x < samples; s->d += s->decimation)
