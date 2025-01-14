@@ -1331,7 +1331,7 @@ int main(int argc, char *argv[])
 				r = av_ffmpeg_open(&s.vid.av, pre, s.ffmt, s.fopts);
 			}
 			
-			if(r != HACKTV_OK)
+			if(r != AV_OK)
 			{
 				/* Error opening this source. Move to the next */
 				continue;
