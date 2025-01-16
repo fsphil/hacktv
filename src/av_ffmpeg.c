@@ -1017,9 +1017,9 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	i = av_find_best_stream(s->format_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
 	s->video_stream = (i >= 0 ? s->format_ctx->streams[i] : NULL);
 	
-	/* Select the audio stream if required */
+	/* Select the audio stream */
 	i = av_find_best_stream(s->format_ctx, AVMEDIA_TYPE_AUDIO, -1, i, NULL, 0);
-	s->audio_stream = (i >= 0 && av->sample_rate.num > 0 ? s->format_ctx->streams[i] : NULL);
+	s->audio_stream = (i >= 0 ? s->format_ctx->streams[i] : NULL);
 	
 	/* At minimum we need either a video or audio stream */
 	if(s->video_stream == NULL && s->audio_stream == NULL)
