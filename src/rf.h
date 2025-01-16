@@ -37,17 +37,20 @@
 
 /* RF output function prototypes */
 typedef int (*rf_write_t)(void *ctx, const int16_t *iq_data, size_t samples);
+typedef int (*rf_write_audio_t)(void *ctx, const int16_t *audio, size_t samples);
 typedef int (*rf_close_t)(void *ctx);
 
 typedef struct {
 	
 	void *ctx;
 	rf_write_t write;
+	rf_write_t write_audio;
 	rf_close_t close;
 	
 } rf_t;
 
 extern int rf_write(rf_t *s, const int16_t *iq_data, size_t samples);
+extern int rf_write_audio(rf_t *s, const int16_t *audio, size_t samples);
 extern int rf_close(rf_t *s);
 
 #include "rf_file.h"

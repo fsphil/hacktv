@@ -1341,6 +1341,7 @@ int main(int argc, char *argv[])
 				if(line == NULL) break;
 				
 				if(rf_write(&s.rf, line->output, line->width) != RF_OK) break;
+				if(line->audio_len && rf_write_audio(&s.rf, line->audio, line->audio_len) != RF_OK) break;
 			}
 			
 			if(_signal)

@@ -30,6 +30,16 @@ int rf_write(rf_t *s, const int16_t *iq_data, size_t samples)
 	return(RF_ERROR);
 }
 
+int rf_write_audio(rf_t *s, const int16_t *audio, size_t samples)
+{
+	if(s->write_audio)
+	{
+		return(s->write_audio(s->ctx, audio, samples));
+	}
+	
+	return(RF_OK);
+}
+
 int rf_close(rf_t *s)
 {
 	if(s->close)
