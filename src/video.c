@@ -2546,11 +2546,13 @@ static int _vid_next_line_rawbb(vid_t *s, void *arg, int nlines, vid_line_t **li
 	vid_line_t *l = lines[0];
 	int x, i;
 	
-	l->width    = s->width;
-	l->frame    = s->bframe;
-	l->line     = s->bline;
-	l->vbialloc = 0;
-	l->lut      = NULL;
+	l->width     = s->width;
+	l->frame     = s->bframe;
+	l->line      = s->bline;
+	l->vbialloc  = 0;
+	l->lut       = NULL;
+	l->audio     = NULL;
+	l->audio_len = 0;
 	
 	/* Read the next line */
 	for(x = 0; x < l->width;)
@@ -2591,11 +2593,13 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	int al, ar;
 	vid_line_t *l = lines[1];
 	
-	l->width    = s->width;
-	l->frame    = s->bframe;
-	l->line     = s->bline;
-	l->vbialloc = 0;
-	l->lut      = NULL;
+	l->width     = s->width;
+	l->frame     = s->bframe;
+	l->line      = s->bline;
+	l->vbialloc  = 0;
+	l->lut       = NULL;
+	l->audio     = NULL;
+	l->audio_len = 0;
 	
 	/* Sequence codes: abcd
 	 * 
@@ -3311,6 +3315,7 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 {
 	vid_line_t *l = lines[0];
 	int16_t audio[2] = { 0, 0 };
+	int16_t *buf;
 	int x;
 	
 	for(x = 0; x < l->width; x++)
@@ -3350,6 +3355,12 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 				audio[0] = 0;
 				audio[1] = 0;
 			}
+			
+			/* Feed the samples into the audio FIFO */
+			fifo_write_ptr(&s->audiofifo, (void **) &buf, 1);
+			buf[0] = audio[0];
+			buf[1] = audio[1];
+			fifo_write(&s->audiofifo, sizeof(int16_t) * 2);
 			
 			if(s->conf.am_audio_level > 0 && s->conf.am_mono_carrier != 0)
 			{
@@ -3483,6 +3494,10 @@ static int _vid_audio_process(vid_t *s, void *arg, int nlines, vid_line_t **line
 	{
 		dance_mod_output(&s->dance, l->output, l->width);
 	}
+	
+	l->audio_len = fifo_read(&s->audio_reader, (void **) &l->audio, NICAM_AUDIO_LEN * 2 * 10 * sizeof(int16_t), 0);
+	l->audio_len /= sizeof(int16_t);
+	if(l->audio_len == 0) l->audio = NULL;
 	
 	return(1);
 }
@@ -4139,7 +4154,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		.interlaced = 0,
 	};
 	s->olines = 1;
-	s->audio = 0;
 	
 	if(s->conf.raw_bb_file != NULL)
 	{
@@ -4270,9 +4284,11 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		_add_lineprocess(s, "sis", 1, &s->sis, sis_render, NULL);
-		
-		s->audio = 1;
 	}
+	
+	/* Prepare audio FIFO (1 second at 32khz) */
+	fifo_init(&s->audiofifo, 100, 320 * sizeof(int16_t) * 2);
+	fifo_reader_init(&s->audio_reader, &s->audiofifo, 0);
 	
 	/* Initialise the teletext system */
 	if(s->conf.teletext)
@@ -4369,8 +4385,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 				return(VID_OUT_OF_MEMORY);
 			}
 		}
-		
-		s->audio = 1;
 	}
 	
 	if(s->conf.fm_left_level > 0 && s->conf.fm_left_carrier != 0)
@@ -4410,8 +4424,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 				return(VID_OUT_OF_MEMORY);
 			}
 		}
-		
-		s->audio = 1;
 	}
 	
 	if(s->conf.fm_right_level > 0 && s->conf.fm_right_carrier != 0)
@@ -4451,8 +4463,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 				return(VID_OUT_OF_MEMORY);
 			}
 		}
-		
-		s->audio = 1;
 	}
 	
 	/* NICAM audio */
@@ -4467,7 +4477,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		s->nicam_buf_len = 0;
-		s->audio = 1;
 	}
 	
 	/* DANCE audio */
@@ -4482,7 +4491,6 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		s->dance_buf_len = 0;
-		s->audio = 1;
 	}
 	
 	/* AM audio */
@@ -4494,15 +4502,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			vid_free(s);
 			return(r);
 		}
-		
-		s->audio = 1;
 	}
 	
 	/* Add the audio process */
-	if(s->audio == 1)
-	{
-		_add_lineprocess(s, "audio", 1, NULL, _vid_audio_process, NULL);
-	}
+	_add_lineprocess(s, "audio", 1, NULL, _vid_audio_process, NULL);
 	
 	/* FM video */
 	if(s->conf.modulation == VID_FM)
@@ -4612,6 +4615,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->oline[r].vbialloc = 0;
 		s->oline[r].previous = &s->oline[(r + s->olines - 1) % s->olines];
 		s->oline[r].next = &s->oline[(r + 1) % s->olines];
+		s->oline[r].audio = NULL;
+		s->oline[r].audio_len = 0;
 	}
 	
 	/* Setup lineprocess output windows (non-threaded version) */
@@ -4705,6 +4710,9 @@ void vid_free(vid_t *s)
 	{
 		mac_free(s);
 	}
+	
+	fifo_reader_close(&s->audio_reader);
+	fifo_free(&s->audiofifo);
 	
 	/* Free allocated memory */
 	free(s->yuv_level_lookup);

@@ -1272,10 +1272,7 @@ int main(int argc, char *argv[])
 		.max_display_aspect_ratio = s.max_aspect,
 		.width = s.vid.active_width,
 		.height = s.vid.conf.active_lines,
-		.sample_rate = (r64_t) {
-			.num = (s.vid.audio ? HACKTV_AUDIO_SAMPLE_RATE : 0),
-			1,
-		},
+		.sample_rate = (r64_t) { HACKTV_AUDIO_SAMPLE_RATE, 1 },
 	};
 	
 	if((s.vid.conf.frame_orientation & 3) == VID_ROTATE_90 ||

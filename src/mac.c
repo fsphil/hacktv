@@ -867,8 +867,6 @@ int mac_init(vid_t *s)
 	mac_t *mac = &s->mac;
 	int i, x;
 	
-	s->audio = 1; /* MAC always has audio */
-	
 	memset(mac, 0, sizeof(mac_t));
 	
 	mac->vsam = MAC_VSAM_FREE_ACCESS;

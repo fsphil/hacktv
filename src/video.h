@@ -23,6 +23,7 @@
 #include "nicam728.h"
 #include "dance.h"
 #include "fir.h"
+#include "fifo.h"
 
 typedef struct vid_line_t vid_line_t;
 typedef struct vid_t vid_t;
@@ -306,6 +307,10 @@ struct vid_line_t {
 	/* Status */
 	int vbialloc;
 	
+	/* Audio output */
+	const int16_t *audio;
+	size_t audio_len;
+	
 	/* Pointer the previous and next line */
 	vid_line_t *previous;
 	vid_line_t *next;
@@ -423,7 +428,8 @@ struct vid_t {
 	vitc_t vitc;
 	
 	/* Audio state */
-	int audio;
+	fifo_t audiofifo;
+	fifo_reader_t audio_reader;
 	int16_t *audiobuffer;
 	size_t audiobuffer_samples;
 	int interp;
