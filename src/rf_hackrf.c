@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include "rf.h"
 #include "fifo.h"
+#include "fir.h"
 
 /* Value from host/libhackrf/src/hackrf.c */
 #define TRANSFER_BUFFER_SIZE 262144
@@ -59,10 +60,14 @@ typedef struct {
 	int hackdac_sync_frame_sent;
 	int hackdac_frame_phase;
 	int hackdac_frame_padding;
+	fir_int16_t hackdac_audio_resampler[2];
 	
 	/* Buffers */
 	fifo_t buffers;
 	fifo_reader_t buffers_reader;
+	
+	fifo_t audio_buffers;
+	fifo_reader_t audio_buffers_reader;
 	
 	/* Stats */
 	uint32_t stats_counter;
@@ -114,10 +119,18 @@ static int _tx_callback_hackdac(hackrf_transfer *transfer)
 	fifo_reader_t *reader = NULL;
 	int r;
 	
-	if(rf->hackdac_sync_frame_sent == 0)
+	if(rf->hackdac_sync_frame_sent < 3)
 	{
-		/* The first frame sent is the sync frame, which
-		 * marks where interleaved a/v data begins */
+		/* Send out three blank frames before anything else */
+		memset(buf, 0, l);
+		l -= l;
+		buf += l;
+		rf->hackdac_sync_frame_sent++;
+	}
+	else if(rf->hackdac_sync_frame_sent == 3)
+	{
+		/* Next send the sync frame, which marks where
+		 * interleaved a/v data begins */
 		
 		memset(buf, 0, HACKDAC_USB_AUDIO_BUFFER_SIZE);
 		
@@ -128,7 +141,7 @@ static int _tx_callback_hackdac(hackrf_transfer *transfer)
 		l -= HACKDAC_USB_AUDIO_BUFFER_SIZE;
 		buf += HACKDAC_USB_AUDIO_BUFFER_SIZE;
 		
-		rf->hackdac_sync_frame_sent = 1;
+		rf->hackdac_sync_frame_sent++;
 		rf->hackdac_frame_phase = 0;
 	}
 	
@@ -157,7 +170,7 @@ static int _tx_callback_hackdac(hackrf_transfer *transfer)
 		else
 		{
 			/* Audio phase */
-			reader = NULL;
+			reader = &rf->audio_buffers_reader;
 			r = HACKDAC_PHASE_SIZE - rf->hackdac_frame_phase;
 		}
 		
@@ -196,6 +209,7 @@ static int _tx_callback_hackdac(hackrf_transfer *transfer)
 		{
 			/* EOF, stop transmission */
 			fifo_reader_close(&rf->buffers_reader);
+			fifo_reader_close(&rf->audio_buffers_reader);
 			return(-1);
 		}
 	}
@@ -294,12 +308,45 @@ static int _rf_write_baseband(void *private, const int16_t *iq_data, size_t samp
 	return(r >= 0 ? RF_OK : RF_ERROR);
 }
 
+static int _rf_write_baseband_audio(void *private, const int16_t *audio, size_t samples)
+{
+	hackrf_t *rf = private;
+	
+	if(audio == NULL) return(RF_OK);
+	
+	fir_int16_feed(&rf->hackdac_audio_resampler[0], audio + 0, samples / 2, 2);
+	fir_int16_feed(&rf->hackdac_audio_resampler[1], audio + 1, samples / 2, 2);
+	
+	while(1)
+	{
+		int16_t *buf;
+		size_t buf_len;
+		size_t r;
+		
+		r = fifo_write_ptr(&rf->audio_buffers, (void **) &buf, 1);
+		if(r < 0) break;
+		
+		buf_len  = fir_int16_process(&rf->hackdac_audio_resampler[0], buf + 0, r / sizeof(int16_t) / 2, 2);
+		buf_len += fir_int16_process(&rf->hackdac_audio_resampler[1], buf + 1, r / sizeof(int16_t) / 2, 2);
+		buf_len *= sizeof(int16_t);
+		if(buf_len == 0) break;
+		
+		fifo_write(&rf->audio_buffers, buf_len);
+	}
+	
+	return(RF_OK);
+}
+
 static int _rf_close(void *private)
 {
 	hackrf_t *rf = private;
 	int r;
 	
+	fifo_close(&rf->buffers);
+	if(rf->audio_buffers.count) fifo_close(&rf->audio_buffers);
+	
 	fifo_free(&rf->buffers);
+	if(rf->audio_buffers.count) fifo_free(&rf->audio_buffers);
 	
 	r = hackrf_stop_tx(rf->d);
 	if(r != HACKRF_SUCCESS)
@@ -321,6 +368,9 @@ static int _rf_close(void *private)
 	}
 	
 	hackrf_exit();
+	
+	fir_int16_free(&rf->hackdac_audio_resampler[0]);
+	fir_int16_free(&rf->hackdac_audio_resampler[1]);
 	free(rf);
 	
 	return(RF_OK);
@@ -390,6 +440,8 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 	/* Override RF settings for baseband mode */
 	if(baseband)
 	{
+		size_t len;
+		
 		if(rf->hackdac_firmware_version == 0)
 		{
 			fprintf(stderr, "HackDAC required for baseband operation\n");
@@ -400,6 +452,23 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 		frequency_hz = 0;
 		txvga_gain = 0;
 		amp_enable = 0;
+		
+		/* Initalise the audio resamplers */
+		/* TODO: Don't hardwire the input sample rate */
+		for(int i = 0; i < 2; i++)
+		{
+			r = fir_int16_resampler_init(
+				&rf->hackdac_audio_resampler[i],
+				(r64_t) { rf->sample_rate, 64 },
+				(r64_t) { 32000, 1 }
+			);
+		}
+		
+		/* Allocate memory for the output audio buffers,
+		 * enough for at least 400ms (10ms blocks x40) */
+		len = fir_int16_output_size(&rf->hackdac_audio_resampler[0], 320);
+		fifo_init(&rf->audio_buffers, 40, len * 2 * sizeof(int16_t));
+		fifo_reader_init(&rf->audio_buffers_reader, &rf->audio_buffers, 0);
 	}
 	
 	if(rf->hackdac_firmware_version > 0)
@@ -485,6 +554,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 	/* Register the callback functions */
 	s->ctx = rf;
 	s->write = baseband ? _rf_write_baseband : _rf_write;
+	s->write_audio = baseband ? _rf_write_baseband_audio : NULL;
 	s->close = _rf_close;
 	
 	return(RF_OK);
