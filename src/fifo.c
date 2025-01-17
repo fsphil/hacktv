@@ -55,6 +55,7 @@ int fifo_init(fifo_t *fifo, size_t count, size_t length)
 		fifo->blocks[i].next = &fifo->blocks[(i + 1) % count];
 	}
 	
+	/* The writer starts on the first block */
 	fifo->block = fifo->blocks;
 	fifo->block->writing = 1;
 	fifo->offset = 0;
@@ -64,6 +65,7 @@ int fifo_init(fifo_t *fifo, size_t count, size_t length)
 
 void fifo_reader_init(fifo_reader_t *reader, fifo_t *fifo, int prefill)
 {
+	/* Readers start on the last (empty) block, waiting for the writer */
 	reader->block = fifo->block->prev;
 	reader->block->readers++;
 	reader->offset = reader->block->length;
@@ -72,8 +74,10 @@ void fifo_reader_init(fifo_reader_t *reader, fifo_t *fifo, int prefill)
 	
 	if(prefill > 0)
 	{
-		if(prefill >= fifo->count) prefill = fifo->count - 1;
-		reader->prefill = &fifo->blocks[prefill];
+		/* Prefill can use any block up to but not including -1 */
+		if(prefill > fifo->count) prefill = fifo->count - 1;
+		
+		reader->prefill = &fifo->blocks[prefill - 1];
 	}
 }
 

@@ -109,7 +109,7 @@ extern void fifo_write(fifo_t *fifo, size_t length);
  * reader: Pointer to an uninitalised FIFO reader
  * fifo: Pointer to an initalised FIFO
  * prefill: Number of blocks that must be written
- *          before reading begins
+ *          before reading begins (max: num. blocks - 1)
  *
  * This must be called in the same thread that
  * called fifo_init(), and before any writes
