@@ -179,7 +179,7 @@ size_t fifo_read(fifo_reader_t *reader, void **ptr, size_t length, int wait)
 {
 	fifo_block_t *block = reader->block;
 	
-	if(reader->eof)
+	if(block == NULL || reader->eof)
 	{
 		/* End of line */
 		return(-1);
@@ -273,7 +273,7 @@ size_t fifo_write_ptr(fifo_t *fifo, void **ptr, int wait)
 {
 	fifo_block_t *block = fifo->block;
 	
-	if(block->length == 0) return(-1);
+	if(block == NULL || block->length == 0) return(-1);
 	
 	if(fifo->offset == block->length)
 	{
