@@ -4162,7 +4162,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		{
 			perror("fopen");
 			vid_free(s);
-			return(r);
+			return(VID_ERROR);
 		}
 		
 		_add_lineprocess(s, "rawbb", 1, NULL, _vid_next_line_rawbb, NULL);
