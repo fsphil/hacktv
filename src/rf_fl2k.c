@@ -139,16 +139,16 @@ static int _rf_write_audio(void *private, const int16_t *audio, size_t samples)
 			
 			for(c = 0; c < 2; c++)
 			{
-				buf[c][i] = rf->audio[c] >> 8;
-				
 				/* Apply a delta-sigma modulation / dither using the lost
 				 * lower 8-bits of the 16-bit audio samples. Use a low pass
 				 * filter on the output to reconstruct the full signal */
-				rf->err[c] += rf->audio[c] & 0xFF;
-				if(rf->err[c] >= 0x100 && buf[c][i] < 0xFF)
+				
+				buf[c][i] = (rf->audio[c] & 0xFE00) >> 8;
+				rf->err[c] += rf->audio[c] & 0x1FF;
+				if(rf->err[c] >= 0x1FF)
 				{
 					buf[c][i]++;
-					rf->err[c] -= 0x100;
+					rf->err[c] -= 0x1FF;
 				}
 			}
 		}
