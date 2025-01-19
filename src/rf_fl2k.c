@@ -28,11 +28,16 @@
 typedef struct {
 	
 	fl2k_dev_t *d;
+	unsigned int sample_rate;
 	int abort;
 	
 	fifo_t buffer[3];
 	fifo_reader_t reader[3];
 	int phase;
+	
+	int interp;
+	uint16_t audio[2];
+	uint16_t err[2];
 	
 } fl2k_t;
 
@@ -99,6 +104,62 @@ static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 	return(r >= 0 ? RF_OK : RF_ERROR);
 }
 
+static int _rf_write_audio(void *private, const int16_t *audio, size_t samples)
+{
+	fl2k_t *rf = private;
+	uint8_t *buf[2];
+	int i, r, c;
+	
+	if(audio == NULL) return(RF_OK);
+	
+	r = 0;
+	samples /= 2;
+	
+	while(samples > 0)
+	{
+		r = fifo_write_ptr(&rf->buffer[1], (void **) &buf[0], 1);
+		if(r < 0) break;
+		
+		i = fifo_write_ptr(&rf->buffer[2], (void **) &buf[1], 1);
+		if(i < 0) break;
+		
+		if(i < r) r = i;
+		
+		for(i = 0; i < r && samples > 0; i++)
+		{
+			rf->interp += 32000; /* TODO: Don't hardwire this */
+			if(rf->interp >= rf->sample_rate)
+			{
+				rf->interp -= rf->sample_rate;
+				rf->audio[0] = audio[0] - INT16_MIN;
+				rf->audio[1] = audio[1] - INT16_MIN;
+				samples--;
+				audio += 2;
+			}
+			
+			for(c = 0; c < 2; c++)
+			{
+				buf[c][i] = rf->audio[c] >> 8;
+				
+				/* Apply a delta-sigma modulation / dither using the lost
+				 * lower 8-bits of the 16-bit audio samples. Use a low pass
+				 * filter on the output to reconstruct the full signal */
+				rf->err[c] += rf->audio[c] & 0xFF;
+				if(rf->err[c] >= 0x100 && buf[c][i] < 0xFF)
+				{
+					buf[c][i]++;
+					rf->err[c] -= 0x100;
+				}
+			}
+		}
+		
+		fifo_write(&rf->buffer[1], i);
+		fifo_write(&rf->buffer[2], i);
+	}
+	
+	return(r >= 0 ? RF_OK : RF_ERROR);
+}
+
 static int _rf_close(void *private)
 {
 	fl2k_t *rf = private;
@@ -136,6 +197,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 	}
 	
 	rf->abort = 0;
+	rf->sample_rate = sample_rate;
 	
 	r = device ? atoi(device) : 0;
 	
@@ -151,7 +213,17 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 	fifo_init(&rf->buffer[0], BUFFERS, FL2K_BUF_LEN);
 	fifo_reader_init(&rf->reader[0], &rf->buffer[0], -1);
 	
+	/* Green channel is left audio */
+	fifo_init(&rf->buffer[1], BUFFERS, FL2K_BUF_LEN);
+	fifo_reader_init(&rf->reader[1], &rf->buffer[1], 0);
+	
+	/* Blue channel is right audio */
+	fifo_init(&rf->buffer[2], BUFFERS, FL2K_BUF_LEN);
+	fifo_reader_init(&rf->reader[2], &rf->buffer[2], 0);
+	
 	rf->phase = 0;
+	
+	rf->interp = 0;
 	
 	r = fl2k_start_tx(rf->d, _callback, rf, 0);
 	if(r < 0)
@@ -161,7 +233,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 		return(RF_ERROR);
 	}
 	
-	r = fl2k_set_sample_rate(rf->d, sample_rate);
+	r = fl2k_set_sample_rate(rf->d, rf->sample_rate);
 	if(r < 0)
 	{
 		fprintf(stderr, "fl2k_set_sample_rate() failed: %d\n", r);
@@ -171,7 +243,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 	
 	/* Read back the actual frequency */
 	r = fl2k_get_sample_rate(rf->d);
-	if(r != sample_rate)
+	if(r != rf->sample_rate)
 	{
 		//fprintf(stderr, "fl2k sample rate changed from %d > %d\n", s->vid.sample_rate, r);
 		//_rf_close(rf);
@@ -181,6 +253,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 	/* Register the callback functions */
 	s->ctx = rf;
 	s->write = _rf_write;
+	s->write_audio = _rf_write_audio;
 	s->close = _rf_close;
 	
 	return(RF_OK);
