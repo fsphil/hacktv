@@ -72,10 +72,10 @@ void fifo_reader_init(fifo_reader_t *reader, fifo_t *fifo, int prefill)
 	reader->eof = 0;
 	reader->prefill = NULL;
 	
-	if(prefill > 0)
+	if(prefill != 0)
 	{
-		/* Prefill can use any block up to but not including -1 */
-		if(prefill > fifo->count) prefill = fifo->count - 1;
+		/* The prefill block cannot be either of the last two blocks */
+		if(prefill < 0 || prefill > fifo->count - 2) prefill = fifo->count - 2;
 		
 		reader->prefill = &fifo->blocks[prefill - 1];
 	}
