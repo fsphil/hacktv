@@ -21,6 +21,7 @@
 #include <osmo-fl2k.h>
 #include <pthread.h>
 #include "rf.h"
+#include "fifo.h"
 
 #define BUFFERS 4
 
@@ -29,18 +30,20 @@ typedef struct {
 	fl2k_dev_t *d;
 	int abort;
 	
-	uint8_t buffer_r[BUFFERS][FL2K_BUF_LEN];
-	uint8_t buffer_g[BUFFERS][FL2K_BUF_LEN];
-	pthread_mutex_t mutex[BUFFERS];
-	int len;
-	int in;
-	int out;
+	fifo_t buffer[3];
+	fifo_reader_t reader[3];
+	int phase;
 	
 } fl2k_t;
 
 static void _callback(fl2k_data_info_t *data_info)
 {
 	fl2k_t *rf = data_info->ctx;
+	void *channels[3] = {
+		&data_info->r_buf,
+		&data_info->g_buf,
+		&data_info->b_buf
+	};
 	int i;
 	
 	if(data_info->device_error)
@@ -49,72 +52,71 @@ static void _callback(fl2k_data_info_t *data_info)
 		return;
 	}
 	
-	/* Try to get a lock on the next output buffer */
-	i = (rf->out + 1) % BUFFERS;
-	
-	if(pthread_mutex_trylock(&rf->mutex[i]) != 0)
+	for(; rf->phase < 3; rf->phase++)
 	{
-		/* No luck, the writer must have it */
-		fprintf(stderr, "U");
-		return;
+		i = fifo_read(&rf->reader[rf->phase], channels[rf->phase], FL2K_BUF_LEN, 0);
+		if(i == 0)
+		{
+			if(rf->reader[rf->phase].prefill == NULL) fprintf(stderr, "U");
+			break;
+		}
 	}
 	
-	/* Got a lock on the next buffer, clear and release the previous */
-	pthread_mutex_unlock(&rf->mutex[rf->out]);
-	
-	rf->out = i;
+	if(rf->phase == 3) rf->phase = 0;
 	
 	data_info->sampletype_signed = 0;
-	data_info->r_buf = (char *) rf->buffer_r[rf->out];
-	data_info->g_buf = (char *) rf->buffer_g[rf->out];
-	data_info->b_buf = NULL;
 }
 
 static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	fl2k_t *rf = private;
-	int i;
+	uint8_t *buf = NULL;
+	int i, r;
 	
 	if(rf->abort)
 	{
 		return(RF_ERROR);
 	}
 	
+	r = 0;
+	
 	while(samples > 0)
 	{
-		for(; rf->len < FL2K_BUF_LEN && samples > 0; rf->len++, samples--)
+		r = fifo_write_ptr(&rf->buffer[0], (void **) &buf, 1);
+		if(r < 0) break;
+		
+		for(i = 0; i < r && i < samples; i++)
 		{
-			rf->buffer_r[rf->in][rf->len] = 128 + (*(iq_data++) / 256);
-			rf->buffer_g[rf->in][rf->len] = 128 + (*(iq_data++) / 256);
+			buf[i] = (iq_data[i * 2] - INT16_MIN) >> 8;
 		}
 		
-		if(rf->len == FL2K_BUF_LEN)
-		{
-			/* This buffer is full. Move on to the next. */
-			i = (rf->in + 1) % BUFFERS;
-			pthread_mutex_lock(&rf->mutex[i]);
-			pthread_mutex_unlock(&rf->mutex[rf->in]);
-			rf->in = i;
-			rf->len = 0;
-		}
+		fifo_write(&rf->buffer[0], i);
+		
+		iq_data += i * 2;
+		samples -= i;
 	}
 	
-	return(RF_OK);
+	return(r >= 0 ? RF_OK : RF_ERROR);
 }
 
 static int _rf_close(void *private)
 {
 	fl2k_t *rf = private;
-	int r;
+	int i;
 	
 	rf->abort = 1;
 	
 	fl2k_stop_tx(rf->d);
 	fl2k_close(rf->d);
 	
-	for(r = 0; r < BUFFERS; r++)
+	for(i = 0; i < 3; i++)
 	{
-		pthread_mutex_destroy(&rf->mutex[r]);
+		fifo_reader_close(&rf->reader[i]);
+	}
+	
+	for(i = 0; i < 3; i++)
+	{
+		fifo_free(&rf->buffer[i]);
 	}
 	
 	free(rf);
@@ -145,20 +147,11 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 		return(RF_ERROR);
 	}
 	
-	for(r = 0; r < BUFFERS; r++)
-	{
-		pthread_mutex_init(&rf->mutex[r], NULL);
-	}
+	/* Red channel is composite video */
+	fifo_init(&rf->buffer[0], BUFFERS, FL2K_BUF_LEN);
+	fifo_reader_init(&rf->reader[0], &rf->buffer[0], -1);
 	
-	/* Lock the initial buffer for the provider */
-	rf->in = 0;
-	pthread_mutex_lock(&rf->mutex[rf->in]);
-	
-	/* Lock the last empty buffer for the consumer */
-	rf->out = BUFFERS - 1;
-	pthread_mutex_lock(&rf->mutex[rf->out]);
-	
-	rf->len = 0;
+	rf->phase = 0;
 	
 	r = fl2k_start_tx(rf->d, _callback, rf, 0);
 	if(r < 0)
