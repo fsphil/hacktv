@@ -137,12 +137,23 @@ static void print_usage(void)
 		"fl2k output options\n"
 		"\n"
 		"  -o, --output fl2k[:<dev>]      Open an fl2k device for output.\n"
+		"      --fl2k-audio <mode>        Audio mode (none, stereo, spdif), default: none\n"
 		"\n"
-		"  Real signals are output on the Red channel. Complex signals are output\n"
-		"  on the Red (I) and Green (Q) channels.\n"
+		"  Each of the FL2K's three output channels can be used for:\n"
+		"\n"
+		"  Red: Baseband video / Complex I signal\n"
+		"  Green: Complex Q signal / Analogue audio (Left) / Nothing\n"
+		"  Blue: Analogue audio (Right) / Digital audio (S/PDIF) / Nothing\n"
 		"\n"
 		"  The 0.7v p-p voltage level of the FL2K is too low to create a correct\n"
 		"  composite video signal, it will appear too dark without amplification.\n"
+		"\n"
+		"  Digital S/PDIF audio is currently fixed at 16-bit, 32 kHz. Not all\n"
+		"  decoders work at this sample rate.\n"
+		"\n"
+		"  Analogue audio is limited to 8-bits. The LSB is delta-sigma modulated at\n"
+		"  the FL2K sample rate with the lower 8-bits of the 16-bit audio and may be\n"
+		"  recovered by using a low pass filter of ~16 kHz on the output.\n"
 		"\n"
 		"File output options\n"
 		"\n"
@@ -391,6 +402,7 @@ enum {
 	_OPT_MAX_ASPECT,
 	_OPT_LETTERBOX,
 	_OPT_PILLARBOX,
+	_OPT_FL2K_AUDIO,
 	_OPT_VERSION,
 };
 
@@ -464,6 +476,7 @@ int main(int argc, char *argv[])
 		{ "gain",           required_argument, 0, 'g' },
 		{ "antenna",        required_argument, 0, 'A' },
 		{ "type",           required_argument, 0, 't' },
+		{ "fl2k-audio",     required_argument, 0, _OPT_FL2K_AUDIO },
 		{ "version",        no_argument,       0, _OPT_VERSION },
 		{ 0,                0,                 0,  0  }
 	};
@@ -527,6 +540,7 @@ int main(int argc, char *argv[])
 	s.file_type = RF_INT16;
 	s.raw_bb_blanking_level = 0;
 	s.raw_bb_white_level = INT16_MAX;
+	s.fl2k_audio = FL2K_AUDIO_NONE;
 	
 	opterr = 0;
 	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:", long_options, &option_index)) != -1)
@@ -895,6 +909,28 @@ int main(int argc, char *argv[])
 			
 			break;
 		
+		case _OPT_FL2K_AUDIO: /* --fl2k-audio <mode> */
+			
+			if(strcmp(optarg, "none") == 0)
+			{
+				s.fl2k_audio = FL2K_AUDIO_NONE;
+			}
+			else if(strcmp(optarg, "stereo") == 0)
+			{
+				s.fl2k_audio = FL2K_AUDIO_STEREO;
+			}
+			else if(strcmp(optarg, "spdif") == 0)
+			{
+				s.fl2k_audio = FL2K_AUDIO_SPDIF;
+			}
+			else
+			{
+				fprintf(stderr, "Unrecognised FL2K audio mode.\n");
+				return(-1);
+			}
+			
+			break;
+		
 		case _OPT_VERSION: /* --version */
 			print_version();
 			return(0);
@@ -1235,7 +1271,7 @@ int main(int argc, char *argv[])
 	else if(strcmp(s.output_type, "fl2k") == 0)
 	{
 #ifdef HAVE_FL2K
-		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate) != RF_OK)
+		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate, s.fl2k_audio) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);

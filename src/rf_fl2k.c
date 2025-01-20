@@ -18,10 +18,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <osmo-fl2k.h>
 #include <pthread.h>
 #include "rf.h"
 #include "fifo.h"
+#include "fir.h"
+#include "spdif.h"
 
 #define BUFFERS 4
 
@@ -35,9 +38,17 @@ typedef struct {
 	fifo_reader_t reader[3];
 	int phase;
 	
+	int audio_mode;
+	
+	/* Analogue audio */
 	int interp;
 	uint16_t audio[2];
 	uint16_t err[2];
+	
+	/* SPDIF audio */
+	int16_t pcm[SPDIF_BLOCK_SAMPLES];
+	int pcm_len;
+	fir_int16_t spdif_resampler;
 	
 } fl2k_t;
 
@@ -160,6 +171,64 @@ static int _rf_write_audio(void *private, const int16_t *audio, size_t samples)
 	return(r >= 0 ? RF_OK : RF_ERROR);
 }
 
+static int _rf_write_audio_spdif(void *private, const int16_t *audio, size_t samples)
+{
+	fl2k_t *rf = private;
+	uint8_t *buf;
+	uint8_t block[SPDIF_BLOCK_BYTES];
+	int16_t block_s[SPDIF_BLOCK_BITS * 5];
+	int r, i;
+	int16_t s;
+	
+	if(audio == NULL) return(RF_OK);
+	
+	r = 0;
+	
+	while(samples > 0)
+	{
+		/* Copy audio PCM samples */
+		r = SPDIF_BLOCK_SAMPLES - rf->pcm_len;
+		if(r > samples) r = samples;
+		
+		memcpy(&rf->pcm[rf->pcm_len], audio, r * sizeof(int16_t));
+		audio += r;
+		rf->pcm_len += r;
+		samples -= r;
+		
+		/* Incomplete PCM block, return for more */
+		if(rf->pcm_len < SPDIF_BLOCK_SAMPLES) return(RF_OK);
+		
+		/* Encode the SPDIF block (32000 kHz, 4096000 bit/s) */
+		spdif_block(block, rf->pcm);
+		rf->pcm_len = 0;
+		
+		for(r = 0; r < SPDIF_BLOCK_BITS * 5; r++)
+		{
+			i = r / 5;
+			block_s[r] = (block[i >> 3] >> (7 - (i & 7))) & 1 ? 23405 : -23405;
+		}
+		
+		fir_int16_feed(&rf->spdif_resampler, block_s, r, 1);
+		
+		/* Feed the output of the resampler into the FIFO */
+		do
+		{
+			r = fifo_write_ptr(&rf->buffer[2], (void **) &buf, 1);
+			if(r < 0) break;
+			
+			r = fir_int16_process(&rf->spdif_resampler, &s, 1, 1);
+			if(r <= 0) break;
+			
+			buf[0] = (s - INT16_MIN) >> 8;
+			
+			fifo_write(&rf->buffer[2], 1);
+		}
+		while(r > 0);
+	}
+	
+	return(r >= 0 ? RF_OK : RF_ERROR);
+}
+
 static int _rf_close(void *private)
 {
 	fl2k_t *rf = private;
@@ -180,12 +249,17 @@ static int _rf_close(void *private)
 		fifo_free(&rf->buffer[i]);
 	}
 	
+	if(rf->audio_mode == FL2K_AUDIO_SPDIF)
+	{
+		fir_int16_free(&rf->spdif_resampler);
+	}
+	
 	free(rf);
 	
 	return(RF_OK);
 }
 
-int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
+int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int audio_mode)
 {
 	fl2k_t *rf;
 	int r;
@@ -198,6 +272,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 	
 	rf->abort = 0;
 	rf->sample_rate = sample_rate;
+	rf->audio_mode = audio_mode;
 	
 	r = device ? atoi(device) : 0;
 	
@@ -213,17 +288,40 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 	fifo_init(&rf->buffer[0], BUFFERS, FL2K_BUF_LEN);
 	fifo_reader_init(&rf->reader[0], &rf->buffer[0], -1);
 	
-	/* Green channel is left audio */
-	fifo_init(&rf->buffer[1], BUFFERS, FL2K_BUF_LEN);
-	fifo_reader_init(&rf->reader[1], &rf->buffer[1], 0);
-	
-	/* Blue channel is right audio */
-	fifo_init(&rf->buffer[2], BUFFERS, FL2K_BUF_LEN);
-	fifo_reader_init(&rf->reader[2], &rf->buffer[2], 0);
+	if(audio_mode == FL2K_AUDIO_STEREO)
+	{
+		rf->interp = 0;
+		
+		/* Green channel is left audio */
+		fifo_init(&rf->buffer[1], BUFFERS, FL2K_BUF_LEN);
+		fifo_reader_init(&rf->reader[1], &rf->buffer[1], 0);
+		
+		/* Blue channel is right audio / SPDIF */
+		fifo_init(&rf->buffer[2], BUFFERS, FL2K_BUF_LEN);
+		fifo_reader_init(&rf->reader[2], &rf->buffer[2], 0);
+		
+		/* Register the callback */
+		s->write_audio = _rf_write_audio;
+	}
+	else if(audio_mode == FL2K_AUDIO_SPDIF)
+	{
+		/* SPDIF init */
+		rf->pcm_len = 0;
+		r = fir_int16_resampler_init(
+			&rf->spdif_resampler,
+			(r64_t) { rf->sample_rate, 1 },
+			(r64_t) { spdif_bitrate(32000) * 5, 1 }
+		);
+		
+		/* Blue channel is right audio / SPDIF */
+		fifo_init(&rf->buffer[2], BUFFERS, FL2K_BUF_LEN);
+		fifo_reader_init(&rf->reader[2], &rf->buffer[2], 0);
+		
+		/* Register the callback */
+		s->write_audio = _rf_write_audio_spdif;
+	}
 	
 	rf->phase = 0;
-	
-	rf->interp = 0;
 	
 	r = fl2k_start_tx(rf->d, _callback, rf, 0);
 	if(r < 0)
@@ -253,7 +351,6 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate)
 	/* Register the callback functions */
 	s->ctx = rf;
 	s->write = _rf_write;
-	s->write_audio = _rf_write_audio;
 	s->close = _rf_close;
 	
 	return(RF_OK);

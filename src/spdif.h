@@ -1,6 +1,6 @@
 /* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
-/* Copyright 2019 Philip Heron <phil@sanslogic.co.uk>                    */
+/* Copyright 2025 Philip Heron <phil@sanslogic.co.uk>                    */
 /*                                                                       */
 /* This program is free software: you can redistribute it and/or modify  */
 /* it under the terms of the GNU General Public License as published by  */
@@ -15,15 +15,17 @@
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FL2K_H
-#define _FL2K_H
+#ifndef _SPDIF_H
+#define _SPDIF_H
 
-#define FL2K_AUDIO_NONE   0
-#define FL2K_AUDIO_MONO   1
-#define FL2K_AUDIO_STEREO 2
-#define FL2K_AUDIO_SPDIF  3
+#include <stdint.h>
 
-extern int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int audio_mode);
+#define SPDIF_BLOCK_SAMPLES (192 * 2)
+#define SPDIF_BLOCK_BYTES (SPDIF_BLOCK_SAMPLES * 8)
+#define SPDIF_BLOCK_BITS (SPDIF_BLOCK_BYTES * 8)
+
+extern uint32_t spdif_bitrate(uint32_t sample_rate);
+extern void spdif_block(uint8_t b[SPDIF_BLOCK_BYTES], const int16_t pcm[SPDIF_BLOCK_SAMPLES]);
 
 #endif
 
