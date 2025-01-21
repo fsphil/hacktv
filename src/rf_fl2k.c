@@ -296,7 +296,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int audi
 		fifo_init(&rf->buffer[1], BUFFERS, FL2K_BUF_LEN);
 		fifo_reader_init(&rf->reader[1], &rf->buffer[1], 0);
 		
-		/* Blue channel is right audio / SPDIF */
+		/* Blue channel is right audio */
 		fifo_init(&rf->buffer[2], BUFFERS, FL2K_BUF_LEN);
 		fifo_reader_init(&rf->reader[2], &rf->buffer[2], 0);
 		
@@ -313,7 +313,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int audi
 			(r64_t) { spdif_bitrate(32000) * 5, 1 }
 		);
 		
-		/* Blue channel is right audio / SPDIF */
+		/* Blue channel is S/PDIF digital audio */
 		fifo_init(&rf->buffer[2], BUFFERS, FL2K_BUF_LEN);
 		fifo_reader_init(&rf->reader[2], &rf->buffer[2], 0);
 		
