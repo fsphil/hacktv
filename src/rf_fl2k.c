@@ -318,7 +318,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int base
 	{
 		if(!rf->baseband)
 		{
-			fprintf(stderr, "fl2k: Stereo audio is not available with complex modes\n");
+			fprintf(stderr, "fl2k: Stereo audio is not available with S-Video or complex modes\n");
 			_rf_close(rf);
 			return(RF_ERROR);
 		}

@@ -3129,7 +3129,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		}
 		
 		/* Render the colour subcarrier */
-		o = l->output;
+		o = l->output + (s->conf.s_video ? 1 : 0);
 		oc = s->chrominance_buffer;
 		for(x = 0; x < s->width; x++, o += 2, oc += 2)
 		{
@@ -3262,6 +3262,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		if(sr > sl)
 		{
+			int16_t *o;
+			
 			fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width, 2);
 			fir_int16_process_block(&s->fm_secam_fir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
 			iir_int16_process(&s->fm_secam_iir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
@@ -3275,6 +3277,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			dmin = s->fm_secam_dmin[((l->frame * s->conf.lines) + l->line) & 1];
 			dmax = s->fm_secam_dmax[((l->frame * s->conf.lines) + l->line) & 1];
 			
+			o = l->output + (s->conf.s_video ? 1 : 0);
 			for(x = sl; x < sr; x++)
 			{
 				if(s->chrominance_buffer[x] < dmin) s->chrominance_buffer[x] = dmin;
@@ -3283,7 +3286,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				g = &s->fm_secam_bell[(uint16_t) s->chrominance_buffer[x]];
 				_fm_modulator_cgain(&s->fm_secam, &s->chrominance_buffer[x], s->chrominance_buffer[x], g);
 				
-				l->output[x * 2] += (s->chrominance_buffer[x] * s->burst_win[x - s->burst_left]) >> 15;
+				o[x * 2] += (s->chrominance_buffer[x] * s->burst_win[x - s->burst_left]) >> 15;
 			}
 		}
 	}

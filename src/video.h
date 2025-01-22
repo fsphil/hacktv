@@ -215,6 +215,7 @@ typedef struct {
 	
 	int colour_mode;
 	r64_t colour_carrier;
+	int s_video;
 	
 	double burst_width;
 	double burst_left;

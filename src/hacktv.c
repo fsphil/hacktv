@@ -71,6 +71,8 @@ static void print_usage(void)
 		"      --vitc                     Enable VITC time code.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"
+		"      --s-video                  Output colour subcarrier on second channel.\n"
+		"                                 (PAL, NTSC, SECAM baseband modes only).\n"
 		"      --volume <value>           Adjust volume. Takes floats as argument.\n"
 		"      --noaudio                  Suppress all audio subcarriers.\n"
 		"      --nonicam                  Disable the NICAM subcarrier if present.\n"
@@ -365,6 +367,7 @@ enum {
 	_OPT_VITC,
 	_OPT_FILTER,
 	_OPT_NOCOLOUR,
+	_OPT_S_VIDEO,
 	_OPT_VOLUME,
 	_OPT_NOAUDIO,
 	_OPT_NONICAM,
@@ -441,6 +444,7 @@ int main(int argc, char *argv[])
 		{ "filter",         no_argument,       0, _OPT_FILTER },
 		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
 		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
+		{ "s-video",        no_argument,       0, _OPT_S_VIDEO },
 		{ "volume",         required_argument, 0, _OPT_VOLUME },
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
 		{ "nonicam",        no_argument,       0, _OPT_NONICAM },
@@ -739,6 +743,10 @@ int main(int argc, char *argv[])
 			s.nocolour = 1;
 			break;
 		
+		case _OPT_S_VIDEO: /* --s-video */
+			s.s_video = 1;
+			break;
+		
 		case _OPT_VOLUME: /* --volume <value> */
 			s.volume = atof(optarg);
 			break;
@@ -1012,6 +1020,20 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+	if(s.s_video)
+	{
+		if((vid_conf.colour_mode != VID_PAL &&
+		   vid_conf.colour_mode != VID_SECAM &&
+		   vid_conf.colour_mode != VID_NTSC) ||
+		   vid_conf.output_type != RF_INT16_REAL)
+		{
+			fprintf(stderr, "S-Video is only available with PAL, SECAM, or NTSC baseband modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.s_video = 1;
+	}
+	
 	if(s.noaudio > 0)
 	{
 		/* Disable all audio sub-carriers */
@@ -1271,7 +1293,7 @@ int main(int argc, char *argv[])
 	else if(strcmp(s.output_type, "fl2k") == 0)
 	{
 #ifdef HAVE_FL2K
-		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate, s.vid.conf.output_type == RF_INT16_REAL, s.fl2k_audio) != RF_OK)
+		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate, s.vid.conf.output_type == RF_INT16_REAL || s.vid.conf.s_video, s.fl2k_audio) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
@@ -1284,7 +1306,7 @@ int main(int argc, char *argv[])
 	}
 	else if(strcmp(s.output_type, "file") == 0)
 	{
-		if(rf_file_open(&s.rf, s.output, s.file_type, s.vid.conf.output_type == RF_INT16_COMPLEX) != RF_OK)
+		if(rf_file_open(&s.rf, s.output, s.file_type, s.vid.conf.output_type == RF_INT16_COMPLEX || s.vid.conf.s_video) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
