@@ -1293,7 +1293,7 @@ int main(int argc, char *argv[])
 	else if(strcmp(s.output_type, "fl2k") == 0)
 	{
 #ifdef HAVE_FL2K
-		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate, s.vid.conf.output_type == RF_INT16_REAL || s.vid.conf.s_video, s.fl2k_audio) != RF_OK)
+		if(rf_fl2k_open(&s.rf, s.output, s.vid.sample_rate, s.vid.conf.output_type == RF_INT16_REAL && s.vid.conf.s_video == 0, s.fl2k_audio) != RF_OK)
 		{
 			vid_free(&s.vid);
 			return(-1);
