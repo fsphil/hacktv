@@ -38,6 +38,7 @@ typedef struct {
 	fifo_reader_t reader[3];
 	int phase;
 	
+	int baseband;
 	int audio_mode;
 	
 	/* Analogue audio */
@@ -86,7 +87,7 @@ static void _callback(fl2k_data_info_t *data_info)
 static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 {
 	fl2k_t *rf = private;
-	uint8_t *buf = NULL;
+	uint8_t *buf[2];
 	int i, r;
 	
 	if(rf->abort)
@@ -98,15 +99,32 @@ static int _rf_write(void *private, const int16_t *iq_data, size_t samples)
 	
 	while(samples > 0)
 	{
-		r = fifo_write_ptr(&rf->buffer[0], (void **) &buf, 1);
+		r = fifo_write_ptr(&rf->buffer[0], (void **) &buf[0], 1);
 		if(r < 0) break;
+		
+		if(!rf->baseband)
+		{
+			i = fifo_write_ptr(&rf->buffer[1], (void **) &buf[1], 1);
+			if(i < r) r = i;
+			if(r < 0) break;
+		}
 		
 		for(i = 0; i < r && i < samples; i++)
 		{
-			buf[i] = (iq_data[i * 2] - INT16_MIN) >> 8;
+			buf[0][i] = (iq_data[i * 2] - INT16_MIN) >> 8;
 		}
 		
 		fifo_write(&rf->buffer[0], i);
+		
+		if(!rf->baseband)
+		{
+			for(i = 0; i < r && i < samples; i++)
+			{
+				buf[1][i] = (iq_data[i * 2 + 1] - INT16_MIN) >> 8;
+			}
+			
+			fifo_write(&rf->buffer[1], i);
+		}
 		
 		iq_data += i * 2;
 		samples -= i;
@@ -259,7 +277,7 @@ static int _rf_close(void *private)
 	return(RF_OK);
 }
 
-int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int audio_mode)
+int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int baseband, int audio_mode)
 {
 	fl2k_t *rf;
 	int r;
@@ -272,6 +290,7 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int audi
 	
 	rf->abort = 0;
 	rf->sample_rate = sample_rate;
+	rf->baseband = baseband ? 1 : 0;
 	rf->audio_mode = audio_mode;
 	
 	r = device ? atoi(device) : 0;
@@ -284,12 +303,26 @@ int rf_fl2k_open(rf_t *s, const char *device, unsigned int sample_rate, int audi
 		return(RF_ERROR);
 	}
 	
-	/* Red channel is composite video */
+	/* Red channel is composite video / in-phase complex component */
 	fifo_init(&rf->buffer[0], BUFFERS, FL2K_BUF_LEN);
 	fifo_reader_init(&rf->reader[0], &rf->buffer[0], -1);
 	
+	if(!rf->baseband)
+	{
+		/* Green channel is chrominance / quadrature complex component */
+		fifo_init(&rf->buffer[1], BUFFERS, FL2K_BUF_LEN);
+		fifo_reader_init(&rf->reader[1], &rf->buffer[1], 0);
+	}
+	
 	if(audio_mode == FL2K_AUDIO_STEREO)
 	{
+		if(!rf->baseband)
+		{
+			fprintf(stderr, "fl2k: Stereo audio is not available with complex modes\n");
+			_rf_close(rf);
+			return(RF_ERROR);
+		}
+		
 		rf->interp = 0;
 		
 		/* Green channel is left audio */
