@@ -2148,7 +2148,8 @@ const vid_configs_t vid_configs[] = {
 
 /* Video filter process */
 typedef struct {
-	fir_int16_t fir;
+	int channels;
+	fir_int16_t fir[2];
 } _vid_filter_process_t;
 
 /* Test taps for a CCIR-405 625 line video pre-emphasis filter at 28 MHz (5.0 MHz video) */
@@ -3300,8 +3301,11 @@ static int _vid_filter_process(vid_t *s, void *arg, int nlines, vid_line_t **lin
 	vid_line_t *dst = lines[0];
 	vid_line_t *src = lines[nlines - 1];
 	
-	fir_int16_feed(&p->fir, src->output, src->width, 2);
-	dst->width = fir_int16_process(&p->fir, dst->output, 0, 2);
+	for(int i = 0; i < p->channels; i++)
+	{
+		fir_int16_feed(&p->fir[i], src->output + i, src->width, 2);
+		dst->width = fir_int16_process(&p->fir[i], dst->output + i, 0, 2);
+	}
 	
 	return(1);
 }
@@ -3310,7 +3314,10 @@ static void _vid_filter_free(vid_t *s, void *arg)
 {
 	_vid_filter_process_t *p = arg;
 	
-	fir_int16_free(&p->fir);
+	for(int i = 0; i < p->channels; i++)
+	{
+		fir_int16_free(&p->fir[i]);
+	}
 	free(p);
 }
 
@@ -3635,7 +3642,7 @@ static int _calc_filter_delay(int width, int ntaps)
 	return(width - ((ntaps / 2) % width));
 }
 
-static int _init_vresampler(vid_t *s, r64_t in_rate, r64_t out_rate)
+static int _init_vresampler(vid_t *s, r64_t in_rate, r64_t out_rate, int channels)
 {
 	_vid_filter_process_t *p;
 	int width;
@@ -3645,11 +3652,15 @@ static int _init_vresampler(vid_t *s, r64_t in_rate, r64_t out_rate)
 	{
 		return(VID_OUT_OF_MEMORY);
 	}
+	p->channels = channels;
 	
-	fir_int16_resampler_init(&p->fir, out_rate, in_rate);
+	for(int i = 0; i < channels; i++)
+	{
+		fir_int16_resampler_init(&p->fir[i], out_rate, in_rate);
+	}
 	
 	/* Update maximum line width */
-	width = fir_int16_output_size(&p->fir, s->width);
+	width = fir_int16_output_size(&p->fir[0], s->width);
 	if(width > s->max_width) s->max_width = width;
 	
 	_add_lineprocess(s, "vresampler", 2, p, _vid_filter_process, _vid_filter_free);
@@ -3671,6 +3682,7 @@ static int _init_vfilter(vid_t *s)
 	{
 		return(VID_OUT_OF_MEMORY);
 	}
+	p->channels = 1;
 	
 	if(s->conf.modulation == VID_VSB)
 	{
@@ -3679,7 +3691,7 @@ static int _init_vfilter(vid_t *s)
 		ntaps = 51;
 		
 		fir_complex_band_pass(taps, ntaps, s->sample_rate, -s->conf.vsb_lower_bw, s->conf.vsb_upper_bw, 750000, 1);
-		fir_int16_scomplex_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
+		fir_int16_scomplex_init(&p->fir[0], taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	else if(s->conf.modulation == VID_FM)
 	{
@@ -3742,7 +3754,7 @@ static int _init_vfilter(vid_t *s)
 			}
 		}
 		
-		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
+		fir_int16_init(&p->fir[0], taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
@@ -3752,10 +3764,10 @@ static int _init_vfilter(vid_t *s)
 		ntaps = 51;
 		
 		fir_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
-		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
+		fir_int16_init(&p->fir[0], taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	
-	if(p->fir.type == 0)
+	if(p->fir[0].type == 0)
 	{
 		/* No filter has been created */
 		free(p);
@@ -4313,7 +4325,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	{
 		_init_vresampler(s,
 			(r64_t) { s->pixel_rate, 1 },
-			(r64_t) { s->sample_rate, 1 }
+			(r64_t) { s->sample_rate, 1 },
+			s->conf.s_video ? 2 : 1
 		);
 	}
 	
