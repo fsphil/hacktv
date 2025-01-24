@@ -3265,7 +3265,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		{
 			int16_t *o;
 			
-			fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width, 2);
+			if(!s->conf.s_video) fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width, 2);
 			fir_int16_process_block(&s->fm_secam_fir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
 			iir_int16_process(&s->fm_secam_iir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
 			
