@@ -4340,7 +4340,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		/* Enable Zweikanalton / A2 Stereo */
 		s->a2stereo_system_m = s->conf.fm_mono_carrier == 4500000;
 		s->conf.fm_right_level = s->conf.fm_mono_level * 0.446684; /* -7 dB */
-		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + (s->a2stereo_system_m ? 224213 : 242000);
+		s->conf.fm_right_carrier = s->conf.fm_mono_carrier + (s->a2stereo_system_m ? 224213 : 242187.5);
 		s->conf.fm_right_deviation = s->conf.fm_mono_deviation;
 		s->conf.fm_right_preemph = s->conf.fm_mono_preemph;
 		
