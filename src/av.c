@@ -35,6 +35,12 @@ int av_read_video(av_t *s, av_frame_t *frame)
 {
 	int r = AV_EOF;
 	
+	if(av_eof(s) && s->open_next != NULL)
+	{
+		r = s->open_next(s, s->av_control_ctx);
+		if(r != AV_OK) return(r);
+	}
+	
 	if(s->read_video)
 	{
 		r = s->read_video(s->av_source_ctx, frame);
@@ -60,6 +66,12 @@ int av_read_video(av_t *s, av_frame_t *frame)
 int av_read_audio(av_t *s, int16_t **samples, size_t *nsamples)
 {
 	int r = AV_EOF;
+	
+	if(av_eof(s) && s->open_next != NULL)
+	{
+		r = s->open_next(s, s->av_control_ctx);
+		if(r != AV_OK) return(r);
+	}
 	
 	*samples = NULL;
 	*nsamples = 0;

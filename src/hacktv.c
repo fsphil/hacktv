@@ -409,6 +409,70 @@ enum {
 	_OPT_VERSION,
 };
 
+static int _open_next(av_t *av, void *ctx)
+{
+	hacktv_t *s = ctx;
+	char *pre, *sub;
+	int r = AV_EOF;
+	int l;
+	
+	av_close(av);
+	
+	for(; s->item <= s->nitems; s->item++)
+	{
+		if(s->item == s->nitems)
+		{
+			if(s->repeat) s->item = 0;
+			else return(AV_EOF);
+		}
+		
+		if(s->shuffle && s->item == 0)
+		{
+			/* Shuffle the input source list */
+			/* Avoid moving the last entry to the start
+			 * to prevent it repeating immediately */
+			for(r = 0; r < s->nitems - 1; r++)
+			{
+				l = r + (rand() % (s->nitems - (r ? 0 : 1)));
+				pre = s->items[r];
+				s->items[r] = s->items[l];
+				s->items[l] = pre;
+			}
+		}
+		
+		/* Get a pointer to the output prefix and target */
+		pre = s->items[s->item];
+		sub = strchr(pre, ':');
+		
+		if(sub != NULL)
+		{
+			l = sub - pre;
+			sub++;
+		}
+		else
+		{
+			l = strlen(pre);
+		}
+		
+		if(strncmp(pre, "test", l) == 0)
+		{
+			r = av_test_open(av);
+		}
+		else if(strncmp(pre, "ffmpeg", l) == 0)
+		{
+			r = av_ffmpeg_open(av, sub, s->ffmt, s->fopts);
+		}
+		else
+		{
+			r = av_ffmpeg_open(av, pre, s->ffmt, s->fopts);
+		}
+		
+		if(r == AV_OK) break;
+	}
+	
+	return(r);
+}
+
 int main(int argc, char *argv[])
 {
 	int c;
@@ -484,11 +548,10 @@ int main(int argc, char *argv[])
 		{ "version",        no_argument,       0, _OPT_VERSION },
 		{ 0,                0,                 0,  0  }
 	};
-	static hacktv_t s;
+	hacktv_t s;
 	const vid_configs_t *vid_confs;
 	vid_config_t vid_conf;
 	char *pre, *sub;
-	int l;
 	int r;
 	
 	/* Disable console output buffer in Windows */
@@ -955,7 +1018,12 @@ int main(int argc, char *argv[])
 		return(-1);
 	}
 	
-	if(optind >= argc)
+	/* Setup playlist */
+	s.nitems = argc - optind;
+	s.items  = argv + optind;
+	s.item   = 0;
+	
+	if(s.nitems <= 0)
 	{
 		fprintf(stderr, "No input specified.\n");
 		return(-1);
@@ -1331,6 +1399,8 @@ int main(int argc, char *argv[])
 		.width = s.vid.active_width,
 		.height = s.vid.conf.active_lines,
 		.sample_rate = (r64_t) { HACKTV_AUDIO_SAMPLE_RATE, 1 },
+		.open_next = _open_next,
+		.av_control_ctx = &s,
 	};
 	
 	if((s.vid.conf.frame_orientation & 3) == VID_ROTATE_90 ||
@@ -1341,77 +1411,21 @@ int main(int argc, char *argv[])
 		s.vid.av.height = s.vid.active_width;
 	}
 	
-	do
+	while(!_abort)
 	{
-		if(s.shuffle)
-		{
-			/* Shuffle the input source list */
-			/* Avoids moving the last entry to the start
-			 * to prevent it repeating immediately */
-			for(c = optind; c < argc - 1; c++)
-			{
-				l = c + (rand() % (argc - c - (c == optind ? 1 : 0)));
-				pre = argv[c];
-				argv[c] = argv[l];
-				argv[l] = pre;
-			}
-		}
+		vid_line_t *line = vid_next_line(&s.vid);
 		
-		for(c = optind; c < argc && !_abort; c++)
+		if(line == NULL) break;
+		
+		if(rf_write(&s.rf, line->output, line->width) != RF_OK) break;
+		if(line->audio_len && rf_write_audio(&s.rf, line->audio, line->audio_len) != RF_OK) break;
+		
+		if(_signal)
 		{
-			/* Get a pointer to the output prefix and target */
-			pre = argv[c];
-			sub = strchr(pre, ':');
-			
-			if(sub != NULL)
-			{
-				l = sub - pre;
-				sub++;
-			}
-			else
-			{
-				l = strlen(pre);
-			}
-			
-			if(strncmp(pre, "test", l) == 0)
-			{
-				r = av_test_open(&s.vid.av);
-			}
-			else if(strncmp(pre, "ffmpeg", l) == 0)
-			{
-				r = av_ffmpeg_open(&s.vid.av, sub, s.ffmt, s.fopts);
-			}
-			else
-			{
-				r = av_ffmpeg_open(&s.vid.av, pre, s.ffmt, s.fopts);
-			}
-			
-			if(r != AV_OK)
-			{
-				/* Error opening this source. Move to the next */
-				continue;
-			}
-			
-			while(!_abort)
-			{
-				vid_line_t *line = vid_next_line(&s.vid);
-				
-				if(line == NULL) break;
-				
-				if(rf_write(&s.rf, line->output, line->width) != RF_OK) break;
-				if(line->audio_len && rf_write_audio(&s.rf, line->audio, line->audio_len) != RF_OK) break;
-			}
-			
-			if(_signal)
-			{
-				fprintf(stderr, "Caught signal %d\n", _signal);
-				_signal = 0;
-			}
-			
-			av_close(&s.vid.av);
+			fprintf(stderr, "Caught signal %d\n", _signal);
+			_signal = 0;
 		}
-	}
-	while(s.repeat && !_abort);
+	};
 	
 	rf_close(&s.rf);
 	vid_free(&s.vid);
