@@ -4796,10 +4796,13 @@ static vid_line_t *_vid_next_line(vid_t *s)
 	/* Load the next frame */
 	if(s->bline == 1 || (s->conf.interlace && s->bline == s->conf.hline))
 	{
-		if(av_read_video(&s->av, &s->vframe) != AV_OK)
+		/* Have we reached the end of the video? */
+		if(av_eof(&s->av))
 		{
 			return(NULL);
 		}
+		
+		av_read_video(&s->av, &s->vframe);
 		
 		av_rotate_frame(&s->vframe, s->conf.frame_orientation & 3);
 		if(s->conf.frame_orientation & VID_HFLIP) av_hflip_frame(&s->vframe);

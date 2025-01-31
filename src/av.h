@@ -28,10 +28,7 @@
 #define AV_OUT_OF_MEMORY -2
 #define AV_EOF           -3
 
-typedef struct av_frame_t av_frame_t;
-typedef struct av_t av_t;
-
-struct av_frame_t {
+typedef struct {
 	
 	/* Dimensions */
 	int width;
@@ -48,7 +45,7 @@ struct av_frame_t {
 	/* Interlace flag */
 	int interlaced;
 	
-};
+} av_frame_t;
 
 
 
@@ -72,16 +69,6 @@ typedef int (*av_close_t)(void *ctx);
 
 
 
-/* AV control callbacks:
- *
- * av_open_next(): Return AV_OK when a new source is opened, or AV_EOF if
- *                 there are no further sources.
- *                 Any return code that is not AV_OK is treated as AV_EOF */
-
-typedef int (*av_open_next_t)(av_t *av, void *ctx);
-
-
-
 /* Frame fit/crop modes */
 typedef enum {
 	AV_FIT_STRETCH,
@@ -90,7 +77,7 @@ typedef enum {
 	AV_FIT_NONE,
 } av_fit_mode_t;
 
-struct av_t {
+typedef struct {
 	
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
@@ -120,11 +107,7 @@ struct av_t {
 	av_read_audio_t read_audio;
 	av_close_t close;
 	
-	/* Control callbacks */
-	void *av_control_ctx;
-	av_open_next_t open_next;
-	
-};
+} av_t;
 
 extern void av_frame_init(av_frame_t *frame, int width, int height, uint32_t *framebuffer, int pstride, int lstride);
 

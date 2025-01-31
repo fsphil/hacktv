@@ -101,11 +101,6 @@ typedef struct {
 	/* RF sink interface */
 	rf_t rf;
 	
-	/* Source playlist */
-	int item;
-	int nitems;
-	char **items;
-	
 } hacktv_t;
 
 #endif
