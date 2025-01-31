@@ -433,7 +433,7 @@ static int _open_next(av_t *av, void *ctx)
 			 * to prevent it repeating immediately */
 			for(r = 0; r < s->nitems - 1; r++)
 			{
-				l = r + (rand() % (s->nitems - (r ? r : 1)));
+				l = r + (rand() % (s->nitems - (r ? 0 : 1)));
 				pre = s->items[r];
 				s->items[r] = s->items[l];
 				s->items[l] = pre;
