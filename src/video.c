@@ -3979,7 +3979,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		/* Generate the colour subcarrier lookup table */
 		/* This carrier is in phase with the U (B-Y) component */
 		s->colour_lookup_width = a.num;
-		d = 2.0 * M_PI * ((double) s->conf.colour_carrier.num / s->conf.colour_carrier.den) / s->pixel_rate;
+		d = 2.0 * M_PI * ((double) a.den / a.num);
 		
 		/*  To make overflow easier to handle the length of the table is extended by one line */
 		s->colour_lookup = malloc((s->colour_lookup_width + s->width) * sizeof(cint16_t));
