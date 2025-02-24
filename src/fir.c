@@ -220,7 +220,7 @@ void fir_complex_band_pass(double *taps, size_t ntaps, double sample_rate, doubl
 
 
 
-int fir_int16_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int16_init(fir_int16_t *s, const double *taps, int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -393,7 +393,7 @@ int fir_int16_resampler_init(fir_int16_t *s, r64_t out_rate, r64_t in_rate)
 
 
 
-int fir_int16_complex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int16_complex_init(fir_int16_t *s, const double *taps, int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -486,7 +486,7 @@ size_t fir_int16_complex_process(fir_int16_t *s, int16_t *out, size_t samples, s
 	return(x);
 }
 
-int fir_int16_scomplex_init(fir_int16_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int16_scomplex_init(fir_int16_t *s, const double *taps, int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
@@ -580,7 +580,7 @@ size_t fir_int16_scomplex_process(fir_int16_t *s, int16_t *out, size_t samples, 
 
 
 
-int fir_int32_init(fir_int32_t *s, const double *taps, unsigned int ntaps, int interpolation, int decimation, int delay)
+int fir_int32_init(fir_int32_t *s, const double *taps, int ntaps, int interpolation, int decimation, int delay)
 {
 	int i, j;
 	
