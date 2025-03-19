@@ -241,7 +241,12 @@ double rc_window(double t, double left, double width, double rise)
 	}
 	else if(t < rise)
 	{
-		r = 0.5 + cos(t / rise * M_PI) / 2;
+		/* Raised cosine edge */
+		//r = 0.5 + cos(t / rise * M_PI) / 2;
+		
+		/* Integrated raised cosine edge */
+		t = 1.0 - t / rise * 2;
+		r = 0.5 * (1.0 + t + sin(M_PI * t) / M_PI);
 	}
 	else
 	{

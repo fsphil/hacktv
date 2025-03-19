@@ -24,6 +24,10 @@
 #define RT1090 1.6939549523182869 /* Factor to convert 10-90% rise time to 0-100% */
 #define RT2080 2.4410157268268087 /* Factor to convert 20-80% rise time to 0-100% */
 
+/* As above but for integrated raised cosine edges */
+#define IRT1090 2.0738786 /* 10-90% to 0-100% */
+#define IRT2080 3.0546756 /* 10-90% to 0-100% */
+
 typedef struct {
 	int64_t num;
 	int64_t den;

@@ -3796,7 +3796,7 @@ vbidata_lut_t *_render_sync_pulses(vid_t *s, const double syncs[][4], int num)
 			NULL,
 			syncs[i][0] * s->pixel_rate,		/* Offset */
 			syncs[i][1] * s->pixel_rate,		/* Width */
-			syncs[i][2] * RT1090 * s->pixel_rate,	/* Rise-time */
+			syncs[i][2] * IRT1090 * s->pixel_rate,	/* Rise-time */
 			syncs[i][3]				/* Level */
 		);
 	}
@@ -3816,7 +3816,7 @@ vbidata_lut_t *_render_sync_pulses(vid_t *s, const double syncs[][4], int num)
 			lptr,
 			syncs[i][0] * s->pixel_rate,		/* Offset */
 			syncs[i][1] * s->pixel_rate,		/* Width */
-			syncs[i][2] * RT1090 * s->pixel_rate,	/* Rise-time */
+			syncs[i][2] * IRT1090 * s->pixel_rate,	/* Rise-time */
 			syncs[i][3]				/* Level */
 		);
 	}
@@ -4015,7 +4015,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->burst_win   = _burstwin(
 			s->pixel_rate,
 			s->conf.burst_width,
-			s->conf.burst_rise,
+			s->conf.burst_rise * IRT1090,
 			s->conf.burst_level * (s->conf.white_level - s->conf.blanking_level) / 2 * level,
 			&s->burst_width
 		);
@@ -4135,7 +4135,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->burst_win   = _burstwin(
 			s->pixel_rate,
 			s->conf.burst_width,
-			s->conf.burst_rise,
+			s->conf.burst_rise * IRT1090,
 			1.0,
 			&s->burst_width
 		);
