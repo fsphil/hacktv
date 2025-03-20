@@ -215,6 +215,7 @@ typedef struct {
 	
 	int colour_mode;
 	r64_t colour_carrier;
+	double colour_bw;
 	int s_video;
 	
 	double burst_width;
@@ -389,6 +390,7 @@ struct vid_t {
 	
 	/* PAL/NTSC chrominance baseband buffer */
 	int16_t *chrominance_buffer;
+	fir_int16_t chrominance_fir;
 	
 	/* Video state */
 	av_frame_t vframe;

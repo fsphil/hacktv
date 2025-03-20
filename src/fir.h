@@ -65,6 +65,8 @@ typedef struct {
 extern void fir_normalise(double *taps, size_t ntaps, double f);
 
 extern void fir_low_pass(double *taps, size_t ntaps, double sample_rate, double cutoff, double width, double gain);
+extern int fir_gaussian_low_pass_ntaps(double sample_rate, double cutoff);
+extern void fir_gaussian_low_pass(double *taps, int ntaps, double sample_rate, double cutoff, double gain);
 extern void fir_band_reject(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
 extern void fir_complex_band_pass(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain);
 

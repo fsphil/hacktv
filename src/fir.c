@@ -136,6 +136,46 @@ void fir_low_pass(double *taps, size_t ntaps, double sample_rate, double cutoff,
 	}
 }
 
+int fir_gaussian_low_pass_ntaps(double sample_rate, double cutoff)
+{
+	int ntaps = ceil(sample_rate / 1.35e6 / (cutoff / 1.4e6));
+	return(ntaps | 1);
+}
+
+void fir_gaussian_low_pass(double *taps, int ntaps, double sample_rate, double cutoff, double gain)
+{
+	double f = 13.5e6 / sample_rate;
+	double s = 354372.0 / cutoff;
+	double t, sum, r;
+	int x, h;
+	
+	/* Ensure an odd number of taps */
+	if((ntaps & 1) == 0)
+	{
+		ntaps -= 1;
+		taps[ntaps] = 0;
+	}
+	
+	/* h = index of the centre tap */
+	h = ntaps / 2;
+	
+	for(sum = x = 0; x <= h; x++)
+	{
+		t = (double) x / 5 * f;
+		r = 1.0 / s * pow(2.0 * M_PI, 0.5) * pow(M_E, -pow(t, 2.0) / (2.0 * pow(s, 2)));
+		
+		sum += r * (x > 0 ? 2 : 1);
+		taps[h + x] = taps[h - x] = r;
+	}
+	
+	gain /= sum;
+	
+	for(x = 0; x < ntaps; x++)
+	{
+		taps[x] *= gain;
+	}
+}
+
 void fir_band_reject(double *taps, size_t ntaps, double sample_rate, double low_cutoff, double high_cutoff, double width, double gain)
 {
 	int n, M;

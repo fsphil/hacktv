@@ -88,6 +88,7 @@ const vid_config_t vid_config_pal_i = {
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
+	.colour_bw      = 1.4e6,      /* 3dB gaussian filter */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -144,6 +145,7 @@ const vid_config_t vid_config_pal_bg = {
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
+	.colour_bw      = 1.4e6,      /* 3dB gaussian filter */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -200,6 +202,7 @@ const vid_config_t vid_config_pal_dk = {
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
+	.colour_bw      = 1.4e6,      /* 3dB gaussian filter */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -259,6 +262,7 @@ const vid_config_t vid_config_pal_fm = {
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
+	.colour_bw      = 1.4e6,      /* 3dB gaussian filter */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -315,6 +319,7 @@ const vid_config_t vid_config_pal = {
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
+	.colour_bw      = 1.4e6,      /* 3dB gaussian filter */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -1088,6 +1093,7 @@ const vid_config_t vid_config_pal60_i = {
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
+	.colour_bw      = 1.4e6,      /* 3dB gaussian filter */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -1138,6 +1144,7 @@ const vid_config_t vid_config_pal60 = {
 	.burst_left     = 0.00000560, /* |-->| 5.6 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 3 / 7 of white - blanking level */
 	.colour_carrier = { 17734475, 4 }, /* 4433618.75 Hz */
+	.colour_bw      = 1.4e6,      /* 3dB gaussian filter */
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -3121,6 +3128,14 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		int16_t *o, *oc;
 		
+		/* Apply chrominance baseband filter */
+		if(s->chrominance_fir.type > 0)
+		{
+			oc = s->chrominance_buffer;
+			fir_int16_process_block(&s->chrominance_fir, &oc[0], &oc[0], s->width, 2);
+			fir_int16_process_block(&s->chrominance_fir, &oc[1], &oc[1], s->width, 2);
+		}
+		
 		/* Render the colour burst */
 		oc = &s->chrominance_buffer[s->burst_left * 2];
 		for(x = 0; x < s->burst_width; x++, oc += 2)
@@ -4006,6 +4021,25 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			vid_free(s);
 			return(VID_OUT_OF_MEMORY);
 		}
+		
+		/* Set up chrominance FIR filter */
+		if(s->conf.colour_bw > 0)
+		{
+			double *taps;
+			int ntaps;
+			
+			ntaps = fir_gaussian_low_pass_ntaps(s->pixel_rate, s->conf.colour_bw);
+			taps = malloc(sizeof(double) * ntaps);
+			if(!taps)
+			{
+				vid_free(s);
+				return(VID_OUT_OF_MEMORY);
+			}
+			
+			fir_gaussian_low_pass(taps, ntaps, s->pixel_rate, s->conf.colour_bw, 1);
+			fir_int16_init(&s->chrominance_fir, taps, ntaps, 1, 1, 0);
+			free(taps);
+		}
 	}
 	
 	if(s->conf.burst_level > 0)
@@ -4758,6 +4792,8 @@ void vid_free(vid_t *s)
 		}
 		free(s->oline);
 	}
+	
+	fir_int16_free(&s->chrominance_fir);
 	
 	free(s->chrominance_buffer);
 	free(s->burst_win);
