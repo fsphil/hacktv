@@ -368,6 +368,7 @@ const vid_config_t vid_config_pal_m = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
 	.burst_level    = 33.0 / 73.0, /* Approximation */
 	.colour_carrier = { 511312500, 143 }, /* 3575611.888... Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -419,6 +420,7 @@ const vid_config_t vid_config_pal_n = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
 	.burst_level    = 33.0 / 73.0, /* Approximation */
 	.colour_carrier = { 14328225, 4 }, /* 3582056.25 Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -467,6 +469,7 @@ const vid_config_t vid_config_525pal = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1μs */
 	.burst_level    = 33.0 / 73.0, /* Approximation */
 	.colour_carrier = { 511312500, 143 }, /* 3575611.888... Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          = 0.299, /* R weight */
 	.gw_co          = 0.587, /* G weight */
@@ -827,6 +830,7 @@ const vid_config_t vid_config_ntsc_m = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -880,6 +884,7 @@ const vid_config_t vid_config_ntsc_i = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -937,6 +942,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -997,6 +1003,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -1044,6 +1051,7 @@ const vid_config_t vid_config_ntsc = {
 	.burst_left     = 0.00000530, /* |-->| 5.3 ±0.1µs */
 	.burst_level    = 4.0 / 10.0, /* 4/10 of white - blanking level */
 	.colour_carrier = { 39375000, 11 }, /* 3579545.4545... Hz */
+	.colour_bw      = 1.4e6,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
@@ -1644,6 +1652,7 @@ const vid_config_t vid_config_405_ntsc = {
 	.burst_left     = 0.00001050, /* |-->| 10.5 ±0.1µs */
 	.burst_level    = 3.0 / 7.0, /* 30% full carrier */
 	.colour_carrier = { 5315625, 2 }, /* 2657812.5 Hz */
+	.colour_bw      = 1.1e6,
 	
 	.rw_co          =  0.299, /* R weight */
 	.gw_co          =  0.587, /* G weight */
