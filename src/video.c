@@ -3194,6 +3194,12 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		int16_t dmin, dmax;
 		int sl = 0, sr = 0;
 		
+		if(l->line == 1 || l->line == s->conf.hline)
+		{
+			/* Clear the chrominance buffer at the top of each field */
+			memset(s->chrominance_buffer, 0, sizeof(int16_t) * 2 * s->width);
+		}
+		
 		if(s->conf.secam_field_id &&
 		   ((l->line >= 7 && l->line < 7 + s->secam_field_id_lines) ||
 		    (l->line >= 320 && l->line < 320 + s->secam_field_id_lines)))
@@ -3253,7 +3259,12 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
-					s->chrominance_buffer[x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].v;
+					s->chrominance_buffer[x] =
+						(s->yuv_level_lookup[*prgb & 0xFFFFFF].v +
+						 s->chrominance_buffer[s->width + x]) / 2;
+					
+					/* Store this lines D'b values to average with next line */
+					s->chrominance_buffer[s->width + x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].u;
 				}
 				
 				for(; x < s->width; x++)
@@ -3272,7 +3283,12 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				
 				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
 				{
-					s->chrominance_buffer[x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].u;
+					s->chrominance_buffer[x] =
+						(s->yuv_level_lookup[*prgb & 0xFFFFFF].u +
+						 s->chrominance_buffer[s->width + x]) / 2;
+					
+					/* Store this lines D'r values to average with next line */
+					s->chrominance_buffer[s->width + x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].v;
 				}
 				
 				for(; x < s->width; x++)
@@ -4188,8 +4204,9 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(VID_OUT_OF_MEMORY);
 		}
 		
-		/* Allocate memory for the chrominance baseband buffer */
-		s->chrominance_buffer = malloc(sizeof(int16_t) * s->width);
+		/* Allocate memory for the chrominance baseband buffer,
+		 * the top half is used for the vertical averaging filter */
+		s->chrominance_buffer = malloc(sizeof(int16_t) * 2 * s->width);
 		if(!s->chrominance_buffer)
 		{
 			vid_free(s);
