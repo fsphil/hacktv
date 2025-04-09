@@ -3193,6 +3193,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		const cint16_t *g;
 		int16_t dmin, dmax;
 		int sl = 0, sr = 0;
+		int dr;
+		
+		/* Is this line D'r or D'b? */
+		dr = ((l->frame * s->conf.lines) + l->line) & 1;
 		
 		if(l->line == 1 || l->line == s->conf.hline)
 		{
@@ -3208,7 +3212,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			int16_t dev;
 			double rw;
 			
-			if(((l->frame * s->conf.lines) + l->line) & 1)
+			if(dr)
 			{
 				level = s->yuv_level_lookup[0x000000].v; // D'r
 				dev = s->secam_fsync_level;
@@ -3248,7 +3252,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				stride = s->vframe.pixel_stride;
 			}
 			
-			if(((l->frame * s->conf.lines) + l->line) & 1)
+			if(dr)
 			{
 				/* D'r */
 				
@@ -3315,8 +3319,8 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 			s->fm_secam.phase.q = 0;
 			
 			/* Limit the FM deviation */
-			dmin = s->fm_secam_dmin[((l->frame * s->conf.lines) + l->line) & 1];
-			dmax = s->fm_secam_dmax[((l->frame * s->conf.lines) + l->line) & 1];
+			dmin = s->fm_secam_dmin[dr];
+			dmax = s->fm_secam_dmax[dr];
 			
 			o = l->output + (s->conf.s_video ? 1 : 0);
 			for(x = sl; x < sr; x++)
