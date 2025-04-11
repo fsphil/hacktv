@@ -618,6 +618,7 @@ const vid_config_t vid_config_secam_bg = {
 	
 	.video_level    = 0.80 * (100.0 / 124.0), /* Power level of video */
 	.fm_mono_level  = 0.15, /* FM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
@@ -650,6 +651,9 @@ const vid_config_t vid_config_secam_bg = {
 	.fm_mono_carrier   = 5500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US, /* Seconds */
+	
+	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_beta     = 0.4,
 };
 
 const vid_config_t vid_config_secam_fm = {
