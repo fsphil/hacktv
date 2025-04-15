@@ -4199,6 +4199,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "vitc", 1, &s->vitc, vitc_render, NULL);
 	}
 	
+	/* Initialise EIA/CEA-608 CC test */
+	if(s->conf.cc608)
+	{
+		if((r = cc608_init(&s->cc608, s)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "cc608", 1, &s->cc608, cc608_render, NULL);
+	}
+	
 	/* Initialise SiS encoder */
 	if(s->conf.sis)
 	{
@@ -4595,6 +4607,11 @@ void vid_free(vid_t *s)
 	if(s->conf.sis)
 	{
 		sis_free(&s->sis);
+	}
+	
+	if(s->conf.cc608)
+	{
+		cc608_free(&s->cc608);
 	}
 	
 	if(s->conf.vitc)

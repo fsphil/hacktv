@@ -68,6 +68,7 @@ static void print_usage(void)
 		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
+		"      --cc608                    Enable CEA/EIA-608 closed-caption test.\n"
 		"      --vitc                     Enable VITC time code.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"
@@ -365,6 +366,7 @@ enum {
 	_OPT_ACP,
 	_OPT_VITS,
 	_OPT_VITC,
+	_OPT_CC608,
 	_OPT_FILTER,
 	_OPT_NOCOLOUR,
 	_OPT_S_VIDEO,
@@ -441,6 +443,7 @@ int main(int argc, char *argv[])
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "vits",           no_argument,       0, _OPT_VITS },
 		{ "vitc",           no_argument,       0, _OPT_VITC },
+		{ "cc608",          no_argument,       0, _OPT_CC608 },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
 		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
 		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
@@ -524,6 +527,7 @@ int main(int argc, char *argv[])
 	s.acp = 0;
 	s.vits = 0;
 	s.vitc = 0;
+	s.cc608 = 0;
 	s.filter = 0;
 	s.nocolour = 0;
 	s.volume = 1.0;
@@ -733,6 +737,10 @@ int main(int argc, char *argv[])
 		
 		case _OPT_VITC: /* --vitc */
 			s.vitc = 1;
+			break;
+		
+		case _OPT_CC608: /* --cc608 */
+			s.cc608 = 1;
 			break;
 		
 		case _OPT_FILTER: /* --filter */
@@ -1210,6 +1218,18 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.vitc = 1;
+	}
+	
+	if(s.cc608)
+	{
+		if(vid_conf.type != VID_RASTER_625 &&
+		   vid_conf.type != VID_RASTER_525)
+		{
+			fprintf(stderr, "CEA/EIA-608 is only currently supported for 625 and 525 line raster modes.\n");
+			return(-1);
+		}
+		
+		vid_conf.cc608 = 1;
 	}
 	
 	if(vid_conf.type == VID_MAC)

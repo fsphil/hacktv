@@ -37,6 +37,7 @@ typedef struct vid_t vid_t;
 #include "acp.h"
 #include "vits.h"
 #include "vitc.h"
+#include "cc608.h"
 #include "vbidata.h"
 #include "sis.h"
 
@@ -205,6 +206,7 @@ typedef struct {
 	int acp;
 	int vits;
 	int vitc;
+	int cc608;
 	char *sis;
 	char *eurocrypt;
 	
@@ -429,6 +431,9 @@ struct vid_t {
 	
 	/* VITC state */
 	vitc_t vitc;
+	
+	/* CEA/EIA-608 state */
+	cc608_t cc608;
 	
 	/* Audio state */
 	fifo_t audiofifo;

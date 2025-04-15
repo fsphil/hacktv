@@ -60,6 +60,7 @@ typedef struct {
 	int acp;
 	int vits;
 	int vitc;
+	int cc608;
 	int filter;
 	int nocolour;
 	int s_video;
