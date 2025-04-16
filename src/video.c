@@ -4748,6 +4748,12 @@ static vid_line_t *_vid_next_line(vid_t *s)
 		/* Calculate frame offset from top left */
 		s->vframe_x = (s->active_width - s->vframe.width) / 2;
 		s->vframe_y = (s->conf.active_lines - s->vframe.height) / 2;
+		
+		/* Extract CC608 subtitles */
+		if(s->conf.cc608)
+		{
+			cc608_fifo_write(&s->cc608.ccfifo, s->vframe.cc608, 2);
+		}
 	}
 	
 	for(i = 0; i < s->nprocesses; i++)

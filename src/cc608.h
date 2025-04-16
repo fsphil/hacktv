@@ -21,6 +21,45 @@
 #include <stdint.h>
 #include "video.h"
 
+
+
+/* CC608 FIFO functions */
+
+typedef struct {
+	
+	uint8_t *fifo;
+	int size;
+	int len;
+	int ptr_in;
+	int ptr_out;
+	
+	pthread_mutex_t mutex;
+	
+} cc608_fifo_t;
+
+/* cc608_fifo_init(): Returns 0 if successful, -1 if out of memory */
+
+extern int cc608_fifo_init(cc608_fifo_t *fifo);
+
+/* cc608_fifo_free(): Frees FIFO memory */
+
+extern void cc608_fifo_free(cc608_fifo_t *fifo);
+
+/* cc608_fifo_write(): Write up to "len" bytes from "data" into the FIFO.
+ *                     Returns the number of bytes written, always an even
+ *                     number */
+
+extern int cc608_fifo_write(cc608_fifo_t *fifo, uint8_t *data, int len);
+
+/* cc608_fifo_read(): Read up to "len" bytes from the FIFO into "data".
+ *                    Returns the number of bytes read, always an even number */
+
+extern int cc608_fifo_read(cc608_fifo_t *fifo, uint8_t *data, int len);
+
+
+
+/* CC608 render functions */
+
 typedef struct {
 	
 	/* Config */
@@ -34,9 +73,8 @@ typedef struct {
 	/* VBI renderer lookup */
 	vbidata_lut_t *lut;
 	
-	/* Active and next message */
-	const uint8_t *msg;
-	const uint8_t *nmsg;
+	/* FIFO */
+	cc608_fifo_t ccfifo;
 	
 } cc608_t;
 
@@ -44,6 +82,8 @@ extern int cc608_init(cc608_t *s, vid_t *vid);
 extern void cc608_free(cc608_t *s);
 
 extern int cc608_render(vid_t *s, void *arg, int nlines, vid_line_t **lines);
+
+
 
 #endif
 

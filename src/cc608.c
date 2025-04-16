@@ -23,6 +23,77 @@
 #include "video.h"
 #include "vbidata.h"
 
+int cc608_fifo_init(cc608_fifo_t *fifo)
+{
+	fifo->ptr_out = fifo->ptr_in = fifo->len = 0;
+	fifo->size = 128 * 2;
+	fifo->fifo = malloc(fifo->size);
+	if(fifo->fifo == NULL)
+	{
+		return(-1);
+	}
+	
+	pthread_mutex_init(&fifo->mutex, NULL);
+	
+	return(0);
+}
+
+void cc608_fifo_free(cc608_fifo_t *fifo)
+{
+	pthread_mutex_destroy(&fifo->mutex);
+	free(fifo->fifo);
+}
+
+int cc608_fifo_write(cc608_fifo_t *fifo, uint8_t *data, int len)
+{
+	int i;
+	
+	/* Always copy codes in pairs */
+	len -= len & 1;
+	
+	pthread_mutex_lock(&fifo->mutex);
+	
+	for(i = 0; i < len && fifo->len < fifo->size; i += 2, data += 2)
+	{
+		if(((data[0] | data[1]) & 0x7F) == 0x00)
+		{
+			/* Don't write empty pairs into the FIFO */
+			continue;
+		}
+		
+		fifo->fifo[fifo->ptr_in++] = data[0];
+		fifo->fifo[fifo->ptr_in++] = data[1];
+		
+		if(fifo->ptr_in >= fifo->size) fifo->ptr_in = 0;
+		
+		fifo->len += 2;
+	}
+	
+	pthread_mutex_unlock(&fifo->mutex);
+	
+	return(i);
+}
+
+int cc608_fifo_read(cc608_fifo_t *fifo, uint8_t *data, int len)
+{
+	int i;
+	
+	/* Always copy codes in pairs */
+	len -= len & 1;
+	
+	pthread_mutex_lock(&fifo->mutex);
+	
+	for(i = 0; i < len && fifo->len > 0; i++, fifo->len--)
+	{
+		*(data++) = fifo->fifo[fifo->ptr_out++];
+		if(fifo->ptr_out >= fifo->size) fifo->ptr_out = 0;
+	}
+	
+	pthread_mutex_unlock(&fifo->mutex);
+	
+	return(i);
+}
+
 int cc608_init(cc608_t *s, vid_t *vid)
 {
 	double offset;
@@ -82,18 +153,18 @@ int cc608_init(cc608_t *s, vid_t *vid)
 		s->cri[i] = (0.5 - cos(((double) i - (x - s->cri_x)) * (2 * M_PI / w * 7)) * 0.5) * level;
 	}
 	
-	s->msg = NULL;
-	s->nmsg = (const uint8_t *)
-		"\x14\x27" "\x14\x27" /* RU2 Roll-Up Captions-4 Rows */
-		"\x14\x2D" "\x14\x2D" /* CR Carriage Return */
-		"\x14\x70" "\x14\x70" /* row 15, indent 0, white (?) */
-		"HELLO FROM LINE 21 & HACKTV!";
+	if(cc608_fifo_init(&s->ccfifo) != 0)
+	{
+		free(s->lut);
+		return(VID_OUT_OF_MEMORY);
+	}
 	
 	return(VID_OK);
 }
 
 void cc608_free(cc608_t *s)
 {
+	cc608_fifo_free(&s->ccfifo);
 	free(s->lut);
 	memset(s, 0, sizeof(cc608_t));
 }
@@ -101,8 +172,6 @@ void cc608_free(cc608_t *s)
 void _encode_chars(uint8_t *data, uint8_t c1, uint8_t c2)
 {
 	int i;
-	
-	fprintf(stderr, "tx: %02X %02X\n", c1, c2);
 	
 	c1 = (c1 & 0x7F) | 0x80;
 	c2 = (c2 & 0x7F) | 0x80;
@@ -131,25 +200,13 @@ int cc608_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		return(1);
 	}
 	
-	if(v->msg == NULL || v->msg[0] == '\0')
+	if(cc608_fifo_read(&v->ccfifo, data, 2) != 2)
 	{
-		v->msg = NULL;
-		
-		if(l->frame % 150 == 0)
-		{
-			v->msg = v->nmsg;
-		}
+		/* Transmit zeros if no pending codes */
+		data[0] = data[1] = 0;
 	}
 	
-	if(v->msg == NULL || v->msg[0] == '\0')
-	{
-		_encode_chars(data, 0, 0);
-	}
-	else
-	{
-		_encode_chars(data, v->msg[0], v->msg[1]);
-		v->msg += 2;
-	}
+	_encode_chars(data, data[0], data[1]);
 	
 	/* Render the line */
 	for(i = 0; i < v->cri_len; i++)

@@ -28,6 +28,7 @@ void av_frame_init(av_frame_t *frame, int width, int height, uint32_t *framebuff
 		.line_stride = lstride,
 		.pixel_aspect_ratio = { 1, 1 },
 		.interlaced = 0,
+		.cc608 = { 0, 0 },
 	};
 }
 

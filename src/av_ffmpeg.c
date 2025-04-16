@@ -101,6 +101,9 @@ typedef struct {
 	_frame_dbuffer_t in_video_buffer;
 	int video_eof;
 	
+	/* CC608 caption fifo */
+	cc608_fifo_t ccfifo;
+	
 	/* Video scaling */
 	struct SwsContext *sws_ctx;
 	_frame_dbuffer_t out_video_buffer;
@@ -540,6 +543,7 @@ static void *_video_scaler_thread(void *arg)
 	AVRational ratio;
 	r64_t r;
 	int64_t pts;
+	int i, j;
 	
 	//fprintf(stderr, "_video_scaler_thread(): Starting\n");
 	
@@ -547,6 +551,23 @@ static void *_video_scaler_thread(void *arg)
 	while((frame = _frame_dbuffer_flip(&s->in_video_buffer)) != NULL)
 	{
 		pts = frame->best_effort_timestamp;
+		
+		/* Extract EIA-608 caption codes from the frame */
+		for(i = 0; i < frame->nb_side_data; i++)
+		{
+			if(frame->side_data[i]->type != AV_FRAME_DATA_A53_CC) continue;
+			
+			for(j = 0; j < frame->side_data[i]->size; j += 3)
+			{
+				/* Skip non-608 codes */
+				if((frame->side_data[i]->data[j] & 0x07) != 0x04) continue;
+				
+				if(cc608_fifo_write(&s->ccfifo, &frame->side_data[i]->data[j + 1], 2) != 2)
+				{
+					fprintf(stderr, "cc608: overflow\n");
+				}
+			}
+		}
 		
 		if(pts != AV_NOPTS_VALUE)
 		{
@@ -706,6 +727,9 @@ static int _ffmpeg_read_video(void *ctx, av_frame_t *frame)
 		frame->interlaced = avframe->top_field_first ? 1 : 2;
 	}
 #endif
+	
+	/* Return CC608 code */
+	cc608_fifo_read(&s->ccfifo, frame->cc608, 2);
 	
 	/* Set the pointer to the framebuffer */
 	frame->width = avframe->width;
@@ -948,6 +972,8 @@ static int _ffmpeg_close(void *ctx)
 	
 	pthread_cond_destroy(&s->cond);
 	pthread_mutex_destroy(&s->mutex);
+	
+	cc608_fifo_free(&s->ccfifo);
 	
 	free(s);
 	
@@ -1197,6 +1223,12 @@ int av_ffmpeg_open(av_t *av, char *input_url, char *format, char *options)
 	if(s->audio_stream != NULL)
 	{
 		s->audio_start_time = av_rescale_q(start_time, time_base, s->audio_time_base);
+	}
+	
+	/* Allocate cc608 fifo */
+	if(cc608_fifo_init(&s->ccfifo) != 0)
+	{
+		return(AV_OUT_OF_MEMORY);
 	}
 	
 	/* Register the callback functions */

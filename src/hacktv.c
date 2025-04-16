@@ -68,7 +68,7 @@ static void print_usage(void)
 		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
-		"      --cc608                    Enable CEA/EIA-608 closed-caption test.\n"
+		"      --cc608                    Enable CEA/EIA-608 closed-caption pass through.\n"
 		"      --vitc                     Enable VITC time code.\n"
 		"      --filter                   Enable experimental VSB modulation filter.\n"
 		"      --nocolour                 Disable the colour subcarrier (PAL, SECAM, NTSC only).\n"

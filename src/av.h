@@ -45,6 +45,9 @@ typedef struct {
 	/* Interlace flag */
 	int interlaced;
 	
+	/* CC608 subtitle data */
+	uint8_t cc608[2];
+	
 } av_frame_t;
 
 
