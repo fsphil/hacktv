@@ -1409,10 +1409,10 @@ const vid_config_t vid_config_405_a = {
 	.frame_rate     = { 25, 1 },
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
-	.interlaced     = 1,
+	.interlaced     = 2,
 	.hline          = 203,
 	
-	.active_lines   = 376,
+	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
@@ -1448,10 +1448,10 @@ const vid_config_t vid_config_405_a_ntsc = {
 	.frame_rate     = { 25, 1 },
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
-	.interlaced     = 1,
+	.interlaced     = 2,
 	.hline          = 203,
 	
-	.active_lines   = 376,
+	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
@@ -1497,10 +1497,10 @@ const vid_config_t vid_config_405_i = {
 	.frame_rate     = { 25, 1 },
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
-	.interlaced     = 1,
+	.interlaced     = 2,
 	.hline          = 203,
 	
-	.active_lines   = 376,
+	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
@@ -1532,10 +1532,10 @@ const vid_config_t vid_config_405 = {
 	.frame_rate     = { 25, 1 },
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
-	.interlaced     = 1,
+	.interlaced     = 2,
 	.hline          = 203,
 	
-	.active_lines   = 376,
+	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
@@ -1564,10 +1564,10 @@ const vid_config_t vid_config_405_ntsc = {
 	.frame_rate     = { 25, 1 },
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
-	.interlaced     = 1,
+	.interlaced     = 2,
 	.hline          = 203,
 	
-	.active_lines   = 376,
+	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
@@ -2793,7 +2793,7 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		}
 		
 		/* Calculate the active line number */
-		vy = (l->line < 210 ? (l->line - 16) * 2 : (l->line - 219) * 2 + 1);
+		vy = (l->line < 210 ? (l->line - 16) * 2 : (l->line - 218) * 2 + 1);
 	}
 	else if(s->conf.type == VID_CBS_405)
 	{
