@@ -175,8 +175,10 @@ typedef struct {
 	
 	int lines;
 	int hline;
+	int interlaced; /* 0 = Non-interlaced, 1 = TFF, 2 = BFF */
 	int active_lines;
-	int interlace;
+	
+	int interlace; /* 0 = Update image per frame, 1 = per field */
 	
 	double hsync_width;
 	double vsync_short_width;

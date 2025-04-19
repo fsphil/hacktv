@@ -42,7 +42,10 @@ typedef struct {
 	/* The pixel aspect ratio */
 	r64_t pixel_aspect_ratio;
 	
-	/* Interlace flag */
+	/* Interlace flag:
+	 * 0 = Non-interlaced
+	 * 1 = Top field first
+	 * 2 = Bottom field first */
 	int interlaced;
 	
 	/* CC608 subtitle data */
