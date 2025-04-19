@@ -67,7 +67,6 @@ const vid_config_t vid_config_pal_i = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -122,7 +121,6 @@ const vid_config_t vid_config_pal_bg = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -177,7 +175,6 @@ const vid_config_t vid_config_pal_dk = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -235,7 +232,6 @@ const vid_config_t vid_config_pal_fm = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -290,7 +286,6 @@ const vid_config_t vid_config_pal = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -337,7 +332,6 @@ const vid_config_t vid_config_pal_m = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005280, /* 52.80µs */
@@ -388,7 +382,6 @@ const vid_config_t vid_config_pal_n = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -434,7 +427,6 @@ const vid_config_t vid_config_525pal = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005280, /* 52.80µs */
@@ -482,7 +474,6 @@ const vid_config_t vid_config_secam_l = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -532,7 +523,6 @@ const vid_config_t vid_config_secam_dk = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -584,7 +574,6 @@ const vid_config_t vid_config_secam_i = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -636,7 +625,6 @@ const vid_config_t vid_config_secam_bg = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -689,7 +677,6 @@ const vid_config_t vid_config_secam_fm = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -741,7 +728,6 @@ const vid_config_t vid_config_secam = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_width   = 0.00005195, /* 51.95µs */
@@ -785,7 +771,6 @@ const vid_config_t vid_config_ntsc_m = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -837,7 +822,6 @@ const vid_config_t vid_config_ntsc_i = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -893,7 +877,6 @@ const vid_config_t vid_config_ntsc_fm = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -952,7 +935,6 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -998,7 +980,6 @@ const vid_config_t vid_config_ntsc = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -1046,7 +1027,6 @@ const vid_config_t vid_config_pal60_i = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -1096,7 +1076,6 @@ const vid_config_t vid_config_pal60 = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -1136,7 +1115,6 @@ const vid_config_t vid_config_d2mac_am = {
 	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_left    = 585.0 / MAC_CLOCK_RATE,
@@ -1171,7 +1149,6 @@ const vid_config_t vid_config_d2mac_fm = {
 	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_left    = 585.0 / MAC_CLOCK_RATE,
@@ -1204,7 +1181,6 @@ const vid_config_t vid_config_d2mac = {
 	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_left    = 585.0 / MAC_CLOCK_RATE,
@@ -1237,7 +1213,6 @@ const vid_config_t vid_config_dmac_am = {
 	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_left    = 585.0 / MAC_CLOCK_RATE,
@@ -1272,7 +1247,6 @@ const vid_config_t vid_config_dmac_fm = {
 	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_left    = 585.0 / MAC_CLOCK_RATE,
@@ -1305,7 +1279,6 @@ const vid_config_t vid_config_dmac = {
 	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.interlaced     = 1,
-	.hline          = 313,
 	
 	.active_lines   = 576,
 	.active_left    = 585.0 / MAC_CLOCK_RATE,
@@ -1343,7 +1316,6 @@ const vid_config_t vid_config_819_e = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 819,
 	.interlaced     = 1,
-	.hline          = 409,
 	
 	.active_lines   = 720, /* Normally 738 */
 	.active_width   = 0.00003944, /* 39.44µs */
@@ -1377,7 +1349,6 @@ const vid_config_t vid_config_819 = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 819,
 	.interlaced     = 1,
-	.hline          = 409,
 	
 	.active_lines   = 720, /* Normally 738 */
 	.active_width   = 0.00003944, /* 39.44µs */
@@ -1410,7 +1381,6 @@ const vid_config_t vid_config_405_a = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.interlaced     = 2,
-	.hline          = 203,
 	
 	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
@@ -1449,7 +1419,6 @@ const vid_config_t vid_config_405_a_ntsc = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.interlaced     = 2,
-	.hline          = 203,
 	
 	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
@@ -1498,7 +1467,6 @@ const vid_config_t vid_config_405_i = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.interlaced     = 2,
-	.hline          = 203,
 	
 	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
@@ -1533,7 +1501,6 @@ const vid_config_t vid_config_405 = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.interlaced     = 2,
-	.hline          = 203,
 	
 	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
@@ -1565,7 +1532,6 @@ const vid_config_t vid_config_405_ntsc = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.interlaced     = 2,
-	.hline          = 203,
 	
 	.active_lines   = 378,
 	.active_width   = 0.00008030, /* 80.3µs */
@@ -1768,7 +1734,6 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -1812,7 +1777,6 @@ const vid_config_t vid_config_apollo_colour = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.interlaced     = 1,
-	.hline          = 263,
 	
 	.active_lines   = 480,
 	.active_width   = 0.00005290, /* 52.90µs */
@@ -1932,7 +1896,6 @@ const vid_config_t vid_config_cbs405_m = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.interlaced     = 1,
-	.hline          = 203,
 	
 	.active_lines   = 376, /* Estimate */
 	.active_width   = 0.00002812, /* 28.12µs */
@@ -1970,7 +1933,6 @@ const vid_config_t vid_config_cbs405 = {
 	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.interlaced     = 1,
-	.hline          = 203,
 	
 	.active_lines   = 376, /* Estimate */
 	.active_width   = 0.00002812, /* 28.12µs */
@@ -3772,6 +3734,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	s->conf = *conf;
 	
 	/* Defaults */
+	if(s->conf.hline <= 0 && s->conf.interlaced != 0) s->conf.hline = (s->conf.lines + 1) / 2;
 	if(s->conf.gamma <= 0) s->conf.gamma = 1.0;
 	if(s->conf.rw_co <= 0) s->conf.rw_co = 0.299; /* R weight */
 	if(s->conf.gw_co <= 0) s->conf.gw_co = 0.587; /* G weight */
