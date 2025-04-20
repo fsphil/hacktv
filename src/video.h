@@ -204,6 +204,7 @@ typedef struct {
 	char *videocrypt2;
 	char *videocrypts;
 	int syster;
+	int showecm;
 	int systeraudio;
 	int acp;
 	int vits;
@@ -211,6 +212,9 @@ typedef struct {
 	int cc608;
 	char *sis;
 	char *eurocrypt;
+	int ec_mat_rating;
+	char *ec_ppv;
+	int nodate;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;

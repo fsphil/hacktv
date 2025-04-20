@@ -75,6 +75,7 @@ typedef struct {
 	int gain;
 	char *antenna;
 	int file_type;
+	int showecm;
 	int chid;
 	int mac_audio_stereo;
 	int mac_audio_quality;
@@ -84,6 +85,9 @@ typedef struct {
 	int swap_iq;
 	int64_t offset;
 	char *passthru;
+	int ec_mat_rating;
+	char *ec_ppv;
+	int nodate;
 	int invert_video;
 	char *raw_bb_file;
 	int16_t raw_bb_blanking_level;

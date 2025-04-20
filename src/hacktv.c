@@ -81,8 +81,11 @@ static void print_usage(void)
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
+		"      --ec-mat-rating <rating>   Enable Eurocrypt maturity rating.\n"
+		"      --ec-ppv <pnum,cost>       Enable Eurocrypt PPV.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
 		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
+		"      --showecm                  Show input and output control words for scrambled modes.\n"
 		"      --mac-audio-stereo         Use stereo audio (D/D2-MAC). (Default)\n"
 		"      --mac-audio-mono           Use mono audio (D/D2-MAC).\n"
 		"      --mac-audio-high-quality   Use high quality 32 kHz audio (D/D2-MAC).\n"
@@ -285,6 +288,11 @@ static void print_usage(void)
 		"  tvs         = (S) A valid TVS (Denmark) card is required to decode.\n"
 		"  rdv         = (S) A valid RDV card is required to decode.\n"
 		"  nrk         = (S) A valid NRK card is required to decode.\n"
+		"  cplus       = (3DES) A valid Canal+ Nordic card is required to decode.\n"
+		"  tv3update   = (M) Autoupdate mode with included PIC/EEPROM files.\n"
+		"  cplusfr43   = (M) Autoupdating mode for Canal+ France cards.\n"
+		"  cplusfr169  = (M) Autoupdating mode for Canal+ France cards.\n"
+		"  cinecfr     = (M) Autoupdating mode for Canal+ France cards.\n"
 		"\n"
 		"MultiMac style cards can also be used.\n"
 		"\n"
@@ -378,6 +386,10 @@ enum {
 	_OPT_DOUBLE_CUT,
 	_OPT_SCRAMBLE_AUDIO,
 	_OPT_CHID,
+	_OPT_SHOW_ECM,
+	_OPT_NODATE,
+	_OPT_EC_MAT_RATING,
+	_OPT_EC_PPV,
 	_OPT_MAC_AUDIO_STEREO,
 	_OPT_MAC_AUDIO_MONO,
 	_OPT_MAC_AUDIO_HIGH_QUALITY,
@@ -445,6 +457,7 @@ int main(int argc, char *argv[])
 		{ "vitc",           no_argument,       0, _OPT_VITC },
 		{ "cc608",          no_argument,       0, _OPT_CC608 },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
+		{ "nodate",         no_argument,       0, _OPT_NODATE },
 		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
 		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
 		{ "s-video",        no_argument,       0, _OPT_S_VIDEO },
@@ -455,6 +468,8 @@ int main(int argc, char *argv[])
 		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
 		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
+		{ "ec-mat-rating",  required_argument, 0, _OPT_EC_MAT_RATING },
+		{ "ec-ppv",         optional_argument, 0, _OPT_EC_PPV },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
 		{ "chid",           required_argument, 0, _OPT_CHID },
 		{ "mac-audio-stereo", no_argument,     0, _OPT_MAC_AUDIO_STEREO },
@@ -484,6 +499,7 @@ int main(int argc, char *argv[])
 		{ "antenna",        required_argument, 0, 'A' },
 		{ "type",           required_argument, 0, 't' },
 		{ "fl2k-audio",     required_argument, 0, _OPT_FL2K_AUDIO },
+		{ "showecm",        no_argument,       0, _OPT_SHOW_ECM },
 		{ "version",        no_argument,       0, _OPT_VERSION },
 		{ 0,                0,                 0,  0  }
 	};
@@ -545,6 +561,9 @@ int main(int argc, char *argv[])
 	s.amp = 0;
 	s.gain = 0;
 	s.antenna = NULL;
+	s.showecm = 0;
+	s.ec_ppv = NULL;
+	s.nodate = 0;
 	s.file_type = RF_INT16;
 	s.raw_bb_blanking_level = 0;
 	s.raw_bb_white_level = INT16_MAX;
@@ -719,6 +738,10 @@ int main(int argc, char *argv[])
 			s.videocrypts = optarg;
 			break;
 		
+		case _OPT_SHOW_ECM: /* --showecm */
+			s.showecm = 1;
+			break;
+		
 		case _OPT_SYSTER: /* --syster */
 			s.syster = 1;
 			break;
@@ -783,6 +806,18 @@ int main(int argc, char *argv[])
 			s.eurocrypt = optarg;
 			break;
 		
+		case _OPT_EC_MAT_RATING: /* --ec-mat-rating */
+			s.ec_mat_rating = atoi(optarg);
+			break;
+		
+		case _OPT_EC_PPV: /* --ec-ppv */
+			s.ec_ppv = "0,0";
+			if(!optarg && NULL != argv[optind] && '-' != argv[optind][0])
+			{
+				s.ec_ppv = argv[optind++];
+			}
+			break;
+			
 		case _OPT_SCRAMBLE_AUDIO: /* --scramble-audio */
 			s.scramble_audio = 1;
 			break;
@@ -1144,6 +1179,41 @@ int main(int argc, char *argv[])
 		vid_conf.videocrypts = s.videocrypts;
 	}
 	
+	if(s.eurocrypt)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_MAC)
+		{
+			fprintf(stderr, "Eurocrypt is only compatible with MAC modes.\n");
+			return(-1);
+		}
+		vid_conf.eurocrypt = s.eurocrypt;
+	}
+	
+	if(s.ec_mat_rating)
+	{
+		if(!s.eurocrypt)
+		{
+			fprintf(stderr, "Maturing rating option is only used in conjunction with Eurocrypt.\n");
+			return(-1);
+		}
+		vid_conf.ec_mat_rating = s.ec_mat_rating;
+	}
+	
+	if(s.ec_ppv)
+	{
+		if(!s.eurocrypt)
+		{
+			fprintf(stderr, "PPV option is only used in conjunction with Eurocrypt.\n");
+			return(-1);
+		}
+		vid_conf.ec_ppv = s.ec_ppv;
+	}
+	
+	if(s.showecm)
+	{
+		vid_conf.showecm = s.showecm;
+	}
+	
 	if(s.syster)
 	{
 		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
@@ -1194,6 +1264,11 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.acp = 1;
+	}
+	
+	if(s.nodate)
+	{
+		vid_conf.nodate = s.nodate;
 	}
 	
 	if(s.vits)
