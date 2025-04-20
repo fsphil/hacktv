@@ -23,6 +23,8 @@
 #include "video.h"
 #include "mac.h"
 
+#define EC_S 0x01
+
 /* MAC sync codes */
 #define MAC_CLAMP 0xEAF3927FUL
 #define MAC_LSW   0x0B
@@ -763,14 +765,17 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 		
 		/* Parameter ACCM */
 		pkt[x++] = 0x88;
-		pkt[x++] = 0x03;        /* Packet length = 3 */
+		pkt[x++] = 0x04;        /* Packet length = 4 */
 		b  = 1 << 15;           /* 0: Absence of ECM, 1: Presence of ECM */
 		b |= 0 << 14;           /* 0: CW derived 'by other means', 1: CW derived from CAFCNT */
 		b |= 1 << 10;           /* Subframe related location - TDMCID 01 */
 		b |= s->ec.ecm_addr;    /* Address 346 */
 		pkt[x++] = (b & 0x00FF) >> 0;
 		pkt[x++] = (b & 0xFF00) >> 8;
-		pkt[x++] = 0x40;        /* Eurocrypt */
+		pkt[x++] = s->ec.mode->packet_type != EC_S ? 0x40 : 0x20; 
+								/* Eurocrypt S or M/S2 */
+		pkt[x++] = s->ec.mode->packet_type != EC_S ? s->ec.mode->packet_type & 0x30 : 0x01 ;
+		                        /* Eurocrypt algo (M, S or S2) */
 	}
 	
 	/* Parameter VCONF */
@@ -871,6 +876,8 @@ int mac_init(vid_t *s)
 	
 	mac->vsam = MAC_VSAM_FREE_ACCESS;
 	
+	mac->ec_mat_rating = s->conf.ec_mat_rating ? s->conf.ec_mat_rating : 0;
+
 	/* Calculate the threshold pixel aspect ratio for auto aspect ratio */
 	mac->ratio_threshold = r64_div(
 		(r64_t) { 14, 9 },
