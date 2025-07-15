@@ -3493,9 +3493,9 @@ static int _vid_passthru_process(vid_t *s, void *arg, int nlines, vid_line_t **l
 	return(1);
 }
 
-static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, vid_lineprocess_process_t pprocess, vid_lineprocess_free_t pfree)
+static int _add_lineprocess(vid_t *s, const char *name, int nlines, int thread, void *arg, vid_lineprocess_process_t pprocess, vid_lineprocess_free_t pfree)
 {
-	_lineprocess_t *p;
+	_lineprocess_t *lp, *p;
 	
 	p = realloc(s->processes, sizeof(_lineprocess_t) * (s->nprocesses + 1));
 	if(!p)
@@ -3504,25 +3504,70 @@ static int _add_lineprocess(vid_t *s, const char *name, int nlines, void *arg, v
 	}
 	
 	s->processes = p;
+	lp = s->nprocesses ? &s->processes[s->nprocesses - 1] : NULL;
 	p = &s->processes[s->nprocesses++];
 	
 	strncpy(p->name, name, 15);
 	p->vid = s;
 	p->nlines = nlines;
+	p->thread = 0;
 	p->arg = arg;
 	p->process = pprocess;
 	p->free = pfree;
 	
-	p->lines = calloc(sizeof(vid_line_t *), nlines);
+	if(s->conf.threads_test && thread)
+	{
+		s->nthreads++;
+		p->thread = 1;
+	}
+	
+	p->lines = calloc(sizeof(vid_line_t *), p->nlines);
 	if(!p->lines)
 	{
 		return(VID_OUT_OF_MEMORY);
 	}
 	
-	/* Update required line total (non-threaded version) */
-	s->olines += nlines - 1;
+	/* Update required line total */
+	s->olines += p->nlines - (p->thread || lp == NULL || lp->thread ? 0 : 1);
 	
 	return(VID_OK);
+}
+
+static void *_lineprocess_thread(void *priv)
+{
+	_lineprocess_t *p = priv;
+	int i;
+	
+	fprintf(stderr, "%s: Thread started\n", p->name);
+	
+	while(p->vid->thread_abort == 0)
+	{
+		if(p->process) p->process(p->vid, p->arg, p->nlines, p->lines);
+		
+		pthread_barrier_wait(&p->vid->process_barrier);
+		
+		for(i = 0; i < p->nlines; i++)
+		{
+			p->lines[i] = p->lines[i]->next;
+		}
+	}
+	
+	fprintf(stderr, "%s: Thread ending\n", p->name);
+	
+	/* Ensure all lineprocess theads exit at the same moment,
+	 * or some could block forever at pthread_barrier_wait() */
+	
+	p->vid->nthreads--;
+	
+	do
+	{
+		pthread_barrier_wait(&p->vid->process_barrier);
+	}
+	while(p->vid->nthreads > 0);
+	
+	fprintf(stderr, "%s: Thread ended\n", p->name);
+	
+	return(NULL);
 }
 
 static int _calc_filter_delay(int width, int ntaps)
@@ -3553,7 +3598,7 @@ static int _init_vresampler(vid_t *s, r64_t in_rate, r64_t out_rate, int channel
 	width = fir_int16_output_size(&p->fir[0], s->width);
 	if(width > s->max_width) s->max_width = width;
 	
-	_add_lineprocess(s, "vresampler", 2, p, _vid_filter_process, _vid_filter_free);
+	_add_lineprocess(s, "vresampler", 2, 1, p, _vid_filter_process, _vid_filter_free);
 	
 	return(VID_OK);
 }	
@@ -3666,7 +3711,7 @@ static int _init_vfilter(vid_t *s)
 	
 	delay = (ntaps / 2 + width - 1) / width;
 	
-	_add_lineprocess(s, "vfilter", 1 + delay, p, _vid_filter_process, _vid_filter_free);
+	_add_lineprocess(s, "vfilter", 1 + delay, 1, p, _vid_filter_process, _vid_filter_free);
 	
 	return(VID_OK);
 }
@@ -4080,7 +4125,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		.pixel_aspect_ratio = { 1, 1 },
 		.interlaced = 0,
 	};
-	s->olines = 1;
+	s->olines = 0;
 	
 	if(s->conf.raw_bb_file != NULL)
 	{
@@ -4092,7 +4137,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(VID_ERROR);
 		}
 		
-		_add_lineprocess(s, "rawbb", 1, NULL, _vid_next_line_rawbb, NULL);
+		_add_lineprocess(s, "rawbb", 1, 0, NULL, _vid_next_line_rawbb, NULL);
 	}
 	else if(s->conf.type == VID_MAC)
 	{
@@ -4104,11 +4149,11 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "macraster", 3, NULL, mac_next_line, NULL);
+		_add_lineprocess(s, "macraster", 3, 0, NULL, mac_next_line, NULL);
 	}
 	else
 	{
-		_add_lineprocess(s, "raster", 3, NULL, _vid_next_line_raster, NULL);
+		_add_lineprocess(s, "raster", 3, 0, NULL, _vid_next_line_raster, NULL);
 	}
 	
 	/* Initialise VITS inserter */
@@ -4126,7 +4171,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "vits", 1, &s->vits, vits_render, NULL);
+		_add_lineprocess(s, "vits", 1, 0, &s->vits, vits_render, NULL);
 	}
 	
 	/* Initialise the WSS system */
@@ -4138,7 +4183,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "wss", 1, &s->wss, wss_render, NULL);
+		_add_lineprocess(s, "wss", 1, 0, &s->wss, wss_render, NULL);
 	}
 	
 	/* Initialise videocrypt I/II encoder */
@@ -4150,7 +4195,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "videocrypt", 2, &s->vc, vc_render_line, NULL);
+		_add_lineprocess(s, "videocrypt", 2, 0, &s->vc, vc_render_line, NULL);
 	}
 	
 	/* Initialise videocrypt S encoder */
@@ -4162,7 +4207,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "videocrypts", VCS_DELAY_LINES, &s->vcs, vcs_render_line, NULL);
+		_add_lineprocess(s, "videocrypts", VCS_DELAY_LINES, 0, &s->vcs, vcs_render_line, NULL);
 	}
 	
 	/* Initialise syster encoder */
@@ -4174,7 +4219,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "syster", NG_DELAY_LINES, &s->ng, ng_render_line, NULL);
+		_add_lineprocess(s, "syster", NG_DELAY_LINES, 0, &s->ng, ng_render_line, NULL);
 	}
 	
 	/* Initialise ACP renderer */
@@ -4186,7 +4231,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "acp", 1, &s->acp, acp_render_line, NULL);
+		_add_lineprocess(s, "acp", 1, 0, &s->acp, acp_render_line, NULL);
 	}
 	
 	/* Initialise VITC timestamp */
@@ -4198,7 +4243,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "vitc", 1, &s->vitc, vitc_render, NULL);
+		_add_lineprocess(s, "vitc", 1, 0, &s->vitc, vitc_render, NULL);
 	}
 	
 	/* Initialise EIA/CEA-608 CC test */
@@ -4210,7 +4255,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "cc608", 1, &s->cc608, cc608_render, NULL);
+		_add_lineprocess(s, "cc608", 1, 0, &s->cc608, cc608_render, NULL);
 	}
 	
 	/* Initialise SiS encoder */
@@ -4222,7 +4267,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(r);
 		}
 		
-		_add_lineprocess(s, "sis", 1, &s->sis, sis_render, NULL);
+		_add_lineprocess(s, "sis", 1, 0, &s->sis, sis_render, NULL);
 	}
 	
 	/* Prepare audio FIFO (1 second at 32khz) */
@@ -4241,7 +4286,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		/* Start the teletext renderer thread for non-MAC modes */
 		if(s->conf.type != VID_MAC)
 		{
-			_add_lineprocess(s, "teletext", 1, &s->tt, tt_render_line, NULL);
+			_add_lineprocess(s, "teletext", 1, 0, &s->tt, tt_render_line, NULL);
 		}
 	}
 	
@@ -4445,7 +4490,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	}
 	
 	/* Add the audio process */
-	_add_lineprocess(s, "audio", 1, NULL, _vid_audio_process, NULL);
+	_add_lineprocess(s, "audio", 1, 1, NULL, _vid_audio_process, NULL);
 	
 	/* FM video */
 	if(s->conf.modulation == VID_FM)
@@ -4468,12 +4513,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			);
 		}
 		
-		_add_lineprocess(s, "fmmod", 1, NULL, _vid_fmmod_process, NULL);
+		_add_lineprocess(s, "fmmod", 1, 1, NULL, _vid_fmmod_process, NULL);
 	}
 	
 	if(s->conf.swap_iq != 0)
 	{
-		_add_lineprocess(s, "swap_iq", 1, NULL, _vid_swap_iq_process, NULL);
+		_add_lineprocess(s, "swap_iq", 1, 0, NULL, _vid_swap_iq_process, NULL);
 	}
 	
 	if(s->conf.offset != 0)
@@ -4488,7 +4533,7 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->offset.delta.i = lround(cos(d) * INT32_MAX);
 		s->offset.delta.q = lround(sin(d) * INT32_MAX);
 		
-		_add_lineprocess(s, "offset", 1, NULL, _vid_offset_process, NULL);
+		_add_lineprocess(s, "offset", 1, 1, NULL, _vid_offset_process, NULL);
 	}
 	
 	if(s->conf.passthru)
@@ -4518,11 +4563,11 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 			return(VID_OUT_OF_MEMORY);
 		}
 		
-		_add_lineprocess(s, "passthru", 1, NULL, _vid_passthru_process, NULL);
+		_add_lineprocess(s, "passthru", 1, 0, NULL, _vid_passthru_process, NULL);
 	}
 	
 	/* The final process is only for output */
-	_add_lineprocess(s, "output", 1, NULL, NULL, NULL);
+	_add_lineprocess(s, "output", 1, 0, NULL, NULL, NULL);
 	s->output_process = &s->processes[s->nprocesses - 1];
 	
 	/* Output line buffer(s) */
@@ -4559,18 +4604,31 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		s->oline[r].audio_len = 0;
 	}
 	
-	/* Setup lineprocess output windows (non-threaded version) */
+	/* Setup lineprocess output windows */
 	l = &s->oline[s->olines - 1];
 	
 	for(r = 0; r < s->nprocesses; r++)
 	{
 		_lineprocess_t *p = &s->processes[r];
 		
-		l -= p->nlines - 1;
+		l -= p->nlines - ((r > 0 && s->processes[r - 1].thread) || p->thread ? 0 : 1);
 		
 		for(x = 0; x < p->nlines; x++)
 		{
 			p->lines[x] = &l[x];
+		}
+	}
+	
+	/* Init thread barrier */
+	s->thread_abort = 0;
+	pthread_barrier_init(&s->process_barrier, NULL, s->nthreads + 1);
+	
+	/* Start threaded processes */
+	for(r = 0; r < s->nprocesses; r++)
+	{
+		if(s->processes[r].thread)
+		{
+			pthread_create(&s->processes[r].pthread, NULL, &_lineprocess_thread, &s->processes[r]);
 		}
 	}
 	
@@ -4584,8 +4642,20 @@ void vid_free(vid_t *s)
 	/* Close the AV source */
 	av_close(&s->av);
 	
+	/* Wait for threads to end */
+	s->thread_abort = 1;
+	while(s->nthreads > 0)
+	{
+		pthread_barrier_wait(&s->process_barrier);
+	}
+	
 	for(i = 0; i < s->nprocesses; i++)
 	{
+		if(s->processes[i].thread == 1)
+		{
+			pthread_join(s->processes[i].pthread, NULL);
+		}
+		
 		if(s->processes[i].free)
 		{
 			s->processes[i].free(s, s->processes[i].arg);
@@ -4594,6 +4664,8 @@ void vid_free(vid_t *s)
 		free(s->processes[i].lines);
 	}
 	free(s->processes);
+	
+	pthread_barrier_destroy(&s->process_barrier);
 	
 	if(s->conf.passthru)
 	{
@@ -4762,16 +4834,21 @@ static vid_line_t *_vid_next_line(vid_t *s)
 	{
 		_lineprocess_t *p = &s->processes[i];
 		
-		if(p->process)
+		if(p->thread == 0)
 		{
-			p->process(p->vid, p->arg, p->nlines, p->lines);
-		}
-		
-		for(j = 0; j < p->nlines; j++)
-		{
-			p->lines[j] = p->lines[j]->next;
+			if(p->process)
+			{
+				p->process(p->vid, p->arg, p->nlines, p->lines);
+			}
+			
+			for(j = 0; j < p->nlines; j++)
+			{
+				p->lines[j] = p->lines[j]->next;
+			}
 		}
 	}
+	
+	pthread_barrier_wait(&s->process_barrier);
 	
 	/* Advance the next line/frame counter */
 	if(s->bline++ == s->conf.lines)

@@ -287,6 +287,9 @@ typedef struct {
 	/* Video filter enable flag */
 	int vfilter;
 	
+	/* Multithreading test */
+	int threads_test;
+	
 } vid_config_t;
 
 typedef struct {
@@ -347,6 +350,10 @@ struct _lineprocess_t {
 	/* Callback parameters */
 	vid_t *vid;
 	void *arg;
+	
+	/* Thread handle */
+	int thread; /* 0 = Main thread, 1 = Separate thread */
+	pthread_t pthread;
 };
 
 struct vid_t {
@@ -494,8 +501,11 @@ struct vid_t {
 	
 	/* Line processes */
 	int nprocesses;
+	int nthreads;
+	int thread_abort;
 	_lineprocess_t *processes;
 	_lineprocess_t *output_process;
+	pthread_barrier_t process_barrier;
 };
 
 extern const vid_configs_t vid_configs[];
