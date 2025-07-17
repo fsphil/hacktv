@@ -3062,152 +3062,170 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		vbidata_render(s->fsc_syncs, &sc, 0, 2, VBIDATA_LSB_FIRST, l);
 	}
 	
-	/* Render the SECAM colour subcarrier */
-	if(s->conf.colour_mode == VID_SECAM)
+	return(1);
+}
+
+static int _vid_render_secam(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	const char *seq;
+	int x, vy;
+	vid_line_t *l = lines[0];
+	const cint16_t *g;
+	int16_t dmin, dmax;
+	int sl = 0, sr = 0;
+	int dr;
+	
+	seq = _line_sequence(s->conf.type, l->frame, l->line);
+	vy = _active_video_line(s->conf.type, l->frame, l->line);
+	
+	/* Shift the lines by one if the source
+	 * video has the bottom field first */
+	if(vy >= 0 && s->conf.interlaced != 0 &&
+	   s->vframe.interlaced != s->conf.interlaced) vy += 1;
+	
+	/* Centre the video vertically */
+	vy -= s->vframe_y;
+	
+	/* Check for out of bounds */
+	if(vy < 0 || vy >= s->vframe.height) vy = -1;
+	
+	/* Is this line D'r or D'b? */
+	dr = ((l->frame * s->conf.lines) + l->line) & 1;
+	
+	if(l->line == 1 || l->line == s->conf.hline)
 	{
-		const cint16_t *g;
-		int16_t dmin, dmax;
-		int sl = 0, sr = 0;
-		int dr;
+		/* Clear the chrominance buffer at the top of each field */
+		memset(s->chrominance_buffer, 0, sizeof(int16_t) * 2 * s->width);
+	}
+	
+	if(s->conf.secam_field_id &&
+	   ((l->line >= 7 && l->line < 7 + s->secam_field_id_lines) ||
+	    (l->line >= 320 && l->line < 320 + s->secam_field_id_lines)))
+	{
+		int16_t level;
+		int16_t dev;
+		double rw;
 		
-		/* Is this line D'r or D'b? */
-		dr = ((l->frame * s->conf.lines) + l->line) & 1;
-		
-		if(l->line == 1 || l->line == s->conf.hline)
+		if(dr)
 		{
-			/* Clear the chrominance buffer at the top of each field */
-			memset(s->chrominance_buffer, 0, sizeof(int16_t) * 2 * s->width);
+			level = s->yuv_level_lookup[0x000000].v; // D'r
+			dev = s->secam_fsync_level;
+			rw = 15e-6;
+		}
+		else
+		{
+			level = s->yuv_level_lookup[0x000000].u; // D'b
+			dev = -s->secam_fsync_level;
+			rw = 18e-6;
 		}
 		
-		if(s->conf.secam_field_id &&
-		   ((l->line >= 7 && l->line < 7 + s->secam_field_id_lines) ||
-		    (l->line >= 320 && l->line < 320 + s->secam_field_id_lines)))
+		for(x = 0; x < s->width; x++)
 		{
-			int16_t level;
-			int16_t dev;
-			double rw;
+			double t = (double) (x - s->active_left) / s->pixel_rate / rw;
 			
-			if(dr)
-			{
-				level = s->yuv_level_lookup[0x000000].v; // D'r
-				dev = s->secam_fsync_level;
-				rw = 15e-6;
-			}
-			else
-			{
-				level = s->yuv_level_lookup[0x000000].u; // D'b
-				dev = -s->secam_fsync_level;
-				rw = 18e-6;
-			}
+			if(t < 0) t = 0;
+			else if(t > 1) t = 1;
 			
-			for(x = 0; x < s->width; x++)
-			{
-				double t = (double) (x - s->active_left) / s->pixel_rate / rw;
-				
-				if(t < 0) t = 0;
-				else if(t > 1) t = 1;
-				
-				s->chrominance_buffer[x] = level + dev * t;
-			}
-			
-			sl = s->burst_left;
-			sr = sl + s->burst_width;
-			
-			l->vbialloc = 1;
-		}
-		else if(seq[2] == 'a' || seq[3] == 'a')
-		{
-			uint32_t rgb = 0x000000;
-			uint32_t *prgb = &rgb;
-			int stride = 0;
-			
-			if(s->vframe.framebuffer && vy >= 0)
-			{
-				prgb = &s->vframe.framebuffer[vy * s->vframe.line_stride];
-				stride = s->vframe.pixel_stride;
-			}
-			
-			if(dr)
-			{
-				/* D'r */
-				
-				for(x = 0; x < s->active_left + s->vframe_x; x++)
-				{
-					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].v;
-				}
-				
-				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
-				{
-					s->chrominance_buffer[x] =
-						(s->yuv_level_lookup[*prgb & 0xFFFFFF].v +
-						 s->chrominance_buffer[s->width + x]) / 2;
-					
-					/* Store this lines D'b values to average with next line */
-					s->chrominance_buffer[s->width + x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].u;
-				}
-				
-				for(; x < s->width; x++)
-				{
-					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].v;
-				}
-			}
-			else
-			{
-				/* D'b */
-				
-				for(x = 0; x < s->active_left + s->vframe_x; x++)
-				{
-					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].u;
-				}
-				
-				for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
-				{
-					s->chrominance_buffer[x] =
-						(s->yuv_level_lookup[*prgb & 0xFFFFFF].u +
-						 s->chrominance_buffer[s->width + x]) / 2;
-					
-					/* Store this lines D'r values to average with next line */
-					s->chrominance_buffer[s->width + x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].v;
-				}
-				
-				for(; x < s->width; x++)
-				{
-					s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].u;
-				}
-			}
-			
-			sl = s->burst_left;
-			sr = seq[3] == 'a' ? sl + s->burst_width : s->half_width;
+			s->chrominance_buffer[x] = level + dev * t;
 		}
 		
-		if(sr > sl)
+		sl = s->burst_left;
+		sr = sl + s->burst_width;
+		
+		l->vbialloc = 1;
+	}
+	else if(seq[2] == 'a' || seq[3] == 'a')
+	{
+		uint32_t rgb = 0x000000;
+		uint32_t *prgb = &rgb;
+		int stride = 0;
+		
+		if(s->vframe.framebuffer && vy >= 0)
 		{
-			int16_t *o;
+			prgb = &s->vframe.framebuffer[vy * s->vframe.line_stride];
+			stride = s->vframe.pixel_stride;
+		}
+		
+		if(dr)
+		{
+			/* D'r */
 			
-			if(!s->conf.s_video) fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width, 2);
-			fir_int16_process_block(&s->fm_secam_fir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
-			iir_int16_process(&s->fm_secam_iir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
-			
-			/* Reset the SECAM FM phase every line, alternating every third line */
-			s->fm_secam.counter = INT16_MAX;
-			s->fm_secam.phase.i = ((l->frame * s->conf.lines) + l->line) % 3 == 0 ? INT32_MAX : -INT32_MAX;
-			s->fm_secam.phase.q = 0;
-			
-			/* Limit the FM deviation */
-			dmin = s->fm_secam_dmin[dr];
-			dmax = s->fm_secam_dmax[dr];
-			
-			o = l->output + (s->conf.s_video ? 1 : 0);
-			for(x = sl; x < sr; x++)
+			for(x = 0; x < s->active_left + s->vframe_x; x++)
 			{
-				if(s->chrominance_buffer[x] < dmin) s->chrominance_buffer[x] = dmin;
-				else if(s->chrominance_buffer[x] > dmax) s->chrominance_buffer[x] = dmax;
-				
-				g = &s->fm_secam_bell[(uint16_t) s->chrominance_buffer[x]];
-				_fm_modulator_cgain(&s->fm_secam, &s->chrominance_buffer[x], s->chrominance_buffer[x], g);
-				
-				o[x * 2] += (s->chrominance_buffer[x] * s->burst_win[x - s->burst_left]) >> 15;
+				s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].v;
 			}
+			
+			for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
+			{
+				s->chrominance_buffer[x] =
+					(s->yuv_level_lookup[*prgb & 0xFFFFFF].v +
+					 s->chrominance_buffer[s->width + x]) / 2;
+				
+				/* Store this lines D'b values to average with next line */
+				s->chrominance_buffer[s->width + x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].u;
+			}
+			
+			for(; x < s->width; x++)
+			{
+				s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].v;
+			}
+		}
+		else
+		{
+			/* D'b */
+			
+			for(x = 0; x < s->active_left + s->vframe_x; x++)
+			{
+				s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].u;
+			}
+			
+			for(; x < s->active_left + s->vframe_x + s->vframe.width; x++, prgb += stride)
+			{
+				s->chrominance_buffer[x] =
+					(s->yuv_level_lookup[*prgb & 0xFFFFFF].u +
+					 s->chrominance_buffer[s->width + x]) / 2;
+				
+				/* Store this lines D'r values to average with next line */
+				s->chrominance_buffer[s->width + x] = s->yuv_level_lookup[*prgb & 0xFFFFFF].v;
+			}
+			
+			for(; x < s->width; x++)
+			{
+				s->chrominance_buffer[x] = s->yuv_level_lookup[0x000000].u;
+			}
+		}
+		
+		sl = s->burst_left;
+		sr = seq[3] == 'a' ? sl + s->burst_width : s->half_width;
+	}
+	
+	if(sr > sl)
+	{
+		int16_t *o;
+		
+		if(!s->conf.s_video) fir_int16_process_block(&s->secam_l_fir, l->output + s->active_left * 2, l->output + s->active_left * 2, s->active_width, 2);
+		fir_int16_process_block(&s->fm_secam_fir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
+		iir_int16_process(&s->fm_secam_iir, s->chrominance_buffer, s->chrominance_buffer, s->width, 1);
+		
+		/* Reset the SECAM FM phase every line, alternating every third line */
+		s->fm_secam.counter = INT16_MAX;
+		s->fm_secam.phase.i = ((l->frame * s->conf.lines) + l->line) % 3 == 0 ? INT32_MAX : -INT32_MAX;
+		s->fm_secam.phase.q = 0;
+		
+		/* Limit the FM deviation */
+		dmin = s->fm_secam_dmin[dr];
+		dmax = s->fm_secam_dmax[dr];
+		
+		o = l->output + (s->conf.s_video ? 1 : 0);
+		for(x = sl; x < sr; x++)
+		{
+			if(s->chrominance_buffer[x] < dmin) s->chrominance_buffer[x] = dmin;
+			else if(s->chrominance_buffer[x] > dmax) s->chrominance_buffer[x] = dmax;
+			
+			g = &s->fm_secam_bell[(uint16_t) s->chrominance_buffer[x]];
+			_fm_modulator_cgain(&s->fm_secam, &s->chrominance_buffer[x], s->chrominance_buffer[x], g);
+			
+			o[x * 2] += (s->chrominance_buffer[x] * s->burst_win[x - s->burst_left]) >> 15;
 		}
 	}
 	
@@ -4183,6 +4201,12 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 	else
 	{
 		_add_lineprocess(s, "raster", 3, 0, NULL, _vid_next_line_raster, NULL);
+		
+		if(s->conf.colour_mode == VID_SECAM)
+		{
+			/* Render the SECAM colour subcarrier */
+			_add_lineprocess(s, "secam", 1, 1, NULL, _vid_render_secam, NULL);
+		}
 	}
 	
 	/* Initialise VITS inserter */
