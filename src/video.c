@@ -2444,24 +2444,9 @@ static int _vid_next_line_rawbb(vid_t *s, void *arg, int nlines, vid_line_t **li
 	return(1);
 }
 
-static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+static const char *_line_sequence(const int type, const int frame, const int line)
 {
-	const char *seq;
-	int x;
-	int vy;
-	int pal = 0;
-	int fsc = 0;
-	uint8_t sc = 0;
-	int al, ar;
-	vid_line_t *l = lines[1];
-	
-	l->width     = s->width;
-	l->frame     = s->bframe;
-	l->line      = s->bline;
-	l->vbialloc  = 0;
-	l->lut       = NULL;
-	l->audio     = NULL;
-	l->audio_len = 0;
+	const char *seq = "____";
 	
 	/* Sequence codes: abcd
 	 * 
@@ -2487,15 +2472,13 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	 *    v = short vertical sync pulse
 	 *    V = long vertical sync pulse
 	 * 
-	 **** I don't like this code, it's overly complicated for all it does.
-	*/
+	 */
 	
-	vy = -1;
-	seq = "____";
+	/* I don't like this code, it's overly complicated for all it does. */
 	
-	if(s->conf.type == VID_RASTER_625)
+	if(type == VID_RASTER_625)
 	{
-		switch(l->line)
+		switch(line)
 		{
 		case 1:   seq = "V__V"; break;
 		case 2:   seq = "V__V"; break;
@@ -2555,13 +2538,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		default:  seq = "h0aa"; break;
 		}
-		
-		/* Calculate the active line number */
-		vy = (l->line < 313 ? (l->line - 23) * 2 : (l->line - 336) * 2 + 1);
 	}
-	else if(s->conf.type == VID_RASTER_525)
+	else if(type == VID_RASTER_525)
 	{
-		switch(l->line)
+		switch(line)
 		{
 		case 1:   seq = "v__v"; break;
 		case 2:   seq = "v__v"; break;
@@ -2608,20 +2588,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		default:  seq = "h0aa"; break;
 		}
-		
-		/* Calculate the active line number */
-		
-		/* There are 486 lines in this mode with some active video,
-		 * but encoded files normally only have 480 of these. Here
-		 * we use the line numbers suggested by SMPTE Recommended
-		 * Practice RP-202. Lines 23-262 from the first field and
-		 * 286-525 from the second. */
-		
-		vy = (l->line < 265 ? (l->line - 23) * 2 : (l->line - 286) * 2 + 1);
 	}
-	else if(s->conf.type == VID_RASTER_819)
+	else if(type == VID_RASTER_819)
 	{
-		switch(l->line)
+		switch(line)
 		{
 		case 817: seq = "h___"; break;
 		case 818: seq = "h___"; break;
@@ -2710,13 +2680,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		default:  seq = "h_aa"; break;
 		}
-		
-		/* Calculate the active line number */
-		vy = (l->line < 406 ? (l->line - 48) * 2 : (l->line - 457) * 2 + 1);
 	}
-	else if(s->conf.type == VID_RASTER_405)
+	else if(type == VID_RASTER_405)
 	{
-		switch(l->line)
+		switch(line)
 		{
 		case 1:   seq = "V__V"; break;
 		case 2:   seq = "V__V"; break;
@@ -2753,13 +2720,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		default:  seq = "h0aa"; break;
 		}
-		
-		/* Calculate the active line number */
-		vy = (l->line < 210 ? (l->line - 16) * 2 : (l->line - 218) * 2 + 1);
 	}
-	else if(s->conf.type == VID_CBS_405)
+	else if(type == VID_CBS_405)
 	{
-		switch(l->line)
+		switch(line)
 		{
 		case 1:   seq = "v__v"; break;
 		case 2:   seq = "v__v"; break;
@@ -2794,21 +2758,15 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		default:  seq = "h_aa"; break;
 		}
-		
-		/* Calculate the active line number */
-		vy = (l->line < 210 ? (l->line - 16) * 2 : (l->line - 219) * 2 + 1);
 	}
-	else if(s->conf.type == VID_APOLLO_320)
+	else if(type == VID_APOLLO_320)
 	{
-		if(l->line <= 8) seq = "V__v";
+		if(line <= 8) seq = "V__v";
 		else seq = "h_aa";
-		
-		vy = l->line - 9;
-		if(vy < 0 || vy >= s->conf.active_lines) vy = -1;
 	}
-	else if(s->conf.type == VID_BAIRD_240)
+	else if(type == VID_BAIRD_240)
 	{
-		switch(l->line)
+		switch(line)
 		{
 		case 1:   seq = "V__V"; break;
 		case 2:   seq = "V__V"; break;
@@ -2833,26 +2791,97 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		default:  seq = "h_aa"; break;
 		}
-		
-		/* Calculate the active line number */
-		vy = l->line - 20;
 	}
-	else if(s->conf.type == VID_BAIRD_30)
+	else if(type == VID_BAIRD_30)
 	{
 		/* The original Baird 30 line standard has no sync pulses */
 		seq = "__aa";
-		vy = l->line - 1;
 	}
-	else if(s->conf.type == VID_NBTV_32)
+	else if(type == VID_NBTV_32)
 	{
-		switch(l->line)
+		switch(line)
 		{
 		case 1:  seq = "__aa"; break;
 		default: seq = "h_aa"; break;
 		}
-		
-		vy = l->line - 1;
 	}
+	
+	return(seq);
+}
+
+static int _active_video_line(const int type, const int frame, const int line)
+{
+	int vy = -1;
+	
+	/* Calculate the active line number */
+	
+	if(type == VID_RASTER_625)
+	{
+		vy = (line < 313 ? (line - 23) * 2 : (line - 336) * 2 + 1);
+	}
+	else if(type == VID_RASTER_525)
+	{
+		/* There are 486 lines in this mode with some active video,
+		 * but encoded files normally only have 480 of these. Here
+		 * we use the line numbers suggested by SMPTE Recommended
+		 * Practice RP-202. Lines 23-262 from the first field and
+		 * 286-525 from the second. */
+		
+		vy = (line < 265 ? (line - 23) * 2 : (line - 286) * 2 + 1);
+	}
+	else if(type == VID_RASTER_819)
+	{
+		vy = (line < 406 ? (line - 48) * 2 : (line - 457) * 2 + 1);
+	}
+	else if(type == VID_RASTER_405)
+	{
+		vy = (line < 210 ? (line - 16) * 2 : (line - 218) * 2 + 1);
+	}
+	else if(type == VID_CBS_405)
+	{
+		vy = (line < 210 ? (line - 16) * 2 : (line - 219) * 2 + 1);
+	}
+	else if(type == VID_APOLLO_320)
+	{
+		vy = line - 9;
+	}
+	else if(type == VID_BAIRD_240)
+	{
+		vy = line - 20;
+	}
+	else if(type == VID_BAIRD_30)
+	{
+		vy = line - 1;
+	}
+	else if(type == VID_NBTV_32)
+	{
+		vy = line - 1;
+	}
+	
+	return(vy);
+}
+
+static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **lines)
+{
+	const char *seq;
+	int x;
+	int vy;
+	int pal = 0;
+	int fsc = 0;
+	uint8_t sc = 0;
+	int al, ar;
+	vid_line_t *l = lines[1];
+	
+	l->width     = s->width;
+	l->frame     = s->bframe;
+	l->line      = s->bline;
+	l->vbialloc  = 0;
+	l->lut       = NULL;
+	l->audio     = NULL;
+	l->audio_len = 0;
+	
+	seq = _line_sequence(s->conf.type, l->frame, l->line);
+	vy = _active_video_line(s->conf.type, l->frame, l->line);
 	
 	/* Shift the lines by one if the source
 	 * video has the bottom field first */
