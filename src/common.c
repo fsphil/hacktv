@@ -282,3 +282,72 @@ double rrc(double x, double b, double t)
 	return(r);
 }
 
+#ifndef _POSIX_BARRIERS
+
+#include <pthread.h>
+
+int pthread_barrier_destroy(pthread_barrier_t *barrier)
+{
+	pthread_cond_destroy(&barrier->cond);
+	pthread_mutex_destroy(&barrier->mutex);
+	return(0);
+}
+
+int pthread_barrier_init(pthread_barrier_t *restrict barrier, void *attr, unsigned count)
+{
+	int r;
+	
+	r = pthread_mutex_init(&barrier->mutex, NULL);
+	if(r) return(r);
+	
+	r = pthread_cond_init(&barrier->cond, NULL);
+	if(r) return(r);
+	
+	barrier->count = count;
+	barrier->pending = count;
+	barrier->cycle = 0;
+	
+	return(0);
+}
+
+int pthread_barrier_wait(pthread_barrier_t *barrier)
+{
+	int r, c;
+	
+	r = pthread_mutex_lock(&barrier->mutex);
+	if(r) return(r);
+	
+	if(--barrier->pending == 0)
+	{
+		/* We're the last thread to reach the barrier,
+		 * reset for the next cycle and send signal */
+		barrier->pending = barrier->count;
+		barrier->cycle++;
+		
+		r = pthread_cond_broadcast(&barrier->cond);
+		if(r) return(r);
+		
+		r = pthread_mutex_unlock(&barrier->mutex);
+		if(r) return(r);
+		
+		return(PTHREAD_BARRIER_SERIAL_THREAD);
+	}
+	
+	/* Wait here until a new cycle is signalled */
+	
+	c = barrier->cycle;
+	
+	do
+	{
+		r = pthread_cond_wait(&barrier->cond, &barrier->mutex);
+		if(r) return(r);
+	}
+	while(barrier->cycle == c);
+	
+	r = pthread_mutex_unlock(&barrier->mutex);
+	
+	return(r);
+}
+
+#endif
+
