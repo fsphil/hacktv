@@ -105,6 +105,8 @@ static inline void cint32_mula(cint32_t *r, const cint32_t *a, const cint32_t *b
  * Looking at you Apple....
 */
 
+#include <pthread.h>
+
 typedef struct {
 	
 	pthread_mutex_t mutex;

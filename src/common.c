@@ -282,9 +282,7 @@ double rrc(double x, double b, double t)
 	return(r);
 }
 
-#ifndef _POSIX_BARRIERS
-
-#include <pthread.h>
+#if !defined(_POSIX_BARRIERS) || _POSIX_BARRIERS <= 0
 
 int pthread_barrier_destroy(pthread_barrier_t *barrier)
 {
