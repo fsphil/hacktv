@@ -99,7 +99,7 @@ static inline void cint32_mula(cint32_t *r, const cint32_t *a, const cint32_t *b
 	r->q += q >> 31;
 }
 
-#ifndef _POSIX_BARRIERS
+#if !defined(_POSIX_BARRIERS) || _POSIX_BARRIERS <= 0
 
 /* For systems that don't include a native POSIX Barriers implementation
  * Looking at you Apple....
