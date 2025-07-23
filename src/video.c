@@ -3562,7 +3562,7 @@ static int _add_lineprocess(vid_t *s, const char *name, int nlines, int thread, 
 	p->process = pprocess;
 	p->free = pfree;
 	
-	if(s->conf.threads_test && thread)
+	if(thread)
 	{
 		s->nthreads++;
 		p->thread = 1;

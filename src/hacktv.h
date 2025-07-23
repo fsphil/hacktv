@@ -96,7 +96,6 @@ typedef struct {
 	int secam_field_id_lines;
 	int list_modes;
 	int json;
-	int threads_test;
 	char *ffmt;
 	char *fopts;
 	int fl2k_audio;

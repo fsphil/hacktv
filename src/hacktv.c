@@ -1003,10 +1003,6 @@ int main(int argc, char *argv[])
 			
 			break;
 		
-		case _OPT_THREADS: /* --threads */
-			s.threads_test = 1;
-			break;
-		
 		case _OPT_VERSION: /* --version */
 			print_version();
 			return(0);
@@ -1371,11 +1367,6 @@ int main(int argc, char *argv[])
 	vid_conf.raw_bb_white_level = s.raw_bb_white_level;
 	vid_conf.secam_field_id = s.secam_field_id;
 	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
-	
-	if(s.threads_test)
-	{
-		vid_conf.threads_test = 1;
-	}
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, s.pixelrate, &vid_conf);

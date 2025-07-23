@@ -287,9 +287,6 @@ typedef struct {
 	/* Video filter enable flag */
 	int vfilter;
 	
-	/* Multithreading test */
-	int threads_test;
-	
 } vid_config_t;
 
 typedef struct {
