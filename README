@@ -3,6 +3,12 @@
 
 https://sanslogic.co.uk/hacktv
 
+NOTICE
+
+The GitHub repository at https://github.com/fsphil/hacktv is being removed
+at the end of 2025. The new location is: https://codeberg.org/fsphil/hacktv
+Both repositories will be kept in sync until then.
+
 WHAT'S IT DO
 
 Generates a PAL, NTSC, SECAM, D/D2-MAC video signal from a video file, stream
