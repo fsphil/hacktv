@@ -391,14 +391,14 @@ int dance_mod_init(dance_mod_t *s, uint8_t mode, unsigned int sample_rate, unsig
 	
 	/* Allocate memory for the baseband buffer */
 	s->bb_start = calloc(s->ntaps, sizeof(cint16_t));
-	s->bb_end   = s->bb_start + s->ntaps;
-	s->bb       = s->bb_start;
-	s->bb_len   = 0;
-	
 	if(!s->bb_start)
 	{
 		return(-1);
 	}
+	
+	s->bb_end   = s->bb_start + s->ntaps;
+	s->bb       = s->bb_start;
+	s->bb_len   = 0;
 	
 	/* Setup values for the sample rate error correction */
 	n = gcd(sample_rate, DANCE_SYMBOL_RATE);

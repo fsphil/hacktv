@@ -289,14 +289,14 @@ int nicam_mod_init(nicam_mod_t *s, uint8_t mode, uint8_t reserve, unsigned int s
 	
 	/* Allocate memory for the baseband buffer */
 	s->bb_start = calloc(s->ntaps, sizeof(cint16_t));
-	s->bb_end   = s->bb_start + s->ntaps;
-	s->bb       = s->bb_start;
-	s->bb_len   = 0;
-	
 	if(!s->bb_start)
 	{
 		return(-1);
 	}
+	
+	s->bb_end   = s->bb_start + s->ntaps;
+	s->bb       = s->bb_start;
+	s->bb_len   = 0;
 	
 	/* Setup values for the sample rate error correction */
 	n = gcd(sample_rate, NICAM_SYMBOL_RATE);
