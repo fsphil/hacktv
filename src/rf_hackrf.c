@@ -433,7 +433,7 @@ int rf_hackrf_open(rf_t *s, const char *serial, uint32_t sample_rate, uint64_t f
 		pstr = strstr(str, HACKDAC_FIRMWARE_SUFFIX);
 		if(pstr && sscanf(pstr, HACKDAC_FIRMWARE_SUFFIX "-%c-%d", &hackdac_hardware_type, &rf->hackdac_firmware_version) == 2)
 		{
-			fprintf(stderr, "hackrf: HackDAC Type: %c/%u\n", hackdac_hardware_type + ('A' - 'a'), rf->hackdac_firmware_version);
+			fprintf(stderr, "hackrf: HackDAC Type: %c/%d\n", hackdac_hardware_type + ('A' - 'a'), rf->hackdac_firmware_version);
 		}
 	}
 	
