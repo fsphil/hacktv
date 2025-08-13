@@ -2400,7 +2400,7 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 	/* Not really. Suggest some good sample rates */
 	r = sample_rate / m;
 	fprintf(stderr, "Warning: Pixel rate %u may not work well with this mode.\n", sample_rate);
-	fprintf(stderr, "Next valid pixel rates: %u, %u\n", m * r, m * (r + 1));
+	fprintf(stderr, "Next valid pixel rates: %d, %d\n", m * r, m * (r + 1));
 }
 
 static int _vid_next_line_rawbb(vid_t *s, void *arg, int nlines, vid_line_t **lines)
