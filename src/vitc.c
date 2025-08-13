@@ -162,7 +162,7 @@ int vitc_render(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	timecode |= (fn % 24 / 10) << 28; /* Hours, tens */
 	if(v->type == VID_RASTER_625)
 	{
-		timecode |= (l->line >= v->lines[1] ? 1 : 0) << 31; /* Field flag, 0: first/odd field, 1: second/even field */
+		timecode |= (uint32_t) (l->line >= v->lines[1] ? 1 : 0) << 31; /* Field flag, 0: first/odd field, 1: second/even field */
 	}
 	
 	/* User bits, not used here */
