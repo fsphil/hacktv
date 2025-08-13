@@ -249,6 +249,17 @@ static int _packet_queue_write(av_ffmpeg_t *s, _packet_queue_t *q, AVPacket *pkt
 		
 		/* Allocate memory for queue item and copy packet */
 		p = malloc(sizeof(_packet_queue_item_t));
+		if(p == NULL)
+		{
+			/* Out of memory */
+			av_packet_unref(pkt);
+			
+			pthread_cond_signal(&s->cond);
+			pthread_mutex_unlock(&s->mutex);
+			
+			return(-1);
+		}
+		
 		p->pkt = *pkt;
 		p->next = NULL;
 		
