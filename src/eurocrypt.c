@@ -820,10 +820,8 @@ char *_get_sub_date(int b, const char *date)
 static void _encrypt_opkey(uint8_t *data, eurocrypt_t *e, int t)
 {
 	int r;
-	uint8_t *emm = malloc(sizeof(e->mode->key) / sizeof(uint8_t));
+	uint8_t emm[sizeof(e->mode->key)];
 	
-	memset(emm, 0, 8);
-
 	/* Pick the right key */
 	if(e->mode->des_algo == EC_3DES)
 	{
