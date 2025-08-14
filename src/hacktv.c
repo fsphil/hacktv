@@ -64,7 +64,9 @@ static void print_usage(void)
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
-		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
+		"      --syster <mode>            Enable Nagravision Syster scrambling. (PAL only)\n"
+		"      --d11 <mode>               Enable Discret 11 scrambling. (PAL only)\n"
+		"      --systercnr <mode>         Enable Syster cut and rotate scrambling (***INCOMPLETE***). (PAL only)\n"
 		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
@@ -267,8 +269,26 @@ static void print_usage(void)
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
 		"are vertically shuffled within a field.\n"
 		"\n"
-		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
-		"with most hardware.\n"
+		"hacktv supports the following modes (number in brackets indicates the permutation table):\n"
+		"\n"
+		"  premiere-fa     = (1) A valid Premiere 'key' is required to decode - free access.\n"
+		"  premiere-ca     = (1) A valid Premiere 'key' is required to decode - subscription level access.\n"
+		"  cfrfa           = (2) A valid Canal+ France 'key' is required to decode - free access. \n"
+		"  cfrca           = (2) A valid Canal+ France 'key' is required to decode - subscription level access.\n"
+		"  cplfa           = (1) A valid Canal+ Poland 'key' is required to decode - free access.\n"
+		"  cesfa           = (1) A valid Canal+ Spain 'key' is required to decode - free access.\n"
+		"  chorfa          = (2) A valid Canal+ Horizons 'key' is required to decode - free access.\n"
+		"  ntvfa           = (2) A valid HTB+ Russia 'key' is required to decode - free access.\n"
+		"\n"
+		"By default, PAL providers use permutation table 1 and SECAM ones use table 2.\n"
+		"\n"
+		"Discret 11\n"
+		"\n"
+		"This scrambling system is a precursor to Syster in 1980s and mid-1990s. Uses one of three \n"
+		"line delays to create a jagged effect. This will work with Syster decoders and dedicated Discret ones.\n"
+		"Syster decoder will require one of valid keys used in Syster (above).\n"
+		"\n"
+		"Discret parameter requires one of the above modes specified.\n"
 		"\n"
 		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
 		"to use the --systeraudio option.\n"
@@ -369,6 +389,10 @@ enum {
 	_OPT_VIDEOCRYPT2,
 	_OPT_VIDEOCRYPTS,
 	_OPT_SYSTER,
+	_OPT_SYSTER_KT1,
+	_OPT_SYSTER_KT2,
+	_OPT_DISCRET,
+	_OPT_SMARTCRYPT,
 	_OPT_SYSTERAUDIO,
 	_OPT_EUROCRYPT,
 	_OPT_ACP,
@@ -451,7 +475,11 @@ int main(int argc, char *argv[])
 		{ "videocrypt",     required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "videocrypt2",    required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts",    required_argument, 0, _OPT_VIDEOCRYPTS },
-		{ "syster",         no_argument,       0, _OPT_SYSTER },
+		{ "syster",         required_argument, 0, _OPT_SYSTER },
+		{ "key-table-1",    no_argument,       0, _OPT_SYSTER_KT1 },
+		{ "key-table-2",    no_argument,       0, _OPT_SYSTER_KT2 },
+		{ "d11",            required_argument, 0, _OPT_DISCRET },
+		{ "systercnr",      required_argument, 0, _OPT_SMARTCRYPT },
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "vits",           no_argument,       0, _OPT_VITS },
@@ -541,7 +569,9 @@ int main(int argc, char *argv[])
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
-	s.syster = 0;
+	s.syster = NULL;
+	s.d11 = NULL;
+	s.systercnr = NULL;
 	s.systeraudio = 0;
 	s.acp = 0;
 	s.vits = 0;
@@ -764,7 +794,26 @@ int main(int argc, char *argv[])
 			break;
 		
 		case _OPT_SYSTER: /* --syster */
-			s.syster = 1;
+			free(s.syster);
+			s.syster = strdup(optarg);
+			break;
+		
+		case _OPT_SYSTER_KT1: /* --key-table-1 */
+			s.scramble_video = 1;
+			break;
+		
+		case _OPT_SYSTER_KT2: /* --key-table-2 */
+			s.scramble_video = 2;
+			break;
+		
+		case _OPT_DISCRET: /* --d11 */
+			free(s.d11);
+			s.d11 = strdup(optarg);
+			break;
+		
+		case _OPT_SMARTCRYPT: /* --systercnr */
+			free(s.systercnr);
+			s.systercnr = strdup(optarg);
 			break;
 		
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
@@ -1235,11 +1284,11 @@ int main(int argc, char *argv[])
 		vid_conf.showecm = s.showecm;
 	}
 	
-	if(s.syster)
+	if(s.d11)
 	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_SECAM)
 		{
-			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
+			fprintf(stderr, "Discret 11 is only compatible with 625 line PAL modes.\n");
 			return(-1);
 		}
 		
@@ -1249,7 +1298,26 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		vid_conf.syster = 1;
+		vid_conf.d11 = s.d11;
+		vid_conf.systeraudio = s.systeraudio;
+	}
+	
+	if(s.syster || s.systercnr)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		if(vid_conf.videocrypt || vid_conf.videocrypt2 || vid_conf.videocrypts || vid_conf.d11)
+		{
+			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
+			return(-1);
+		}
+		
+		vid_conf.syster = s.syster;
+		vid_conf.systercnr = s.systercnr;
 		vid_conf.systeraudio = s.systeraudio;
 	}
 	

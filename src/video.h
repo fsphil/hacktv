@@ -203,8 +203,10 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	int syster;
 	int showecm;
+	char *d11;
+	char *systercnr;
+	char *syster;
 	int systeraudio;
 	int acp;
 	int vits;

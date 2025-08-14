@@ -54,7 +54,9 @@ typedef struct {
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	int syster;
+	char *d11;
+	char *syster;
+	char *systercnr;
 	int systeraudio;
 	char *eurocrypt;
 	int acp;
