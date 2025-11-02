@@ -50,6 +50,48 @@ if [[ ! -f $PREFIX/lib/libosmo-fl2k.a ]]; then
 	
 	if [[ ! -d osmo-fl2k ]]; then
 		git clone --depth 1 https://gitea.osmocom.org/sdr/osmo-fl2k
+		
+		# Rename argc/argv arguments to avoid conflict
+		patch -d osmo-fl2k -Np1 << PATCH
+diff --git a/src/getopt/getopt.h b/src/getopt/getopt.h
+index a1b8dd6..a739d71 100644
+--- a/src/getopt/getopt.h
++++ b/src/getopt/getopt.h
+@@ -142,23 +142,23 @@ struct option
+ /* Many other libraries have conflicting prototypes for getopt, with
+    differences in the consts, in stdlib.h.  To avoid compilation
+    errors, only prototype getopt for the GNU C library.  */
+-extern int getopt (int __argc, char *const *__argv, const char *__shortopts);
++extern int getopt (int argc, char *const *argv, const char *shortopts);
+ # else /* not __GNU_LIBRARY__ */
+ extern int getopt ();
+ # endif /* __GNU_LIBRARY__ */
+ 
+ # ifndef __need_getopt
+-extern int getopt_long (int __argc, char *const *__argv, const char *__shortopts,
+-		        const struct option *__longopts, int *__longind);
+-extern int getopt_long_only (int __argc, char *const *__argv,
+-			     const char *__shortopts,
+-		             const struct option *__longopts, int *__longind);
++extern int getopt_long (int argc, char *const *argv, const char *shortopts,
++		        const struct option *longopts, int *longind);
++extern int getopt_long_only (int argc, char *const *argv,
++			     const char *shortopts,
++		             const struct option *longopts, int *longind);
+ 
+ /* Internal only.  Users should not call this directly.  */
+-extern int _getopt_internal (int __argc, char *const *__argv,
+-			     const char *__shortopts,
+-		             const struct option *__longopts, int *__longind,
+-			     int __long_only);
++extern int _getopt_internal (int argc, char *const *argv,
++			     const char *shortopts,
++		             const struct option *longopts, int *longind,
++			     int long_only);
+ # endif
+ #else /* not __STDC__ */
+ extern int getopt ();
+PATCH
 	fi
 	
 	rm -rf osmo-fl2k/build
